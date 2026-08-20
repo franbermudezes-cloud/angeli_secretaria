@@ -38,3 +38,11 @@ Antes de introducir una responsabilidad nueva, decidir su módulo. No concentrar
 - El endpoint de Google Apps Script es una integración externa: no cambiarlo, ni sus datos enviados, sin una solicitud explícita y una revisión de impacto.
 - Los adjuntos e imágenes tienen limitaciones de almacenamiento local; no alterar su tratamiento sin verificar sus efectos sobre las entradas existentes.
 - Mantener la documentación en español, salvo identificadores técnicos o texto que deba conservarse literal.
+
+## Automatización y n8n
+
+- Angeli Secretaria debe ser una PWA lo más autónoma posible. Usar la PWA y sus módulos JavaScript para interfaz, validación, confirmaciones, IndexedDB, interpretación integrada y acciones inmediatas.
+- Usar Google APIs directas para acciones inmediatas que requieran respuesta en pantalla, como Contactos y Calendar. Al llegar Drive, estudiar primero una conexión directa y segura desde la PWA antes de proponer automatización externa.
+- n8n es una herramienta auxiliar futura para automatizaciones en segundo plano, correo, seguimientos, procesos programados o flujos complejos con una razón concreta; no es el motor de las funciones básicas de la PWA ni la arquitectura principal de Drive o IA.
+- No migrar a n8n una función ya validada solo por centralizarla. Antes de cada integración nueva, comparar explícitamente lógica local, Google API directa y n8n, y elegir la alternativa más simple, segura y mantenible.
+- Un webhook de n8n no puede considerarse seguro solo por ser poco visible. No incrustar secretos, contraseñas, tokens permanentes ni credenciales de webhook en la PWA pública.
