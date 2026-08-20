@@ -6,7 +6,7 @@
 - Rama principal: `main`.
 - Commit de referencia al iniciar esta memoria: `764d9590e1ece6a0ea20e1d1a3cabe6a71c95f32` (`764d959`, `Update index.html`, 2026-08-20).
 - En ese momento, `main` y `origin/main` apuntaban al mismo commit y el árbol de trabajo estaba limpio.
-- Última versión estable validada: `V0.10 · IndexedDB`, commit `e5a745efac566ef273859ba73ea96ca9f298af8b`, validada manualmente en Android el 2026-08-20.
+- Última versión estable validada: `V0.11 · Clasificación`, validada manualmente en Android el 2026-08-20.
 - No existe un README, gestor de paquetes, dependencias declaradas, proceso de build ni pruebas automatizadas.
 
 GitHub es la fuente de verdad del código. Antes de modificar cualquier funcionalidad, comprobar el estado actual del repositorio y del código, y analizar qué otros flujos podrían verse afectados.
@@ -60,3 +60,7 @@ Añadir aquí, con fecha, el contexto, la decisión tomada, los archivos implica
 ### 2026-08-20 — Validación estable V0.10
 
 V0.10 se validó manualmente en Android: dictado y texto, cámara, selección de fotos, archivos, persistencia tras actualizar/reabrir la PWA, visualización de medios y envío a Google Sheets. Tratar este estado como referencia estable: los cambios futuros deben preservar esos flujos.
+
+### 2026-08-20 — Validación estable V0.11
+
+V0.11 se validó manualmente en Android con clasificación correcta: tarea, recordatorio, calendario, contacto, foto y archivo; una nota textual acompañada de PDF conservó la prioridad de la intención textual. También se confirmó la persistencia de textos y adjuntos.

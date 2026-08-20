@@ -16,6 +16,10 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 - Se añade el campo `type` a nuevas entradas y se clasifica/persiste automáticamente en las existentes al abrir la aplicación.
 - Se actualiza la identificación y la caché PWA a `V0.11 · Clasificación`.
 
+### Validated
+
+- V0.11 validada manualmente en Android: clasificación de tarea, recordatorio, calendario, contacto, foto y archivo, prioridad de texto sobre adjuntos y persistencia de textos y medios.
+
 ## [0.10] - 2026-08-20
 
 ### Changed
