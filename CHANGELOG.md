@@ -4,6 +4,21 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.12.3] - 2026-08-20
+
+### Added
+
+- Hoja de estilos externa `styles.css`, incluida en el precaché de la PWA.
+
+### Changed
+
+- Renovación visual SaaS de cabecera, formularios, filtros, tarjetas, chips, acciones y controles de mantenimiento.
+- Se actualiza la identificación y la caché PWA a `V0.12.3 · SaaS UI`.
+
+### Pending validation
+
+- Pendiente de validación visual manual en Android y escritorio.
+
 ## [0.12.2] - 2026-08-20
 
 ### Added

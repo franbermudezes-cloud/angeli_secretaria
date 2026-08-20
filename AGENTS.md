@@ -12,7 +12,8 @@
 ## Arquitectura actual
 
 - El proyecto es una aplicación web estática sin framework, dependencias, gestor de paquetes ni proceso de compilación.
-- `index.html` contiene la interfaz, los estilos y la lógica principal.
+- `index.html` contiene la interfaz y la lógica principal.
+- `styles.css` contiene todos los estilos de la interfaz. No añadir bloques CSS grandes a `index.html`; mantener los cambios visuales en esta hoja de estilos.
 - `manifest.json` y `sw.js` configuran la PWA y su caché offline.
 - `prueba-microfono.html` es una prueba aislada de reconocimiento de voz.
 
@@ -20,7 +21,7 @@
 
 - Para desarrollo local, servir la raíz por HTTP, por ejemplo: `python3 -m http.server 8000`, y abrir `http://localhost:8000/`.
 - Verificar los flujos afectados en un navegador compatible. El dictado requiere `SpeechRecognition`/`webkitSpeechRecognition` y permiso de micrófono.
-- Al modificar PWA, revisar conjuntamente `index.html`, `manifest.json` y `sw.js`, incluido el versionado de recursos y el comportamiento de caché.
+- Al modificar PWA, revisar conjuntamente `index.html`, `styles.css` cuando corresponda, `manifest.json` y `sw.js`, incluido el versionado de recursos y el comportamiento de caché.
 - Si se cambia el modelo de datos, preservar o planificar la migración de las entradas guardadas en `localStorage`.
 - Registrar en `PROJECT_MEMORY.md` las decisiones, limitaciones y soluciones que deban persistir entre sesiones; actualizar `CHANGELOG.md` para cambios funcionales relevantes.
 

@@ -18,13 +18,16 @@ Regla permanente de versionado: cada commit funcional incrementa la versión vis
 
 | Archivo | Responsabilidad |
 | --- | --- |
-| `index.html` | Aplicación completa: marcado, CSS y JavaScript de la secretaria. |
+| `index.html` | Marcado y JavaScript de la secretaria. |
+| `styles.css` | Estilos de la interfaz. Debe contener los cambios visuales; evitar bloques CSS grandes dentro de `index.html`. |
 | `manifest.json` | Metadatos de la PWA, colores, inicio e iconos. |
 | `sw.js` | Instalación, activación y estrategia de caché de la PWA. |
 | `prueba-microfono.html` | Prueba independiente del reconocimiento de voz. |
 | `icon-192.png`, `icon-512.png` | Iconos de la PWA. |
 
 La aplicación se ejecuta con un servidor HTTP local, por ejemplo `python3 -m http.server 8000`, y se abre en `http://localhost:8000/`.
+
+La arquitectura visual se separó en V0.12.3: el marcado y la lógica continúan en `index.html`, mientras que todo el CSS reside en `styles.css`. Al cambiar estilos de PWA, revisar también la inclusión versionada de `styles.css` en `index.html` y en el precaché de `sw.js`.
 
 ## Funcionalidad existente
 
@@ -78,3 +81,7 @@ V0.12.1 se validó manualmente en Android: teléfonos escritos y dictados se rec
 ### 2026-08-20 — V0.12.2 · Contactos Google pendiente de validación
 
 La PWA solicita de forma explícita y temporal el alcance `https://www.googleapis.com/auth/contacts.readonly` mediante Google Identity Services. Para una entrada como `Llama a Montse`, extrae el nombre, consulta People API con los campos mínimos `names,phoneNumbers` y muestra opciones de llamada sin persistir la agenda ni los resultados. Pendiente de validar en Android: autorización, cero/una/varias coincidencias, contacto sin teléfono y reautorización tras caducar el token.
+
+### 2026-08-20 — V0.12.3 · SaaS UI pendiente de validación
+
+Se extrajo la hoja de estilos de `index.html` a `styles.css` y se adoptó una presentación SaaS de tarjetas, controles táctiles, filtros y acciones. No se modificó ninguna lógica de la aplicación. `styles.css` se incluye en el precaché del Service Worker y está pendiente de validación visual manual en Android y escritorio.

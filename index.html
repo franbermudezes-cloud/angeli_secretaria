@@ -5,31 +5,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1f2023">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="manifest" href="manifest.json?v=0.12.2">
-<title>Angeli · Secretaria V0.12.2</title>
-<style>
-*{box-sizing:border-box}html,body{margin:0;padding:0;width:100%;max-width:100%;overflow-x:hidden}
-body{background:#f4f4f2;color:#202124;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
-header{background:#1f2023;color:#fff;padding:18px 16px 17px}.brand{font-size:10px;letter-spacing:2.5px;font-weight:800;opacity:.65}
-h1{font-size:25px;line-height:1.05;margin:5px 0 0}.version{font-size:10px;opacity:.55;margin-top:5px}
-main{width:100%;max-width:720px;margin:auto;padding:12px 10px 30px}.panel{background:#fff;border:1px solid #dededb;border-radius:16px;padding:13px;margin-bottom:11px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
-.label{display:block;font-size:11px;font-weight:750;text-transform:uppercase;letter-spacing:.7px;color:#666;margin:0 0 7px}
-textarea{display:block;width:100%;min-height:112px;border:1px solid #d2d2cf;border-radius:12px;padding:13px;font:inherit;font-size:16px;line-height:1.45;resize:vertical;color:#202124}
-.row{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:8px}.action{height:46px;border:0;border-radius:11px;font:inherit;font-weight:750;cursor:pointer;background:#202124;color:#fff;display:flex;align-items:center;justify-content:center;gap:5px;min-width:0}
-.action.secondary{background:#f0f0ee;color:#202124;border:1px solid #d4d4d1}.action.danger{background:#fff;color:#333;border:1px solid #d4d4d1}.action.listening{background:#666}
-.help{font-size:11px;color:#777;margin-top:7px;line-height:1.3}
-.search input{width:100%;height:45px;border:1px solid #d4d4d1;border-radius:10px;padding:0 12px;font:inherit;font-size:15px}
-.filters{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:7px}.filter{height:40px;border:1px solid #d4d4d1;border-radius:10px;background:#fff;font:inherit;font-size:13px;cursor:pointer}.filter.active{background:#202124;color:#fff;border-color:#202124;font-weight:750}
-.toast{position:fixed;left:12px;right:12px;bottom:18px;z-index:50;background:#202124;color:#fff;border-radius:12px;padding:12px 14px;font-size:13px;font-weight:650;text-align:center;box-shadow:0 5px 20px rgba(0,0,0,.22);opacity:0;transform:translateY(14px);pointer-events:none;transition:.2s}.toast.show{opacity:1;transform:translateY(0)}
-.card{background:#fff;border:1px solid #dededb;border-radius:13px;padding:12px;margin:8px 0}.meta{font-size:10px;color:#777;margin-bottom:6px;line-height:1.35;overflow-wrap:anywhere}.badge{font-weight:800;color:#333}.note-text{font-size:14px;line-height:1.45;overflow-wrap:anywhere}
-.card-media{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.thumb{width:70px;height:70px;object-fit:cover;border-radius:8px;border:1px solid #ddd}
-.file-line{font-size:11px;color:#555;margin-top:7px;overflow-wrap:anywhere}.actions{display:flex;justify-content:flex-end;gap:7px;margin-top:9px}.small-btn{border:1px solid #d4d4d1;border-radius:8px;background:#fff;padding:7px 9px;font:inherit;font-size:11px;cursor:pointer}.google-status{font-size:11px;color:#666;margin-left:8px}.contact-options{margin-top:8px;display:grid;gap:6px}.contact-option{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;border:1px solid #e1e1de;border-radius:8px;padding:7px 8px}.contact-option span{overflow-wrap:anywhere}
-.done{opacity:.55}.done .note-text{text-decoration:line-through}.empty{text-align:center;color:#777;padding:30px 10px;font-size:13px}
-@media(min-width:600px){main{padding:16px}.row{grid-template-columns:150px 100px 100px;justify-content:end}}
-</style>
+<link rel="manifest" href="manifest.json?v=0.12.3">
+<link rel="stylesheet" href="styles.css?v=0.12.3">
+<title>Angeli · Secretaria V0.12.3</title>
 </head>
 <body>
-<header><div class="brand">ANGELI</div><h1>Secretaria</h1><div class="version">V0.12.2 · Contactos Google</div></header>
+<header><div class="brand">ANGELI</div><h1>Secretaria</h1><div class="version">V0.12.3 · SaaS UI</div></header>
 <main>
 <section class="panel">
 <label class="label">Bandeja de entrada</label>
@@ -150,7 +131,7 @@ $("search").oninput=render;
 $("typeFilter").onchange=e=>{selectedType=e.target.value;render()};
 document.querySelectorAll(".filter").forEach(b=>b.onclick=()=>{selectedFilter=b.dataset.filter;document.querySelectorAll(".filter").forEach(x=>x.classList.toggle("active",x===b));render()});
 $("list").onclick=async e=>{const b=e.target.closest("button");if(!b)return;const n=notes.find(x=>x.id===b.dataset.id);if(!n)return;if(b.dataset.a==="calendar"){notify("Integración con calendario pendiente");return}if(b.dataset.a==="contact"){notify("No hay número de teléfono en esta entrada");return}if(b.dataset.a==="search-contact"){await searchGoogleContact(n);return}if(b.dataset.a==="open-file"){try{const media=await getMedia(MEDIA_STORES.files,b.dataset.mediaId);if(!media)throw new Error();const url=URL.createObjectURL(media.blob);window.open(url,"_blank");setTimeout(()=>URL.revokeObjectURL(url),60000)}catch(e){notify("No se pudo abrir el archivo")}return}if(b.dataset.a==="toggle"){n.status=n.status==="done"?"pending":"done";save();return}if(b.dataset.a==="delete"){const nextNotes=notes.filter(x=>x.id!==n.id);if(!save(nextNotes))return;contactResults.delete(n.id);try{for(const id of n.images||[])await deleteMedia(MEDIA_STORES.images,id);for(const file of n.files||[])if(file.id)await deleteMedia(MEDIA_STORES.files,file.id)}catch(e){notify("La entrada se borró, pero quedó algún medio sin eliminar")}}};
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.12.2",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.12.3",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{});
 load();
 </script>
 </body>
