@@ -290,7 +290,7 @@ def vertex_interpret(text: str, now: str, timezone: str) -> dict[str, Any]:
             response_json_schema=RESPONSE_SCHEMA,
             max_output_tokens=400,
         ),
-        timeout=REQUEST_TIMEOUT_SECONDS,
+        http_options=types.HttpOptions(timeout=REQUEST_TIMEOUT_SECONDS * 1000),
     )
     return response.parsed if response.parsed is not None else json.loads(response.text)
 
