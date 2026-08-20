@@ -40,6 +40,8 @@ ALLOWED_FIELDS = {
     "title",
     "date",
     "time",
+    "rangeStart",
+    "rangeEnd",
     "location",
     "contactName",
     "phone",
@@ -67,7 +69,15 @@ lugar físico, location debe ser null.
 Para cancelar usa calendar.delete y expresa en target el título del evento y,
 si se menciona, su fecha u hora. Para modificar usa calendar.update: target
 identifica el evento actual y changes contiene solo los nuevos datos. Para
-preguntas sobre la agenda usa calendar.query con la fecha pedida cuando exista.
+preguntas sobre la agenda usa calendar.query. En una consulta de intervalo,
+como «qué tengo la semana que viene», usa rangeStart y rangeEnd en formato
+YYYY-MM-DD, con el inicio inclusivo y el fin exclusivo. Para «pasa la cena con
+Vicente para el lunes que viene», target debe identificar «Cena con Vicente»
+y changes debe contener la nueva fecha; nunca uses esa nueva fecha para buscar
+el evento antiguo. Si una orden de creación contiene «en» seguido de un
+recinto, restaurante, dirección o población, location debe contener ese lugar
+completo y title no debe copiarlo. Nunca copies la frase completa dictada como
+título de un evento.
 No ejecutes ni sugieras llamadas a APIs, almacenamiento ni acciones externas."""
 
 RESPONSE_SCHEMA: dict[str, Any] = {
@@ -80,6 +90,8 @@ RESPONSE_SCHEMA: dict[str, Any] = {
         "title": {"type": ["string", "null"]},
         "date": {"type": ["string", "null"]},
         "time": {"type": ["string", "null"]},
+        "rangeStart": {"type": ["string", "null"]},
+        "rangeEnd": {"type": ["string", "null"]},
         "location": {"type": ["string", "null"]},
         "contactName": {"type": ["string", "null"]},
         "phone": {"type": ["string", "null"]},
@@ -243,8 +255,10 @@ def validate_interpretation(raw: Any) -> dict[str, Any]:
         if value is not None and (not isinstance(value, str) or len(value) > MAX_TEXT_LENGTH):
             raise ValueError("Texto de salida no válido")
         result[key] = value.strip() if isinstance(value, str) else None
-    for key in ("date", "time"):
+    for key in ("date", "time", "rangeStart", "rangeEnd"):
         validate_temporal(key, result[key])
+    if result["rangeStart"] and result["rangeEnd"] and result["rangeStart"] >= result["rangeEnd"]:
+        raise ValueError("Intervalo no válido")
     validate_target(result["target"])
     validate_changes(result["changes"])
     if result["requiresConfirmation"] is None:

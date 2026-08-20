@@ -11,6 +11,8 @@ VALID_RESPONSE = {
     "title": "Cena con Pedro",
     "date": "2026-08-21",
     "time": "21:00",
+    "rangeStart": None,
+    "rangeEnd": None,
     "location": None,
     "contactName": None,
     "phone": None,
@@ -77,7 +79,8 @@ class InterpretEndpointTests(unittest.TestCase):
             lambda text, now, timezone: {
                 "intent": "calendar.query",
                 "confidence": 0.92,
-                "date": "2026-08-23",
+                "rangeStart": "2026-08-23",
+                "rangeEnd": "2026-08-24",
             }
         )
         status, data = app.wsgi_request(
@@ -85,7 +88,23 @@ class InterpretEndpointTests(unittest.TestCase):
         )
         self.assertEqual(status, "200 OK")
         self.assertEqual(data["intent"], "calendar.query")
-        self.assertEqual(data["date"], "2026-08-23")
+        self.assertEqual(data["rangeStart"], "2026-08-23")
+        self.assertEqual(data["rangeEnd"], "2026-08-24")
+
+    def test_rejects_invalid_calendar_query_interval(self):
+        app.set_test_dependencies(
+            lambda text, now, timezone: {
+                "intent": "calendar.query",
+                "confidence": 0.92,
+                "rangeStart": "2026-08-24",
+                "rangeEnd": "2026-08-23",
+            }
+        )
+        status, data = app.wsgi_request(
+            {"text": "¿Qué tengo la semana que viene?", "now": "2026-08-20T21:20:00+02:00", "timeZone": "Europe/Madrid"}
+        )
+        self.assertEqual(status, "503 Service Unavailable")
+        self.assertEqual(data["error"], "Interpretación no disponible")
 
     def test_requires_confirmation_for_sensitive_intent(self):
         response = VALID_RESPONSE | {"intent": "calendar.delete", "target": {"title": "Cena con Pedro", "date": "2026-08-21", "time": None}, "requiresConfirmation": False}

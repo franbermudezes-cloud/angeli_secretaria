@@ -4,6 +4,19 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.15.6] - 2026-08-21
+
+### Changed
+
+- Una modificación de Calendar busca el evento existente por el objetivo original, no por la nueva fecha u hora indicada en `changes`.
+- Las consultas de agenda pueden conservar un intervalo explícito mediante `rangeStart` y `rangeEnd`; se añade soporte para «esta semana» y «la semana que viene».
+- La instrucción estructurada de Gemini refuerza la separación entre título, ubicación, evento objetivo y cambios solicitados.
+- Se actualiza la identificación y la caché PWA a `V0.15.6 · Calendario contextual`.
+
+### Pending validation
+
+- Pendiente de validación manual en Android: mover un evento existente a otra fecha, consultar la semana siguiente y crear un evento con recinto/ubicación.
+
 ## [0.15.5] - 2026-08-21
 
 ### Changed
