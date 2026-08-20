@@ -4,6 +4,26 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.12.2] - 2026-08-20
+
+### Added
+
+- Conexión opcional a Google mediante OAuth para buscar por nombre en Google Contacts.
+- Búsqueda limitada a nombre y teléfonos mediante People API, con selección explícita cuando hay varias coincidencias o números.
+
+### Security
+
+- Se solicita exclusivamente el alcance `contacts.readonly` al pulsar `Conectar Google`.
+- Los tokens de acceso y los resultados de contactos se mantienen solo en memoria; no se persisten en la aplicación ni se envían al endpoint público de Sheets.
+
+### Changed
+
+- Se actualiza la identificación y la caché PWA a `V0.12.2 · Contactos Google`.
+
+### Pending validation
+
+- Pendiente de validación manual en Android con la cuenta autorizada de Google.
+
 ## [0.12.1] - 2026-08-20
 
 ### Changed

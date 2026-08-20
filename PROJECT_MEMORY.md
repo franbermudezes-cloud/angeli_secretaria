@@ -7,6 +7,7 @@
 - Commit de referencia al iniciar esta memoria: `764d9590e1ece6a0ea20e1d1a3cabe6a71c95f32` (`764d959`, `Update index.html`, 2026-08-20).
 - En ese momento, `main` y `origin/main` apuntaban al mismo commit y el árbol de trabajo estaba limpio.
 - Última versión estable validada: `V0.12.1 · Teléfonos`, validada manualmente en Android el 2026-08-20.
+- `V0.12.2 · Contactos Google` está preparada para prueba manual; no debe considerarse validada hasta completar la autorización OAuth y una búsqueda real en Android.
 - No existe un README, gestor de paquetes, dependencias declaradas, proceso de build ni pruebas automatizadas.
 
 GitHub es la fuente de verdad del código. Antes de modificar cualquier funcionalidad, comprobar el estado actual del repositorio y del código, y analizar qué otros flujos podrían verse afectados.
@@ -34,6 +35,7 @@ La aplicación se ejecuta con un servidor HTTP local, por ejemplo `python3 -m ht
 - Captura de cámara, selección de imágenes y selección de archivos. Imágenes y archivos se guardan localmente como blobs en IndexedDB.
 - Dictado en español mediante `SpeechRecognition` o `webkitSpeechRecognition`.
 - Envío de datos de la entrada a un endpoint de Google Apps Script/Google Sheets.
+- Consulta opcional de contactos por nombre mediante Google Identity Services OAuth y People API; solicita exclusivamente `contacts.readonly` cuando la persona usuaria pulsa `🔗 Conectar Google`.
 - Instalación PWA y disponibilidad parcial offline mediante Service Worker.
 
 ## Decisiones y límites conocidos
@@ -44,6 +46,7 @@ La aplicación se ejecuta con un servidor HTTP local, por ejemplo `python3 -m ht
 - Las notas se mantienen en `localStorage`; los blobs de imágenes y archivos se guardan en IndexedDB, base `angeli_secretaria_media`, almacenes `images` y `files`.
 - Las notas solo conservan IDs de imágenes y referencias ligeras de archivos. Las imágenes Data URL heredadas se migran al iniciar tras confirmar su copia en IndexedDB.
 - Los archivos no se suben a Google desde la aplicación actual; se conservan localmente en IndexedDB y pueden abrirse desde la entrada.
+- Google Contacts no utiliza el endpoint público de Apps Script. El Client ID web es público por diseño; los tokens de acceso y las coincidencias de contactos permanecen únicamente en memoria y no se guardan en GitHub, `localStorage` ni IndexedDB.
 - La opción `⚙️ Mantenimiento · Borrar todos los datos` elimina solo la clave local de notas y la base IndexedDB de medios tras confirmación; nunca modifica Google Sheets.
 - La versión visible y las referencias de caché PWA están alineadas en `0.10`. Antes de cambios futuros de versión o caché, revisar en conjunto `index.html`, `manifest.json` y `sw.js`.
 - La caché del Service Worker puede retener recursos en el navegador. Tras cambios de PWA, validar actualización, activación y recursos precargados.
@@ -71,3 +74,7 @@ V0.11 se validó manualmente en Android con clasificación correcta: tarea, reco
 ### 2026-08-20 — Validación estable V0.12.1
 
 V0.12.1 se validó manualmente en Android: teléfonos escritos y dictados se reconocen, clasifican la entrada como Contacto y abren correctamente el marcador mediante `tel:`.
+
+### 2026-08-20 — V0.12.2 · Contactos Google pendiente de validación
+
+La PWA solicita de forma explícita y temporal el alcance `https://www.googleapis.com/auth/contacts.readonly` mediante Google Identity Services. Para una entrada como `Llama a Montse`, extrae el nombre, consulta People API con los campos mínimos `names,phoneNumbers` y muestra opciones de llamada sin persistir la agenda ni los resultados. Pendiente de validar en Android: autorización, cero/una/varias coincidencias, contacto sin teléfono y reautorización tras caducar el token.
