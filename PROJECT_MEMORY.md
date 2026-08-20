@@ -6,6 +6,7 @@
 - Rama principal: `main`.
 - Commit de referencia al iniciar esta memoria: `764d9590e1ece6a0ea20e1d1a3cabe6a71c95f32` (`764d959`, `Update index.html`, 2026-08-20).
 - En ese momento, `main` y `origin/main` apuntaban al mismo commit y el árbol de trabajo estaba limpio.
+- Última versión estable validada: `V0.10 · IndexedDB`, commit `e5a745efac566ef273859ba73ea96ca9f298af8b`, validada manualmente en Android el 2026-08-20.
 - No existe un README, gestor de paquetes, dependencias declaradas, proceso de build ni pruebas automatizadas.
 
 GitHub es la fuente de verdad del código. Antes de modificar cualquier funcionalidad, comprobar el estado actual del repositorio y del código, y analizar qué otros flujos podrían verse afectados.
@@ -26,7 +27,7 @@ La aplicación se ejecuta con un servidor HTTP local, por ejemplo `python3 -m ht
 
 - Bandeja de entrada de notas: crear, buscar, filtrar por pendiente/hecha, completar, reabrir y borrar.
 - Persistencia de las entradas en `localStorage` con la clave `angeli_secretaria_notes_v5`.
-- Captura de cámara, selección de imágenes y selección de archivos. Las imágenes se guardan en la entrada como data URLs; de los demás archivos se guarda nombre, tipo y tamaño.
+- Captura de cámara, selección de imágenes y selección de archivos. Imágenes y archivos se guardan localmente como blobs en IndexedDB.
 - Dictado en español mediante `SpeechRecognition` o `webkitSpeechRecognition`.
 - Envío de datos de la entrada a un endpoint de Google Apps Script/Google Sheets.
 - Instalación PWA y disponibilidad parcial offline mediante Service Worker.
@@ -53,3 +54,7 @@ La aplicación se ejecuta con un servidor HTTP local, por ejemplo `python3 -m ht
 ## Registro de decisiones y soluciones
 
 Añadir aquí, con fecha, el contexto, la decisión tomada, los archivos implicados y cómo se verificó. No sustituir decisiones anteriores sin explicar el motivo del cambio.
+
+### 2026-08-20 — Validación estable V0.10
+
+V0.10 se validó manualmente en Android: dictado y texto, cámara, selección de fotos, archivos, persistencia tras actualizar/reabrir la PWA, visualización de medios y envío a Google Sheets. Tratar este estado como referencia estable: los cambios futuros deben preservar esos flujos.

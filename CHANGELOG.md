@@ -4,16 +4,19 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
-### Added
-
-- Aún no hay cambios funcionales pendientes de publicar.
+## [0.10] - 2026-08-20
 
 ### Changed
 
+- V0.10 · IndexedDB validada manualmente en Android.
 - Se alinea la identificación visible y la caché PWA en `V0.10 · IndexedDB`.
 - Las fotos e imágenes se guardan como blobs en IndexedDB en lugar de Data URLs en `localStorage`.
 - Los archivos adjuntos se conservan localmente como blobs y se pueden abrir desde la entrada.
 - Las imágenes Data URL existentes se migran de forma segura a IndexedDB al iniciar.
+
+### Validated
+
+- Dictado/texto, cámara, selección de fotos, archivos, persistencia tras actualizar/reabrir, visualización de medios y envío a Google Sheets.
 
 ## [0.9] - 2026-08-20
 
