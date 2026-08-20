@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1f2023"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.json?v=0.8.3">
-<title>Angeli · Secretaria V0.8.4</title>
+<title>Angeli · Secretaria V0.8.5</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;padding:0;width:100%;max-width:100%;overflow-x:hidden}
 body{background:#f4f4f2;color:#202124;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
@@ -39,7 +39,7 @@ textarea{display:block;width:100%;min-height:105px;border:1px solid #d2d2cf;bord
 </style>
 </head>
 <body>
-<header><div class="brand">ANGELI</div><h1>Secretaria</h1><div class="version">V0.8.4 · dictado estable</div></header>
+<header><div class="brand">ANGELI</div><h1>Secretaria</h1><div class="version">V0.8.5 · dictado en directo</div></header>
 <main>
 <section class="panel">
 <label class="label">Bandeja de entrada</label>
@@ -125,13 +125,14 @@ function start(){
  if(!SR){notify("Este navegador no admite dictado");return}
  if(listening)return;
 
- // Exact pattern validated in the standalone HTTPS microphone test:
- // one recognition session, no interim results, no automatic restart.
  rec=new SR();
  rec.lang="es-ES";
  rec.continuous=false;
- rec.interimResults=false;
+ rec.interimResults=true;
  rec.maxAlternatives=1;
+
+ let sessionFinal=finalText || "";
+ let lastInterim="";
 
  rec.onstart=()=>{
    listening=true;
@@ -141,10 +142,29 @@ function start(){
  };
 
  rec.onresult=e=>{
-   const phrase=(e.results?.[0]?.[0]?.transcript||"").trim();
-   if(!phrase)return;
-   finalText=finalText ? finalText+" "+phrase : phrase;
-   $("text").value=finalText;
+   let finalPart="";
+   let interimPart="";
+
+   for(let i=e.resultIndex;i<e.results.length;i++){
+     const result=e.results[i];
+     const phrase=(result[0]?.transcript||"").trim();
+     if(!phrase)continue;
+     if(result.isFinal){
+       finalPart += (finalPart?" ":"")+phrase;
+     }else{
+       interimPart += (interimPart?" ":"")+phrase;
+     }
+   }
+
+   if(finalPart){
+     sessionFinal += (sessionFinal?" ":"")+finalPart;
+     lastInterim="";
+   }else{
+     lastInterim=interimPart;
+   }
+
+   finalText=sessionFinal;
+   $("text").value=(sessionFinal+(lastInterim?" "+lastInterim:"")).trim();
  };
 
  rec.onerror=e=>{
@@ -156,6 +176,8 @@ function start(){
  };
 
  rec.onend=()=>{
+   finalText=sessionFinal;
+   $("text").value=finalText;
    listening=false;
    $("mic").classList.remove("listening");
    $("mic").textContent="🎙️ Dictar";
