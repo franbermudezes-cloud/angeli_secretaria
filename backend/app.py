@@ -7,9 +7,9 @@ llamar a Vertex AI. Este servicio no ejecuta acciones de negocio.
 from __future__ import annotations
 
 import json
-import logging
 import os
 import re
+import sys
 import time
 from collections import defaultdict, deque
 from datetime import date, datetime
@@ -107,7 +107,6 @@ RESPONSE_SCHEMA: dict[str, Any] = {
 _rate_windows: dict[str, deque[float]] = defaultdict(deque)
 _interpreter: Callable[[str, str, str], dict[str, Any]] | None = None
 _identity_verifier: Callable[[str], dict[str, Any]] | None = None
-LOGGER = logging.getLogger("angeli.interpreter")
 
 
 class OutputValidationError(ValueError):
@@ -147,7 +146,7 @@ def log_interpreter_error(category: str, error: Exception) -> None:
     status = getattr(error, "status_code", None) or getattr(error, "code", None)
     if callable(status):
         status = status()
-    LOGGER.warning("interpreter_error category=%s type=%s status=%s", category, type(error).__name__, status if status is not None else "none")
+    print(f"interpreter_error category={category} type={type(error).__name__} status={status if status is not None else 'none'}", file=sys.stderr, flush=True)
 
 
 def allowed_origin(environ: dict[str, Any]) -> str:
