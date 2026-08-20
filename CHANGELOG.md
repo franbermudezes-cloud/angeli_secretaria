@@ -4,6 +4,26 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.15.2] - 2026-08-20
+
+### Added
+
+- Conexión opcional y separada de Google para la capa IA, limitada a una credencial de identidad temporal de la sesión.
+- Proveedor remoto en `ai.js` que envía únicamente el texto y contexto temporal al intérprete seguro de Cloud Run.
+
+### Security
+
+- La credencial de identidad solo permanece en memoria; no se guarda en `localStorage`, IndexedDB ni GitHub.
+- El intérprete remoto valida la identidad y una lista privada de cuentas autorizadas antes de usar Gemini. Si no hay conexión, la identidad caduca o el servicio falla, la PWA usa la clasificación local existente.
+
+### Changed
+
+- Se actualiza la identificación y la caché PWA a `V0.15.2 · IA real`.
+
+### Pending validation
+
+- Pendiente de validación manual en Android: conexión IA con la cuenta autorizada, interpretación de órdenes naturales, fallback sin conexión y conservación de Contactos, Calendar, medios, dictado y Sheets.
+
 ## [0.15.1] - 2026-08-20
 
 ### Added

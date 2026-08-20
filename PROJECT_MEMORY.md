@@ -7,7 +7,7 @@
 - Commit de referencia al iniciar esta memoria: `764d9590e1ece6a0ea20e1d1a3cabe6a71c95f32` (`764d959`, `Update index.html`, 2026-08-20).
 - En ese momento, `main` y `origin/main` apuntaban al mismo commit y el árbol de trabajo estaba limpio.
 - Última versión estable validada: `V0.12.1 · Teléfonos`, validada manualmente en Android el 2026-08-20.
-- `V0.12.2 · Contactos Google`, `V0.12.3 · SaaS UI`, `V0.13 · Google Calendar`, `V0.13.1 · Cuentas Google`, `V0.14 · Arquitectura modular`, `V0.14.1 · Temporal inteligente`, `V0.15 · IA estructurada` y `V0.15.1 · Ubicaciones` están preparadas para prueba manual; no deben considerarse validadas hasta completar sus pruebas reales en Android.
+- `V0.12.2 · Contactos Google`, `V0.12.3 · SaaS UI`, `V0.13 · Google Calendar`, `V0.13.1 · Cuentas Google`, `V0.14 · Arquitectura modular`, `V0.14.1 · Temporal inteligente`, `V0.15 · IA estructurada`, `V0.15.1 · Ubicaciones` y `V0.15.2 · IA real` están preparadas para prueba manual; no deben considerarse validadas hasta completar sus pruebas reales en Android.
 - No existe un README, gestor de paquetes, dependencias declaradas, proceso de build ni pruebas automatizadas.
 
 GitHub es la fuente de verdad del código. Antes de modificar cualquier funcionalidad, comprobar el estado actual del repositorio y del código, y analizar qué otros flujos podrían verse afectados.
@@ -66,6 +66,7 @@ La arquitectura visual se separó en V0.12.3 y la lógica se modularizó en V0.1
 - La versión visible y las referencias de caché PWA deben mantenerse alineadas. Antes de cambios futuros de versión o caché, revisar en conjunto `index.html`, `manifest.json`, `sw.js` y los recursos versionados.
 - La caché del Service Worker puede retener recursos en el navegador. Tras cambios de PWA, validar actualización, activación y recursos precargados.
 - Angeli Secretaria debe mantenerse como PWA lo más autónoma posible. n8n es auxiliar futuro para automatizaciones en segundo plano, correo, seguimientos, procesos programados o workflows complejos, nunca el motor de sus funciones básicas. Contacts y Calendar continúan por Google APIs directas; al llegar Drive se estudiará primero conexión directa y segura desde la PWA. No se deben incrustar secretos de webhooks ni credenciales de n8n en la PWA pública.
+- El intérprete IA se ejecuta de forma aislada en Cloud Run (`angeli-ai-interpreter`, región `europe-southwest1`) y usa la cuenta de servicio dedicada con `roles/aiplatform.user` y ADC. No usa API key ni archivo JSON. La URL del servicio es pública solo a nivel de red: el endpoint exige un ID token de Google válido, con audiencia del Client ID web y `sub` incluido en la lista privada `ALLOWED_GOOGLE_SUBS` del servicio.
 
 ## Protocolo antes de cambios funcionales
 
@@ -126,3 +127,7 @@ Las entradas `calendar.create` conservan la ubicación detectada en el campo loc
 ### 2026-08-20 — Decisión de arquitectura: PWA autónoma y n8n auxiliar
 
 La PWA es el núcleo de Angeli Secretaria: conserva interfaz, validación, confirmaciones, almacenamiento local e integraciones inmediatas. Contacts y Calendar siguen con Google APIs directas. n8n queda reservado para una necesidad futura y concreta de automatización diferida, correo, seguimiento, programación o workflow complejo; no es el motor de Drive ni de la IA. Cuando se aborde Drive, se estudiará primero una conexión directa y segura desde la PWA. Un webhook no se protege mediante una URL oculta: nunca se incluirán secretos o credenciales permanentes en el código publicado.
+
+### 2026-08-20 — V0.15.2 · Intérprete IA remoto pendiente de validación
+
+`backend/` contiene el servicio aislado `POST /interpret`, desplegado en Cloud Run con Gemini `gemini-2.5-flash-lite` mediante Agent Platform/ADC. El servicio acepta como máximo 500 caracteres, aplica un límite básico de 30 peticiones por minuto por identidad, agota a los 8 segundos y no registra el cuerpo de la petición. La PWA adquiere un ID token solo después de pulsar `✨ Conectar IA`; lo conserva exclusivamente en memoria, lo envía como `Authorization: Bearer` y mantiene el clasificador local como fallback. La respuesta sigue validándose contra la lista cerrada de intenciones en `ai.js`; no puede ejecutar acciones externas por sí sola. La cuenta autorizada en Cloud Run se conserva exclusivamente como `sub` privado en la configuración del servicio, nunca en el repositorio.
