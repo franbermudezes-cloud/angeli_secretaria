@@ -4,6 +4,26 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.15] - 2026-08-20
+
+### Added
+
+- Capa de interpretación estructurada con proveedor simulado intercambiable, validación de esquema, lista cerrada de intenciones y fallback local.
+- Propuestas visibles para crear, modificar o cancelar eventos, llamar, crear tareas y preparar recordatorios.
+
+### Security
+
+- Las intenciones sensibles requieren confirmación y no ejecutan código ni integraciones desde una respuesta del proveedor.
+- No se añade ninguna clave, secreto ni llamada a una API de IA.
+
+### Changed
+
+- Se actualiza la identificación y la caché PWA a `V0.15 · IA estructurada`.
+
+### Pending validation
+
+- Pendiente de validación manual en Android con el proveedor simulado; las operaciones reales de actualizar/cancelar Calendar siguen pendientes.
+
 ## [0.14.1] - 2026-08-20
 
 ### Added

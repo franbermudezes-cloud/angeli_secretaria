@@ -7,7 +7,7 @@
 - Commit de referencia al iniciar esta memoria: `764d9590e1ece6a0ea20e1d1a3cabe6a71c95f32` (`764d959`, `Update index.html`, 2026-08-20).
 - En ese momento, `main` y `origin/main` apuntaban al mismo commit y el árbol de trabajo estaba limpio.
 - Última versión estable validada: `V0.12.1 · Teléfonos`, validada manualmente en Android el 2026-08-20.
-- `V0.12.2 · Contactos Google`, `V0.12.3 · SaaS UI`, `V0.13 · Google Calendar`, `V0.13.1 · Cuentas Google`, `V0.14 · Arquitectura modular` y `V0.14.1 · Temporal inteligente` están preparadas para prueba manual; no deben considerarse validadas hasta completar sus pruebas reales en Android.
+- `V0.12.2 · Contactos Google`, `V0.12.3 · SaaS UI`, `V0.13 · Google Calendar`, `V0.13.1 · Cuentas Google`, `V0.14 · Arquitectura modular`, `V0.14.1 · Temporal inteligente` y `V0.15 · IA estructurada` están preparadas para prueba manual; no deben considerarse validadas hasta completar sus pruebas reales en Android.
 - No existe un README, gestor de paquetes, dependencias declaradas, proceso de build ni pruebas automatizadas.
 
 GitHub es la fuente de verdad del código. Antes de modificar cualquier funcionalidad, comprobar el estado actual del repositorio y del código, y analizar qué otros flujos podrían verse afectados.
@@ -25,6 +25,8 @@ Regla permanente de versionado: cada commit funcional incrementa la versión vis
 | `js/storage.js` | `localStorage`, IndexedDB, medios, migración y limpieza. |
 | `js/classifier.js` | Tipos, prioridades, teléfonos y datos derivados de la clasificación. |
 | `js/temporal.js` | Detección temporal actual, sin reglas de negocio adicionales. |
+| `js/ai.js` | Interpretación estructurada, proveedor intercambiable, validación y fallback. |
+| `js/intents.js` | Propuestas de acción derivadas de intenciones validadas, sin ejecutar integraciones. |
 | `js/google.js` | OAuth, People API y Calendar API. |
 | `js/sheets.js` | Envío actual al Apps Script público de Google Sheets. |
 | `manifest.json` | Metadatos de la PWA, colores, inicio e iconos. |
@@ -111,3 +113,7 @@ Sin modificar el comportamiento, la aplicación se separó en módulos ES para i
 ### 2026-08-20 — V0.14.1 · Temporal inteligente pendiente de validación
 
 `temporal.js` reconoce ahora mañana, días de semana, fechas numéricas y fechas como `28 de agosto`; también horas numéricas y naturales con franja del día, medias y cuartos. `classifier.js` mantiene como prioridad recordatorio, tarea y contacto, y clasifica como Calendario las entradas restantes con fecha y hora detectadas. Al iniciar, una nota existente solo se recalifica si pasa inequívocamente a Calendario; los demás tipos guardados no se cambian. El título enviado a Calendar elimina las expresiones temporales nuevas. Pendiente de validación manual en Android.
+
+### 2026-08-20 — V0.15 · IA estructurada pendiente de validación
+
+Se incorporan `ai.js` e `intents.js` con un proveedor local simulado, sin secretos ni llamadas de red. La respuesta se limita a una lista cerrada de intenciones, se valida y usa el clasificador local como fallback ante error o confianza inferior a `0.75`. La IA solo crea propuestas; Calendar crear conserva su confirmación existente, mientras que actualizar/cancelar Calendar se muestra como solicitud confirmable y no ejecuta todavía ninguna acción externa. La futura integración real sustituirá el proveedor dentro de `ai.js` y requerirá backend autenticado con secreto fuera de la PWA.
