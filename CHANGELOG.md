@@ -4,6 +4,26 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.13.1] - 2026-08-20
+
+### Added
+
+- Controles separados para conectar, cambiar cuenta y desconectar Contactos y Calendar dentro de la sesión actual.
+
+### Changed
+
+- El estado visible ya no mezcla ambas integraciones de Google.
+- Una búsqueda de contacto sin conexión muestra una explicación persistente en la entrada.
+- Se actualiza la identificación y la caché PWA a `V0.13.1 · Cuentas Google`.
+
+### Security
+
+- Desconectar elimina únicamente los tokens temporales y los resultados de Contactos de la sesión; no revoca permisos concedidos en Google.
+
+### Pending validation
+
+- Pendiente de validación manual en Android con cuentas distintas para Contactos y Calendar.
+
 ## [0.13] - 2026-08-20
 
 ### Added
