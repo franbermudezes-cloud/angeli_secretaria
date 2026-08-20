@@ -12,10 +12,17 @@
 ## Arquitectura actual
 
 - El proyecto es una aplicación web estática sin framework, dependencias, gestor de paquetes ni proceso de compilación.
-- `index.html` contiene la interfaz y la lógica principal.
+- `index.html` contiene la estructura HTML y carga el punto de entrada de módulos; no incorporar en él lógica de negocio nueva.
 - `styles.css` contiene todos los estilos de la interfaz. No añadir bloques CSS grandes a `index.html`; mantener los cambios visuales en esta hoja de estilos.
+- `js/app.js` inicializa la aplicación y coordina el estado y los eventos principales.
+- `js/ui.js` contiene el renderizado, tarjetas, estados visuales, previsualizaciones y mensajes.
+- `js/storage.js` concentra `localStorage`, IndexedDB, medios, migraciones y limpieza.
+- `js/classifier.js` concentra clasificación, teléfonos y prioridades; `js/temporal.js` contiene únicamente las utilidades de fecha y hora.
+- `js/google.js` contiene OAuth, Contacts y Calendar; `js/sheets.js` contiene exclusivamente el envío existente a Apps Script/Google Sheets.
 - `manifest.json` y `sw.js` configuran la PWA y su caché offline.
 - `prueba-microfono.html` es una prueba aislada de reconocimiento de voz.
+
+Antes de introducir una responsabilidad nueva, decidir su módulo. No concentrar funcionalidades nuevas en `app.js` por comodidad: mantener coordinación en `app.js`, presentación en `ui.js`, datos en `storage.js`, clasificación en `classifier.js`, temporal en `temporal.js` e integraciones en sus módulos correspondientes.
 
 ## Forma de trabajar
 

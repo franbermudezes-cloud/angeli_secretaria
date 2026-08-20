@@ -7,7 +7,7 @@
 - Commit de referencia al iniciar esta memoria: `764d9590e1ece6a0ea20e1d1a3cabe6a71c95f32` (`764d959`, `Update index.html`, 2026-08-20).
 - En ese momento, `main` y `origin/main` apuntaban al mismo commit y el árbol de trabajo estaba limpio.
 - Última versión estable validada: `V0.12.1 · Teléfonos`, validada manualmente en Android el 2026-08-20.
-- `V0.12.2 · Contactos Google`, `V0.12.3 · SaaS UI`, `V0.13 · Google Calendar` y `V0.13.1 · Cuentas Google` están preparadas para prueba manual; no deben considerarse validadas hasta completar sus pruebas reales en Android.
+- `V0.12.2 · Contactos Google`, `V0.12.3 · SaaS UI`, `V0.13 · Google Calendar`, `V0.13.1 · Cuentas Google` y `V0.14 · Arquitectura modular` están preparadas para prueba manual; no deben considerarse validadas hasta completar sus pruebas reales en Android.
 - No existe un README, gestor de paquetes, dependencias declaradas, proceso de build ni pruebas automatizadas.
 
 GitHub es la fuente de verdad del código. Antes de modificar cualquier funcionalidad, comprobar el estado actual del repositorio y del código, y analizar qué otros flujos podrían verse afectados.
@@ -18,8 +18,15 @@ Regla permanente de versionado: cada commit funcional incrementa la versión vis
 
 | Archivo | Responsabilidad |
 | --- | --- |
-| `index.html` | Marcado y JavaScript de la secretaria. |
+| `index.html` | Marcado de la secretaria y carga del módulo principal. |
 | `styles.css` | Estilos de la interfaz. Debe contener los cambios visuales; evitar bloques CSS grandes dentro de `index.html`. |
+| `js/app.js` | Inicialización, estado mínimo, coordinación y eventos. |
+| `js/ui.js` | Renderizado de bandeja, tarjetas, estados visuales, previsualizaciones y avisos. |
+| `js/storage.js` | `localStorage`, IndexedDB, medios, migración y limpieza. |
+| `js/classifier.js` | Tipos, prioridades, teléfonos y datos derivados de la clasificación. |
+| `js/temporal.js` | Detección temporal actual, sin reglas de negocio adicionales. |
+| `js/google.js` | OAuth, People API y Calendar API. |
+| `js/sheets.js` | Envío actual al Apps Script público de Google Sheets. |
 | `manifest.json` | Metadatos de la PWA, colores, inicio e iconos. |
 | `sw.js` | Instalación, activación y estrategia de caché de la PWA. |
 | `prueba-microfono.html` | Prueba independiente del reconocimiento de voz. |
@@ -27,7 +34,7 @@ Regla permanente de versionado: cada commit funcional incrementa la versión vis
 
 La aplicación se ejecuta con un servidor HTTP local, por ejemplo `python3 -m http.server 8000`, y se abre en `http://localhost:8000/`.
 
-La arquitectura visual se separó en V0.12.3: el marcado y la lógica continúan en `index.html`, mientras que todo el CSS reside en `styles.css`. Al cambiar estilos de PWA, revisar también la inclusión versionada de `styles.css` en `index.html` y en el precaché de `sw.js`.
+La arquitectura visual se separó en V0.12.3 y la lógica se modularizó en V0.14. `index.html` carga `js/app.js` como módulo ES; sus dependencias se importan con la misma versión de caché y se precargan en `sw.js`. Al modificar PWA, revisar de forma conjunta los recursos versionados de `index.html`, los imports de módulos, `manifest.json` y el precaché de `sw.js`.
 
 ## Funcionalidad existente
 
@@ -96,3 +103,7 @@ Las entradas de tipo Calendario con fecha y hora detectadas pueden crear, previa
 ### 2026-08-20 — V0.13.1 · Cuentas Google pendiente de validación
 
 Se separa la conexión temporal de Google Contacts y Google Calendar: cada una permite elegir o cambiar cuenta y desconectarse solo de la sesión local. No se guardan tokens ni resultados de contactos. Las búsquedas sin token de Contactos ahora dejan un mensaje persistente en la tarjeta, en lugar de conservar un botón sin explicación. Pendiente de validar en Android con una cuenta de agenda distinta de la cuenta de Calendar.
+
+### 2026-08-20 — V0.14 · Arquitectura modular pendiente de validación
+
+Sin modificar el comportamiento, la aplicación se separó en módulos ES para interfaz, almacenamiento, clasificación, utilidades temporales, OAuth/Google, Sheets y coordinación. `index.html` queda limitado al marcado y la carga de `js/app.js`. El Service Worker precarga el grafo de módulos con el mismo identificador de versión para evitar combinaciones de HTML y JavaScript de versiones distintas. Pendiente de regresión manual completa en Android.

@@ -4,6 +4,18 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.14] - 2026-08-20
+
+### Changed
+
+- Refactor interno a módulos ES: interfaz, almacenamiento, clasificación, temporal, Google, Sheets y coordinación se separan en archivos independientes.
+- `index.html` queda como estructura y carga del punto de entrada modular.
+- Se actualiza la identificación y la caché PWA a `V0.14 · Arquitectura modular` y se precarga el grafo de módulos en el Service Worker.
+
+### Pending validation
+
+- Pendiente de regresión manual completa en Android; no se añade funcionalidad nueva.
+
 ## [0.13.1] - 2026-08-20
 
 ### Added
