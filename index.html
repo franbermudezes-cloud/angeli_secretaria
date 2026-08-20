@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#1f2023">
+<meta name="theme-color" content="#1f2023"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="manifest.json?v=0.6">
 <title>Angeli · Secretaria V0.6</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;padding:0;width:100%;max-width:100%;overflow-x:hidden}
@@ -85,6 +85,6 @@ document.querySelectorAll("#types .choice").forEach(b=>b.onclick=()=>{selectedTy
 document.querySelectorAll("#areas .choice").forEach(b=>b.onclick=()=>{selectedArea=b.dataset.value;document.querySelectorAll("#areas .choice").forEach(x=>x.classList.toggle("active",x===b))});
 document.querySelectorAll(".filter").forEach(b=>b.onclick=()=>{selectedFilter=b.dataset.filter;document.querySelectorAll(".filter").forEach(x=>x.classList.toggle("active",x===b));render()});
 $("list").onclick=e=>{const b=e.target.closest("button");if(!b)return;const n=notes.find(x=>x.id===b.dataset.id);if(!n)return;if(b.dataset.a==="toggle")n.status=n.status==="done"?"pending":"done";else notes=notes.filter(x=>x.id!==n.id);save()};
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});load();
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.6",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{});load();
 </script>
 </body></html>
