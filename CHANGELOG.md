@@ -4,6 +4,26 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.13] - 2026-08-20
+
+### Added
+
+- Creación confirmada de eventos de una hora en el calendario principal de Google para entradas clasificadas como Calendario que tengan fecha y hora detectadas.
+- Estado local de calendario (`pending`, `synced`, `error`), identificador del evento y enlace de apertura cuando Google lo proporciona.
+
+### Security
+
+- Se solicita de forma incremental únicamente el alcance `calendar.events` al confirmar la creación del evento.
+- El token de Calendar permanece solo en memoria y no se persiste en la aplicación.
+
+### Changed
+
+- Se actualiza la identificación y la caché PWA a `V0.13 · Google Calendar`.
+
+### Pending validation
+
+- Pendiente de validación manual en Android con autorización de Google: creación real, ausencia de duplicados y recuperación ante error.
+
 ## [0.12.3] - 2026-08-20
 
 ### Added

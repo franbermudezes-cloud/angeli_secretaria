@@ -7,7 +7,7 @@
 - Commit de referencia al iniciar esta memoria: `764d9590e1ece6a0ea20e1d1a3cabe6a71c95f32` (`764d959`, `Update index.html`, 2026-08-20).
 - En ese momento, `main` y `origin/main` apuntaban al mismo commit y el árbol de trabajo estaba limpio.
 - Última versión estable validada: `V0.12.1 · Teléfonos`, validada manualmente en Android el 2026-08-20.
-- `V0.12.2 · Contactos Google` está preparada para prueba manual; no debe considerarse validada hasta completar la autorización OAuth y una búsqueda real en Android.
+- `V0.12.2 · Contactos Google`, `V0.12.3 · SaaS UI` y `V0.13 · Google Calendar` están preparadas para prueba manual; no deben considerarse validadas hasta completar sus pruebas reales en Android.
 - No existe un README, gestor de paquetes, dependencias declaradas, proceso de build ni pruebas automatizadas.
 
 GitHub es la fuente de verdad del código. Antes de modificar cualquier funcionalidad, comprobar el estado actual del repositorio y del código, y analizar qué otros flujos podrían verse afectados.
@@ -33,12 +33,13 @@ La arquitectura visual se separó en V0.12.3: el marcado y la lógica continúan
 
 - Bandeja de entrada de notas: crear, buscar, filtrar por pendiente/hecha, completar, reabrir y borrar.
 - Clasificación local automática de entradas por tipo: nota, tarea, recordatorio, calendario, contacto, foto o archivo.
-- Acciones contextuales locales: calendario preparado, llamada por `tel:` cuando se detecta teléfono y estados visuales de tarea/recordatorio.
+- Acciones contextuales: llamada por `tel:` cuando se detecta teléfono, estados visuales de tarea/recordatorio y creación confirmada de eventos en Google Calendar.
 - Persistencia de las entradas en `localStorage` con la clave `angeli_secretaria_notes_v5`.
 - Captura de cámara, selección de imágenes y selección de archivos. Imágenes y archivos se guardan localmente como blobs en IndexedDB.
 - Dictado en español mediante `SpeechRecognition` o `webkitSpeechRecognition`.
 - Envío de datos de la entrada a un endpoint de Google Apps Script/Google Sheets.
 - Consulta opcional de contactos por nombre mediante Google Identity Services OAuth y People API; solicita exclusivamente `contacts.readonly` cuando la persona usuaria pulsa `🔗 Conectar Google`.
+- Creación opcional de eventos en el calendario principal mediante Google Identity Services OAuth y Calendar API; solicita exclusivamente `calendar.events` cuando la persona usuaria confirma `📅 Añadir al calendario`.
 - Instalación PWA y disponibilidad parcial offline mediante Service Worker.
 
 ## Decisiones y límites conocidos
@@ -50,8 +51,9 @@ La arquitectura visual se separó en V0.12.3: el marcado y la lógica continúan
 - Las notas solo conservan IDs de imágenes y referencias ligeras de archivos. Las imágenes Data URL heredadas se migran al iniciar tras confirmar su copia en IndexedDB.
 - Los archivos no se suben a Google desde la aplicación actual; se conservan localmente en IndexedDB y pueden abrirse desde la entrada.
 - Google Contacts no utiliza el endpoint público de Apps Script. El Client ID web es público por diseño; los tokens de acceso y las coincidencias de contactos permanecen únicamente en memoria y no se guardan en GitHub, `localStorage` ni IndexedDB.
+- Google Calendar tampoco utiliza el endpoint público de Apps Script. Su token de acceso permanece únicamente en memoria. Las notas de calendario conservan solo `calendarStatus`, `calendarEventId` y `calendarUrl`; nunca el token.
 - La opción `⚙️ Mantenimiento · Borrar todos los datos` elimina solo la clave local de notas y la base IndexedDB de medios tras confirmación; nunca modifica Google Sheets.
-- La versión visible y las referencias de caché PWA están alineadas en `0.10`. Antes de cambios futuros de versión o caché, revisar en conjunto `index.html`, `manifest.json` y `sw.js`.
+- La versión visible y las referencias de caché PWA deben mantenerse alineadas. Antes de cambios futuros de versión o caché, revisar en conjunto `index.html`, `manifest.json`, `sw.js` y los recursos versionados.
 - La caché del Service Worker puede retener recursos en el navegador. Tras cambios de PWA, validar actualización, activación y recursos precargados.
 
 ## Protocolo antes de cambios funcionales
@@ -85,3 +87,7 @@ La PWA solicita de forma explícita y temporal el alcance `https://www.googleapi
 ### 2026-08-20 — V0.12.3 · SaaS UI pendiente de validación
 
 Se extrajo la hoja de estilos de `index.html` a `styles.css` y se adoptó una presentación SaaS de tarjetas, controles táctiles, filtros y acciones. No se modificó ninguna lógica de la aplicación. `styles.css` se incluye en el precaché del Service Worker y está pendiente de validación visual manual en Android y escritorio.
+
+### 2026-08-20 — V0.13 · Google Calendar pendiente de validación
+
+Las entradas de tipo Calendario con fecha y hora detectadas pueden crear, previa confirmación, un evento de una hora en el calendario principal. La integración solicita de forma incremental el alcance `https://www.googleapis.com/auth/calendar.events` y conserva el identificador y enlace del evento para una futura gestión bidireccional. La inserción usa un ID determinista por entrada y trata una respuesta de conflicto como recuperación del evento existente para evitar duplicados. Si falta fecha u hora, falla Google o se rechaza la autorización, la entrada local se conserva y permite reintentar. Pendiente de validar en Android: autorización, creación real, persistencia del estado sincronizado, no duplicación y errores de Google.
