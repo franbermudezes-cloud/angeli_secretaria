@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Prueba de micrófono Angeli</title>
+<style>
+body{font-family:system-ui,-apple-system,sans-serif;background:#f4f4f2;color:#202124;margin:0;padding:24px}main{max-width:650px;margin:auto;background:#fff;padding:22px;border-radius:18px}h1{margin:0 0 10px;font-size:28px}p{line-height:1.45;color:#555}button{width:100%;height:54px;border:0;border-radius:12px;background:#202124;color:#fff;font-size:17px;font-weight:700}button:disabled{opacity:.65}textarea{width:100%;min-height:220px;margin-top:14px;box-sizing:border-box;padding:14px;border:1px solid #ccc;border-radius:12px;font:16px system-ui;resize:vertical}#state{font-size:13px;color:#666;margin-top:10px}
+</style>
+</head>
+<body>
+<main>
+<h1>Prueba de micrófono</h1>
+<p>Prueba aislada de reconocimiento de voz. No utiliza Google Sheets, Drive, PWA ni Angeli Secretaria.</p>
+<button id="mic">🎙️ Empezar dictado</button>
+<textarea id="text" placeholder="Aquí aparecerá lo que digas…"></textarea>
+<div id="state">Preparado.</div>
+</main>
+<script>
+const mic=document.getElementById("mic"),text=document.getElementById("text"),state=document.getElementById("state");
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let recognition=null,running=false,committed="";
+if(!SR){mic.disabled=true;state.textContent="Este navegador no ofrece SpeechRecognition.";}
+else{
+ recognition=new SR();recognition.lang="es-ES";recognition.continuous=false;recognition.interimResults=false;recognition.maxAlternatives=1;
+ recognition.onstart=()=>{running=true;mic.disabled=true;mic.textContent="🎙️ Escuchando…";state.textContent="Escuchando. Habla ahora.";};
+ recognition.onresult=e=>{const phrase=e.results?.[0]?.[0]?.transcript?.trim()||"";if(phrase){committed=committed?committed+" "+phrase:phrase;text.value=committed;}};
+ recognition.onerror=e=>{running=false;mic.disabled=false;mic.textContent="🎙️ Empezar dictado";state.textContent="Error: "+e.error;};
+ recognition.onend=()=>{running=false;mic.disabled=false;mic.textContent="🎙️ Empezar dictado";state.textContent="Dictado terminado.";};
+}
+mic.onclick=()=>{if(!recognition||running)return;committed=text.value.trim();running=true;mic.disabled=true;try{recognition.start();}catch(error){running=false;mic.disabled=false;mic.textContent="🎙️ Empezar dictado";state.textContent="No se pudo iniciar: "+error.message;}};
+</script>
+</body>
+</html>
