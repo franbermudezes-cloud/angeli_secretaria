@@ -39,7 +39,7 @@ La aplicación se ejecuta con un servidor HTTP local, por ejemplo `python3 -m ht
 - Las notas se mantienen en `localStorage`; los blobs de imágenes y archivos se guardan en IndexedDB, base `angeli_secretaria_media`, almacenes `images` y `files`.
 - Las notas solo conservan IDs de imágenes y referencias ligeras de archivos. Las imágenes Data URL heredadas se migran al iniciar tras confirmar su copia en IndexedDB.
 - Los archivos no se suben a Google desde la aplicación actual; se conservan localmente en IndexedDB y pueden abrirse desde la entrada.
-- `index.html` muestra `V0.9`, mientras que `manifest.json` y `sw.js` usan `0.8.1` y aún hay referencias a `0.8`. Antes de cambiar versiones o caché, revisar los tres archivos de PWA en conjunto.
+- La versión visible y las referencias de caché PWA están alineadas en `0.10`. Antes de cambios futuros de versión o caché, revisar en conjunto `index.html`, `manifest.json` y `sw.js`.
 - La caché del Service Worker puede retener recursos en el navegador. Tras cambios de PWA, validar actualización, activación y recursos precargados.
 
 ## Protocolo antes de cambios funcionales

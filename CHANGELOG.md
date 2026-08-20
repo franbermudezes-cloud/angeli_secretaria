@@ -10,6 +10,7 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ### Changed
 
+- Se alinea la identificación visible y la caché PWA en `V0.10 · IndexedDB`.
 - Las fotos e imágenes se guardan como blobs en IndexedDB en lugar de Data URLs en `localStorage`.
 - Los archivos adjuntos se conservan localmente como blobs y se pueden abrir desde la entrada.
 - Las imágenes Data URL existentes se migran de forma segura a IndexedDB al iniciar.
