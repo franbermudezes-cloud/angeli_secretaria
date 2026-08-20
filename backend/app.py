@@ -146,7 +146,11 @@ def log_interpreter_error(category: str, error: Exception) -> None:
     status = getattr(error, "status_code", None) or getattr(error, "code", None)
     if callable(status):
         status = status()
-    print(f"interpreter_error category={category} type={type(error).__name__} status={status if status is not None else 'none'}", file=sys.stderr, flush=True)
+    detail = "none"
+    if isinstance(error, TypeError):
+        match = re.search(r"unexpected keyword argument ['\"]([^'\"]+)['\"]", str(error))
+        detail = f"unexpected_keyword={match.group(1)}" if match else "type_error_without_keyword"
+    print(f"interpreter_error category={category} type={type(error).__name__} status={status if status is not None else 'none'} detail={detail}", file=sys.stderr, flush=True)
 
 
 def allowed_origin(environ: dict[str, Any]) -> str:
