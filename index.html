@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1f2023">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.json?v=0.8.1">
-<title>Angeli · Secretaria V0.8.8</title>
+<title>Angeli · Secretaria V0.8.1</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;padding:0;width:100%;max-width:100%;overflow-x:hidden}
 body{background:#f4f4f2;color:#202124;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
@@ -29,7 +29,7 @@ textarea{display:block;width:100%;min-height:112px;border:1px solid #d2d2cf;bord
 </style>
 </head>
 <body>
-<header><div class="brand">ANGELI</div><h1>Secretaria</h1><div class="version">V0.8.8 · estable</div></header>
+<header><div class="brand">ANGELI</div><h1>Secretaria</h1><div class="version">V0.8.9 · estable</div></header>
 <main>
 <section class="panel">
 <label class="label">Bandeja de entrada</label>
@@ -86,7 +86,7 @@ async function add(){
      hora:now.toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"}),
      entrada:text || "Entrada con archivo o imagen",
      estado:"Pendiente",
-     origen:"Angeli Secretaria V0.8.1",
+     origen:"Angeli Secretaria V0.8.9",
      archivo:(entry.files||[]).map(f=>f.name).join(" · "),
      creadoPor:"Angeli Secretaria"
    };
