@@ -128,6 +128,18 @@ def json_response(start_response: Callable, status: str, data: dict[str, Any], o
     return [body]
 
 
+def cors_preflight_response(start_response: Callable, origin: str):
+    headers = [
+        ("Access-Control-Allow-Origin", origin),
+        ("Vary", "Origin"),
+        ("Access-Control-Allow-Headers", "Authorization, Content-Type"),
+        ("Access-Control-Allow-Methods", "POST, OPTIONS"),
+        ("Content-Length", "0"),
+    ]
+    start_response("204 No Content", headers)
+    return []
+
+
 def allowed_origin(environ: dict[str, Any]) -> str:
     origin = environ.get("HTTP_ORIGIN", "")
     allowed = {value.strip() for value in os.getenv("ALLOWED_ORIGINS", "").split(",") if value.strip()}
@@ -277,7 +289,7 @@ def vertex_interpret(text: str, now: str, timezone: str) -> dict[str, Any]:
 def app(environ: dict[str, Any], start_response: Callable):
     origin = allowed_origin(environ)
     if environ.get("REQUEST_METHOD") == "OPTIONS":
-        return json_response(start_response, "204 No Content", {}, origin)
+        return cors_preflight_response(start_response, origin)
     if environ.get("REQUEST_METHOD") != "POST" or environ.get("PATH_INFO") != "/interpret":
         return json_response(start_response, "404 Not Found", {"error": "No encontrado"}, origin)
     if environ.get("HTTP_ORIGIN") and not origin:

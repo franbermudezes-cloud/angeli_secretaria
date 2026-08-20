@@ -1,5 +1,6 @@
 import os
 import unittest
+from io import BytesIO
 
 import app
 
@@ -62,6 +63,20 @@ class InterpretEndpointTests(unittest.TestCase):
         self.assertEqual(status, "401 Unauthorized")
         self.assertEqual(data["error"], "No autorizado")
         os.environ.pop("ALLOWED_GOOGLE_SUBS", None)
+
+    def test_preflight_is_empty_and_allows_authorized_origin(self):
+        os.environ["ALLOWED_ORIGINS"] = "https://franbermudezes-cloud.github.io"
+        captured = {}
+
+        def start_response(status, headers):
+            captured["status"], captured["headers"] = status, dict(headers)
+
+        response = app.app({"REQUEST_METHOD": "OPTIONS", "PATH_INFO": "/interpret", "HTTP_ORIGIN": "https://franbermudezes-cloud.github.io", "wsgi.input": BytesIO()}, start_response)
+        self.assertEqual(captured["status"], "204 No Content")
+        self.assertEqual(captured["headers"]["Access-Control-Allow-Origin"], "https://franbermudezes-cloud.github.io")
+        self.assertEqual(captured["headers"]["Content-Length"], "0")
+        self.assertEqual(response, [])
+        os.environ.pop("ALLOWED_ORIGINS", None)
 
 
 if __name__ == "__main__":
