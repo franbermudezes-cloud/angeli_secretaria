@@ -4,6 +4,17 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.11] - 2026-08-20
+
+### Added
+
+- Clasificación local automática de las entradas y filtro por tipo.
+
+### Changed
+
+- Se añade el campo `type` a nuevas entradas y se clasifica/persiste automáticamente en las existentes al abrir la aplicación.
+- Se actualiza la identificación y la caché PWA a `V0.11 · Clasificación`.
+
 ## [0.10] - 2026-08-20
 
 ### Changed
