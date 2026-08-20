@@ -7,6 +7,7 @@ llamar a Vertex AI. Este servicio no ejecuta acciones de negocio.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import time
@@ -106,6 +107,7 @@ RESPONSE_SCHEMA: dict[str, Any] = {
 _rate_windows: dict[str, deque[float]] = defaultdict(deque)
 _interpreter: Callable[[str, str, str], dict[str, Any]] | None = None
 _identity_verifier: Callable[[str], dict[str, Any]] | None = None
+LOGGER = logging.getLogger("angeli.interpreter")
 
 
 class OutputValidationError(ValueError):
@@ -138,6 +140,14 @@ def cors_preflight_response(start_response: Callable, origin: str):
     ]
     start_response("204 No Content", headers)
     return []
+
+
+def log_interpreter_error(category: str, error: Exception) -> None:
+    """Registra únicamente diagnóstico técnico; nunca el texto de la entrada."""
+    status = getattr(error, "status_code", None) or getattr(error, "code", None)
+    if callable(status):
+        status = status()
+    LOGGER.warning("interpreter_error category=%s type=%s status=%s", category, type(error).__name__, status if status is not None else "none")
 
 
 def allowed_origin(environ: dict[str, Any]) -> str:
@@ -306,13 +316,17 @@ def app(environ: dict[str, Any], start_response: Callable):
         return json_response(start_response, "200 OK", interpretation, origin)
     except PermissionError:
         return json_response(start_response, "401 Unauthorized", {"error": "No autorizado"}, origin)
-    except OutputValidationError:
+    except OutputValidationError as error:
+        log_interpreter_error("invalid_model_output", error)
         return json_response(start_response, "503 Service Unavailable", {"error": "Interpretación no disponible"}, origin)
     except ValueError as error:
         return json_response(start_response, "400 Bad Request", {"error": str(error)}, origin)
     except RuntimeError as error:
+        if "Demasiadas" not in str(error):
+            log_interpreter_error("runtime", error)
         return json_response(start_response, "429 Too Many Requests" if "Demasiadas" in str(error) else "503 Service Unavailable", {"error": "Interpretación no disponible"}, origin)
-    except Exception:
+    except Exception as error:
+        log_interpreter_error("unexpected", error)
         return json_response(start_response, "503 Service Unavailable", {"error": "Interpretación no disponible"}, origin)
 
 
