@@ -1,4 +1,4 @@
-import{cleanTemporalText}from"./temporal.js?v=0.15.2";
+import{cleanTemporalText}from"./temporal.js?v=0.15.3";
 
 const GOOGLE_CLIENT_ID="172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const GOOGLE_CONTACTS_SCOPE="https://www.googleapis.com/auth/contacts.readonly";

@@ -218,11 +218,11 @@ def enforce_rate_limit(subject: str) -> None:
 
 
 def validate_interpretation(raw: Any) -> dict[str, Any]:
-    if not isinstance(raw, dict) or set(raw) != ALLOWED_FIELDS:
+    if not isinstance(raw, dict) or not set(raw).issubset(ALLOWED_FIELDS):
         raise ValueError("Respuesta estructurada no válida")
-    if raw["intent"] not in VALID_INTENTS or not isinstance(raw["confidence"], (int, float)) or not 0 <= raw["confidence"] <= 1:
+    if raw.get("intent") not in VALID_INTENTS or not isinstance(raw.get("confidence"), (int, float)) or not 0 <= raw["confidence"] <= 1:
         raise ValueError("Intención o confianza no válidas")
-    result = dict(raw)
+    result = {field: raw.get(field) for field in ALLOWED_FIELDS}
     for key in ("title", "location", "contactName", "phone", "notes"):
         value = result[key]
         if value is not None and (not isinstance(value, str) or len(value) > MAX_TEXT_LENGTH):
@@ -232,6 +232,8 @@ def validate_interpretation(raw: Any) -> dict[str, Any]:
         validate_temporal(key, result[key])
     validate_target(result["target"])
     validate_changes(result["changes"])
+    if result["requiresConfirmation"] is None:
+        result["requiresConfirmation"] = False
     if not isinstance(result["requiresConfirmation"], bool):
         raise ValueError("Confirmación no válida")
     if result["intent"] in SENSITIVE_INTENTS:
@@ -257,8 +259,13 @@ def validate_temporal(kind: str, value: Any) -> None:
 def validate_target(value: Any) -> None:
     if value is None:
         return
-    if not isinstance(value, dict) or set(value) != {"title", "date", "time"} or not isinstance(value["title"], str):
+    if not isinstance(value, dict) or not set(value).issubset({"title", "date", "time"}) or not isinstance(value.get("title"), str):
         raise ValueError("Objetivo no válido")
+    value["title"] = value["title"].strip()
+    if not value["title"] or len(value["title"]) > MAX_TEXT_LENGTH:
+        raise ValueError("Objetivo no válido")
+    value["date"] = value.get("date")
+    value["time"] = value.get("time")
     validate_temporal("date", value["date"])
     validate_temporal("time", value["time"])
 
@@ -270,6 +277,8 @@ def validate_changes(value: Any) -> None:
     if not isinstance(value, dict) or not value or not set(value).issubset(allowed):
         raise ValueError("Cambios no válidos")
     for key, item in value.items():
+        if item is None:
+            continue
         if key in {"date", "time"}:
             validate_temporal(key, item)
         elif not isinstance(item, str) or len(item) > MAX_TEXT_LENGTH:

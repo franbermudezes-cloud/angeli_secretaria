@@ -48,6 +48,14 @@ class InterpretEndpointTests(unittest.TestCase):
         self.assertEqual(status, "503 Service Unavailable")
         self.assertEqual(data["error"], "Interpretación no disponible")
 
+    def test_accepts_partial_safe_model_response_and_normalizes_it(self):
+        app.set_test_dependencies(lambda text, now, timezone: {"intent": "calendar.delete", "confidence": 0.91, "target": {"title": "Cena con Pedro"}})
+        status, data = app.wsgi_request({"text": "Anula la cena", "now": "2026-08-20T21:20:00+02:00", "timeZone": "Europe/Madrid"})
+        self.assertEqual(status, "200 OK")
+        self.assertEqual(data["intent"], "calendar.delete")
+        self.assertEqual(data["target"], {"title": "Cena con Pedro", "date": None, "time": None})
+        self.assertTrue(data["requiresConfirmation"])
+
     def test_requires_confirmation_for_sensitive_intent(self):
         response = VALID_RESPONSE | {"intent": "calendar.delete", "target": {"title": "Cena con Pedro", "date": "2026-08-21", "time": None}, "requiresConfirmation": False}
         app.set_test_dependencies(lambda text, now, timezone: response)

@@ -4,6 +4,24 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.15.3] - 2026-08-20
+
+### Changed
+
+- Una interpretación remota de IA válida pasa a ser la fuente de intención, tipo y datos de la entrada; no se reinterpreta con reglas locales.
+- La clasificación local se usa exclusivamente cuando la IA no está conectada, no responde, falla o devuelve una respuesta que no supera la validación estructural.
+- Las respuestas parciales pero seguras del modelo se normalizan en el intérprete antes de llegar a la PWA, para evitar perder una orden válida por campos opcionales ausentes.
+- La interfaz distingue una propuesta de IA de una clasificación local de respaldo.
+- Se actualiza la identificación y la caché PWA a `V0.15.3 · IA prioritaria`.
+
+### Security
+
+- La PWA mantiene una lista cerrada de intenciones, valida los datos recibidos y conserva la confirmación humana antes de cualquier acción sensible. La IA no ejecuta acciones externas directamente.
+
+### Pending validation
+
+- Pendiente de validación manual en Android: creación, modificación y cancelación propuestas por IA; confirmación de acciones sensibles; y mensaje claro cuando se use el respaldo local.
+
 ## [0.15.2] - 2026-08-20
 
 ### Added
