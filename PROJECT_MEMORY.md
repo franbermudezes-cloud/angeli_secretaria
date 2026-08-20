@@ -145,3 +145,7 @@ La integración incorpora `calendar.query`, `calendar.update` y `calendar.delete
 ### 2026-08-21 — V0.15.6 · Calendario contextual pendiente de validación
 
 La intención `calendar.update` separa ahora el objetivo existente (`target`) de los datos nuevos (`changes`): la búsqueda no usa la fecha nueva como filtro. Las consultas `calendar.query` pueden incluir `rangeStart` y `rangeEnd`; «la semana que viene» comprende desde el lunes siguiente, inclusive, hasta el lunes posterior, exclusivo. El contrato del intérprete exige mantener separado título, ubicación, objetivo y cambios. Pendiente de validación manual en Android.
+
+### 2026-08-21 — V0.16 · Angeli Asistente pendiente de validación
+
+La interfaz se rediseña para móvil sin mover la lógica de negocio a `index.html`: este conserva solo marcado, `styles.css` contiene la presentación, `ui.js` renderiza conversación y tarjetas emergentes, `app.js` coordina entrada, dictado, accesos y acciones, y `storage.js` conserva los accesos directos locales bajo `angeli_secretaria_shortcuts_v1`. El dictado puede pararse y continuarse; solo `Enviar` procesa la instrucción. La propuesta aparece primero en una tarjeta emergente y después pasa a la conversación. Los accesos directos representan texto de instrucciones para el mismo flujo de interpretación; no contienen código ni secretos. `Limpiar vista` no modifica notas, IndexedDB ni integraciones externas. Pendiente de validación completa en Android antes de considerar la versión estable.

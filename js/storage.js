@@ -1,10 +1,13 @@
 export const NOTES_KEY="angeli_secretaria_notes_v5";
+export const SHORTCUTS_KEY="angeli_secretaria_shortcuts_v1";
 export const MEDIA_DB="angeli_secretaria_media";
 export const MEDIA_STORES={images:"images",files:"files"};
 
 export function readNotes(){try{return JSON.parse(localStorage.getItem(NOTES_KEY)||"[]")}catch(e){return[]}}
 export function writeNotes(notes){localStorage.setItem(NOTES_KEY,JSON.stringify(notes))}
 export function clearNotes(){localStorage.removeItem(NOTES_KEY)}
+export function readShortcuts(){try{const shortcuts=JSON.parse(localStorage.getItem(SHORTCUTS_KEY)||"null");return Array.isArray(shortcuts)?shortcuts:null}catch(e){return null}}
+export function writeShortcuts(shortcuts){localStorage.setItem(SHORTCUTS_KEY,JSON.stringify(shortcuts))}
 export function openMediaDB(){return new Promise((resolve,reject)=>{const request=indexedDB.open(MEDIA_DB,1);request.onupgradeneeded=()=>{const db=request.result;Object.values(MEDIA_STORES).forEach(store=>{if(!db.objectStoreNames.contains(store))db.createObjectStore(store,{keyPath:"id"})})};request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error)})}
 export async function putMedia(store,record){const db=await openMediaDB();return new Promise((resolve,reject)=>{const tx=db.transaction(store,"readwrite");tx.objectStore(store).put(record);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error)})}
 export async function getMedia(store,id){const db=await openMediaDB();return new Promise((resolve,reject)=>{const request=db.transaction(store).objectStore(store).get(id);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error)})}
