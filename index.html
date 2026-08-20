@@ -3,52 +3,62 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#1f2023">
+<meta name="theme-color" content="#1f2023"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="manifest" href="manifest.json?v=0.7">
-<title>Angeli · Secretaria V0.7</title>
+<link rel="manifest" href="manifest.json?v=0.6">
+<title>Angeli · Secretaria V0.6</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;padding:0;width:100%;max-width:100%;overflow-x:hidden}
 body{background:#f4f4f2;color:#202124;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
 header{background:#1f2023;color:#fff;padding:18px 16px 17px}.brand{font-size:10px;letter-spacing:2.5px;font-weight:800;opacity:.65}
 h1{font-size:25px;line-height:1.05;margin:5px 0 0}.version{font-size:10px;opacity:.55;margin-top:5px}
-main{width:100%;max-width:720px;margin:auto;padding:12px 10px 30px}.panel{background:#fff;border:1px solid #dededb;border-radius:16px;padding:13px;margin-bottom:11px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+main{width:100%;max-width:720px;margin:auto;padding:12px 10px 30px}
+.panel{background:#fff;border:1px solid #dededb;border-radius:16px;padding:13px;margin-bottom:11px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
 .label{display:block;font-size:11px;font-weight:750;text-transform:uppercase;letter-spacing:.7px;color:#666;margin:0 0 7px}
-textarea{display:block;width:100%;min-height:112px;border:1px solid #d2d2cf;border-radius:12px;padding:13px;font:inherit;font-size:16px;line-height:1.45;resize:vertical;color:#202124}
-.row{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:8px}.action{height:46px;border:0;border-radius:11px;font:inherit;font-weight:750;cursor:pointer;background:#202124;color:#fff;display:flex;align-items:center;justify-content:center;gap:5px;min-width:0}
-.action.secondary{background:#f0f0ee;color:#202124;border:1px solid #d4d4d1}.action.danger{background:#fff;color:#333;border:1px solid #d4d4d1}.action.listening{background:#666}
+textarea{display:block;width:100%;min-height:105px;border:1px solid #d2d2cf;border-radius:12px;padding:13px;font:inherit;font-size:16px;line-height:1.45;resize:vertical;color:#202124}
+.voice-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:9px}
+.action{height:47px;border:0;border-radius:11px;font:inherit;font-weight:750;cursor:pointer;background:#202124;color:#fff}
+.action.secondary{background:#f0f0ee;color:#202124;border:1px solid #d4d4d1}
+.action.danger{background:#fff;color:#333;border:1px solid #d4d4d1}
+.action.listening{background:#666}
 .help{font-size:11px;color:#777;margin-top:7px;line-height:1.3}
+.field{margin-top:12px}.choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.choice{min-width:0;height:42px;border:1px solid #d4d4d1;border-radius:10px;background:#fff;color:#303030;font:inherit;font-size:13px;text-align:left;padding:0 11px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.choice.active{border-color:#202124;background:#202124;color:#fff;font-weight:750}
 .search input{width:100%;height:45px;border:1px solid #d4d4d1;border-radius:10px;padding:0 12px;font:inherit;font-size:15px}
 .filters{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:7px}.filter{height:40px;border:1px solid #d4d4d1;border-radius:10px;background:#fff;font:inherit;font-size:13px;cursor:pointer}.filter.active{background:#202124;color:#fff;border-color:#202124;font-weight:750}
-.toast{position:fixed;left:12px;right:12px;bottom:18px;z-index:50;background:#202124;color:#fff;border-radius:12px;padding:12px 14px;font-size:13px;font-weight:650;text-align:center;box-shadow:0 5px 20px rgba(0,0,0,.22);opacity:0;transform:translateY(14px);pointer-events:none;transition:.2s}.toast.show{opacity:1;transform:translateY(0)}
-.card{background:#fff;border:1px solid #dededb;border-radius:13px;padding:12px;margin:8px 0}.meta{font-size:10px;color:#777;margin-bottom:6px;line-height:1.35;overflow-wrap:anywhere}.badge{font-weight:800;color:#333}.note-text{font-size:14px;line-height:1.45;overflow-wrap:anywhere}
-.card-media{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.thumb{width:70px;height:70px;object-fit:cover;border-radius:8px;border:1px solid #ddd}
-.file-line{font-size:11px;color:#555;margin-top:7px;overflow-wrap:anywhere}.actions{display:flex;justify-content:flex-end;gap:7px;margin-top:9px}.small-btn{border:1px solid #d4d4d1;border-radius:8px;background:#fff;padding:7px 9px;font:inherit;font-size:11px;cursor:pointer}
+.attachments{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.attach{position:relative;overflow:hidden;flex:1;min-width:0}
+.attach input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.preview{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:9px}.preview img{width:100%;height:90px;object-fit:cover;border-radius:9px;border:1px solid #ddd}
+.card{background:#fff;border:1px solid #dededb;border-radius:13px;padding:12px;margin:8px 0}.meta{font-size:10px;color:#777;margin-bottom:6px;line-height:1.35;overflow-wrap:anywhere}.badge{font-weight:800;color:#333}
+.note-text{font-size:14px;line-height:1.45;overflow-wrap:anywhere}.card-media{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.thumb{width:62px;height:62px;object-fit:cover;border-radius:8px;border:1px solid #ddd}
+.actions{display:flex;justify-content:flex-end;gap:7px;margin-top:9px}.small-btn{border:1px solid #d4d4d1;border-radius:8px;background:#fff;padding:7px 9px;font:inherit;font-size:11px;cursor:pointer}
 .done{opacity:.55}.done .note-text{text-decoration:line-through}.empty{text-align:center;color:#777;padding:30px 10px;font-size:13px}
-@media(min-width:600px){main{padding:16px}.row{grid-template-columns:150px 100px 100px;justify-content:end}}
+@media(min-width:600px){main{padding:16px}.choice-grid{grid-template-columns:repeat(4,1fr)}.voice-row{grid-template-columns:150px 100px 100px;justify-content:end}}
 </style>
 </head>
 <body>
-<header><div class="brand">ANGELI</div><h1>Secretaria</h1><div class="version">V0.7 · prueba</div></header>
+<header><div class="brand">ANGELI</div><h1>Secretaria</h1><div class="version">V0.6 · prueba</div></header>
 <main>
 <section class="panel">
 <label class="label">Bandeja de entrada</label>
 <textarea id="text" placeholder="Escribe o dicta lo que quieras guardar…"></textarea>
-
-<div class="row">
+<div class="voice-row">
 <button class="action" id="mic">🎙️ Dictar</button>
 <button class="action danger" id="clear">🗑️ Borrar</button>
-<button class="action" id="add">💾 Guardar</button>
+<button class="action" id="add">Guardar</button>
 </div>
-
-<div class="row">
-<label class="action secondary">📷 Cámara<input id="cameraInput" type="file" accept="image/*" capture="environment" hidden></label>
-<label class="action secondary">🖼️ Fotos<input id="photoInput" type="file" accept="image/*" multiple hidden></label>
-<label class="action secondary">📎 Archivo<input id="fileInput" type="file" multiple hidden></label>
+<div class="help" id="hint">En esta versión las entradas siguen guardándose localmente para probar el funcionamiento.</div>
+<div class="attachments">
+<label class="action secondary attach">📷 Foto / imagen<input id="imageInput" type="file" accept="image/*" capture="environment" multiple></label>
+<label class="action secondary attach">📎 Archivo<input id="fileInput" type="file" multiple></label>
 </div>
+<div id="preview" class="preview"></div>
 
-<div class="help" id="hint">Todo entra en la bandeja de entrada. La clasificación automática llegará cuando conectemos la IA.</div>
-<div id="preview" class="card-media"></div>
+<div class="field"><label class="label">Tipo (solo para pruebas)</label><div class="choice-grid" id="types">
+<button class="choice active" data-value="idea">💡 Idea</button><button class="choice" data-value="pending">📌 Pendiente</button><button class="choice" data-value="decision">✓ Decisión</button><button class="choice" data-value="note">📝 Nota</button></div></div>
+<div class="field"><label class="label">Área (solo para pruebas)</label><div class="choice-grid" id="areas">
+<button class="choice active" data-value="general">General</button><button class="choice" data-value="bodas">Bodas.net</button><button class="choice" data-value="catalogo">Catálogo</button><button class="choice" data-value="web">Web</button><button class="choice" data-value="redes">Redes</button><button class="choice" data-value="eventos">Angeli Eventos</button><button class="choice" data-value="n8n">n8n</button><button class="choice" data-value="imagenes">Imágenes</button></div></div>
 </section>
 
 <section class="panel">
@@ -57,57 +67,24 @@ textarea{display:block;width:100%;min-height:112px;border:1px solid #d2d2cf;bord
 </section>
 <section id="list"></section>
 </main>
-<div id="toast" class="toast"></div>
-
 <script>
-const KEY="angeli_secretaria_notes_v4";
-let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],selectedFilter="all",toastTimer;
+const KEY="angeli_secretaria_notes_v3";
+let notes=[],rec=null,listening=false,finalText="",selectedType="idea",selectedArea="general",selectedFilter="all",pendingImages=[],pendingFiles=[];
 const $=id=>document.getElementById(id);
-
-function notify(msg){const t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),2200)}
 function load(){try{notes=JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){notes=[]}render()}
 function save(){localStorage.setItem(KEY,JSON.stringify(notes));render()}
-function add(){
- const text=$("text").value.trim();
- if(!text&&!pendingImages.length&&!pendingFiles.length){notify("No hay nada que guardar");return}
- notes.unshift({id:crypto.randomUUID(),date:new Date().toISOString(),text,status:"pending",images:pendingImages,files:pendingFiles});
- $("text").value="";finalText="";pendingImages=[];pendingFiles=[];$("preview").innerHTML="";
- save();notify("Entrada guardada");
-}
-function render(){
- const q=$("search").value.toLowerCase().trim();
- const arr=notes.filter(n=>(selectedFilter==="all"||n.status===selectedFilter)&&(!q||(n.text+" "+(n.files||[]).map(f=>f.name).join(" ")).toLowerCase().includes(q)));
- $("list").innerHTML=arr.length?arr.map(n=>`<article class="card ${n.status==="done"?"done":""}">
- <div class="meta"><span class="badge">Entrada</span> · ${new Date(n.date).toLocaleDateString("es-ES")}</div>
- <div class="note-text">${esc(n.text||"Entrada con archivo o imagen")}</div>
- ${n.images?.length?`<div class="card-media">${n.images.map(x=>`<img class="thumb" src="${x}" alt="">`).join("")}</div>`:""}
- ${n.files?.length?`<div class="file-line">📎 ${n.files.map(f=>esc(f.name)).join(" · ")}</div>`:""}
- <div class="actions"><button class="small-btn" data-a="toggle" data-id="${n.id}">${n.status==="done"?"Reabrir":"✓ Hecho"}</button><button class="small-btn" data-a="delete" data-id="${n.id}">Borrar</button></div>
- </article>`).join(""):'<div class="empty">No hay entradas.</div>'
-}
-function esc(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
-function stop(){listening=false;if(rec){try{rec.stop()}catch(e){}}rec=null;$("mic").classList.remove("listening");$("mic").textContent="🎙️ Dictar";$("hint").textContent="Dictado terminado. Pulsa «Guardar» cuando termines."}
-function start(){
- const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){notify("Este navegador no admite dictado");return}
- if(listening){stop();return}
- finalText=$("text").value.trim();rec=new SR();rec.lang="es-ES";rec.continuous=true;rec.interimResults=true;rec.maxAlternatives=1;
- rec.onstart=()=>{listening=true;$("mic").classList.add("listening");$("mic").textContent="⏹ Parar";$("hint").textContent="Escuchando… pulsa «Parar» cuando termines."};
- rec.onresult=e=>{let interim="";for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0].transcript;if(e.results[i].isFinal)finalText+=(finalText?" ":"")+t.trim();else interim+=t}$("text").value=(finalText+(interim?" "+interim:"")).trim()};
- rec.onerror=e=>{stop();notify(e.error==="not-allowed"?"Permiso de micrófono denegado":"Dictado detenido")};
- rec.onend=()=>{if(listening){try{rec.start()}catch(e){}}};rec.start()
-}
-function readImages(files,msg){pendingImages=[];Promise.all(files.map(f=>new Promise(res=>{const r=new FileReader();r.onload=()=>{pendingImages.push(r.result);res()};r.readAsDataURL(f)}))).then(()=>{$("preview").innerHTML=pendingImages.map(x=>`<img class="thumb" src="${x}" alt="">`).join("");notify(msg)})}
-$("mic").onclick=start;
-$("clear").onclick=()=>{$("text").value="";finalText="";notify("Texto borrado")};
-$("add").onclick=add;
-$("cameraInput").onchange=e=>{if(e.target.files.length)readImages([...e.target.files],"Foto preparada")};
-$("photoInput").onchange=e=>{if(e.target.files.length)readImages([...e.target.files],"Imagen seleccionada")};
-$("fileInput").onchange=e=>{pendingFiles=[...e.target.files].map(f=>({name:f.name,type:f.type,size:f.size}));if(pendingFiles.length)notify("Archivo preparado")};
-$("search").oninput=render;
+function add(){const text=$("text").value.trim();if(!text&&!pendingImages.length&&!pendingFiles.length)return;notes.unshift({id:crypto.randomUUID(),date:new Date().toISOString(),type:selectedType,area:selectedArea,text,status:"pending",images:pendingImages,files:pendingFiles});$("text").value="";pendingImages=[];pendingFiles=[];$("preview").innerHTML="";save();$("hint").textContent="Entrada guardada. En la versión conectada la IA la clasificará automáticamente."}
+function render(){const q=$("search").value.toLowerCase().trim(),arr=notes.filter(n=>(selectedFilter==="all"||n.status===selectedFilter)&&(!q||(n.text+" "+n.area+" "+n.type+" "+(n.files||[]).map(f=>f.name).join(" ")).toLowerCase().includes(q)));$("list").innerHTML=arr.length?arr.map(n=>`<article class="card ${n.status==="done"?"done":""}"><div class="meta"><span class="badge">${label(n.type)}</span> · ${labelArea(n.area)} · ${new Date(n.date).toLocaleDateString("es-ES")}</div><div class="note-text">${esc(n.text||"Entrada con archivo/imagen")}</div>${n.images?.length?`<div class="card-media">${n.images.map(x=>`<img class="thumb" src="${x}" alt="">`).join("")}</div>`:""}${n.files?.length?`<div class="meta" style="margin-top:8px">📎 ${n.files.map(f=>esc(f.name)).join(" · ")}</div>`:""}<div class="actions"><button class="small-btn" data-a="toggle" data-id="${n.id}">${n.status==="done"?"Reabrir":"✓ Hecho"}</button><button class="small-btn" data-a="delete" data-id="${n.id}">Borrar</button></div></article>`).join(""):'<div class="empty">No hay entradas.</div>'}
+function label(x){return({idea:"Idea",pending:"Pendiente",decision:"Decisión",note:"Nota"})[x]||x}function labelArea(x){return({general:"General",bodas:"Bodas.net",catalogo:"Catálogo",web:"Web",redes:"Redes",eventos:"Angeli Eventos",n8n:"n8n",imagenes:"Imágenes"})[x]||x}function esc(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+function stop(){listening=false;if(rec){try{rec.stop()}catch(e){}}rec=null;$("mic").classList.remove("listening");$("mic").textContent="🎙️ Dictar";$("hint").textContent="Dictado terminado. Puedes editar el texto o pulsar «Guardar»."}
+function start(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){$("hint").textContent="Este navegador no admite dictado.";return}if(listening){stop();return}finalText=$("text").value.trim();rec=new SR();rec.lang="es-ES";rec.continuous=true;rec.interimResults=true;rec.maxAlternatives=1;rec.onstart=()=>{listening=true;$("mic").classList.add("listening");$("mic").textContent="⏹ Parar";$("hint").textContent="Escuchando… pulsa «Parar» cuando termines."};rec.onresult=e=>{let interim="";for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0].transcript;if(e.results[i].isFinal)finalText+=(finalText?" ":"")+t.trim();else interim+=t}$("text").value=(finalText+(interim?" "+interim:"")).trim()};rec.onerror=e=>{stop();$("hint").textContent=e.error==="not-allowed"?"Permiso de micrófono denegado.":"Dictado detenido: "+e.error};rec.onend=()=>{if(listening){try{rec.start()}catch(e){}}};rec.start()}
+function showImages(files){pendingImages=[];Promise.all(files.map(f=>new Promise(res=>{const r=new FileReader();r.onload=()=>{pendingImages.push(r.result);res()};r.readAsDataURL(f)}))).then(()=>{$("preview").innerHTML=pendingImages.map(x=>`<img src="${x}" alt="">`).join("")})}
+$("mic").onclick=start;$("clear").onclick=()=>{$("text").value="";finalText="";$("hint").textContent="Texto borrado."};$("add").onclick=add;$("search").oninput=render;
+$("imageInput").onchange=e=>showImages([...e.target.files]);$("fileInput").onchange=e=>{pendingFiles=[...e.target.files].map(f=>({name:f.name,type:f.type,size:f.size}));$("hint").textContent=pendingFiles.length+" archivo(s) preparados. Pulsa «Guardar»."};
+document.querySelectorAll("#types .choice").forEach(b=>b.onclick=()=>{selectedType=b.dataset.value;document.querySelectorAll("#types .choice").forEach(x=>x.classList.toggle("active",x===b))});
+document.querySelectorAll("#areas .choice").forEach(b=>b.onclick=()=>{selectedArea=b.dataset.value;document.querySelectorAll("#areas .choice").forEach(x=>x.classList.toggle("active",x===b))});
 document.querySelectorAll(".filter").forEach(b=>b.onclick=()=>{selectedFilter=b.dataset.filter;document.querySelectorAll(".filter").forEach(x=>x.classList.toggle("active",x===b));render()});
 $("list").onclick=e=>{const b=e.target.closest("button");if(!b)return;const n=notes.find(x=>x.id===b.dataset.id);if(!n)return;if(b.dataset.a==="toggle")n.status=n.status==="done"?"pending":"done";else notes=notes.filter(x=>x.id!==n.id);save()};
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.7",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{});
-load();
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.6",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{});load();
 </script>
-</body>
-</html>
+</body></html>
