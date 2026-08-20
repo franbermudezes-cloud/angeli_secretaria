@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1f2023">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="manifest" href="manifest.json?v=0.8">
-<title>Angeli · Secretaria V0.8</title>
+<link rel="manifest" href="manifest.json?v=0.8.1">
+<title>Angeli · Secretaria V0.8.1</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;padding:0;width:100%;max-width:100%;overflow-x:hidden}
 body{background:#f4f4f2;color:#202124;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
@@ -29,7 +29,7 @@ textarea{display:block;width:100%;min-height:112px;border:1px solid #d2d2cf;bord
 </style>
 </head>
 <body>
-<header><div class="brand">ANGELI</div><h1>Secretaria</h1><div class="version">V0.8 · Google Sheets</div></header>
+<header><div class="brand">ANGELI</div><h1>Secretaria</h1><div class="version">V0.8.1 · prueba Google</div></header>
 <main>
 <section class="panel">
 <label class="label">Bandeja de entrada</label>
@@ -60,7 +60,7 @@ textarea{display:block;width:100%;min-height:112px;border:1px solid #d2d2cf;bord
 <div id="toast" class="toast"></div>
 
 <script>
-const KEY="angeli_secretaria_notes_v5";
+const KEY="angeli_secretaria_notes_v4";
 const SHEETS_ENDPOINT="https://script.google.com/macros/s/AKfycbyyQ8VGgw45D-gRVnAmYs4nifEayZV1JhTc8u9ywtsMsqfJpHmwD8iL_AQFKJ1p5r-2WA/exec";
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],selectedFilter="all",toastTimer;
 const $=id=>document.getElementById(id);
@@ -73,36 +73,30 @@ async function add(){
  if(!text&&!pendingImages.length&&!pendingFiles.length){notify("No hay nada que guardar");return}
  const now=new Date();
  const id=crypto.randomUUID();
- const entry={
-   id:id,
-   date:now.toISOString(),
-   text:text,
-   status:"pending",
-   images:pendingImages,
-   files:pendingFiles
- };
+ const entry={id:id,date:now.toISOString(),text:text,status:"pending",images:pendingImages,files:pendingFiles};
  notes.unshift(entry);
  $("text").value="";finalText="";pendingImages=[];pendingFiles=[];$("preview").innerHTML="";
  save();
- notify("Guardando en Google…");
+ notify("Guardado local. Enviando a Google…");
  try{
+   // Apps Script Web Apps accept the request reliably when sent as text/plain.
    const payload={
      id:id,
      fecha:now.toLocaleDateString("es-ES"),
      hora:now.toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"}),
      entrada:text || "Entrada con archivo o imagen",
      estado:"Pendiente",
-     origen:"Angeli Secretaria V0.8",
+     origen:"Angeli Secretaria V0.8.1",
      archivo:(entry.files||[]).map(f=>f.name).join(" · "),
-     creadoPor:"Angeli Secretaria V0.8"
+     creadoPor:"Angeli Secretaria"
    };
    await fetch(SHEETS_ENDPOINT,{
      method:"POST",
      mode:"no-cors",
-     headers:{"Content-Type":"text/plain;charset=utf-8"},
+     headers:{"Content-Type":"text/plain;charset=UTF-8"},
      body:JSON.stringify(payload)
    });
-   notify("Entrada enviada a Google");
+   notify("Enviada a Google Sheets");
  }catch(e){
    notify("Guardada localmente · Google no respondió");
  }
@@ -139,7 +133,7 @@ $("fileInput").onchange=e=>{pendingFiles=[...e.target.files].map(f=>({name:f.nam
 $("search").oninput=render;
 document.querySelectorAll(".filter").forEach(b=>b.onclick=()=>{selectedFilter=b.dataset.filter;document.querySelectorAll(".filter").forEach(x=>x.classList.toggle("active",x===b));render()});
 $("list").onclick=e=>{const b=e.target.closest("button");if(!b)return;const n=notes.find(x=>x.id===b.dataset.id);if(!n)return;if(b.dataset.a==="toggle")n.status=n.status==="done"?"pending":"done";else notes=notes.filter(x=>x.id!==n.id);save()};
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.8",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.8.1",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{});
 load();
 </script>
 </body>
