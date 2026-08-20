@@ -4,6 +4,16 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.12.1] - 2026-08-20
+
+### Changed
+
+- Se amplía la clasificación de intenciones de llamada y el reconocimiento de teléfonos españoles dictados.
+
+### Validated
+
+- V0.12.1 validada manualmente en Android: teléfono escrito o dictado, clasificación Contacto y apertura del marcador mediante `tel:`.
+
 ## [0.12] - 2026-08-20
 
 ### Added
