@@ -27,6 +27,7 @@ La aplicación se ejecuta con un servidor HTTP local, por ejemplo `python3 -m ht
 
 - Bandeja de entrada de notas: crear, buscar, filtrar por pendiente/hecha, completar, reabrir y borrar.
 - Clasificación local automática de entradas por tipo: nota, tarea, recordatorio, calendario, contacto, foto o archivo.
+- Acciones contextuales locales: calendario preparado, llamada por `tel:` cuando se detecta teléfono y estados visuales de tarea/recordatorio.
 - Persistencia de las entradas en `localStorage` con la clave `angeli_secretaria_notes_v5`.
 - Captura de cámara, selección de imágenes y selección de archivos. Imágenes y archivos se guardan localmente como blobs en IndexedDB.
 - Dictado en español mediante `SpeechRecognition` o `webkitSpeechRecognition`.

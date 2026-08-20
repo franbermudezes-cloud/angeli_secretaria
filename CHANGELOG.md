@@ -4,6 +4,17 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.12] - 2026-08-20
+
+### Added
+
+- Acciones contextuales para calendario, contactos, tareas y recordatorios.
+- Extracción local básica de teléfonos, fecha y hora para preparar acciones futuras.
+
+### Changed
+
+- Se actualiza la identificación y la caché PWA a `V0.12 · Acciones`.
+
 ## [0.11] - 2026-08-20
 
 ### Added
