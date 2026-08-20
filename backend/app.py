@@ -283,7 +283,12 @@ def vertex_interpret(text: str, now: str, timezone: str) -> dict[str, Any]:
     from google import genai
     from google.genai import types
 
-    client = genai.Client(vertexai=True, project=project, location=os.getenv("VERTEX_LOCATION", "global"))
+    client = genai.Client(
+        vertexai=True,
+        project=project,
+        location=os.getenv("VERTEX_LOCATION", "global"),
+        http_options=types.HttpOptions(timeout=REQUEST_TIMEOUT_SECONDS * 1000),
+    )
     prompt = f"Fecha/hora actual: {now}\nZona horaria: {timezone}\nOrden: {text}"
     response = client.models.generate_content(
         model="gemini-2.5-flash-lite",
@@ -294,7 +299,6 @@ def vertex_interpret(text: str, now: str, timezone: str) -> dict[str, Any]:
             response_json_schema=RESPONSE_SCHEMA,
             max_output_tokens=400,
         ),
-        http_options=types.HttpOptions(timeout=REQUEST_TIMEOUT_SECONDS * 1000),
     )
     return response.parsed if response.parsed is not None else json.loads(response.text)
 
