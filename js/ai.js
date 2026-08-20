@@ -1,4 +1,4 @@
-import{cleanTemporalText,temporalData}from"./temporal.js?v=0.15";
+import{cleanTemporalText,temporalData}from"./temporal.js?v=0.15.1";
 
 export const VALID_INTENTS=["note","task.create","reminder.create","calendar.create","calendar.update","calendar.delete","contact.call","file.store","photo.store"];
 const SENSITIVE_INTENTS=new Set(["calendar.update","calendar.delete","contact.call"]);
@@ -17,4 +17,4 @@ function isValidTemporal(type,value){if(typeof value!=="string")return false;if(
 function targetTitle(text,prefix){return cleanTemporalText((text||"").replace(prefix,"").replace(/\b(?:de|del)\s+(?:mañana|domingo|lunes|martes|miércoles|jueves|viernes|sábado)\b/gi,"").trim())}
 function calendarTitle(text){return cleanTemporalText(text).replace(/^\s*(?:me\s+han\s+)?contratad[oa]\s+(?:una?\s+)?/i,"").replace(/\s+en\s+[\p{L}][\p{L}\s-]{1,60}$/iu,"").trim()||"Evento de Angeli Secretaria"}
 function contactName(text){const match=(text||"").match(/\b(?:llama(?:r)?|telefonea(?:r)?|contacta(?:r)?)\s+(?:a\s+|al\s+)?(.+?)(?:[.!?,;]|$)/i);return match?match[1].trim():null}
-function location(text){const match=(text||"").match(/\ben\s+([\p{L}][\p{L}\s-]{1,60}?)(?:[.!?,;]|$)/iu);return match?match[1].trim():null}
+function location(text){const match=(text||"").match(/\ben\s+([\p{L}][\p{L}\d\s,.'’-]{1,100})(?:[.!?;]|$)/iu);return match?match[1].trim().replace(/,$/,""):null}

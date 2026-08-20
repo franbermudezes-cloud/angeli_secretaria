@@ -4,6 +4,23 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.15.1] - 2026-08-20
+
+### Added
+
+- Las propuestas y confirmaciones de creación de eventos muestran la ubicación detectada cuando existe.
+- Las entradas de Calendario guardan la ubicación y recuperan la de las entradas V0.15 que solo la tenían dentro de su intención IA.
+
+### Changed
+
+- La creación de eventos de Google Calendar envía el texto detectado al campo oficial `location`, sin geocodificación ni permisos adicionales.
+- El extractor local conserva ubicaciones con comas y números, como restaurantes y direcciones.
+- Se actualiza la identificación y la caché PWA a `V0.15.1 · Ubicaciones`.
+
+### Pending validation
+
+- Pendiente de validación manual en Android: visualización de ubicación en la confirmación, creación de evento con población/restaurante/dirección y persistencia tras recargar.
+
 ## [0.15] - 2026-08-20
 
 ### Added

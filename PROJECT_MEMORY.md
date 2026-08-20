@@ -7,7 +7,7 @@
 - Commit de referencia al iniciar esta memoria: `764d9590e1ece6a0ea20e1d1a3cabe6a71c95f32` (`764d959`, `Update index.html`, 2026-08-20).
 - En ese momento, `main` y `origin/main` apuntaban al mismo commit y el árbol de trabajo estaba limpio.
 - Última versión estable validada: `V0.12.1 · Teléfonos`, validada manualmente en Android el 2026-08-20.
-- `V0.12.2 · Contactos Google`, `V0.12.3 · SaaS UI`, `V0.13 · Google Calendar`, `V0.13.1 · Cuentas Google`, `V0.14 · Arquitectura modular`, `V0.14.1 · Temporal inteligente` y `V0.15 · IA estructurada` están preparadas para prueba manual; no deben considerarse validadas hasta completar sus pruebas reales en Android.
+- `V0.12.2 · Contactos Google`, `V0.12.3 · SaaS UI`, `V0.13 · Google Calendar`, `V0.13.1 · Cuentas Google`, `V0.14 · Arquitectura modular`, `V0.14.1 · Temporal inteligente`, `V0.15 · IA estructurada` y `V0.15.1 · Ubicaciones` están preparadas para prueba manual; no deben considerarse validadas hasta completar sus pruebas reales en Android.
 - No existe un README, gestor de paquetes, dependencias declaradas, proceso de build ni pruebas automatizadas.
 
 GitHub es la fuente de verdad del código. Antes de modificar cualquier funcionalidad, comprobar el estado actual del repositorio y del código, y analizar qué otros flujos podrían verse afectados.
@@ -60,7 +60,7 @@ La arquitectura visual se separó en V0.12.3 y la lógica se modularizó en V0.1
 - Las notas solo conservan IDs de imágenes y referencias ligeras de archivos. Las imágenes Data URL heredadas se migran al iniciar tras confirmar su copia en IndexedDB.
 - Los archivos no se suben a Google desde la aplicación actual; se conservan localmente en IndexedDB y pueden abrirse desde la entrada.
 - Google Contacts no utiliza el endpoint público de Apps Script. El Client ID web es público por diseño; los tokens de acceso y las coincidencias de contactos permanecen únicamente en memoria y no se guardan en GitHub, `localStorage` ni IndexedDB.
-- Google Calendar tampoco utiliza el endpoint público de Apps Script. Su token de acceso permanece únicamente en memoria. Las notas de calendario conservan solo `calendarStatus`, `calendarEventId` y `calendarUrl`; nunca el token.
+- Google Calendar tampoco utiliza el endpoint público de Apps Script. Su token de acceso permanece únicamente en memoria. Las notas de calendario conservan `calendarStatus`, `calendarEventId`, `calendarUrl` y, cuando se detecta, `location`; nunca el token.
 - Contactos y Calendar se conectan por separado porque pueden pertenecer a cuentas distintas. La interfaz muestra el estado de cada integración solo durante la sesión, permite elegir o cambiar cuenta por separado y permite desconectar la sesión local sin revocar permisos en Google.
 - La opción `⚙️ Mantenimiento · Borrar todos los datos` elimina solo la clave local de notas y la base IndexedDB de medios tras confirmación; nunca modifica Google Sheets.
 - La versión visible y las referencias de caché PWA deben mantenerse alineadas. Antes de cambios futuros de versión o caché, revisar en conjunto `index.html`, `manifest.json`, `sw.js` y los recursos versionados.
@@ -117,3 +117,7 @@ Sin modificar el comportamiento, la aplicación se separó en módulos ES para i
 ### 2026-08-20 — V0.15 · IA estructurada pendiente de validación
 
 Se incorporan `ai.js` e `intents.js` con un proveedor local simulado, sin secretos ni llamadas de red. La respuesta se limita a una lista cerrada de intenciones, se valida y usa el clasificador local como fallback ante error o confianza inferior a `0.75`. La IA solo crea propuestas; Calendar crear conserva su confirmación existente, mientras que actualizar/cancelar Calendar se muestra como solicitud confirmable y no ejecuta todavía ninguna acción externa. La futura integración real sustituirá el proveedor dentro de `ai.js` y requerirá backend autenticado con secreto fuera de la PWA.
+
+### 2026-08-20 — V0.15.1 · Ubicaciones pendiente de validación
+
+Las entradas `calendar.create` conservan la ubicación detectada en el campo local `location`, incluida la recuperación segura desde `aiIntent.location` para entradas V0.15 existentes. La tarjeta y la confirmación de Calendar muestran la ubicación cuando existe. `google.js` envía ese texto libre al campo `location` del evento de Google Calendar, sin geocodificación, Google Maps API ni permisos OAuth adicionales. El extractor local admite poblaciones, nombres de restaurantes y direcciones con números y comas; si no hay ubicación, el evento se crea sin ese campo.
