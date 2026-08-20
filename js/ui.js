@@ -1,4 +1,4 @@
-import{typeLabel}from"./classifier.js?v=0.14";
+import{typeLabel}from"./classifier.js?v=0.14.1";
 
 export function createUI({getMedia}){const $=id=>document.getElementById(id);let toastTimer;
  function notify(msg){const t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),2200)}

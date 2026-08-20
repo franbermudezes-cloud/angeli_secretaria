@@ -4,6 +4,24 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.14.1] - 2026-08-20
+
+### Added
+
+- Detección de fechas naturales: mañana, días de semana y fechas como `28 de agosto`.
+- Detección de horas naturales: franja mañana/tarde/noche, medias y cuartos.
+
+### Changed
+
+- La clasificación prioriza recordatorio, tarea y contacto; las entradas restantes con fecha y hora pasan a Calendario.
+- Las notas existentes se recalifican únicamente cuando ahora cumplen inequívocamente la regla de Calendario.
+- Los títulos de los nuevos eventos eliminan las expresiones temporales detectadas.
+- Se actualiza la identificación y la caché PWA a `V0.14.1 · Temporal inteligente`.
+
+### Pending validation
+
+- Pendiente de validación manual en Android con órdenes naturales y creación real de eventos.
+
 ## [0.14] - 2026-08-20
 
 ### Changed

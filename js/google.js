@@ -1,3 +1,5 @@
+import{cleanTemporalText}from"./temporal.js?v=0.14.1";
+
 const GOOGLE_CLIENT_ID="172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const GOOGLE_CONTACTS_SCOPE="https://www.googleapis.com/auth/contacts.readonly";
 const GOOGLE_CALENDAR_SCOPE="https://www.googleapis.com/auth/calendar.events";
@@ -18,7 +20,7 @@ export function createGoogleIntegration({notify,refresh,setStatus,saveNotes,getN
 
 function contactPhoneValue(phone){return(phone?.value||"").trim()}
 function contactTel(phone){return contactPhoneValue({value:phone}).replace(/[^\d+]/g,"")}
-function calendarEventTitle(text){return(text||"").replace(/^\s*(?:apunta(?:\s+en\s+el\s+calendario)?|añade(?:\s+al\s+calendario)?|agrega(?:\s+al\s+calendario)?)\b\s*/i,"").replace(/\bmañana\b/gi,"").replace(/\b\d{2}\/\d{2}\/\d{4}\b/g,"").replace(/\ba\s+las\s+(?:[01]?\d|2[0-3])(?::[0-5]\d)?\b/gi,"").replace(/\b(?:[01]?\d|2[0-3]):[0-5]\d\b/g,"").replace(/\s{2,}/g," ").replace(/^[\s,.:;-]+|[\s,.:;-]+$/g,"").trim()||"Evento de Angeli Secretaria"}
+function calendarEventTitle(text){return cleanTemporalText(text)}
 function calendarDateTime(date,time){return`${date}T${time}:00`}
 function calendarEndDateTime(date,time){const end=new Date(calendarDateTime(date,time));end.setHours(end.getHours()+1);return`${end.getFullYear()}-${String(end.getMonth()+1).padStart(2,"0")}-${String(end.getDate()).padStart(2,"0")}T${String(end.getHours()).padStart(2,"0")}:${String(end.getMinutes()).padStart(2,"0")}:00`}
 function calendarEventKey(note){return`angeli${note.id.replace(/-/g,"")}`}
