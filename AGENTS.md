@@ -7,6 +7,7 @@
 - Evaluar qué otras funciones pueden verse afectadas antes de editar. En especial, revisar las relaciones entre interfaz, almacenamiento local, dictado, adjuntos, envío a Google Sheets y comportamiento PWA/caché.
 - Mantener los cambios acotados a la solicitud. No modificar archivos funcionales, versiones, configuración de caché ni integraciones externas de forma incidental.
 - No crear commits, etiquetas, ramas remotas ni hacer `push` sin autorización explícita del usuario.
+- Todo commit funcional debe incrementar la versión visible de la aplicación y sincronizar `index.html`, referencias `?v=`, `manifest.json`, la versión/caché de `sw.js` y cualquier otro identificador PWA. Los commits exclusivamente documentales no requieren cambio de versión.
 
 ## Arquitectura actual
 
