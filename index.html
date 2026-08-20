@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1f2023">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="manifest" href="manifest.json?v=0.8.1">
-<title>Angeli · Secretaria V0.8.1</title>
+<link rel="manifest" href="manifest.json?v=0.8.2">
+<title>Angeli · Secretaria V0.8.2</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;padding:0;width:100%;max-width:100%;overflow-x:hidden}
 body{background:#f4f4f2;color:#202124;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
@@ -29,7 +29,7 @@ textarea{display:block;width:100%;min-height:112px;border:1px solid #d2d2cf;bord
 </style>
 </head>
 <body>
-<header><div class="brand">ANGELI</div><h1>Secretaria</h1><div class="version">V0.8.1 · prueba Google</div></header>
+<header><div class="brand">ANGELI</div><h1>Secretaria</h1><div class="version">V0.8.2 · dictado corregido</div></header>
 <main>
 <section class="panel">
 <label class="label">Bandeja de entrada</label>
@@ -113,17 +113,72 @@ function render(){
  </article>`).join(""):'<div class="empty">No hay entradas.</div>'
 }
 function esc(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
-function stop(){listening=false;if(rec){try{rec.stop()}catch(e){}}rec=null;$("mic").classList.remove("listening");$("mic").textContent="🎙️ Dictar";$("hint").textContent="Dictado terminado. Pulsa «Guardar» cuando termines."}
-function start(){
- const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){notify("Este navegador no admite dictado");return}
- if(listening){stop();return}
- finalText=$("text").value.trim();rec=new SR();rec.lang="es-ES";rec.continuous=true;rec.interimResults=true;rec.maxAlternatives=1;
- rec.onstart=()=>{listening=true;$("mic").classList.add("listening");$("mic").textContent="⏹ Parar";$("hint").textContent="Escuchando… pulsa «Parar» cuando termines."};
- rec.onresult=e=>{let interim="";for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0].transcript;if(e.results[i].isFinal)finalText+=(finalText?" ":"")+t.trim();else interim+=t}$("text").value=(finalText+(interim?" "+interim:"")).trim()};
- rec.onerror=e=>{stop();notify(e.error==="not-allowed"?"Permiso de micrófono denegado":"Dictado detenido")};
- rec.onend=()=>{if(listening){try{rec.start()}catch(e){}}};rec.start()
+function stop(){
+ listening=false;
+ if(rec){try{rec.onend=null;rec.stop()}catch(e){}}
+ rec=null;
+ $("mic").classList.remove("listening");
+ $("mic").textContent="🎙️ Dictar";
+ $("hint").textContent="Dictado terminado. Pulsa «Guardar» cuando termines.";
 }
-function readImages(files,msg){pendingImages=[];Promise.all(files.map(f=>new Promise(res=>{const r=new FileReader();r.onload=()=>{pendingImages.push(r.result);res()};r.readAsDataURL(f)}))).then(()=>{$("preview").innerHTML=pendingImages.map(x=>`<img class="thumb" src="${x}" alt="">`).join("");notify(msg)})}
+
+function start(){
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR){notify("Este navegador no admite dictado");return}
+ if(listening){stop();return}
+
+ // One recognition session at a time. Do not restart automatically:
+ // automatic restart was causing duplicated/echoed words on some browsers.
+ finalText=$("text").value.trim();
+ rec=new SR();
+ rec.lang="es-ES";
+ rec.continuous=true;
+ rec.interimResults=true;
+ rec.maxAlternatives=1;
+
+ rec.onstart=()=>{
+   listening=true;
+   $("mic").classList.add("listening");
+   $("mic").textContent="⏹ Parar";
+   $("hint").textContent="Escuchando… pulsa «Parar» cuando termines.";
+ };
+
+ rec.onresult=e=>{
+   let confirmed=finalText;
+   let interim="";
+   for(let i=e.resultIndex;i<e.results.length;i++){
+     const result=e.results[i];
+     const t=(result[0]?.transcript||"").trim();
+     if(!t) continue;
+     if(result.isFinal){
+       confirmed += (confirmed?" ":"")+t;
+     }else{
+       interim += (interim?" ":"")+t;
+     }
+   }
+   finalText=confirmed;
+   $("text").value=(confirmed+(interim?" "+interim:"")).trim();
+ };
+
+ rec.onerror=e=>{
+   const msg=e.error==="not-allowed"?"Permiso de micrófono denegado":"Dictado detenido";
+   stop();
+   notify(msg);
+ };
+
+ rec.onend=()=>{
+   // Keep the text already obtained. Do not restart, avoiding duplicate speech.
+   if(listening){
+     listening=false;
+     $("mic").classList.remove("listening");
+     $("mic").textContent="🎙️ Dictar";
+     $("hint").textContent="Dictado terminado. Pulsa «Guardar» cuando termines.";
+   }
+ };
+
+ rec.start();
+}
+
 $("mic").onclick=start;
 $("clear").onclick=()=>{$("text").value="";finalText="";notify("Texto borrado")};
 $("add").onclick=add;
@@ -133,7 +188,7 @@ $("fileInput").onchange=e=>{pendingFiles=[...e.target.files].map(f=>({name:f.nam
 $("search").oninput=render;
 document.querySelectorAll(".filter").forEach(b=>b.onclick=()=>{selectedFilter=b.dataset.filter;document.querySelectorAll(".filter").forEach(x=>x.classList.toggle("active",x===b));render()});
 $("list").onclick=e=>{const b=e.target.closest("button");if(!b)return;const n=notes.find(x=>x.id===b.dataset.id);if(!n)return;if(b.dataset.a==="toggle")n.status=n.status==="done"?"pending":"done";else notes=notes.filter(x=>x.id!==n.id);save()};
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.8.1",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.8.2",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{});
 load();
 </script>
 </body>
