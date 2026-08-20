@@ -36,8 +36,9 @@ La aplicación se ejecuta con un servidor HTTP local, por ejemplo `python3 -m ht
 - Es una aplicación estática de un solo documento: no hay backend propio ni bundler.
 - La integración con Google usa `fetch` con `mode: "no-cors"`. Esto no permite al navegador verificar la respuesta del servidor; el aviso de éxito indica que la petición se inició, no que Google confirmó el almacenamiento.
 - El dictado depende del soporte del navegador y de los permisos de micrófono. La página `prueba-microfono.html` sirve para aislar ese diagnóstico.
-- Las imágenes en data URLs y las entradas en `localStorage` están sujetas a la cuota de almacenamiento del navegador.
-- Los archivos no se suben a Google desde la aplicación actual; para ellos solo se conserva metadato local.
+- Las notas se mantienen en `localStorage`; los blobs de imágenes y archivos se guardan en IndexedDB, base `angeli_secretaria_media`, almacenes `images` y `files`.
+- Las notas solo conservan IDs de imágenes y referencias ligeras de archivos. Las imágenes Data URL heredadas se migran al iniciar tras confirmar su copia en IndexedDB.
+- Los archivos no se suben a Google desde la aplicación actual; se conservan localmente en IndexedDB y pueden abrirse desde la entrada.
 - `index.html` muestra `V0.9`, mientras que `manifest.json` y `sw.js` usan `0.8.1` y aún hay referencias a `0.8`. Antes de cambiar versiones o caché, revisar los tres archivos de PWA en conjunto.
 - La caché del Service Worker puede retener recursos en el navegador. Tras cambios de PWA, validar actualización, activación y recursos precargados.
 

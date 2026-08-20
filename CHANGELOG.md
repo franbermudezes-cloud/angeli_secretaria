@@ -8,6 +8,12 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 - Aún no hay cambios funcionales pendientes de publicar.
 
+### Changed
+
+- Las fotos e imágenes se guardan como blobs en IndexedDB en lugar de Data URLs en `localStorage`.
+- Los archivos adjuntos se conservan localmente como blobs y se pueden abrir desde la entrada.
+- Las imágenes Data URL existentes se migran de forma segura a IndexedDB al iniciar.
+
 ## [0.9] - 2026-08-20
 
 ### Added
