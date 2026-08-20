@@ -1,4 +1,4 @@
-const V="0.8",CACHE="angeli-secretaria-v"+V;
+const V="0.8.1",CACHE="angeli-secretaria-v"+V;
 const ASSETS=["./?v="+V,"./index.html?v="+V,"./manifest.json?v="+V,"./icon-192.png?v="+V,"./icon-512.png?v="+V];
 self.addEventListener("install",e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)))});
 self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
