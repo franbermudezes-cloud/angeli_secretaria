@@ -26,6 +26,7 @@ VALID_INTENTS = {
     "task.create",
     "reminder.create",
     "calendar.create",
+    "calendar.query",
     "calendar.update",
     "calendar.delete",
     "contact.call",
@@ -52,8 +53,22 @@ SYSTEM_INSTRUCTION = """Eres el intérprete de una secretaria personal en españ
 Interpreta únicamente la orden actual usando la fecha/hora y zona horaria dadas.
 Usa exclusivamente las intenciones permitidas por el esquema. Extrae solo datos
 explícitos o inequívocos; no inventes fechas, horas, personas, teléfonos ni
-ubicaciones. Si existe ambigüedad material, baja la confianza. No ejecutes ni
-sugieras llamadas a APIs, almacenamiento ni acciones externas."""
+ubicaciones. Si existe ambigüedad material, baja la confianza.
+
+Para calendar.create, separa obligatoriamente los datos: title es un nombre
+breve del evento, sin fecha, hora ni lugar; location es el recinto, dirección,
+restaurante o población donde sucede el evento, conservando el lugar completo.
+Elimina del título fórmulas administrativas como «está contratado» o
+«contratada». Por ejemplo, «Está contratada discomóvil en Complejo San Marcos
+de Gandía el 29 de agosto a las siete de la tarde» debe producir title
+«Discomóvil» y location «Complejo San Marcos de Gandía». Si no se expresa un
+lugar físico, location debe ser null.
+
+Para cancelar usa calendar.delete y expresa en target el título del evento y,
+si se menciona, su fecha u hora. Para modificar usa calendar.update: target
+identifica el evento actual y changes contiene solo los nuevos datos. Para
+preguntas sobre la agenda usa calendar.query con la fecha pedida cuando exista.
+No ejecutes ni sugieras llamadas a APIs, almacenamiento ni acciones externas."""
 
 RESPONSE_SCHEMA: dict[str, Any] = {
     "type": "object",

@@ -4,6 +4,24 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.15.5] - 2026-08-21
+
+### Changed
+
+- Los eventos de Calendar creados desde IA usan el título estructurado devuelto por la interpretación, en lugar de reutilizar todo el texto dictado.
+- La instrucción del intérprete distingue explícitamente el título breve del evento de su ubicación física.
+- La ubicación se conserva en la entrada y se envía al campo `location` de Google Calendar, que puede mostrarla como enlace de Maps.
+- Las entradas existentes con una intención IA guardada recuperan su título estructurado al abrir la aplicación.
+- Se añade `calendar.query`: consulta limitada de eventos del calendario principal sin conservarlos localmente.
+- Las propuestas de cancelar o modificar buscan eventos coincidentes y muestran cada coincidencia antes de ejecutar la acción.
+- Las operaciones de cancelar y modificar solicitan una confirmación final con el título y hora concretos del evento.
+- Al cancelar un evento creado por Angeli, su entrada asociada queda marcada como cancelada; al modificarlo, se actualizan sus datos locales conocidos.
+- Se actualiza la identificación y la caché PWA a `V0.15.5 · Calendario bidireccional`.
+
+### Pending validation
+
+- Pendiente de validación manual en Android: creación con título/ubicación, consulta, selección de coincidencias, modificación y cancelación real.
+
 ## [0.15.3] - 2026-08-20
 
 ### Changed

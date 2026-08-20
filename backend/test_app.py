@@ -56,6 +56,37 @@ class InterpretEndpointTests(unittest.TestCase):
         self.assertEqual(data["target"], {"title": "Cena con Pedro", "date": None, "time": None})
         self.assertTrue(data["requiresConfirmation"])
 
+    def test_preserves_structured_calendar_title_and_location(self):
+        app.set_test_dependencies(
+            lambda text, now, timezone: VALID_RESPONSE
+            | {"title": "Discomóvil", "location": "Complejo San Marcos de Gandía"}
+        )
+        status, data = app.wsgi_request(
+            {
+                "text": "Está contratada discomóvil en Complejo San Marcos de Gandía el 29 de agosto a las siete de la tarde",
+                "now": "2026-08-20T21:20:00+02:00",
+                "timeZone": "Europe/Madrid",
+            }
+        )
+        self.assertEqual(status, "200 OK")
+        self.assertEqual(data["title"], "Discomóvil")
+        self.assertEqual(data["location"], "Complejo San Marcos de Gandía")
+
+    def test_accepts_calendar_query_with_requested_date(self):
+        app.set_test_dependencies(
+            lambda text, now, timezone: {
+                "intent": "calendar.query",
+                "confidence": 0.92,
+                "date": "2026-08-23",
+            }
+        )
+        status, data = app.wsgi_request(
+            {"text": "¿Qué tengo el domingo?", "now": "2026-08-20T21:20:00+02:00", "timeZone": "Europe/Madrid"}
+        )
+        self.assertEqual(status, "200 OK")
+        self.assertEqual(data["intent"], "calendar.query")
+        self.assertEqual(data["date"], "2026-08-23")
+
     def test_requires_confirmation_for_sensitive_intent(self):
         response = VALID_RESPONSE | {"intent": "calendar.delete", "target": {"title": "Cena con Pedro", "date": "2026-08-21", "time": None}, "requiresConfirmation": False}
         app.set_test_dependencies(lambda text, now, timezone: response)
