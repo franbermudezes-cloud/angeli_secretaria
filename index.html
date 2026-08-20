@@ -29,28 +29,24 @@ textarea{display:block;width:100%;min-height:112px;border:1px solid #d2d2cf;bord
 </style>
 </head>
 <body>
-<header><div class="brand">ANGELI</div><h1>Secretaria</h1><div class="version">V0.8 · Google Sheets</div></header>
+<header><div class="brand">ANGELI</div><h1>Secretaria</h1><div class="version">V0.9 · V0.8 + dictado estable</div></header>
 <main>
 <section class="panel">
 <label class="label">Bandeja de entrada</label>
 <textarea id="text" placeholder="Escribe o dicta lo que quieras guardar…"></textarea>
-
 <div class="row">
 <button class="action" id="mic">🎙️ Dictar</button>
 <button class="action danger" id="clear">🗑️ Borrar</button>
 <button class="action" id="add">💾 Guardar</button>
 </div>
-
 <div class="row">
 <label class="action secondary">📷 Cámara<input id="cameraInput" type="file" accept="image/*" capture="environment" hidden></label>
 <label class="action secondary">🖼️ Fotos<input id="photoInput" type="file" accept="image/*" multiple hidden></label>
 <label class="action secondary">📎 Archivo<input id="fileInput" type="file" multiple hidden></label>
 </div>
-
 <div class="help" id="hint">Todo entra en la bandeja de entrada. La clasificación automática llegará cuando conectemos la IA.</div>
 <div id="preview" class="card-media"></div>
 </section>
-
 <section class="panel">
 <label class="label">Buscar</label><div class="search"><input id="search" placeholder="Buscar en tus entradas…"></div>
 <label class="label" style="margin-top:12px">Mostrar</label><div class="filters"><button class="filter active" data-filter="all">Todas</button><button class="filter" data-filter="pending">Pendientes</button><button class="filter" data-filter="done">Hechas</button></div>
@@ -58,54 +54,27 @@ textarea{display:block;width:100%;min-height:112px;border:1px solid #d2d2cf;bord
 <section id="list"></section>
 </main>
 <div id="toast" class="toast"></div>
-
 <script>
 const KEY="angeli_secretaria_notes_v5";
 const SHEETS_ENDPOINT="https://script.google.com/macros/s/AKfycbyyQ8VGgw45D-gRVnAmYs4nifEayZV1JhTc8u9ywtsMsqfJpHmwD8iL_AQFKJ1p5r-2WA/exec";
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],selectedFilter="all",toastTimer;
 const $=id=>document.getElementById(id);
-
 function notify(msg){const t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),2200)}
 function load(){try{notes=JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){notes=[]}render()}
 function save(){localStorage.setItem(KEY,JSON.stringify(notes));render()}
 async function add(){
  const text=$("text").value.trim();
  if(!text&&!pendingImages.length&&!pendingFiles.length){notify("No hay nada que guardar");return}
- const now=new Date();
- const id=crypto.randomUUID();
- const entry={
-   id:id,
-   date:now.toISOString(),
-   text:text,
-   status:"pending",
-   images:pendingImages,
-   files:pendingFiles
- };
+ const now=new Date();const id=crypto.randomUUID();
+ const entry={id:id,date:now.toISOString(),text:text,status:"pending",images:pendingImages,files:pendingFiles};
  notes.unshift(entry);
  $("text").value="";finalText="";pendingImages=[];pendingFiles=[];$("preview").innerHTML="";
- save();
- notify("Guardando en Google…");
+ save();notify("Guardando en Google…");
  try{
-   const payload={
-     id:id,
-     fecha:now.toLocaleDateString("es-ES"),
-     hora:now.toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"}),
-     entrada:text || "Entrada con archivo o imagen",
-     estado:"Pendiente",
-     origen:"Angeli Secretaria V0.8",
-     archivo:(entry.files||[]).map(f=>f.name).join(" · "),
-     creadoPor:"Angeli Secretaria V0.8"
-   };
-   await fetch(SHEETS_ENDPOINT,{
-     method:"POST",
-     mode:"no-cors",
-     headers:{"Content-Type":"text/plain;charset=utf-8"},
-     body:JSON.stringify(payload)
-   });
+   const payload={id:id,fecha:now.toLocaleDateString("es-ES"),hora:now.toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"}),entrada:text||"Entrada con archivo o imagen",estado:"Pendiente",origen:"Angeli Secretaria V0.8",archivo:(entry.files||[]).map(f=>f.name).join(" · "),creadoPor:"Angeli Secretaria V0.8"};
+   await fetch(SHEETS_ENDPOINT,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)});
    notify("Entrada enviada a Google");
- }catch(e){
-   notify("Guardada localmente · Google no respondió");
- }
+ }catch(e){notify("Guardada localmente · Google no respondió")}
 }
 function render(){
  const q=$("search").value.toLowerCase().trim();
@@ -123,11 +92,18 @@ function stop(){listening=false;if(rec){try{rec.stop()}catch(e){}}rec=null;$("mi
 function start(){
  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){notify("Este navegador no admite dictado");return}
  if(listening){stop();return}
- finalText=$("text").value.trim();rec=new SR();rec.lang="es-ES";rec.continuous=true;rec.interimResults=true;rec.maxAlternatives=1;
- rec.onstart=()=>{listening=true;$("mic").classList.add("listening");$("mic").textContent="⏹ Parar";$("hint").textContent="Escuchando… pulsa «Parar» cuando termines."};
- rec.onresult=e=>{let interim="";for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0].transcript;if(e.results[i].isFinal)finalText+=(finalText?" ":"")+t.trim();else interim+=t}$("text").value=(finalText+(interim?" "+interim:"")).trim()};
- rec.onerror=e=>{stop();notify(e.error==="not-allowed"?"Permiso de micrófono denegado":"Dictado detenido")};
- rec.onend=()=>{if(listening){try{rec.start()}catch(e){}}};rec.start()
+ finalText=$("text").value.trim();rec=new SR();rec.lang="es-ES";rec.continuous=false;rec.interimResults=true;rec.maxAlternatives=1;
+ let sessionFinal=finalText||"",lastInterim="";
+ rec.onstart=()=>{listening=true;$("mic").classList.add("listening");$("mic").textContent="⏹️ Parar";$("hint").textContent="Escuchando…"};
+ rec.onresult=e=>{
+   let finalPart="",interimPart="";
+   for(let i=e.resultIndex;i<e.results.length;i++){const result=e.results[i];const phrase=(result[0]?.transcript||"").trim();if(!phrase)continue;if(result.isFinal)finalPart+=(finalPart?" ":"")+phrase;else interimPart+=(interimPart?" ":"")+phrase}
+   if(finalPart){sessionFinal+=(sessionFinal?" ":"")+finalPart;lastInterim=""}else lastInterim=interimPart;
+   finalText=sessionFinal;$("text").value=(sessionFinal+(lastInterim?" "+lastInterim:"")).trim()
+ };
+ rec.onerror=e=>{listening=false;$("mic").classList.remove("listening");$("mic").textContent="🎙️ Dictar";$("hint").textContent="Dictado detenido.";notify(e.error==="not-allowed"?"Permiso de micrófono denegado":"Error de dictado: "+e.error)};
+ rec.onend=()=>{finalText=sessionFinal;$("text").value=finalText;listening=false;$("mic").classList.remove("listening");$("mic").textContent="🎙️ Dictar";$("hint").textContent="Dictado terminado. Pulsa «Dictar» para continuar."};
+ try{rec.start()}catch(e){listening=false;$("mic").classList.remove("listening");$("mic").textContent="🎙️ Dictar";notify("No se pudo iniciar el dictado")}
 }
 function readImages(files,msg){pendingImages=[];Promise.all(files.map(f=>new Promise(res=>{const r=new FileReader();r.onload=()=>{pendingImages.push(r.result);res()};r.readAsDataURL(f)}))).then(()=>{$("preview").innerHTML=pendingImages.map(x=>`<img class="thumb" src="${x}" alt="">`).join("");notify(msg)})}
 $("mic").onclick=start;
@@ -144,3 +120,4 @@ load();
 </script>
 </body>
 </html>
+
