@@ -53,6 +53,7 @@ textarea{display:block;width:100%;min-height:112px;border:1px solid #d2d2cf;bord
 <label class="label" style="margin-top:12px">Tipo</label><div class="search"><select id="typeFilter"><option value="all">Todos los tipos</option><option value="note">Notas</option><option value="task">Tareas</option><option value="reminder">Recordatorios</option><option value="calendar">Calendario</option><option value="contact">Contactos</option><option value="photo">Fotos</option><option value="file">Archivos</option></select></div>
 </section>
 <section id="list"></section>
+<section class="panel"><button class="small-btn" id="resetData">⚙️ Mantenimiento · Borrar todos los datos</button></section>
 </main>
 <div id="toast" class="toast"></div>
 <script>
@@ -66,6 +67,7 @@ function openMediaDB(){return new Promise((resolve,reject)=>{const request=index
 async function putMedia(store,record){const db=await openMediaDB();return new Promise((resolve,reject)=>{const tx=db.transaction(store,"readwrite");tx.objectStore(store).put(record);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error)})}
 async function getMedia(store,id){const db=await openMediaDB();return new Promise((resolve,reject)=>{const request=db.transaction(store).objectStore(store).get(id);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error)})}
 async function deleteMedia(store,id){const db=await openMediaDB();return new Promise((resolve,reject)=>{const tx=db.transaction(store,"readwrite");tx.objectStore(store).delete(id);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error)})}
+function deleteMediaDB(){return new Promise((resolve,reject)=>{const request=indexedDB.deleteDatabase(MEDIA_DB);request.onsuccess=()=>resolve();request.onerror=()=>reject(request.error);request.onblocked=()=>reject(new Error("La base de datos está en uso"))})}
 async function migrateLegacyImages(){let changed=false;for(const note of notes){if(!note.images?.some(image=>typeof image==="string"&&image.startsWith("data:")))continue;const migrated=[];let complete=true;for(const image of note.images){if(!image.startsWith?.("data:")){migrated.push(image);continue}try{const blob=await fetch(image).then(response=>response.blob());const id=crypto.randomUUID();await putMedia(MEDIA_STORES.images,{id,blob,type:blob.type,size:blob.size});migrated.push(id)}catch(e){complete=false;break}}if(complete){note.images=migrated;changed=true}}if(changed)save(notes)}
 function classify(text,images=[],files=[]){const value=(text||"").toLowerCase();if(/\b(mañana a las|cita|reunión|visita|apunta en el calendario)\b/.test(value))return"calendar";if(/\b(recuérdame|recordar)\b/.test(value))return"reminder";if(/\b(hacer|comprar|preparar|enviar|revisar)\b/.test(value))return"task";if(/\b(llama a|telefonear|contactar con)\b/.test(value))return"contact";if(images.length)return"photo";if(files.length)return"file";return"note"}
 function typeLabel(type){return({note:"Nota",task:"Tarea",reminder:"Recordatorio",calendar:"Calendario",contact:"Contacto",file:"Archivo",photo:"Foto"})[type]||"Nota"}
@@ -120,6 +122,7 @@ function start(){
 function readImages(files,msg){pendingImages=files;$("preview").innerHTML=pendingImages.map(file=>`<img class="thumb" src="${URL.createObjectURL(file)}" alt="">`).join("");notify(msg)}
 $("mic").onclick=start;
 $("clear").onclick=()=>{$("text").value="";finalText="";notify("Texto borrado")};
+$("resetData").onclick=async()=>{if(!confirm("Se eliminarán todas las entradas, imágenes y archivos guardados solo en este dispositivo. Google Sheets no se modificará. ¿Continuar?"))return;try{await deleteMediaDB();localStorage.removeItem(KEY);notes=[];pendingImages=[];pendingFiles=[];$("text").value="";$("preview").innerHTML="";render();notify("Todos los datos locales han sido eliminados")}catch(e){notify("No se pudieron eliminar todos los datos locales")}};
 $("add").onclick=add;
 $("cameraInput").onchange=e=>{if(e.target.files.length)readImages([...e.target.files],"Foto preparada")};
 $("photoInput").onchange=e=>{if(e.target.files.length)readImages([...e.target.files],"Imagen seleccionada")};

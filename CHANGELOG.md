@@ -9,6 +9,7 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 ### Added
 
 - Clasificación local automática de las entradas y filtro por tipo.
+- Opción de mantenimiento para eliminar explícitamente todos los datos locales de prueba.
 
 ### Changed
 
