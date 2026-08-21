@@ -178,4 +178,8 @@ Cloud Run incorpora el flujo OAuth de código y Secret Manager para que Contacto
 
 ### 2026-08-21 — V0.18.1 · Corrección de arranque
 
-Se corrige un error de sintaxis de `js/google.js` detectado al cargar la PWA publicada. Antes de publicar la corrección se comprobó en navegador que no hay errores de consola y que menú y controles se inicializan. Sigue pendiente validar las sesiones persistentes reales en Android.
+Se corrige un error de sintaxis de `js/google.js` detectado al cargar la PWA publicada. Antes de publicar la corrección se comprobó en navegador que no hay errores de consola y que menú y controles se inicializan. Sigue pendiente validar las sesiones persistentes reales en Android. En la primera prueba posterior, IA sí intercambió su código OAuth y obtuvo estado de sesión (`200`), pero Contactos y Calendar devolvieron `400` antes de Secret Manager: la comparación directa con el encabezado `Origin` se sustituye por validación contra la lista configurada de orígenes permitidos.
+
+### 2026-08-21 — Incidencia pendiente: recuperación de identidad IA
+
+En Android, tras cerrar y reabrir la PWA V0.18.1, Ajustes muestra `IA: elige una cuenta`. Contactos y Calendar se diseñaron para conservar su autorización en Secret Manager, pero el ID token de identidad de IA solo vive en memoria por seguridad y todavía no se recupera de forma silenciosa al iniciar. Durante la primera prueba de V0.18 los tres botones fallan antes de completar la identidad; revisar primero el secreto OAuth almacenado en Secret Manager, porque se registró por error el Client ID público en lugar del Client Secret privado. No considerar V0.18 como validada hasta corregir esa configuración y probar una recuperación silenciosa mediante Google Identity Services, con selector explícito únicamente como respaldo.

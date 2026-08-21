@@ -4,6 +4,13 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.18.2] - 2026-08-21
+
+### Fixed
+
+- Se valida el retorno OAuth contra la lista de orígenes permitidos en lugar de compararlo directamente con un encabezado del navegador; corrige el `400` que impedía vincular Contactos y Calendar.
+- La primera vinculación de Contactos o Calendar solicita consentimiento y selección de cuenta, necesarios para conservar la autorización segura en Secret Manager.
+
 ## [0.18.1] - 2026-08-21
 
 ### Fixed

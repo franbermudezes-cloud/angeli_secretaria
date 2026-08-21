@@ -194,8 +194,11 @@ def log_interpreter_error(category: str, error: Exception) -> None:
 
 def allowed_origin(environ: dict[str, Any]) -> str:
     origin = environ.get("HTTP_ORIGIN", "")
-    allowed = {value.strip() for value in os.getenv("ALLOWED_ORIGINS", "").split(",") if value.strip()}
-    return origin if origin and origin in allowed else ""
+    return origin if origin and origin in configured_origins() else ""
+
+
+def configured_origins() -> set[str]:
+    return {value.strip() for value in os.getenv("ALLOWED_ORIGINS", "").split(",") if value.strip()}
 
 
 def parse_request(environ: dict[str, Any]) -> tuple[str, str, str]:
@@ -421,7 +424,7 @@ def app(environ: dict[str, Any], start_response: Callable):
         if path == "/oauth/exchange":
             payload = parse_json_body(environ, {"integration", "code", "redirectUri"})
             integration, code, redirect_uri = payload.get("integration"), payload.get("code"), payload.get("redirectUri")
-            if integration not in {"identity", CONTACTS, CALENDAR} or not isinstance(code, str) or not isinstance(redirect_uri, str) or redirect_uri != origin:
+            if integration not in {"identity", CONTACTS, CALENDAR} or not isinstance(code, str) or not isinstance(redirect_uri, str) or redirect_uri not in configured_origins():
                 raise ValueError("Autorización no válida")
             if integration == "identity":
                 result = sessions().exchange_code(integration, code, redirect_uri)
@@ -437,7 +440,7 @@ def app(environ: dict[str, Any], start_response: Callable):
         if path == "/oauth/exchange":
             payload = parse_json_body(environ, {"integration", "code", "redirectUri"})
             integration, code, redirect_uri = payload.get("integration"), payload.get("code"), payload.get("redirectUri")
-            if integration not in {CONTACTS, CALENDAR} or not isinstance(code, str) or not isinstance(redirect_uri, str) or redirect_uri != origin:
+            if integration not in {CONTACTS, CALENDAR} or not isinstance(code, str) or not isinstance(redirect_uri, str) or redirect_uri not in configured_origins():
                 raise ValueError("Autorización no válida")
             return json_response(start_response, "200 OK", sessions().exchange_code(integration, code, redirect_uri), origin)
         if path == "/google":
@@ -455,6 +458,7 @@ def app(environ: dict[str, Any], start_response: Callable):
         log_interpreter_error("invalid_model_output", error)
         return json_response(start_response, "503 Service Unavailable", {"error": "Interpretación no disponible"}, origin)
     except ValueError as error:
+        print(f"request_error path={path} reason={str(error)}", file=sys.stderr, flush=True)
         return json_response(start_response, "400 Bad Request", {"error": str(error)}, origin)
     except RuntimeError as error:
         if "Demasiadas" not in str(error):

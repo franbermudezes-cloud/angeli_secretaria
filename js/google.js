@@ -1,5 +1,5 @@
-import { cleanTemporalText } from "./temporal.js?v=0.18.1";
-import { scheduleTitle } from "./schedule.js?v=0.18.1";
+import { cleanTemporalText } from "./temporal.js?v=0.18.2";
+import { scheduleTitle } from "./schedule.js?v=0.18.2";
 
 const CLIENT_ID = "172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
@@ -53,6 +53,7 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
         client_id: CLIENT_ID,
         scope: SCOPES[kind],
         ux_mode: "popup",
+        prompt: kind === "identity" ? "select_account" : "consent select_account",
         callback: response => response.code ? resolve(response.code) : reject(new Error(response.error || "Google no autorizó")),
         error_callback: () => reject(new Error("Google no pudo abrir la autorización"))
       });
@@ -64,8 +65,9 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
     const headers = { "Content-Type": "application/json" };
     if (needsIdentity) headers.Authorization = `Bearer ${idToken}`;
     const response = await fetch(API + path, { method: "POST", headers, body: JSON.stringify(body) });
-    if (!response.ok) throw new Error(`Google respondió ${response.status}`);
-    return response.json();
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || `Google respondió ${response.status}`);
+    return data;
   }
 
   function storeIdentity(token) {
@@ -114,8 +116,8 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
       updateStatus();
       notify(`${kind === "contacts" ? "Contactos" : "Calendario"} conectado de forma permanente`);
       return true;
-    } catch (_) {
-      notify("No se pudo guardar la conexión");
+    } catch (error) {
+      notify(`No se pudo guardar la conexión: ${error.message}`);
       return false;
     }
   }
