@@ -8,6 +8,7 @@
 - Mantener los cambios acotados a la solicitud. No modificar archivos funcionales, versiones, configuración de caché ni integraciones externas de forma incidental.
 - No crear commits, etiquetas, ramas remotas ni hacer `push` sin autorización explícita del usuario.
 - Todo commit funcional debe incrementar la versión visible de la aplicación y sincronizar `index.html`, referencias `?v=`, `manifest.json`, la versión/caché de `sw.js` y cualquier otro identificador PWA. Los commits exclusivamente documentales no requieren cambio de versión.
+- Antes de cambiar código de una integración externa o de datos (Firebase/Firestore, Google Cloud, Drive, OAuth, Calendar, Contacts, Apps Script), comprobar de extremo a extremo la configuración real: proyecto, recurso o base de datos concreta, ID, cuenta/identidad, permisos, regla activa, destino y una operación mínima de lectura/escritura. No asumir que el nombre configurado en el código coincide con el recurso creado en la consola. Registrar el resultado de esa comprobación antes de proponer cambios de código.
 
 ## Arquitectura actual
 
@@ -16,7 +17,7 @@
 - `styles.css` contiene todos los estilos de la interfaz. No añadir bloques CSS grandes a `index.html`; mantener los cambios visuales en esta hoja de estilos.
 - `js/app.js` inicializa la aplicación y coordina el estado y los eventos principales.
 - `js/ui.js` contiene el renderizado, tarjetas, estados visuales, previsualizaciones y mensajes.
-- `js/firebase.js` contiene la sesión de Angeli y Firestore, única fuente de verdad de las entradas compartidas.
+- `js/firebase.js` contiene la sesión de Angeli y Firestore, única fuente de verdad de las entradas compartidas. La base Firestore real del proyecto es la base con nombre `angelifirebase`, no `(default)`.
 - `js/media.js` concentra los adjuntos remotos en Google Drive; `js/storage.js` queda limitado a preferencias y limpieza de caché heredada, nunca como fuente de verdad.
 - `js/classifier.js` concentra clasificación, teléfonos y prioridades; `js/temporal.js` contiene únicamente las utilidades de fecha y hora.
 - `js/ai.js` interpreta texto mediante un proveedor intercambiable y valida una lista cerrada de intenciones; `js/intents.js` convierte esas intenciones en propuestas sin efectos externos.

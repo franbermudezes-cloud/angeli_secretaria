@@ -23,7 +23,8 @@ import {
   doc,
   getFirestore,
   onSnapshot,
-  setDoc
+  setDoc,
+  waitForPendingWrites
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -37,6 +38,9 @@ const firebaseConfig = {
 // Esta es la cuenta propietaria de Angeli. Contactos y Calendar pueden seguir
 // vinculándose con cuentas distintas desde sus botones específicos.
 const OWNER_EMAIL = "franbermudez.es@gmail.com";
+// La base creada en Firebase tiene nombre propio. Sin este ID el SDK usa
+// `(default)`, que es otra base distinta y no comparte las entradas de Angeli.
+const FIRESTORE_DATABASE_ID = "angelifirebase";
 
 const SYNCABLE_FIELDS = new Set([
   "id", "date", "updatedAt", "text", "status", "type", "scheduledDate",
@@ -56,7 +60,7 @@ export function createCloudSync({ notify }) {
     callbacks = handlers || {};
     const app = initializeApp(firebaseConfig);
     auth = getAuth(app);
-    db = getFirestore(app);
+    db = getFirestore(app, FIRESTORE_DATABASE_ID);
     await setPersistence(auth, browserLocalPersistence);
     try { await getRedirectResult(auth); } catch (error) {
       notify("No se pudo completar el inicio de sesión");
@@ -134,6 +138,9 @@ export function createCloudSync({ notify }) {
     if (operations.length) callbacks.onSyncStatus?.({ state: "pending" });
     if (!operations.length) return true;
     await Promise.all(operations);
+    // setDoc confirma primero la cola local. Esperar aquí garantiza que el
+    // estado "sincronizado" solo llegue tras la confirmación del servidor.
+    await waitForPendingWrites(db);
     return true;
   }
 

@@ -21,6 +21,21 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.20.5] - 2026-08-21
+
+### Fixed
+
+- La PWA apunta explícitamente a la base Cloud Firestore real `angelifirebase`, en lugar de a `(default)`. Las entradas de móvil y escritorio pasan a leer y escribir el mismo registro remoto.
+- El estado de sincronización espera la confirmación de las escrituras pendientes de Firestore antes de declarar que los datos están sincronizados.
+
+### Changed
+
+- Identificación visible y caché PWA actualizadas a `V0.20.5 · Sincronización`.
+
+### Pending validation
+
+- Pendiente de comprobar una entrada de texto creada desde Android y vista en Mac, y otra creada desde Mac y vista en Android, con la misma cuenta Angeli.
+
 ## [0.20.4] - 2026-08-21
 
 ### Fixed

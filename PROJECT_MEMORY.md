@@ -73,14 +73,21 @@ La arquitectura visual se separó en V0.12.3 y la lógica se modularizó en V0.1
 ## Protocolo antes de cambios funcionales
 
 1. Consultar el estado Git, la rama y la relación con `origin`.
-2. Leer los archivos implicados y localizar dependencias o flujos relacionados.
-3. Definir el alcance y los posibles efectos en interfaz, datos locales, Google Sheets, dictado, adjuntos y PWA.
-4. Aplicar cambios mínimos y validar los flujos afectados en un servidor HTTP local.
-5. Actualizar esta memoria y `CHANGELOG.md` cuando haya decisiones, limitaciones o cambios funcionales relevantes.
+2. Para cualquier servicio externo o almacén de datos, confirmar antes de editar el recurso real que se está usando: proyecto, ID/nombre, cuenta, permisos, regla activa, destino y una lectura/escritura mínima. No inferirlo a partir de variables, nombres o pantallas parciales.
+3. Leer los archivos implicados y localizar dependencias o flujos relacionados.
+4. Definir el alcance y los posibles efectos en interfaz, datos locales, Google Sheets, dictado, adjuntos y PWA.
+5. Aplicar cambios mínimos y validar los flujos afectados en un servidor HTTP local.
+6. Actualizar esta memoria y `CHANGELOG.md` cuando haya decisiones, limitaciones o cambios funcionales relevantes.
 
 ## Registro de decisiones y soluciones
 
 Añadir aquí, con fecha, el contexto, la decisión tomada, los archivos implicados y cómo se verificó. No sustituir decisiones anteriores sin explicar el motivo del cambio.
+
+### 2026-08-21 — V0.20.5 · Base Firestore real pendiente de validación
+
+La consola confirmó que la base Cloud Firestore creada para Angeli se llama `angelifirebase`. El cliente PWA apuntaba a `(default)`, que es otra base distinta; por ello móvil/Mac no podían sincronizar por el registro que se comprobaba en la consola. V0.20.5 selecciona explícitamente `angelifirebase` y espera la confirmación remota de las escrituras pendientes antes de declarar los datos sincronizados. No modifica IA, Calendar, Contactos, Drive ni diseño. Pendiente de comprobación cruzada Android/Mac con la cuenta Angeli.
+
+Regla permanente: antes de modificar una integración o almacén externo, confirmar proyecto, ID/nombre, cuenta, permisos, reglas activas, destino y una operación mínima de lectura/escritura. No inferir una configuración correcta a partir de variables, nombres o pantallas parciales.
 
 ### 2026-08-21 — V0.20 · Datos y Drive pendiente de validación
 
