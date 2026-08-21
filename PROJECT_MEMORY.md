@@ -93,6 +93,10 @@ Regla permanente: antes de modificar una integración o almacén externo, confir
 
 La PWA muestra al abrirse una pantalla completa con `assets/angeli-welcome.gif`, proporcionado por el usuario. La animación permanece como mínimo 2,6 segundos mientras se inicializa Angeli y se retira al terminar la carga; un límite de seguridad evita que una incidencia de red deje la pantalla bloqueada. Es un cambio de presentación aislado: no interviene en Firebase, IA, Calendar, Contactos, Drive ni el flujo de acciones.
 
+### 2026-08-21 — V0.20.7 · Animación de trabajo pendiente de validación
+
+El GIF se muestra también dentro del modal único de trabajo, no en los modales de confirmación o resultado. `showWorking()` reutiliza la misma animación para toda espera y cada llamada existente aporta el texto contextual de la operación; así no se duplican pop-ups ni se cambian los flujos de IA, adjuntos, Calendar o Contactos. La pantalla de bienvenida precarga el GIF y usa el mismo fondo que el `manifest` para reducir el destello anterior a que cargue el HTML. El splash nativo de Android sigue siendo necesariamente estático y usa el icono de la PWA: Android no admite un GIF en ese punto.
+
 ### 2026-08-21 — V0.20 · Datos y Drive pendiente de validación
 
 Se sustituye el modelo híbrido de pruebas por una arquitectura única: Firestore es la fuente de verdad de todas las entradas y Google Drive conserva los bytes de fotos y archivos. La PWA no lee, migra ni mezcla `localStorage` o IndexedDB heredados porque el usuario confirmó que todos los datos previos son pruebas. Las entradas remotas guardan únicamente los metadatos y las referencias de Drive; los medios nuevos se organizan en `Angeli Secretaria/Fotos/<año>/<mes>` y `Angeli Secretaria/Archivos/<año>/<mes>`. La autorización `drive.file` se conserva como refresh token solo en Secret Manager, separada de Angeli, Contactos y Calendar. Antes de tratar esta versión como estable hay que desplegar Cloud Run y comprobar foto, archivo, lectura, persistencia, sincronización móvil-escritorio y borrado.

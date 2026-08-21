@@ -21,6 +21,20 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.20.7] - 2026-08-21
+
+### Added
+
+- La animación de Angeli se reutiliza durante todos los estados de trabajo: interpretar, guardar, subir adjuntos y consultar Google. El texto inferior cambia según la operación en curso; las confirmaciones y resultados conservan sus tarjetas sin animación ni bloqueo.
+
+### Fixed
+
+- La pantalla inicial crítica usa el mismo fondo oscuro que la bienvenida y precarga el GIF, evitando el destello blanco entre la apertura de la PWA y la animación.
+
+### Changed
+
+- Identificación visible, fondo nativo y caché PWA actualizados a `V0.20.7 · Animación`.
+
 ## [0.20.6] - 2026-08-21
 
 ### Added

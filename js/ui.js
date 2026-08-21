@@ -1,5 +1,5 @@
-import { typeLabel } from "./classifier.js?v=0.20.6";
-import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.20.6";
+import { typeLabel } from "./classifier.js?v=0.20.7";
+import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.20.7";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -52,6 +52,7 @@ export function createUI({ getMedia }) {
   }
 
   function openModal({ title, lead, body, actions = [] }) {
+    $("actionModal").classList.remove("working-modal");
     $("modalTitle").textContent = title;
     $("modalLead").textContent = lead;
     const bodyElement = $("modalBody");
@@ -97,15 +98,32 @@ export function createUI({ getMedia }) {
     if (draft && draft.value !== value) draft.value = value;
   }
 
+  function workingBody(detail) {
+    const box = document.createElement("div");
+    box.className = "angeli-working";
+    const image = document.createElement("img");
+    image.src = "assets/angeli-welcome.gif?v=0.20.7";
+    image.alt = "Angeli trabajando";
+    const message = document.createElement("span");
+    message.id = "workingDetail";
+    message.textContent = detail || "Un momento…";
+    box.append(image, message);
+    return box;
+  }
+
   function showWorking(title, lead, body) {
-    openModal({ title, lead, body, actions: [] });
+    openModal({ title, lead, body: workingBody(body), actions: [] });
+    $("actionModal").classList.add("working-modal");
   }
 
   function updateWorking(title, lead, body) {
     if (!$("actionModal").classList.contains("show")) return showWorking(title, lead, body);
     $("modalTitle").textContent = title;
     $("modalLead").textContent = lead;
-    $("modalBody").textContent = body || "";
+    const detail = $("workingDetail");
+    if (detail) detail.textContent = body || "Un momento…";
+    else $("modalBody").replaceChildren(workingBody(body));
+    $("actionModal").classList.add("working-modal");
     $("modalActions").innerHTML = "";
   }
 
