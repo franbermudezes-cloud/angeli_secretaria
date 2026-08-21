@@ -1,5 +1,5 @@
-import { typeLabel } from "./classifier.js?v=0.18.0";
-import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.18.0";
+import { typeLabel } from "./classifier.js?v=0.18.1";
+import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.18.1";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);

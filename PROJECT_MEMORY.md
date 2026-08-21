@@ -175,3 +175,7 @@ Se añade `js/schedule.js` para representar una acción futura con fecha/hora, z
 ### 2026-08-21 — V0.18 · Sesiones Google pendiente de validación
 
 Cloud Run incorpora el flujo OAuth de código y Secret Manager para que Contactos y Calendar puedan conservar autorizaciones independientes sin almacenar refresh tokens en la PWA. La IA pasa a usar un selector OAuth explícito para evitar bloqueos de One Tap en Android. Cada integración puede usar una cuenta Google distinta. Pendiente de despliegue y comprobación real antes de considerarla publicada estable.
+
+### 2026-08-21 — V0.18.1 · Corrección de arranque
+
+Se corrige un error de sintaxis de `js/google.js` detectado al cargar la PWA publicada. Antes de publicar la corrección se comprobó en navegador que no hay errores de consola y que menú y controles se inicializan. Sigue pendiente validar las sesiones persistentes reales en Android.

@@ -4,6 +4,12 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.18.1] - 2026-08-21
+
+### Fixed
+
+- Se corrige un error de sintaxis en el módulo de conexiones Google que impedía iniciar el JavaScript de la PWA y dejaba los controles sin responder.
+
 ## [0.18.0] - 2026-08-21
 
 ### Changed
