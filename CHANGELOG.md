@@ -4,6 +4,17 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-08-21
+
+### Changed
+
+- Las autorizaciones de Google se preparan para persistir de forma segura en Cloud Run y Secret Manager, separadas para Contactos y Calendar; los refresh tokens no se guardan en el teléfono ni en GitHub.
+- La conexión de IA usa el flujo OAuth de código con selector explícito de cuenta, evitando depender exclusivamente de One Tap en Android.
+
+### Pending validation
+
+- Pendiente de validación real en Android tras desplegar Cloud Run: conexión inicial de IA, Contactos y Calendar con cuentas distintas, y persistencia después de cerrar y reabrir la PWA.
+
 ## [0.17.0] - 2026-08-21
 
 ### Added

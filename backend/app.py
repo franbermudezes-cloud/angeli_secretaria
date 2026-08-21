@@ -15,7 +15,10 @@ from collections import defaultdict, deque
 from datetime import date, datetime
 from io import BytesIO
 from typing import Any, Callable
+from urllib.parse import quote, urlencode
 from zoneinfo import ZoneInfo
+
+from google_sessions import CALENDAR, CONTACTS, GoogleSessions
 
 MAX_TEXT_LENGTH = 500
 MAX_BODY_BYTES = 2_048
@@ -142,6 +145,7 @@ RESPONSE_SCHEMA: dict[str, Any] = {
 _rate_windows: dict[str, deque[float]] = defaultdict(deque)
 _interpreter: Callable[[str, str, str], dict[str, Any]] | None = None
 _identity_verifier: Callable[[str], dict[str, Any]] | None = None
+_sessions_factory: Callable[[], GoogleSessions] | None = None
 
 
 class OutputValidationError(ValueError):
@@ -216,6 +220,61 @@ def parse_request(environ: dict[str, Any]) -> tuple[str, str, str]:
     except ValueError as error:
         raise ValueError("Contexto temporal no válido") from error
     return text.strip(), now, timezone
+
+
+def parse_json_body(environ: dict[str, Any], allowed: set[str]) -> dict[str, Any]:
+    length = int(environ.get("CONTENT_LENGTH") or 0)
+    if length > MAX_BODY_BYTES:
+        raise ValueError("La petición supera el tamaño permitido")
+    try:
+        payload = json.loads(environ["wsgi.input"].read(length or MAX_BODY_BYTES).decode("utf-8"))
+    except (KeyError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError("JSON de entrada no válido") from error
+    if not isinstance(payload, dict) or not set(payload).issubset(allowed):
+        raise ValueError("Campos de entrada no válidos")
+    return payload
+
+
+def sessions() -> GoogleSessions:
+    if _sessions_factory:
+        return _sessions_factory()
+    project, client_id = os.getenv("GOOGLE_CLOUD_PROJECT", ""), os.getenv("GOOGLE_WEB_CLIENT_ID", "")
+    if not project or not client_id:
+        raise RuntimeError("El servidor no está configurado")
+    return GoogleSessions(project, client_id)
+
+
+def session_status() -> dict[str, Any]:
+    service = sessions()
+    return {"ai": True, "contacts": service.connected(CONTACTS), "calendar": service.connected(CALENDAR)}
+
+
+def persistent_google_action(payload: dict[str, Any]) -> dict[str, Any]:
+    integration, action = payload.get("integration"), payload.get("action")
+    service = sessions()
+    if integration == CONTACTS and action == "search":
+        query = payload.get("query")
+        if not isinstance(query, str) or not query.strip() or len(query) > 100:
+            raise ValueError("Búsqueda no válida")
+        url = "https://people.googleapis.com/v1/people:searchContacts?" + urlencode({"query": query.strip(), "readMask": "names,phoneNumbers", "pageSize": "10", "sources": "READ_SOURCE_TYPE_CONTACT"})
+        return service.api(CONTACTS, "GET", url)
+    if integration != CALENDAR:
+        raise ValueError("Integración no válida")
+    base = "https://www.googleapis.com/calendar/v3/calendars/primary/events"
+    if action == "create" and isinstance(payload.get("event"), dict):
+        return service.api(CALENDAR, "POST", base, payload["event"])
+    if action == "list" and isinstance(payload.get("params"), dict):
+        params = {key: str(value) for key, value in payload["params"].items() if key in {"singleEvents", "orderBy", "maxResults", "timeMin", "timeMax", "q"}}
+        return service.api(CALENDAR, "GET", base + "?" + urlencode(params))
+    event_id = payload.get("eventId")
+    if not isinstance(event_id, str) or not event_id or len(event_id) > 300:
+        raise ValueError("Evento no válido")
+    url = base + "/" + quote(event_id, safe="")
+    if action == "delete":
+        return service.api(CALENDAR, "DELETE", url)
+    if action == "patch" and isinstance(payload.get("event"), dict):
+        return service.api(CALENDAR, "PATCH", url, payload["event"])
+    raise ValueError("Acción no válida")
 
 
 def verify_identity(environ: dict[str, Any]) -> str:
@@ -353,14 +412,37 @@ def app(environ: dict[str, Any], start_response: Callable):
     origin = allowed_origin(environ)
     if environ.get("REQUEST_METHOD") == "OPTIONS":
         return cors_preflight_response(start_response, origin)
-    if environ.get("REQUEST_METHOD") != "POST" or environ.get("PATH_INFO") != "/interpret":
+    path = environ.get("PATH_INFO")
+    if environ.get("REQUEST_METHOD") != "POST" or path not in {"/interpret", "/session/status", "/oauth/exchange", "/google"}:
         return json_response(start_response, "404 Not Found", {"error": "No encontrado"}, origin)
     if environ.get("HTTP_ORIGIN") and not origin:
         return json_response(start_response, "403 Forbidden", {"error": "Origen no permitido"})
     try:
-        text, now, timezone = parse_request(environ)
+        if path == "/oauth/exchange":
+            payload = parse_json_body(environ, {"integration", "code", "redirectUri"})
+            integration, code, redirect_uri = payload.get("integration"), payload.get("code"), payload.get("redirectUri")
+            if integration not in {"identity", CONTACTS, CALENDAR} or not isinstance(code, str) or not isinstance(redirect_uri, str) or redirect_uri != origin:
+                raise ValueError("Autorización no válida")
+            if integration == "identity":
+                result = sessions().exchange_code(integration, code, redirect_uri)
+                claims = google_identity_verifier(result["idToken"])
+                allowed = {value.strip() for value in os.getenv("ALLOWED_GOOGLE_SUBS", "").split(",") if value.strip()}
+                if not allowed or claims.get("sub") not in allowed:
+                    raise PermissionError("Usuario no autorizado")
+                return json_response(start_response, "200 OK", result, origin)
         subject = verify_identity(environ)
         enforce_rate_limit(subject)
+        if path == "/session/status":
+            return json_response(start_response, "200 OK", session_status(), origin)
+        if path == "/oauth/exchange":
+            payload = parse_json_body(environ, {"integration", "code", "redirectUri"})
+            integration, code, redirect_uri = payload.get("integration"), payload.get("code"), payload.get("redirectUri")
+            if integration not in {CONTACTS, CALENDAR} or not isinstance(code, str) or not isinstance(redirect_uri, str) or redirect_uri != origin:
+                raise ValueError("Autorización no válida")
+            return json_response(start_response, "200 OK", sessions().exchange_code(integration, code, redirect_uri), origin)
+        if path == "/google":
+            return json_response(start_response, "200 OK", persistent_google_action(parse_json_body(environ, {"integration", "action", "query", "event", "eventId", "params"})), origin)
+        text, now, timezone = parse_request(environ)
         interpreter = _interpreter or vertex_interpret
         try:
             interpretation = validate_interpretation(interpreter(text, now, timezone))
@@ -383,9 +465,9 @@ def app(environ: dict[str, Any], start_response: Callable):
         return json_response(start_response, "503 Service Unavailable", {"error": "Interpretación no disponible"}, origin)
 
 
-def set_test_dependencies(interpreter: Callable[[str, str, str], dict[str, Any]] | None = None, verifier: Callable[[str], dict[str, Any]] | None = None) -> None:
-    global _interpreter, _identity_verifier
-    _interpreter, _identity_verifier = interpreter, verifier
+def set_test_dependencies(interpreter: Callable[[str, str, str], dict[str, Any]] | None = None, verifier: Callable[[str], dict[str, Any]] | None = None, session_factory: Callable[[], GoogleSessions] | None = None) -> None:
+    global _interpreter, _identity_verifier, _sessions_factory
+    _interpreter, _identity_verifier, _sessions_factory = interpreter, verifier, session_factory
 
 
 def wsgi_request(payload: dict[str, Any], authorization: str = "") -> tuple[str, dict[str, Any]]:

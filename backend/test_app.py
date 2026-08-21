@@ -156,6 +156,48 @@ class InterpretEndpointTests(unittest.TestCase):
         self.assertEqual(response, [])
         os.environ.pop("ALLOWED_ORIGINS", None)
 
+    def test_persistent_contacts_are_read_only_and_calendar_actions_use_server_session(self):
+        class FakeSessions:
+            def __init__(self):
+                self.calls = []
+
+            def connected(self, integration):
+                return integration in {"contacts", "calendar"}
+
+            def api(self, integration, method, url, body=None):
+                self.calls.append((integration, method, url, body))
+                return {"results": []} if integration == "contacts" else {"id": "event-1"}
+
+        service = FakeSessions()
+        app.set_test_dependencies(
+            lambda text, now, timezone: VALID_RESPONSE.copy(),
+            lambda token: {"sub": "approved-sub"},
+            lambda: service,
+        )
+        os.environ.pop("ANGELI_AI_DEV_BYPASS_AUTH", None)
+        os.environ["ALLOWED_GOOGLE_SUBS"] = "approved-sub"
+        status, data = request_path("/google", {"integration": "contacts", "action": "search", "query": "Montse"}, "Bearer test")
+        self.assertEqual(status, "200 OK")
+        self.assertEqual(data, {"results": []})
+        self.assertEqual(service.calls[0][0:2], ("contacts", "GET"))
+        self.assertIn("readMask=names%2CphoneNumbers", service.calls[0][2])
+        status, data = request_path("/google", {"integration": "calendar", "action": "create", "event": {"summary": "Cena"}}, "Bearer test")
+        self.assertEqual(status, "200 OK")
+        self.assertEqual(data, {"id": "event-1"})
+        self.assertEqual(service.calls[1][0:2], ("calendar", "POST"))
+        os.environ.pop("ALLOWED_GOOGLE_SUBS", None)
+
+
+def request_path(path, payload, authorization=""):
+    body = __import__("json").dumps(payload).encode("utf-8")
+    captured = {}
+
+    def start_response(status, headers):
+        captured["status"] = status
+
+    response = b"".join(app.app({"REQUEST_METHOD": "POST", "PATH_INFO": path, "CONTENT_LENGTH": str(len(body)), "wsgi.input": BytesIO(body), "HTTP_AUTHORIZATION": authorization}, start_response))
+    return captured["status"], __import__("json").loads(response)
+
 
 if __name__ == "__main__":
     unittest.main()

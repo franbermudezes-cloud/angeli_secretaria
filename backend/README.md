@@ -1,14 +1,31 @@
 # Backend de interpretación IA
 
-Este servicio ofrece únicamente `POST /interpret`. No crea eventos, consulta
-contactos, accede a Drive, escribe en Sheets ni almacena datos de Angeli.
+Este servicio interpreta texto mediante `POST /interpret` y actúa como backend
+seguro para las integraciones persistentes de Google. La PWA nunca recibe ni
+guarda refresh tokens.
+
+Además ofrece, siempre tras comprobar un ID token del propietario:
+
+- `POST /session/status`: estado de las vinculaciones de Contactos y Calendar.
+- `POST /oauth/exchange`: intercambia un código OAuth; los refresh tokens de
+  Contactos y Calendar se guardan exclusivamente en Secret Manager.
+- `POST /google`: consulta acotada de Contactos y operaciones de Calendar.
+
+No accede a Drive, no escribe en Sheets y no descarga la agenda completa.
 
 ## Producción en Cloud Run
 
 Cloud Run debe usar una Service Account dedicada con el rol
-`roles/aiplatform.user`. El SDK obtiene Application Default Credentials de la
-identidad del servicio; no se usan API keys ni archivos JSON de cuentas de
-servicio.
+`roles/aiplatform.user`. Para las sesiones persistentes, esa misma identidad
+necesita `roles/secretmanager.secretAccessor` y
+`roles/secretmanager.secretVersionAdder` sobre estos secretos:
+
+- `angeli-oauth-client-secret`
+- `angeli-google-contacts-grant`
+- `angeli-google-calendar-grant`
+
+El SDK obtiene Application Default Credentials de la identidad del servicio;
+no se usan API keys ni archivos JSON de cuentas de servicio.
 
 Variables necesarias:
 

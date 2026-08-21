@@ -171,3 +171,7 @@ También se incorpora al roadmap el bloque «Conocimiento de empresa»: consulta
 ### 2026-08-21 — V0.17 · Acciones programadas pendiente de validación
 
 Se añade `js/schedule.js` para representar una acción futura con fecha/hora, zona `Europe/Madrid`, estado, entrega y vínculo al evento de Calendar. Una llamada con fecha y hora se interpreta como `reminder.create` con acción subordinada `contact.call`; nunca abre el marcador en ese momento. La tarjeta permite confirmar, reintentar y cancelar sin borrar la entrada. La confirmación crea un evento privado/transparente con aviso emergente de Google Calendar y guarda su ID/URL para evitar duplicados. Esto ofrece el aviso de Calendar en Android cuando la aplicación Calendar está configurada; una notificación propia y fiable de Angeli con la PWA cerrada requiere todavía un planificador externo autenticado y no se considera implementada.
+
+### 2026-08-21 — V0.18 · Sesiones Google pendiente de validación
+
+Cloud Run incorpora el flujo OAuth de código y Secret Manager para que Contactos y Calendar puedan conservar autorizaciones independientes sin almacenar refresh tokens en la PWA. La IA pasa a usar un selector OAuth explícito para evitar bloqueos de One Tap en Android. Cada integración puede usar una cuenta Google distinta. Pendiente de despliegue y comprobación real antes de considerarla publicada estable.
