@@ -21,6 +21,24 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.20.0] - 2026-08-21
+
+### Added
+
+- Google Drive como almacenamiento permanente de fotos y archivos nuevos. Cada adjunto se guarda en `Angeli Secretaria/Fotos/<año>/<mes>` o `Angeli Secretaria/Archivos/<año>/<mes>` y la entrada de Firestore conserva solamente su referencia.
+- Conexión independiente de Drive mediante el alcance mínimo `drive.file`, con autorización persistente guardada únicamente en Secret Manager.
+- Estado visible de sincronización de Angeli y conexión de Drive en Ajustes.
+
+### Changed
+
+- Cloud Firestore pasa a ser la única fuente de verdad de las entradas entre móvil y escritorio. Las notas y blobs heredados del navegador no se leen, no se migran y no se mezclan con los datos remotos.
+- La limpieza de dispositivo elimina solo la caché técnica y el borrador local: no borra las entradas ni los adjuntos guardados en la nube.
+- El intérprete tolera campos opcionales ajenos a la intención solicitada para evitar descartar una interpretación válida por información inofensiva de Calendar.
+
+### Pending validation
+
+- Pendiente de desplegar Cloud Run y validar en Android y escritorio: conexión única de Drive, foto, PDF, persistencia tras cerrar y abrir, sincronización cruzada y borrado de entrada con adjuntos.
+
 ## [0.19.0] - 2026-08-21
 
 ### Added

@@ -1,18 +1,19 @@
-import { cleanTemporalText } from "./temporal.js?v=0.19.0";
-import { scheduleTitle } from "./schedule.js?v=0.19.0";
+import { cleanTemporalText } from "./temporal.js?v=0.20.0";
+import { scheduleTitle } from "./schedule.js?v=0.20.0";
 
 const CLIENT_ID = "172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
 const SCOPES = {
   identity: "openid email",
   contacts: "https://www.googleapis.com/auth/contacts.readonly",
-  calendar: "https://www.googleapis.com/auth/calendar.events"
+  calendar: "https://www.googleapis.com/auth/calendar.events",
+  drive: "https://www.googleapis.com/auth/drive.file"
 };
 const CALENDAR_SEARCH_INTENTS = new Set(["calendar.query", "calendar.update", "calendar.delete"]);
 
 export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes, getNotes, getAuthToken, getSession }) {
   let scriptPromise = null;
-  let links = { contacts: false, calendar: false };
+  let links = { contacts: false, calendar: false, drive: false };
   const contactResults = new Map();
   const calendarResults = new Map();
   const calendarInFlight = new Set();
@@ -27,7 +28,8 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
     setStatus({
       app: identityText,
       contacts: links.contacts ? "Contactos conectados de forma permanente" : signedIn() ? "Contactos: pendiente de conectar" : "Inicia sesión en Angeli primero",
-      calendar: links.calendar ? "Calendario conectado de forma permanente" : signedIn() ? "Calendario: pendiente de conectar" : "Inicia sesión en Angeli primero"
+      calendar: links.calendar ? "Calendario conectado de forma permanente" : signedIn() ? "Calendario: pendiente de conectar" : "Inicia sesión en Angeli primero",
+      drive: links.drive ? "Drive conectado de forma permanente" : signedIn() ? "Drive: pendiente de conectar" : "Inicia sesión en Angeli primero"
     });
   }
 
@@ -86,7 +88,7 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
       await request("/oauth/exchange", { integration: kind, code, redirectUri: location.origin });
       links = { ...links, [kind]: true };
       updateStatus();
-      notify(`${kind === "contacts" ? "Contactos" : "Calendario"} conectado de forma permanente`);
+      notify(`${kind === "contacts" ? "Contactos" : kind === "calendar" ? "Calendario" : "Drive"} conectado de forma permanente`);
       return true;
     } catch (error) {
       notify(`No se pudo guardar la conexión: ${error.message}`);
@@ -96,6 +98,8 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
 
   const connectContacts = () => connectPersistent("contacts");
   const connectCalendar = () => connectPersistent("calendar");
+  const connectDrive = () => connectPersistent("drive");
+  async function ensureDrive() { return links.drive || connectDrive(); }
 
   async function callApi(body) {
     if (!signedIn()) throw new Error("Sesión de Angeli no iniciada");
@@ -116,6 +120,11 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
   function disconnectCalendar() {
     calendarResults.clear();
     notify("Calendario sigue vinculado de forma segura en Google Cloud");
+    refresh();
+  }
+
+  function disconnectDrive() {
+    notify("Drive sigue vinculado de forma segura en Google Cloud");
     refresh();
   }
 
@@ -278,8 +287,11 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
     syncLinks,
     connectContacts,
     connectCalendar,
+    connectDrive,
+    ensureDrive,
     disconnectContacts,
     disconnectCalendar,
+    disconnectDrive,
     interpretWithAI,
     searchContact,
     createCalendarEvent,

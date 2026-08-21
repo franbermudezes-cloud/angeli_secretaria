@@ -1,12 +1,9 @@
 /**
- * Sesión de Angeli y sincronización de entradas.
+ * Cuenta Angeli y fuente única de entradas.
  *
- * Firebase Auth identifica a la persona propietaria de la aplicación. Cloud
- * Firestore es la fuente compartida de las entradas entre sus dispositivos;
- * localStorage se conserva como copia local y vía de migración segura.
- *
- * Los blobs de imágenes y archivos siguen en IndexedDB hasta el bloque propio
- * de almacenamiento remoto. Nunca se eliminan durante esta migración.
+ * Firestore es el registro compartido. El navegador solo conserva la caché
+ * offline administrada por Firebase; Angeli no mezcla ni migra notas desde
+ * localStorage.
  */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import {
@@ -24,8 +21,6 @@ import {
   collection,
   deleteDoc,
   doc,
-  enableIndexedDbPersistence,
-  getDocs,
   getFirestore,
   onSnapshot,
   setDoc
@@ -56,16 +51,12 @@ export function createCloudSync({ notify }) {
   let user = null;
   let unsubscribe = null;
   let callbacks = {};
-  let bootstrapping = false;
 
   async function initialize(handlers) {
     callbacks = handlers || {};
     const app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
-    try { await enableIndexedDbPersistence(db); } catch (_) {
-      // Otra pestaña puede estar usando Firestore; la sincronización online sigue funcionando.
-    }
     await setPersistence(auth, browserLocalPersistence);
     try { await getRedirectResult(auth); } catch (error) {
       notify("No se pudo completar el inicio de sesión");
@@ -81,12 +72,8 @@ export function createCloudSync({ notify }) {
       user = nextUser || null;
       stopListening();
       callbacks.onAuthChange?.(session());
-      if (!user) return;
-      try {
-        await subscribeAndMigrate();
-      } catch (_) {
-        notify("Sesión iniciada, pero aún no se pudo abrir la sincronización");
-      }
+      if (!user) { callbacks.onSyncStatus?.({ state: "signed-out" }); return; }
+      subscribe();
     });
   }
 
@@ -126,32 +113,25 @@ export function createCloudSync({ notify }) {
     if (auth) await signOut(auth);
   }
 
-  async function subscribeAndMigrate() {
-    const entries = entriesCollection();
-    bootstrapping = true;
-    const localAtStart = callbacks.getLocalNotes?.() || [];
-    const remote = await getDocs(entries);
-    const remoteIds = new Set(remote.docs.map(item => item.id));
-    const missing = localAtStart.filter(note => note?.id && !remoteIds.has(note.id));
-    if (missing.length) {
-      await Promise.all(missing.map(note => setDoc(doc(entries, note.id), toCloudEntry(note), { merge: false })));
-    }
-    unsubscribe = onSnapshot(entries, snapshot => {
+  function subscribe() {
+    callbacks.onSyncStatus?.({ state: "connecting" });
+    unsubscribe = onSnapshot(entriesCollection(), { includeMetadataChanges: true }, snapshot => {
       const remoteNotes = snapshot.docs.map(item => fromCloudEntry(item.data(), item.id)).sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
-      callbacks.onRemoteNotes?.(remoteNotes, { bootstrapping });
-      bootstrapping = false;
-    }, () => notify("No se pudo sincronizar Angeli ahora mismo"));
+      callbacks.onRemoteNotes?.(remoteNotes, { fromCache: snapshot.metadata.fromCache, pending: snapshot.metadata.hasPendingWrites });
+      callbacks.onSyncStatus?.({ state: snapshot.metadata.hasPendingWrites ? "pending" : snapshot.metadata.fromCache ? "offline" : "synced" });
+    }, () => callbacks.onSyncStatus?.({ state: "error" }));
   }
 
   async function syncNotes(nextNotes, previousNotes) {
-    if (!user || !db) return false;
+    if (!user || !db) throw new Error("Inicia sesión en Angeli para guardar");
     const before = new Map((previousNotes || []).filter(note => note?.id).map(note => [note.id, note]));
     const after = new Map((nextNotes || []).filter(note => note?.id).map(note => [note.id, note]));
     const operations = [];
     for (const [id, note] of after) {
-      if (!sameEntry(note, before.get(id))) operations.push(setDoc(doc(entriesCollection(), id), toCloudEntry(note), { merge: false }));
+      if (!sameEntry(note, before.get(id))) operations.push(setDoc(doc(entriesCollection(), id), toCloudEntry(note)));
     }
     for (const id of before.keys()) if (!after.has(id)) operations.push(deleteDoc(doc(entriesCollection(), id)));
+    if (operations.length) callbacks.onSyncStatus?.({ state: "pending" });
     if (!operations.length) return true;
     await Promise.all(operations);
     return true;
@@ -190,5 +170,6 @@ function removeUndefined(value) {
 }
 
 function sameEntry(left, right) {
-  return JSON.stringify(removeUndefined(left || {})) === JSON.stringify(removeUndefined(right || {}));
+  const clean = value => { const copy = removeUndefined(value || {}); delete copy.updatedAt; return copy; };
+  return JSON.stringify(clean(left)) === JSON.stringify(clean(right));
 }

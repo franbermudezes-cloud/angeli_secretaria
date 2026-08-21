@@ -12,9 +12,11 @@ from urllib.request import Request, urlopen
 
 CONTACTS = "contacts"
 CALENDAR = "calendar"
+DRIVE = "drive"
 SCOPES = {
-    CONTACTS: "openid email https://www.googleapis.com/auth/contacts.readonly",
-    CALENDAR: "openid email https://www.googleapis.com/auth/calendar.events",
+  CONTACTS: "openid email https://www.googleapis.com/auth/contacts.readonly",
+  CALENDAR: "openid email https://www.googleapis.com/auth/calendar.events",
+  DRIVE: "openid email https://www.googleapis.com/auth/drive.file",
 }
 
 
@@ -101,6 +103,51 @@ class GoogleSessions:
             if status in {401, 403}:
                 raise PermissionError("La autorización de Google ha caducado; conéctala de nuevo") from error
             raise RuntimeError("Google no pudo completar la operación") from error
+
+    def upload_drive_file(self, data: bytes, name: str, mime_type: str, kind: str) -> dict:
+        parent = self._drive_folder(kind)
+        boundary = "angeli-media-boundary"
+        metadata = json.dumps({"name": name, "parents": [parent]}, ensure_ascii=False).encode("utf-8")
+        body = b"\r\n".join([
+            f"--{boundary}".encode(), b"Content-Type: application/json; charset=UTF-8", b"", metadata,
+            f"--{boundary}".encode(), f"Content-Type: {mime_type}".encode(), b"", data,
+            f"--{boundary}--".encode(), b""
+        ])
+        response = self._raw(DRIVE, "POST", "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,mimeType,size,webViewLink", body, f"multipart/related; boundary={boundary}")
+        result = json.loads(response[0].decode("utf-8"))
+        return {"id": result["id"], "driveFileId": result["id"], "name": result.get("name", name), "type": result.get("mimeType", mime_type), "size": int(result.get("size", len(data))), "url": result.get("webViewLink", "")}
+
+    def download_drive_file(self, file_id: str) -> tuple[bytes, str]:
+        return self._raw(DRIVE, "GET", f"https://www.googleapis.com/drive/v3/files/{file_id}?alt=media")
+
+    def delete_drive_file(self, file_id: str) -> None:
+        self._raw(DRIVE, "DELETE", f"https://www.googleapis.com/drive/v3/files/{file_id}")
+
+    def _drive_folder(self, kind: str) -> str:
+        from datetime import datetime
+        now = datetime.now()
+        root = self._find_or_create_folder("Angeli Secretaria", "root")
+        section = self._find_or_create_folder("Fotos" if kind == "image" else "Archivos", root)
+        year = self._find_or_create_folder(str(now.year), section)
+        return self._find_or_create_folder(f"{now.month:02d}", year)
+
+    def _find_or_create_folder(self, name: str, parent: str) -> str:
+        safe_name = name.replace("'", "\\'")
+        query = urlencode({"q": f"name = '{safe_name}' and mimeType = 'application/vnd.google-apps.folder' and '{parent}' in parents and trashed = false", "fields": "files(id)", "pageSize": "1"})
+        found = self.api(DRIVE, "GET", "https://www.googleapis.com/drive/v3/files?" + query).get("files", [])
+        if found: return found[0]["id"]
+        created = self.api(DRIVE, "POST", "https://www.googleapis.com/drive/v3/files", {"name": name, "mimeType": "application/vnd.google-apps.folder", "parents": [parent]})
+        return created["id"]
+
+    def _raw(self, integration: str, method: str, url: str, data: bytes | None = None, content_type: str = "application/json") -> tuple[bytes, str]:
+        request = Request(url, data=data, method=method, headers={"Authorization": f"Bearer {self._access_token(integration)}", "Content-Type": content_type})
+        try:
+            with urlopen(request, timeout=30) as response:
+                return response.read(), response.headers.get_content_type() or "application/octet-stream"
+        except Exception as error:
+            if getattr(error, "code", None) in {401, 403}:
+                raise PermissionError("La autorización de Google ha caducado; conéctala de nuevo") from error
+            raise RuntimeError("Google Drive no pudo completar la operación") from error
 
     @staticmethod
     def _post_form(url: str, values: dict) -> dict:

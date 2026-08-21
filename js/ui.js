@@ -1,5 +1,5 @@
-import { typeLabel } from "./classifier.js?v=0.19.0";
-import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.19.0";
+import { typeLabel } from "./classifier.js?v=0.20.0";
+import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.20.0";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -13,10 +13,16 @@ export function createUI({ getMedia }) {
     toastTimer = setTimeout(() => toast.classList.remove("show"), 2600);
   }
 
-  function setGoogleStatus({ contacts, calendar, app }) {
+  function setGoogleStatus({ contacts, calendar, drive, app }) {
     $("contactsStatus").textContent = contacts;
     $("calendarStatus").textContent = calendar;
+    $("driveStatus").textContent = drive;
     $("aiStatus").textContent = app;
+  }
+
+  function setSyncStatus({ state }) {
+    const labels = { connecting: "Datos: conectando…", pending: "Datos: guardando…", synced: "Datos: sincronizados", offline: "Datos: sin conexión; esperando red", error: "Datos: no se pudieron sincronizar", "signed-out": "Datos: inicia sesión para verlos" };
+    $("syncStatus").textContent = labels[state] || "Datos: comprobando…";
   }
 
   function closeLayers() {
@@ -218,7 +224,7 @@ export function createUI({ getMedia }) {
   function renderCard(note, google) {
     const id = esc(note.id);
     const location = note.location ? '<div class="meta">📍 ' + esc(note.location) + "</div>" : "";
-    const images = (note.images || []).map(imageId => '<img class="thumb" data-image-id="' + esc(imageId) + '" alt="Imagen adjunta">').join("");
+    const images = (note.images || []).map(image => '<img class="thumb" data-image-id="' + esc(typeof image === "string" ? image : image.driveFileId || image.id) + '" alt="Imagen adjunta">').join("");
     const files = (note.files || []).map(file => '<button class="small-btn" data-a="open-file" data-id="' + id + '" data-media-id="' + esc(file.id) + '">📎 ' + esc(file.name) + "</button>").join(" ");
     const attachments = (images ? '<div class="media">' + images + "</div>" : "") + (files ? '<div class="file-line">' + files + "</div>" : "");
     const extra = note.schedule ? scheduleActions(note) : note.type === "calendar" ? calendarActions(note, google) : note.type === "contact" ? contactActions(note, google) : "";
@@ -240,7 +246,7 @@ export function createUI({ getMedia }) {
     $("preview").innerHTML = files.map(file => '<img class="thumb" src="' + URL.createObjectURL(file) + '" alt="Imagen preparada">').join("");
   }
 
-  return { $, notify, setGoogleStatus, render, showImagePreview, showEntryAction, showDraft, updateDraft, showWorking, openModal, openMenu, closeLayers };
+  return { $, notify, setGoogleStatus, setSyncStatus, render, showImagePreview, showEntryAction, showDraft, updateDraft, showWorking, openModal, openMenu, closeLayers };
 }
 
 function esc(value) {

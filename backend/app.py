@@ -18,10 +18,11 @@ from typing import Any, Callable
 from urllib.parse import quote, urlencode
 from zoneinfo import ZoneInfo
 
-from google_sessions import CALENDAR, CONTACTS, GoogleSessions
+from google_sessions import CALENDAR, CONTACTS, DRIVE, GoogleSessions
 
 MAX_TEXT_LENGTH = 500
 MAX_BODY_BYTES = 2_048
+MAX_MEDIA_BYTES = 20 * 1024 * 1024
 REQUEST_TIMEOUT_SECONDS = 8
 RATE_LIMIT_PER_MINUTE = 30
 VALID_INTENTS = {
@@ -166,7 +167,7 @@ def json_response(start_response: Callable, status: str, data: dict[str, Any], o
             [
                 ("Access-Control-Allow-Origin", origin),
                 ("Vary", "Origin"),
-                ("Access-Control-Allow-Headers", "Authorization, Content-Type"),
+                ("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Angeli-Name, X-Angeli-Type, X-Angeli-Kind, X-Angeli-Entry"),
                 ("Access-Control-Allow-Methods", "POST, OPTIONS"),
             ]
         )
@@ -178,7 +179,7 @@ def cors_preflight_response(start_response: Callable, origin: str):
     headers = [
         ("Access-Control-Allow-Origin", origin),
         ("Vary", "Origin"),
-        ("Access-Control-Allow-Headers", "Authorization, Content-Type"),
+        ("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Angeli-Name, X-Angeli-Type, X-Angeli-Kind, X-Angeli-Entry"),
         ("Access-Control-Allow-Methods", "POST, OPTIONS"),
         ("Content-Length", "0"),
     ]
@@ -195,6 +196,10 @@ def log_interpreter_error(category: str, error: Exception) -> None:
     if isinstance(error, TypeError):
         match = re.search(r"unexpected keyword argument ['\"]([^'\"]+)['\"]", str(error))
         detail = f"unexpected_keyword={match.group(1)}" if match else "type_error_without_keyword"
+    elif isinstance(error, OutputValidationError):
+        # El mensaje procede únicamente de validadores internos; nunca contiene
+        # el texto dictado ni la respuesta completa del modelo.
+        detail = str(error)[:120] or "validation_error"
     print(f"interpreter_error category={category} type={type(error).__name__} status={status if status is not None else 'none'} detail={detail}", file=sys.stderr, flush=True)
 
 
@@ -255,7 +260,34 @@ def sessions() -> GoogleSessions:
 
 def session_status() -> dict[str, Any]:
     service = sessions()
-    return {"ai": True, "contacts": service.connected(CONTACTS), "calendar": service.connected(CALENDAR)}
+    return {"ai": True, "contacts": service.connected(CONTACTS), "calendar": service.connected(CALENDAR), "drive": service.connected(DRIVE)}
+
+
+def parse_media_upload(environ: dict[str, Any]) -> tuple[bytes, str, str, str]:
+    length = int(environ.get("CONTENT_LENGTH") or 0)
+    if not 0 < length <= MAX_MEDIA_BYTES:
+        raise ValueError("El archivo debe tener entre 1 byte y 20 MB")
+    name = environ.get("HTTP_X_ANGELI_NAME", "")
+    mime_type = environ.get("HTTP_X_ANGELI_TYPE", "application/octet-stream")
+    kind = environ.get("HTTP_X_ANGELI_KIND", "")
+    if kind not in {"image", "file"} or not name or len(name) > 255 or len(mime_type) > 150:
+        raise ValueError("Datos de archivo no válidos")
+    from urllib.parse import unquote
+    name = unquote(name).replace("/", "_").replace("\\", "_").strip()
+    if not name:
+        raise ValueError("Nombre de archivo no válido")
+    data = environ["wsgi.input"].read(length)
+    if len(data) != length:
+        raise ValueError("No se pudo recibir el archivo completo")
+    return data, name, mime_type, kind
+
+
+def media_response(start_response: Callable, data: bytes, content_type: str, origin: str):
+    headers = [("Content-Type", content_type), ("Content-Length", str(len(data))), ("Content-Disposition", "inline")]
+    if origin:
+        headers.extend([("Access-Control-Allow-Origin", origin), ("Vary", "Origin")])
+    start_response("200 OK", headers)
+    return [data]
 
 
 def persistent_google_action(payload: dict[str, Any]) -> dict[str, Any]:
@@ -331,6 +363,16 @@ def validate_interpretation(raw: Any) -> dict[str, Any]:
     if raw.get("intent") not in VALID_INTENTS or not isinstance(raw.get("confidence"), (int, float)) or not 0 <= raw["confidence"] <= 1:
         raise ValueError("Intención o confianza no válidas")
     result = {field: raw.get(field) for field in ALLOWED_FIELDS}
+    # Gemini puede completar campos auxiliares que no aplican a la intención
+    # solicitada. No dejamos que esos datos inofensivos conviertan una orden
+    # válida de recordatorio en un fallo global de interpretación.
+    if result["intent"] not in {"calendar.update", "calendar.delete"}:
+        result["target"] = None
+    if result["intent"] != "calendar.update":
+        result["changes"] = None
+    if result["intent"] != "calendar.query":
+        result["rangeStart"] = None
+        result["rangeEnd"] = None
     for key in ("title", "location", "contactName", "phone", "notes"):
         value = result[key]
         if value is not None and (not isinstance(value, str) or len(value) > MAX_TEXT_LENGTH):
@@ -427,7 +469,7 @@ def app(environ: dict[str, Any], start_response: Callable):
     if environ.get("REQUEST_METHOD") == "OPTIONS":
         return cors_preflight_response(start_response, origin)
     path = environ.get("PATH_INFO")
-    if environ.get("REQUEST_METHOD") != "POST" or path not in {"/interpret", "/session/status", "/oauth/exchange", "/google"}:
+    if environ.get("REQUEST_METHOD") != "POST" or path not in {"/interpret", "/session/status", "/oauth/exchange", "/google", "/media/upload", "/media/download", "/media/delete"}:
         return json_response(start_response, "404 Not Found", {"error": "No encontrado"}, origin)
     if environ.get("HTTP_ORIGIN") and not origin:
         return json_response(start_response, "403 Forbidden", {"error": "Origen no permitido"})
@@ -439,17 +481,32 @@ def app(environ: dict[str, Any], start_response: Callable):
         if path == "/oauth/exchange":
             oauth_payload = parse_json_body(environ, {"integration", "code", "redirectUri"})
             integration, code, redirect_uri = oauth_payload.get("integration"), oauth_payload.get("code"), oauth_payload.get("redirectUri")
-            if integration not in {CONTACTS, CALENDAR} or not isinstance(code, str) or not isinstance(redirect_uri, str) or redirect_uri not in configured_origins():
+            if integration not in {CONTACTS, CALENDAR, DRIVE} or not isinstance(code, str) or not isinstance(redirect_uri, str) or redirect_uri not in configured_origins():
                 raise ValueError("Autorización no válida")
             return json_response(start_response, "200 OK", sessions().exchange_code(integration, code, redirect_uri), origin)
         if path == "/google":
             return json_response(start_response, "200 OK", persistent_google_action(parse_json_body(environ, {"integration", "action", "query", "event", "eventId", "params"})), origin)
+        if path == "/media/upload":
+            data, name, mime_type, kind = parse_media_upload(environ)
+            return json_response(start_response, "200 OK", sessions().upload_drive_file(data, name, mime_type, kind), origin)
+        if path == "/media/download":
+            payload = parse_json_body(environ, {"fileId"})
+            file_id = payload.get("fileId")
+            if not isinstance(file_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{10,200}", file_id): raise ValueError("Archivo no válido")
+            data, mime_type = sessions().download_drive_file(file_id)
+            return media_response(start_response, data, mime_type, origin)
+        if path == "/media/delete":
+            payload = parse_json_body(environ, {"fileId"})
+            file_id = payload.get("fileId")
+            if not isinstance(file_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{10,200}", file_id): raise ValueError("Archivo no válido")
+            sessions().delete_drive_file(file_id)
+            return json_response(start_response, "200 OK", {"deleted": True}, origin)
         text, now, timezone = parse_request(environ)
         interpreter = _interpreter or vertex_interpret
         try:
             interpretation = validate_interpretation(interpreter(text, now, timezone))
         except ValueError as error:
-            raise OutputValidationError from error
+            raise OutputValidationError(str(error)) from error
         return json_response(start_response, "200 OK", interpretation, origin)
     except PermissionError:
         return json_response(start_response, "401 Unauthorized", {"error": "No autorizado"}, origin)

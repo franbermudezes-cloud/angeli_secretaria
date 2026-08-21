@@ -133,6 +133,29 @@ class InterpretEndpointTests(unittest.TestCase):
         self.assertEqual(data["date"], "2026-08-21")
         self.assertEqual(data["time"], "21:00")
 
+    def test_ignores_irrelevant_calendar_fields_on_a_reminder(self):
+        app.set_test_dependencies(
+            lambda text, now, timezone: {
+                "intent": "reminder.create",
+                "confidence": 0.93,
+                "title": "Llamar a Monse",
+                "date": "2026-08-22",
+                "time": "13:00",
+                "target": {"title": "Dato no aplicable", "date": None, "time": None},
+                "changes": {"location": "Dato no aplicable"},
+                "rangeStart": "2026-08-22",
+                "rangeEnd": "2026-08-23",
+            }
+        )
+        status, data = app.wsgi_request(
+            {"text": "Recuérdame mañana a la una llamar a Monse", "now": "2026-08-21T14:00:00+02:00", "timeZone": "Europe/Madrid"}
+        )
+        self.assertEqual(status, "200 OK")
+        self.assertEqual(data["intent"], "reminder.create")
+        self.assertIsNone(data["target"])
+        self.assertIsNone(data["changes"])
+        self.assertIsNone(data["rangeStart"])
+
     def test_rejects_unapproved_identity(self):
         os.environ.pop("ANGELI_AI_DEV_BYPASS_AUTH", None)
         os.environ["ALLOWED_FIREBASE_EMAILS"] = "owner@example.com"
@@ -218,6 +241,39 @@ class InterpretEndpointTests(unittest.TestCase):
         os.environ.pop("ALLOWED_FIREBASE_EMAILS", None)
         os.environ.pop("ALLOWED_ORIGINS", None)
 
+    def test_drive_upload_and_download_use_persistent_drive_grant(self):
+        class FakeSessions:
+            def upload_drive_file(self, data, name, mime_type, kind):
+                self.upload = (data, name, mime_type, kind)
+                return {"id": "drive-file-123", "driveFileId": "drive-file-123", "name": name, "type": mime_type, "size": len(data), "url": ""}
+
+            def download_drive_file(self, file_id):
+                self.download = file_id
+                return b"test-file", "text/plain"
+
+            def delete_drive_file(self, file_id):
+                self.deleted = file_id
+
+        service = FakeSessions()
+        app.set_test_dependencies(
+            lambda text, now, timezone: VALID_RESPONSE.copy(),
+            lambda token: {"uid": "approved-sub", "email": "owner@example.com", "email_verified": True},
+            lambda: service,
+        )
+        os.environ.pop("ANGELI_AI_DEV_BYPASS_AUTH", None)
+        os.environ["ALLOWED_FIREBASE_EMAILS"] = "owner@example.com"
+        status, data = request_raw("/media/upload", b"photo", "Bearer test", {"HTTP_X_ANGELI_NAME": "foto.jpg", "HTTP_X_ANGELI_TYPE": "image/jpeg", "HTTP_X_ANGELI_KIND": "image"})
+        self.assertEqual(status, "200 OK")
+        self.assertEqual(data["driveFileId"], "drive-file-123")
+        self.assertEqual(service.upload, (b"photo", "foto.jpg", "image/jpeg", "image"))
+        status, body = request_raw("/media/download", b'{"fileId":"drive-file-123"}', "Bearer test")
+        self.assertEqual(status, "200 OK")
+        self.assertEqual(body, b"test-file")
+        status, data = request_path("/media/delete", {"fileId": "drive-file-123"}, "Bearer test")
+        self.assertEqual(status, "200 OK")
+        self.assertEqual(service.deleted, "drive-file-123")
+        os.environ.pop("ALLOWED_FIREBASE_EMAILS", None)
+
 
 def request_path(path, payload, authorization="", origin=""):
     body = __import__("json").dumps(payload).encode("utf-8")
@@ -228,6 +284,16 @@ def request_path(path, payload, authorization="", origin=""):
 
     response = b"".join(app.app({"REQUEST_METHOD": "POST", "PATH_INFO": path, "CONTENT_LENGTH": str(len(body)), "wsgi.input": BytesIO(body), "HTTP_AUTHORIZATION": authorization, "HTTP_ORIGIN": origin}, start_response))
     return captured["status"], __import__("json").loads(response)
+
+
+def request_raw(path, body, authorization="", extra=None):
+    captured = {}
+    def start_response(status, headers): captured["status"] = status
+    environ = {"REQUEST_METHOD": "POST", "PATH_INFO": path, "CONTENT_LENGTH": str(len(body)), "wsgi.input": BytesIO(body), "HTTP_AUTHORIZATION": authorization}
+    environ.update(extra or {})
+    response = b"".join(app.app(environ, start_response))
+    try: return captured["status"], __import__("json").loads(response)
+    except __import__("json").JSONDecodeError: return captured["status"], response
 
 
 if __name__ == "__main__":

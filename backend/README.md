@@ -6,12 +6,13 @@ guarda refresh tokens.
 
 Además ofrece, siempre tras comprobar un ID token de Firebase del propietario:
 
-- `POST /session/status`: estado de las vinculaciones de Contactos y Calendar.
+- `POST /session/status`: estado de las vinculaciones de Contactos, Calendar y Drive.
 - `POST /oauth/exchange`: intercambia un código OAuth; los refresh tokens de
-  Contactos y Calendar se guardan exclusivamente en Secret Manager.
+  Contactos, Calendar y Drive se guardan exclusivamente en Secret Manager.
 - `POST /google`: consulta acotada de Contactos y operaciones de Calendar.
+- `POST /media/upload`, `/media/download` y `/media/delete`: adjuntos de Angeli en Drive.
 
-No accede a Drive, no escribe en Sheets y no descarga la agenda completa.
+No escribe en Sheets ni descarga la agenda completa. Cuando la persona propietaria conecta Drive, recibe y sirve únicamente los adjuntos creados por Angeli mediante `drive.file`; no analiza el resto de Mi unidad.
 
 ## Producción en Cloud Run
 
@@ -23,6 +24,7 @@ necesita `roles/secretmanager.secretAccessor` y
 - `angeli-oauth-client-secret`
 - `angeli-google-contacts-grant`
 - `angeli-google-calendar-grant`
+- `angeli-google-drive-grant`
 
 El SDK obtiene Application Default Credentials de la identidad del servicio;
 no se usan API keys ni archivos JSON de cuentas de servicio.
@@ -43,8 +45,13 @@ llamar a Vertex AI o a una integración Google.
 
 Firebase Auth mantiene la sesión de Angeli en el navegador. Firestore contiene
 las entradas compartidas entre dispositivos; Secret Manager conserva solo las
-autorizaciones de Contactos y Calendar, que pueden pertenecer a cuentas
+autorizaciones de Contactos, Calendar y Drive, que pueden pertenecer a cuentas
 distintas de la cuenta propietaria de Angeli.
+
+Los medios se envían directamente desde la PWA al servicio y se crean con
+`drive.file` dentro de `Angeli Secretaria/Fotos/<año>/<mes>` o
+`Angeli Secretaria/Archivos/<año>/<mes>`. El límite actual por adjunto es de
+20 MB; la entrada en Firestore guarda únicamente metadatos y el ID de Drive.
 
 ## Desarrollo local y pruebas
 

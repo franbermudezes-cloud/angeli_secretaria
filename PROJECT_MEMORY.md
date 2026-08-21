@@ -22,7 +22,9 @@ Regla permanente de versionado: cada commit funcional incrementa la versión vis
 | `styles.css` | Estilos de la interfaz. Debe contener los cambios visuales; evitar bloques CSS grandes dentro de `index.html`. |
 | `js/app.js` | Inicialización, estado mínimo, coordinación y eventos. |
 | `js/ui.js` | Renderizado de bandeja, tarjetas, estados visuales, previsualizaciones y avisos. |
-| `js/storage.js` | `localStorage`, IndexedDB, medios, migración y limpieza. |
+| `js/firebase.js` | Sesión persistente de Angeli y lectura/escritura de entradas en Cloud Firestore. |
+| `js/media.js` | Subida, lectura y borrado autenticado de adjuntos en Google Drive. |
+| `js/storage.js` | Preferencias ligeras y limpieza de caché heredada; no es fuente de verdad. |
 | `js/classifier.js` | Tipos, prioridades, teléfonos y datos derivados de la clasificación. |
 | `js/temporal.js` | Detección temporal actual, sin reglas de negocio adicionales. |
 | `js/ai.js` | Interpretación estructurada, proveedor intercambiable, validación y fallback. |
@@ -43,9 +45,8 @@ La arquitectura visual se separó en V0.12.3 y la lógica se modularizó en V0.1
 - Bandeja de entrada de notas: crear, buscar, filtrar por pendiente/hecha, completar, reabrir y borrar.
 - Clasificación local automática de entradas por tipo: nota, tarea, recordatorio, calendario, contacto, foto o archivo.
 - Acciones contextuales: llamada por `tel:` cuando se detecta teléfono, estados visuales de tarea/recordatorio y creación confirmada de eventos en Google Calendar.
-- Persistencia de las entradas en `localStorage` con la clave `angeli_secretaria_notes_v5`.
-- Firebase Auth y Cloud Firestore están preparados como sustitución de la fuente local de entradas: Firebase mantiene una sesión persistente de la cuenta propietaria y Firestore sincroniza las entradas entre móvil y escritorio. Pendiente de desplegar y validar esta migración como V0.19.
-- Captura de cámara, selección de imágenes y selección de archivos. Imágenes y archivos se guardan localmente como blobs en IndexedDB.
+- Firebase Auth mantiene una sesión persistente de la cuenta propietaria y Cloud Firestore es la única fuente de verdad compartida de las entradas entre móvil y escritorio.
+- Captura de cámara, selección de imágenes y selección de archivos. Las imágenes y archivos nuevos se guardan como ficheros en Google Drive y las entradas solo conservan sus referencias ligeras.
 - Dictado en español mediante `SpeechRecognition` o `webkitSpeechRecognition`.
 - Envío de datos de la entrada a un endpoint de Google Apps Script/Google Sheets.
 - Consulta opcional de contactos por nombre mediante Google Identity Services OAuth y People API; solicita exclusivamente `contacts.readonly` cuando la persona usuaria pulsa `🔗 Conectar Google`.
@@ -57,9 +58,9 @@ La arquitectura visual se separó en V0.12.3 y la lógica se modularizó en V0.1
 - Es una aplicación estática de un solo documento: no hay backend propio ni bundler.
 - La integración con Google usa `fetch` con `mode: "no-cors"`. Esto no permite al navegador verificar la respuesta del servidor; el aviso de éxito indica que la petición se inició, no que Google confirmó el almacenamiento.
 - El dictado depende del soporte del navegador y de los permisos de micrófono. La página `prueba-microfono.html` sirve para aislar ese diagnóstico.
-- Las notas se mantienen en `localStorage`; los blobs de imágenes y archivos se guardan en IndexedDB, base `angeli_secretaria_media`, almacenes `images` y `files`.
-- Las notas solo conservan IDs de imágenes y referencias ligeras de archivos. Las imágenes Data URL heredadas se migran al iniciar tras confirmar su copia en IndexedDB.
-- Los archivos no se suben a Google desde la aplicación actual; se conservan localmente en IndexedDB y pueden abrirse desde la entrada.
+- No se migran los datos locales históricos: el usuario confirmó que son únicamente pruebas. La aplicación no los lee ni los reintroduce en Firestore.
+- Firestore conserva texto, estado, metadatos de acciones y referencias de medios; Drive conserva los bytes de imágenes y archivos. La caché técnica del navegador se puede borrar sin afectar a los datos remotos.
+- Drive se conecta de manera independiente mediante `drive.file`, por lo que puede usar una cuenta distinta de la cuenta Angeli, Contactos o Calendar. La PWA nunca recibe ni conserva el refresh token.
 - Google Contacts no utiliza el endpoint público de Apps Script. El Client ID web es público por diseño; los tokens de acceso y las coincidencias de contactos permanecen únicamente en memoria y no se guardan en GitHub, `localStorage` ni IndexedDB.
 - Google Calendar tampoco utiliza el endpoint público de Apps Script. Su token de acceso permanece únicamente en memoria. Las notas de calendario conservan `calendarStatus`, `calendarEventId`, `calendarUrl` y, cuando se detecta, `location`; nunca el token.
 - Contactos y Calendar se conectan por separado porque pueden pertenecer a cuentas distintas. La interfaz muestra el estado de cada integración solo durante la sesión, permite elegir o cambiar cuenta por separado y permite desconectar la sesión local sin revocar permisos en Google.
@@ -80,6 +81,10 @@ La arquitectura visual se separó en V0.12.3 y la lógica se modularizó en V0.1
 ## Registro de decisiones y soluciones
 
 Añadir aquí, con fecha, el contexto, la decisión tomada, los archivos implicados y cómo se verificó. No sustituir decisiones anteriores sin explicar el motivo del cambio.
+
+### 2026-08-21 — V0.20 · Datos y Drive pendiente de validación
+
+Se sustituye el modelo híbrido de pruebas por una arquitectura única: Firestore es la fuente de verdad de todas las entradas y Google Drive conserva los bytes de fotos y archivos. La PWA no lee, migra ni mezcla `localStorage` o IndexedDB heredados porque el usuario confirmó que todos los datos previos son pruebas. Las entradas remotas guardan únicamente los metadatos y las referencias de Drive; los medios nuevos se organizan en `Angeli Secretaria/Fotos/<año>/<mes>` y `Angeli Secretaria/Archivos/<año>/<mes>`. La autorización `drive.file` se conserva como refresh token solo en Secret Manager, separada de Angeli, Contactos y Calendar. Antes de tratar esta versión como estable hay que desplegar Cloud Run y comprobar foto, archivo, lectura, persistencia, sincronización móvil-escritorio y borrado.
 
 ### 2026-08-20 — Validación estable V0.10
 

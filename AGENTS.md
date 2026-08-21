@@ -16,7 +16,8 @@
 - `styles.css` contiene todos los estilos de la interfaz. No añadir bloques CSS grandes a `index.html`; mantener los cambios visuales en esta hoja de estilos.
 - `js/app.js` inicializa la aplicación y coordina el estado y los eventos principales.
 - `js/ui.js` contiene el renderizado, tarjetas, estados visuales, previsualizaciones y mensajes.
-- `js/storage.js` concentra `localStorage`, IndexedDB, medios, migraciones y limpieza.
+- `js/firebase.js` contiene la sesión de Angeli y Firestore, única fuente de verdad de las entradas compartidas.
+- `js/media.js` concentra los adjuntos remotos en Google Drive; `js/storage.js` queda limitado a preferencias y limpieza de caché heredada, nunca como fuente de verdad.
 - `js/classifier.js` concentra clasificación, teléfonos y prioridades; `js/temporal.js` contiene únicamente las utilidades de fecha y hora.
 - `js/ai.js` interpreta texto mediante un proveedor intercambiable y valida una lista cerrada de intenciones; `js/intents.js` convierte esas intenciones en propuestas sin efectos externos.
 - `js/google.js` contiene OAuth, Contacts y Calendar; `js/sheets.js` contiene exclusivamente el envío existente a Apps Script/Google Sheets.
