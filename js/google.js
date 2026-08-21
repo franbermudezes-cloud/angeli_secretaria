@@ -1,5 +1,5 @@
-import { cleanTemporalText } from "./temporal.js?v=0.20.7";
-import { scheduleTitle } from "./schedule.js?v=0.20.7";
+import { cleanTemporalText } from "./temporal.js?v=0.20.8";
+import { scheduleTitle } from "./schedule.js?v=0.20.8";
 
 const CLIENT_ID = "172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
@@ -7,6 +7,7 @@ const SCOPES = {
   identity: "openid email",
   contacts: "https://www.googleapis.com/auth/contacts.readonly",
   calendar: "https://www.googleapis.com/auth/calendar.events",
+  drive: "https://www.googleapis.com/auth/drive.file",
 };
 const CALENDAR_SEARCH_INTENTS = new Set(["calendar.query", "calendar.update", "calendar.delete"]);
 
@@ -28,7 +29,7 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
       app: identityText,
       contacts: links.contacts ? "Contactos conectados de forma permanente" : signedIn() ? "Contactos: pendiente de conectar" : "Inicia sesión en Angeli primero",
       calendar: links.calendar ? "Calendario conectado de forma permanente" : signedIn() ? "Calendario: pendiente de conectar" : "Inicia sesión en Angeli primero",
-      drive: links.drive ? "Drive listo en el servidor" : signedIn() ? "Drive: falta configurar sus carpetas" : "Inicia sesión en Angeli primero"
+      drive: links.drive ? "Drive conectado de forma permanente" : signedIn() ? "Drive: pendiente de conectar" : "Inicia sesión en Angeli primero"
     });
   }
 
@@ -85,7 +86,17 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
     try {
       const code = await requestCode(kind);
       await request("/oauth/exchange", { integration: kind, code, redirectUri: location.origin });
-      links = { ...links, [kind]: true };
+      if (kind === "drive") {
+        await syncLinks();
+        if (!links.drive) {
+          notify("Drive necesita sus carpetas fijas configuradas");
+          return false;
+        }
+      } else {
+        // Contactos y Calendar conservan su flujo ya validado: el estado
+        // visual inmediato no depende de una segunda petición al servidor.
+        links = { ...links, [kind]: true };
+      }
       updateStatus();
       notify(`${kind === "contacts" ? "Contactos" : kind === "calendar" ? "Calendario" : "Drive"} conectado de forma permanente`);
       return true;
@@ -100,8 +111,8 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
   async function connectDrive() {
     await syncLinks();
     if (links.drive) notify("Drive está listo: fotos y archivos irán a sus carpetas fijas");
-    else notify("Drive no tiene configuradas sus carpetas de destino");
-    return links.drive;
+    else return connectPersistent("drive");
+    return true;
   }
   async function ensureDrive() { return links.drive || connectDrive(); }
 
@@ -128,7 +139,7 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
   }
 
   function disconnectDrive() {
-    notify("Drive usa las carpetas compartidas del servidor");
+    notify("Drive sigue vinculado de forma segura en Google Cloud");
     refresh();
   }
 

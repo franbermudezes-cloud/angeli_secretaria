@@ -16,6 +16,8 @@ DRIVE = "drive"
 SCOPES = {
   CONTACTS: "openid email https://www.googleapis.com/auth/contacts.readonly",
   CALENDAR: "openid email https://www.googleapis.com/auth/calendar.events",
+  # Solo los archivos que crea Angeli; no concede acceso a todo Mi unidad.
+  DRIVE: "openid email https://www.googleapis.com/auth/drive.file",
 }
 
 
@@ -54,7 +56,10 @@ class GoogleSessions:
 
     def connected(self, integration: str) -> bool:
         if integration == DRIVE:
-            return self.drive_configured()
+            # Las carpetas por sí solas no bastan: una cuenta de servicio no
+            # tiene cuota de Drive. Los adjuntos deben crearse con el Gmail
+            # que autorizó Drive y que sí posee almacenamiento.
+            return self.drive_configured() and bool(self._read_secret(self._secret_name(DRIVE)))
         return bool(self._read_secret(self._secret_name(integration)))
 
     @staticmethod
@@ -136,28 +141,17 @@ class GoogleSessions:
             raise RuntimeError("Drive no tiene una carpeta de destino configurada")
         return folder_id
 
-    @staticmethod
-    def _drive_access_token() -> str:
-        """Token de la cuenta de servicio de Cloud Run, compartida en la raíz."""
-        import google.auth
-        from google.auth.transport.requests import Request as GoogleRequest
-
-        credentials, _ = google.auth.default()
-        if hasattr(credentials, "with_scopes"):
-            credentials = credentials.with_scopes(["https://www.googleapis.com/auth/drive"])
-        credentials.refresh(GoogleRequest())
-        if not credentials.token:
-            raise RuntimeError("No se pudo identificar la cuenta de servicio ante Drive")
-        return credentials.token
-
     def _drive_raw(self, method: str, url: str, data: bytes | None = None, content_type: str = "application/json") -> tuple[bytes, str]:
-        request = Request(url, data=data, method=method, headers={"Authorization": f"Bearer {self._drive_access_token()}", "Content-Type": content_type})
+        # Drive actúa con la autorización OAuth persistente del propietario,
+        # igual que n8n, para que los ficheros consuman su cuota y no la
+        # inexistente cuota de la cuenta de servicio de Cloud Run.
+        request = Request(url, data=data, method=method, headers={"Authorization": f"Bearer {self._access_token(DRIVE)}", "Content-Type": content_type})
         try:
             with urlopen(request, timeout=30) as response:
                 return response.read(), response.headers.get_content_type() or "application/octet-stream"
         except Exception as error:
             if getattr(error, "code", None) in {401, 403}:
-                raise PermissionError("La cuenta de servicio no puede acceder a esa carpeta de Drive") from error
+                raise PermissionError("La autorización de Drive no puede escribir en la carpeta configurada") from error
             raise RuntimeError("Google Drive no pudo completar la operación") from error
 
     def _raw(self, integration: str, method: str, url: str, data: bytes | None = None, content_type: str = "application/json") -> tuple[bytes, str]:

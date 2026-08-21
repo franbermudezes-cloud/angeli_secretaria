@@ -21,6 +21,18 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.20.8] - 2026-08-21
+
+### Fixed
+
+- Las fotos y archivos dejan de crearse con la cuenta de servicio de Cloud Run, que Google no permite usar como propietaria de archivos en Mi unidad por no tener cuota. Drive se vincula ahora, de forma independiente y persistente, con el Gmail que posee las carpetas.
+- La vinculación de Drive solicita únicamente `drive.file`: Angeli puede crear, leer y borrar los adjuntos que ella misma genera, sin acceder al resto de Mi unidad.
+
+### Changed
+
+- Drive deja de considerarse listo solo por tener IDs de carpetas; requiere tanto las rutas fijas como la autorización OAuth persistente de Drive.
+- Identificación visible y caché PWA actualizadas a `V0.20.8 · Drive`.
+
 ## [0.20.7] - 2026-08-21
 
 ### Added

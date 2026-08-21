@@ -277,7 +277,7 @@ class InterpretEndpointTests(unittest.TestCase):
     def test_media_distinguishes_angeli_session_from_drive_access(self):
         class DriveDenied:
             def upload_drive_file(self, data, name, mime_type, kind):
-                raise PermissionError("La cuenta de servicio no puede acceder a esa carpeta de Drive")
+                raise PermissionError("La autorización de Drive no puede escribir en la carpeta configurada")
 
         os.environ.pop("ANGELI_AI_DEV_BYPASS_AUTH", None)
         os.environ["ALLOWED_FIREBASE_EMAILS"] = "owner@example.com"
@@ -289,7 +289,7 @@ class InterpretEndpointTests(unittest.TestCase):
         extra = {"HTTP_X_ANGELI_NAME": "foto.jpg", "HTTP_X_ANGELI_TYPE": "image/jpeg", "HTTP_X_ANGELI_KIND": "image"}
         status, data = request_raw("/media/upload", b"photo", "Bearer test", extra)
         self.assertEqual(status, "401 Unauthorized")
-        self.assertEqual(data["error"], "Drive no puede escribir en la carpeta configurada")
+        self.assertEqual(data["error"], "Drive no está autorizado para escribir en la carpeta configurada")
         app.set_test_dependencies(
             lambda text, now, timezone: VALID_RESPONSE.copy(),
             lambda token: {"uid": "other-sub", "email": "other@example.com", "email_verified": True},
@@ -306,6 +306,8 @@ class InterpretEndpointTests(unittest.TestCase):
         os.environ["ANGELI_DRIVE_FILES_FOLDER_ID"] = "files-folder-id"
         service = GoogleSessions("angeli-secretaria", "client-id")
         self.assertTrue(service.drive_configured())
+        service._read_secret = lambda name: "grant" if name == "angeli-google-drive-grant" else None
+        self.assertTrue(service.connected("drive"))
         self.assertEqual(service._drive_folder("image"), "images-folder-id")
         self.assertEqual(service._drive_folder("file"), "files-folder-id")
         os.environ.pop("ANGELI_DRIVE_IMAGES_FOLDER_ID", None)

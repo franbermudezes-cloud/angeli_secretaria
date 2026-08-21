@@ -18,7 +18,7 @@ from typing import Any, Callable
 from urllib.parse import quote, urlencode
 from zoneinfo import ZoneInfo
 
-from google_sessions import CALENDAR, CONTACTS, GoogleSessions
+from google_sessions import CALENDAR, CONTACTS, DRIVE, GoogleSessions
 
 MAX_TEXT_LENGTH = 500
 MAX_BODY_BYTES = 2_048
@@ -260,7 +260,7 @@ def sessions() -> GoogleSessions:
 
 def session_status() -> dict[str, Any]:
     service = sessions()
-    return {"ai": True, "contacts": service.connected(CONTACTS), "calendar": service.connected(CALENDAR), "drive": service.drive_configured()}
+    return {"ai": True, "contacts": service.connected(CONTACTS), "calendar": service.connected(CALENDAR), "drive": service.connected(DRIVE)}
 
 
 def parse_media_upload(environ: dict[str, Any]) -> tuple[bytes, str, str, str]:
@@ -489,7 +489,7 @@ def app(environ: dict[str, Any], start_response: Callable):
         if path == "/oauth/exchange":
             oauth_payload = parse_json_body(environ, {"integration", "code", "redirectUri"})
             integration, code, redirect_uri = oauth_payload.get("integration"), oauth_payload.get("code"), oauth_payload.get("redirectUri")
-            if integration not in {CONTACTS, CALENDAR} or not isinstance(code, str) or not isinstance(redirect_uri, str) or redirect_uri not in configured_origins():
+            if integration not in {CONTACTS, CALENDAR, DRIVE} or not isinstance(code, str) or not isinstance(redirect_uri, str) or redirect_uri not in configured_origins():
                 raise ValueError("Autorización no válida")
             return json_response(start_response, "200 OK", sessions().exchange_code(integration, code, redirect_uri), origin)
         if path == "/google":
@@ -500,7 +500,7 @@ def app(environ: dict[str, Any], start_response: Callable):
                 return json_response(start_response, "200 OK", sessions().upload_drive_file(data, name, mime_type, kind), origin)
             except PermissionError as error:
                 print(f"media_drive_error path={path} reason={str(error)}", file=sys.stderr, flush=True)
-                return json_response(start_response, "401 Unauthorized", {"error": "Drive no puede escribir en la carpeta configurada"}, origin)
+                return json_response(start_response, "401 Unauthorized", {"error": "Drive no está autorizado para escribir en la carpeta configurada"}, origin)
         if path == "/media/download":
             payload = parse_json_body(environ, {"fileId"})
             file_id = payload.get("fileId")
