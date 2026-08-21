@@ -157,3 +157,7 @@ Durante la primera prueba de V0.16 se publicó una plantilla HTML sin cerrar den
 ### 2026-08-21 — V0.16.5 · Flujo operativo pendiente de validación
 
 La tarjeta emergente deja de ser un aviso breve y pasa a ser el espacio de trabajo: muestra el borrador completo al dictar o escribir, y permanece hasta enviar o cancelar. El micrófono grande no se oculta después de una entrada. Para `contact.call`, la tarjeta mantiene la búsqueda abierta; si Contactos no está conectado, inicia la autorización bajo una acción explícita de la persona y, al volver, muestra los teléfonos encontrados para abrir el marcador. El historial inferior conserva los registros, pero no es el lugar donde se debe completar una acción inmediata. Calendar recibe la confirmación desde la tarjeta, por lo que no debe mostrar una segunda confirmación nativa. Pendiente de validación manual completa en Android.
+
+### 2026-08-21 — V0.16.6 · Compositor y acceso de llamada pendientes de validación
+
+El compositor inferior concentra los controles en dos columnas verticales para priorizar el texto: adjuntar/dictar a la izquierda y enviar/borrar a la derecha. El acceso directo de llamada no debe enviar solo el nombre a la IA: abre el borrador con el prefijo `Llama a ` e inicia dictado, de modo que «Montse» forme la instrucción completa `Llama a Montse`. Pendiente de comprobar en Android, incluida la conexión automática de Contactos y la selección final de teléfono en la tarjeta.

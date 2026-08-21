@@ -1,4 +1,4 @@
-import { typeLabel } from "./classifier.js?v=0.16.5";
+import { typeLabel } from "./classifier.js?v=0.16.6";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);

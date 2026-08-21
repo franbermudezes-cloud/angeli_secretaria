@@ -1,17 +1,17 @@
-import{MEDIA_STORES,readNotes,writeNotes,clearNotes,migrateLegacyImages,putMedia,getMedia,deleteMedia,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.16.5";
-import{classify,actionData}from"./classifier.js?v=0.16.5";
-import{sendEntry}from"./sheets.js?v=0.16.5";
-import{createUI}from"./ui.js?v=0.16.5";
-import{createGoogleIntegration}from"./google.js?v=0.16.5";
-import{interpret,remoteProvider}from"./ai.js?v=0.16.5";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.16.5";
-import{calendarQueryRange}from"./temporal.js?v=0.16.5";
+import{MEDIA_STORES,readNotes,writeNotes,clearNotes,migrateLegacyImages,putMedia,getMedia,deleteMedia,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.16.6";
+import{classify,actionData}from"./classifier.js?v=0.16.6";
+import{sendEntry}from"./sheets.js?v=0.16.6";
+import{createUI}from"./ui.js?v=0.16.6";
+import{createGoogleIntegration}from"./google.js?v=0.16.6";
+import{interpret,remoteProvider}from"./ai.js?v=0.16.6";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.16.6";
+import{calendarQueryRange}from"./temporal.js?v=0.16.6";
 
 const ui=createUI({getMedia:(store,id)=>getMedia(store,id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],selectedFilter="all",selectedType="all",shortcutCapture=false;
 const DEFAULT_SHORTCUTS=[
  {label:"🗓️ Hoy",command:"¿Qué tengo hoy?"},{label:"🗓️ Próxima semana",command:"¿Qué tengo la semana que viene?"},
- {label:"📞 Llamar contacto",prompt:"¿A quién quieres llamar?"},{label:"＋ Nuevo evento",prompt:"Cuéntame el evento: fecha, hora y lugar."},
+ {label:"📞 Llamar contacto",prompt:"Di el nombre del contacto.",prefix:"Llama a ",dictate:true},{label:"＋ Nuevo evento",prompt:"Cuéntame el evento: fecha, hora y lugar."},
  {label:"⏰ Recordatorio",prompt:"¿Qué quieres que te recuerde y cuándo?"},{label:"✕ Cancelar evento",prompt:"¿Qué evento quieres cancelar?"}
 ];
 let shortcuts=readShortcuts()||DEFAULT_SHORTCUTS;
@@ -19,7 +19,7 @@ function render(){ui.render({notes,selectedFilter,selectedType,google})}
 function autosize(){const text=$("text");text.style.height="auto";text.style.height=Math.min(text.scrollHeight,78)+"px"}
 function renderShortcuts(){$("shortcuts").innerHTML=shortcuts.map((shortcut,index)=>`<button class="shortcut" data-shortcut="${index}">${esc(shortcut.label)}</button>`).join("")+`<button class="shortcut add" id="shortcutAdd" aria-label="Crear acceso directo">＋</button>`}
 function saveShortcuts(){writeShortcuts(shortcuts);renderShortcuts()}
-function prepareShortcut(shortcut){if(shortcut.command){$("text").value=shortcut.command;autosize();add();return}$("text").value="";$("text").placeholder=shortcut.prompt||"Escribe o dicta tu instrucción…";autosize();$("text").focus();ui.notify(shortcut.prompt||"Completa la instrucción y pulsa Enviar")}
+function prepareShortcut(shortcut){if(shortcut.command){$("text").value=shortcut.command;autosize();add();return}const legacyCall=shortcut.label==="📞 Llamar contacto"?"Llama a ":"",prefix=shortcut.prefix||legacyCall;$("text").value=prefix;$("text").placeholder=shortcut.prompt||"Escribe o dicta tu instrucción…";autosize();openDraft();if(shortcut.dictate||legacyCall)setTimeout(start,120);else ui.notify(shortcut.prompt||"Completa la instrucción y pulsa Enviar")}
 function createShortcut(initial=""){const command=prompt("Escribe la orden que ejecutará Angeli.",initial);if(!command?.trim())return;const label=prompt("Nombre corto para el acceso directo.",command.trim().slice(0,24));if(!label?.trim())return;shortcuts.push({label:label.trim(),command:command.trim()});saveShortcuts();ui.notify("Acceso directo creado")}
 function editShortcuts(){if(!shortcuts.length){ui.notify("No hay accesos para editar");return}const choices=shortcuts.map((shortcut,index)=>`${index+1}. ${shortcut.label}`).join("\n"),value=prompt(`Indica el número del acceso que quieres eliminar:\n${choices}`);const index=Number(value)-1;if(!Number.isInteger(index)||!shortcuts[index])return;shortcuts.splice(index,1);saveShortcuts();ui.notify("Acceso directo eliminado")}
 function scrollConversation(){requestAnimationFrame(()=>$("mainContent").scrollTo({top:$("mainContent").scrollHeight,behavior:"smooth"}))}
@@ -64,7 +64,7 @@ document.querySelectorAll(".filter").forEach(button=>button.onclick=()=>{selecte
 $("shortcuts").onclick=event=>{const button=event.target.closest("button");if(!button)return;if(button.id==="shortcutAdd"){createShortcut();return}const shortcut=shortcuts[Number(button.dataset.shortcut)];if(shortcut)prepareShortcut(shortcut)};
 async function handleEntryAction(event){const button=event.target.closest("button");if(!button)return;const note=notes.find(item=>item.id===button.dataset.id);if(!note)return;if(button.dataset.a==="show-action"){ui.showEntryAction(note,google);return}if(button.dataset.a==="calendar"){ui.showWorking("Añadiendo al calendario","Angeli está creando el evento…","");await google.createCalendarEvent(note,{confirmed:true});ui.showEntryAction(notes.find(item=>item.id===note.id)||note,google);return}if(button.dataset.a==="search-calendar"){ui.showWorking("Buscando en Calendar","Angeli está revisando tus eventos…","");await google.searchCalendar(note);ui.showEntryAction(note,google);return}if(button.dataset.a==="calendar-delete"){await google.deleteCalendarEvent(note,button.dataset.eventId);ui.showEntryAction(notes.find(item=>item.id===note.id)||note,google);return}if(button.dataset.a==="calendar-update"){await google.updateCalendarEvent(note,button.dataset.eventId);ui.showEntryAction(notes.find(item=>item.id===note.id)||note,google);return}if(button.dataset.a==="call"){ui.closeLayers();window.location.href=`tel:${button.dataset.phone}`;return}if(button.dataset.a==="search-contact"){ui.showWorking("Buscando contacto","Angeli está buscando a "+(note.contactQuery||"ese contacto")+"…","");await google.searchContact(note);ui.showEntryAction(note,google);return}if(button.dataset.a==="open-file"){try{const media=await getMedia(MEDIA_STORES.files,button.dataset.mediaId);if(!media)throw new Error();const url=URL.createObjectURL(media.blob);window.open(url,"_blank");setTimeout(()=>URL.revokeObjectURL(url),60000)}catch(e){ui.notify("No se pudo abrir el archivo")}return}if(button.dataset.a==="toggle"){note.status=note.status==="done"?"pending":"done";save();return}if(button.dataset.a==="delete"){const nextNotes=notes.filter(item=>item.id!==note.id);if(!save(nextNotes))return;google.clearContactResult(note.id);try{for(const id of note.images||[])await deleteMedia(MEDIA_STORES.images,id);for(const file of note.files||[])if(file.id)await deleteMedia(MEDIA_STORES.files,file.id)}catch(e){ui.notify("La entrada se borró, pero quedó algún medio sin eliminar")}}}
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.16.5",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.16.6",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 function esc(value){return String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[char]))}

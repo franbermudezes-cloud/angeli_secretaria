@@ -4,6 +4,13 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.16.6] - 2026-08-21
+
+### Changed
+
+- El compositor inferior usa dos columnas verticales de iconos: adjuntar/dictar a la izquierda y enviar/borrar borrador a la derecha, liberando el espacio central para el texto.
+- El acceso directo `Llamar contacto` inicia el borrador con `Llama a ` y el dictado, para que el nombre pronunciado complete una orden de contacto en vez de crear una nota.
+
 ## [0.16.5] - 2026-08-21
 
 ### Changed
