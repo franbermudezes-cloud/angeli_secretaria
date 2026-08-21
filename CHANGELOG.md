@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.18.4] - 2026-08-21
+
+### Fixed
+
+- Al abrir la PWA se intenta recuperar de forma silenciosa la identidad temporal necesaria para consultar las conexiones persistentes de Google. Contactos y Calendar no vuelven a solicitar sus permisos si sus autorizaciones siguen guardadas en Secret Manager.
+- Los estados de Ajustes distinguen entre una conexión realmente confirmada, una sesión que se está comprobando y una identidad que necesita confirmarse; ya no afirman erróneamente que una integración está desconectada.
+- Los recordatorios entienden horas como `a las 2 y 15 minutos` y `a las dos y cuarto`. Para un recordatorio sin día explícito se usa la próxima ocurrencia de esa hora; la tarjeta siempre solicita confirmación antes de crear el aviso de Calendar.
+- Si Calendar no puede crear un evento o aviso, la entrada local conserva un estado de error reintentable en lugar de aparentar que quedó programada.
+
+### Changed
+
+- Identificación visible y caché PWA actualizadas a `V0.18.4 · Sesiones y avisos`.
+
+### Pending validation
+
+- Pendiente de comprobar en Android la recuperación silenciosa tras cerrar y abrir la PWA, y la programación confirmada de un aviso en Google Calendar.
+
 Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y las versiones siguen [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]

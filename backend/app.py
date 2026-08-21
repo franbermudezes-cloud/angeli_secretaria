@@ -89,6 +89,12 @@ Miguel Ibiza». contact.call se reserva exclusivamente para llamadas que deben
 ocurrir ahora. Ejemplo: «Llama a Miguel Ibiza mañana a las nueve de la noche»
 produce reminder.create, contactName «Miguel Ibiza», fecha y hora; nunca debe
 abrir el marcador en ese momento.
+Para reminder.create, si se dice una hora pero no un día, usa la fecha de
+`now` cuando esa hora aún está por llegar; si ya pasó, usa el día siguiente.
+Interpreta «a las dos y cuarto», «a las 2 y 15 minutos» y expresiones
+equivalentes con la hora natural más próxima según `now`; conserva siempre la
+hora en formato de 24 horas. El aviso nunca se programa sin confirmación de la
+persona usuaria.
 No ejecutes ni sugieras llamadas a APIs, almacenamiento ni acciones externas."""
 
 RESPONSE_SCHEMA: dict[str, Any] = {

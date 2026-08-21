@@ -1,5 +1,5 @@
-import { cleanTemporalText } from "./temporal.js?v=0.18.3";
-import { scheduleTitle } from "./schedule.js?v=0.18.3";
+import { cleanTemporalText } from "./temporal.js?v=0.18.4";
+import { scheduleTitle } from "./schedule.js?v=0.18.4";
 
 const CLIENT_ID = "172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
@@ -15,6 +15,8 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
   let identityExpiresAt = 0;
   let account = "";
   let scriptPromise = null;
+  let identityRecoveryAttempted = false;
+  let identityRecoveryPromise = null;
   let links = { contacts: false, calendar: false };
   const contactResults = new Map();
   const calendarResults = new Map();
@@ -25,10 +27,13 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
   }
 
   function updateStatus() {
+    const identityText = identityValid()
+      ? `IA conectada${account ? ` · ${account}` : ""}`
+      : identityRecoveryAttempted ? "IA: toca Conectar para recuperar sesión" : "IA: comprobando sesión…";
     setStatus({
-      ai: identityValid() ? `IA conectada${account ? ` · ${account}` : ""}` : "IA: elige una cuenta",
-      contacts: links.contacts ? "Contactos conectados" : "Contactos: pendiente de conectar",
-      calendar: links.calendar ? "Calendario conectado" : "Calendario: pendiente de conectar"
+      ai: identityText,
+      contacts: links.contacts ? "Contactos conectados de forma permanente" : identityValid() ? "Contactos: pendiente de conectar" : "Contactos: confirma primero la IA",
+      calendar: links.calendar ? "Calendario conectado de forma permanente" : identityValid() ? "Calendario: pendiente de conectar" : "Calendario: confirma primero la IA"
     });
   }
 
@@ -88,8 +93,61 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
     updateStatus();
   }
 
+  async function restoreSession() {
+    if (identityValid()) {
+      await syncLinks();
+      return true;
+    }
+    if (identityRecoveryPromise) return identityRecoveryPromise;
+    identityRecoveryAttempted = true;
+    updateStatus();
+    identityRecoveryPromise = (async () => {
+      try {
+        await loadGoogleIdentity();
+        if (!window.google?.accounts?.id) throw new Error("Google Identity no disponible");
+        const credential = await requestSilentCredential();
+        if (!credential) return false;
+        storeIdentity(credential);
+        await syncLinks();
+        return true;
+      } catch (_) {
+        idToken = "";
+        identityExpiresAt = 0;
+        account = "";
+        updateStatus();
+        return false;
+      } finally {
+        identityRecoveryPromise = null;
+      }
+    })();
+    return identityRecoveryPromise;
+  }
+
+  function requestSilentCredential() {
+    return new Promise(resolve => {
+      let settled = false;
+      const finish = value => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        resolve(value || "");
+      };
+      const timeout = setTimeout(() => finish(""), 3500);
+      google.accounts.id.initialize({
+        client_id: CLIENT_ID,
+        auto_select: true,
+        cancel_on_tap_outside: false,
+        callback: response => finish(response?.credential)
+      });
+      google.accounts.id.prompt(notification => {
+        if (notification.isNotDisplayed?.() || notification.isSkippedMoment?.()) finish("");
+      });
+    });
+  }
+
   async function connectAI() {
     if (identityValid()) return true;
+    if (await restoreSession()) return true;
     try {
       const code = await requestCode("identity");
       const data = await request("/oauth/exchange", { integration: "identity", code, redirectUri: location.origin }, false);
@@ -139,6 +197,7 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
     idToken = "";
     identityExpiresAt = 0;
     account = "";
+    identityRecoveryAttempted = true;
     updateStatus();
   }
 
@@ -199,6 +258,7 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
       } : item));
       notify("Evento añadido al calendario");
     } catch (_) {
+      saveNotes(getNotes().map(item => item.id === note.id ? { ...item, calendarStatus: "error" } : item));
       notify("No se pudo añadir el evento");
     } finally {
       calendarInFlight.delete(note.id);
@@ -223,6 +283,7 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
       } : item));
       notify("Aviso programado en Calendar");
     } catch (_) {
+      saveNotes(getNotes().map(item => item.id === note.id ? { ...item, schedule: { ...item.schedule, status: "error", lastError: "Calendar no pudo programar el aviso" } } : item));
       notify("No se pudo programar el aviso");
     } finally {
       calendarInFlight.delete(note.id);
@@ -308,6 +369,7 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
 
   return {
     updateStatus,
+    restoreSession,
     connectContacts,
     connectCalendar,
     connectAI,
