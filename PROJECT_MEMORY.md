@@ -98,6 +98,10 @@ Todas las instrucciones muestran una tarjeta de progreso desde el primer toque d
 
 La interfaz no espera a que Firestore termine una escritura antes de pasar de «Guardando» a la tarjeta operativa. Firestore sigue siendo la fuente remota de verdad y su estado se muestra en Ajustes; si no sincroniza, se informa de que la instrucción sigue pendiente. Esta separación evita que una demora de red bloquee el menú, adjuntos, Calendar o Contactos.
 
+### 2026-08-21 — V0.20.4 · Adjuntos pendiente de validación
+
+La cuenta de servicio de Cloud Run fue comprobada directamente contra la carpeta de Imágenes: puede listar, crear y modificar contenido. Por tanto, los errores anteriores de adjuntos no se atribuyen sin más a permisos de carpeta. Antes de una subida, el navegador fuerza una renovación del token Firebase. El backend ahora separa y registra de forma segura un rechazo de la sesión Angeli de un rechazo concreto de Drive, sin modificar IA, Calendar, Contactos ni el modelo de datos. Pendiente de desplegar y probar una carga de imagen y archivo desde Android y Mac; esta misma prueba debe confirmar la recepción cruzada por Firestore.
+
 ### 2026-08-20 — Validación estable V0.10
 
 V0.10 se validó manualmente en Android: dictado y texto, cámara, selección de fotos, archivos, persistencia tras actualizar/reabrir la PWA, visualización de medios y envío a Google Sheets. Tratar este estado como referencia estable: los cambios futuros deben preservar esos flujos.

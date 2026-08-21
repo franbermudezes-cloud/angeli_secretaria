@@ -10,7 +10,10 @@ export function createMediaService({ getAuthToken, ensureDrive }) {
     const response = await fetch(API + "/media/upload", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${await getAuthToken()}`,
+        // El adjunto puede tardar más que una orden de texto. Renueva el token
+        // exclusivamente en este punto para evitar que Drive reciba una sesión
+        // que acaba de caducar mientras se prepara la subida.
+        Authorization: `Bearer ${await getAuthToken(true)}`,
         "Content-Type": "application/octet-stream",
         "X-Angeli-Name": encodeURIComponent(file.name || (kind === "image" ? "foto" : "archivo")),
         "X-Angeli-Type": file.type || "application/octet-stream",

@@ -21,6 +21,21 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.20.4] - 2026-08-21
+
+### Fixed
+
+- Las subidas de fotos y archivos renuevan específicamente el token de Firebase antes de iniciarse, sin alterar Calendar, Contactos o IA.
+- El backend diferencia una sesión de Angeli no autorizada de un rechazo de Drive en carga, lectura o borrado de adjuntos; los diagnósticos de Cloud Run ya no atribuyen ambos errores a la carpeta.
+
+### Changed
+
+- Identificación visible y caché PWA actualizadas a `V0.20.4 · Adjuntos`.
+
+### Pending validation
+
+- Pendiente de desplegar Cloud Run y comprobar desde Android y Mac: una foto, un archivo y la aparición de esa misma entrada en el otro dispositivo.
+
 ## [0.20.3] - 2026-08-21
 
 ### Fixed

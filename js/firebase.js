@@ -87,9 +87,9 @@ export function createCloudSync({ notify }) {
 
   function isSignedIn() { return Boolean(user); }
 
-  async function getAuthToken() {
+  async function getAuthToken(forceRefresh = false) {
     if (!user) throw new Error("Inicia sesión en Angeli primero");
-    return user.getIdToken();
+    return user.getIdToken(forceRefresh);
   }
 
   async function connect() {

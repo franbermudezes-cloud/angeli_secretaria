@@ -475,6 +475,14 @@ def app(environ: dict[str, Any], start_response: Callable):
         return json_response(start_response, "403 Forbidden", {"error": "Origen no permitido"})
     try:
         subject = verify_identity(environ)
+    except PermissionError as error:
+        # No atribuir a Drive una sesión Firebase ausente, caducada o no
+        # autorizada: antes ambos casos se traducían al mismo 401 de medios.
+        if path.startswith("/media/"):
+            print(f"media_identity_error path={path} reason={str(error)}", file=sys.stderr, flush=True)
+            return json_response(start_response, "401 Unauthorized", {"error": "La sesión de Angeli no está autorizada; inicia sesión de nuevo"}, origin)
+        return json_response(start_response, "401 Unauthorized", {"error": "No autorizado"}, origin)
+    try:
         enforce_rate_limit(subject)
         if path == "/session/status":
             return json_response(start_response, "200 OK", session_status(), origin)
@@ -488,18 +496,30 @@ def app(environ: dict[str, Any], start_response: Callable):
             return json_response(start_response, "200 OK", persistent_google_action(parse_json_body(environ, {"integration", "action", "query", "event", "eventId", "params"})), origin)
         if path == "/media/upload":
             data, name, mime_type, kind = parse_media_upload(environ)
-            return json_response(start_response, "200 OK", sessions().upload_drive_file(data, name, mime_type, kind), origin)
+            try:
+                return json_response(start_response, "200 OK", sessions().upload_drive_file(data, name, mime_type, kind), origin)
+            except PermissionError as error:
+                print(f"media_drive_error path={path} reason={str(error)}", file=sys.stderr, flush=True)
+                return json_response(start_response, "401 Unauthorized", {"error": "Drive no puede escribir en la carpeta configurada"}, origin)
         if path == "/media/download":
             payload = parse_json_body(environ, {"fileId"})
             file_id = payload.get("fileId")
             if not isinstance(file_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{10,200}", file_id): raise ValueError("Archivo no válido")
-            data, mime_type = sessions().download_drive_file(file_id)
+            try:
+                data, mime_type = sessions().download_drive_file(file_id)
+            except PermissionError as error:
+                print(f"media_drive_error path={path} reason={str(error)}", file=sys.stderr, flush=True)
+                return json_response(start_response, "401 Unauthorized", {"error": "Drive no puede leer este adjunto"}, origin)
             return media_response(start_response, data, mime_type, origin)
         if path == "/media/delete":
             payload = parse_json_body(environ, {"fileId"})
             file_id = payload.get("fileId")
             if not isinstance(file_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{10,200}", file_id): raise ValueError("Archivo no válido")
-            sessions().delete_drive_file(file_id)
+            try:
+                sessions().delete_drive_file(file_id)
+            except PermissionError as error:
+                print(f"media_drive_error path={path} reason={str(error)}", file=sys.stderr, flush=True)
+                return json_response(start_response, "401 Unauthorized", {"error": "Drive no puede borrar este adjunto"}, origin)
             return json_response(start_response, "200 OK", {"deleted": True}, origin)
         text, now, timezone = parse_request(environ)
         interpreter = _interpreter or vertex_interpret
@@ -508,12 +528,8 @@ def app(environ: dict[str, Any], start_response: Callable):
         except ValueError as error:
             raise OutputValidationError(str(error)) from error
         return json_response(start_response, "200 OK", interpretation, origin)
-    except PermissionError as error:
-        message = "No autorizado"
-        if path.startswith("/media/"):
-            message = "Drive no puede acceder a la carpeta configurada"
-            print(f"media_authorization_error path={path} reason={str(error)}", file=sys.stderr, flush=True)
-        return json_response(start_response, "401 Unauthorized", {"error": message}, origin)
+    except PermissionError:
+        return json_response(start_response, "401 Unauthorized", {"error": "No autorizado"}, origin)
     except OutputValidationError as error:
         log_interpreter_error("invalid_model_output", error)
         return json_response(start_response, "503 Service Unavailable", {"error": "Interpretación no disponible"}, origin)

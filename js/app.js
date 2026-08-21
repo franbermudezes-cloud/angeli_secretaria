@@ -1,14 +1,14 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.20.3";
-import{classify,actionData}from"./classifier.js?v=0.20.3";
-import{sendEntry}from"./sheets.js?v=0.20.3";
-import{createUI}from"./ui.js?v=0.20.3";
-import{createGoogleIntegration}from"./google.js?v=0.20.3";
-import{interpret,remoteProvider}from"./ai.js?v=0.20.3";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.20.3";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.20.3";
-import{normalizeFutureCall,normalizeReminderSchedule,scheduleFor}from"./schedule.js?v=0.20.3";
-import{createCloudSync}from"./firebase.js?v=0.20.3";
-import{createMediaService}from"./media.js?v=0.20.3";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.20.4";
+import{classify,actionData}from"./classifier.js?v=0.20.4";
+import{sendEntry}from"./sheets.js?v=0.20.4";
+import{createUI}from"./ui.js?v=0.20.4";
+import{createGoogleIntegration}from"./google.js?v=0.20.4";
+import{interpret,remoteProvider}from"./ai.js?v=0.20.4";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.20.4";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.20.4";
+import{normalizeFutureCall,normalizeReminderSchedule,scheduleFor}from"./schedule.js?v=0.20.4";
+import{createCloudSync}from"./firebase.js?v=0.20.4";
+import{createMediaService}from"./media.js?v=0.20.4";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],selectedFilter="all",selectedType="all",shortcutCapture=false,saving=false;
@@ -74,7 +74,7 @@ document.querySelectorAll(".filter").forEach(button=>button.onclick=()=>{selecte
 $("shortcuts").onclick=event=>{const button=event.target.closest("button");if(!button)return;if(button.id==="shortcutAdd"){createShortcut();return}const shortcut=shortcuts[Number(button.dataset.shortcut)];if(shortcut)prepareShortcut(shortcut)};
 async function handleEntryAction(event){const button=event.target.closest("button");if(!button)return;const note=notes.find(item=>item.id===button.dataset.id);if(!note)return;if(button.dataset.a==="show-action"){ui.showEntryAction(note,google);return}if(button.dataset.a==="schedule"){ui.showWorking("Programando aviso","Angeli está creando el aviso en Calendar…","");await google.createScheduledReminder(note);ui.showEntryAction(notes.find(item=>item.id===note.id)||note,google);return}if(button.dataset.a==="cancel-schedule"){await google.cancelScheduledReminder(note);ui.showEntryAction(notes.find(item=>item.id===note.id)||note,google);return}if(button.dataset.a==="calendar"){ui.showWorking("Añadiendo al calendario","Angeli está creando el evento…","");await google.createCalendarEvent(note,{confirmed:true});ui.showEntryAction(notes.find(item=>item.id===note.id)||note,google);return}if(button.dataset.a==="search-calendar"){ui.showWorking("Buscando en Calendar","Angeli está revisando tus eventos…","");await google.searchCalendar(note);ui.showEntryAction(note,google);return}if(button.dataset.a==="calendar-delete"){await google.deleteCalendarEvent(note,button.dataset.eventId);ui.showEntryAction(notes.find(item=>item.id===note.id)||note,google);return}if(button.dataset.a==="calendar-update"){await google.updateCalendarEvent(note,button.dataset.eventId);ui.showEntryAction(notes.find(item=>item.id===note.id)||note,google);return}if(button.dataset.a==="call"){ui.closeLayers();window.location.href=`tel:${button.dataset.phone}`;return}if(button.dataset.a==="search-contact"){ui.showWorking("Buscando contacto","Angeli está buscando a "+(note.contactQuery||"ese contacto")+"…","");await google.searchContact(note);ui.showEntryAction(note,google);return}if(button.dataset.a==="open-file"){try{const media=await mediaServiceGet(button.dataset.mediaId);if(!media)throw new Error();const url=URL.createObjectURL(media.blob);window.open(url,"_blank");setTimeout(()=>URL.revokeObjectURL(url),60000)}catch(e){ui.notify("No se pudo abrir el archivo")}return}if(button.dataset.a==="toggle"){const nextNotes=notes.map(item=>item.id===note.id?{...item,status:item.status==="done"?"pending":"done"}:item);save(nextNotes);return}if(button.dataset.a==="delete"){const nextNotes=notes.filter(item=>item.id!==note.id);if(!save(nextNotes))return;google.clearContactResult(note.id);try{for(const image of note.images||[])await media.remove(typeof image==="string"?image:image.driveFileId||image.id);for(const file of note.files||[])if(file.id||file.driveFileId)await media.remove(file.driveFileId||file.id)}catch(e){ui.notify("La entrada se borró, pero quedó algún adjunto en Drive")}}}
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.20.3",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.20.4",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}

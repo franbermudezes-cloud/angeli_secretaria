@@ -274,6 +274,31 @@ class InterpretEndpointTests(unittest.TestCase):
         self.assertEqual(service.deleted, "drive-file-123")
         os.environ.pop("ALLOWED_FIREBASE_EMAILS", None)
 
+    def test_media_distinguishes_angeli_session_from_drive_access(self):
+        class DriveDenied:
+            def upload_drive_file(self, data, name, mime_type, kind):
+                raise PermissionError("La cuenta de servicio no puede acceder a esa carpeta de Drive")
+
+        os.environ.pop("ANGELI_AI_DEV_BYPASS_AUTH", None)
+        os.environ["ALLOWED_FIREBASE_EMAILS"] = "owner@example.com"
+        app.set_test_dependencies(
+            lambda text, now, timezone: VALID_RESPONSE.copy(),
+            lambda token: {"uid": "approved-sub", "email": "owner@example.com", "email_verified": True},
+            lambda: DriveDenied(),
+        )
+        extra = {"HTTP_X_ANGELI_NAME": "foto.jpg", "HTTP_X_ANGELI_TYPE": "image/jpeg", "HTTP_X_ANGELI_KIND": "image"}
+        status, data = request_raw("/media/upload", b"photo", "Bearer test", extra)
+        self.assertEqual(status, "401 Unauthorized")
+        self.assertEqual(data["error"], "Drive no puede escribir en la carpeta configurada")
+        app.set_test_dependencies(
+            lambda text, now, timezone: VALID_RESPONSE.copy(),
+            lambda token: {"uid": "other-sub", "email": "other@example.com", "email_verified": True},
+        )
+        status, data = request_raw("/media/upload", b"photo", "Bearer test", extra)
+        self.assertEqual(status, "401 Unauthorized")
+        self.assertEqual(data["error"], "La sesión de Angeli no está autorizada; inicia sesión de nuevo")
+        os.environ.pop("ALLOWED_FIREBASE_EMAILS", None)
+
     def test_drive_requires_fixed_destinations_and_never_creates_folders(self):
         from google_sessions import GoogleSessions
 
