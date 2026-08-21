@@ -8,7 +8,7 @@ Además ofrece, siempre tras comprobar un ID token de Firebase del propietario:
 
 - `POST /session/status`: estado de las vinculaciones de Contactos, Calendar y Drive.
 - `POST /oauth/exchange`: intercambia un código OAuth; los refresh tokens de
-  Contactos, Calendar y Drive se guardan exclusivamente en Secret Manager.
+  Contactos y Calendar se guardan exclusivamente en Secret Manager.
 - `POST /google`: consulta acotada de Contactos y operaciones de Calendar.
 - `POST /media/upload`, `/media/download` y `/media/delete`: adjuntos de Angeli en Drive.
 
@@ -24,7 +24,6 @@ necesita `roles/secretmanager.secretAccessor` y
 - `angeli-oauth-client-secret`
 - `angeli-google-contacts-grant`
 - `angeli-google-calendar-grant`
-- `angeli-google-drive-grant`
 
 El SDK obtiene Application Default Credentials de la identidad del servicio;
 no se usan API keys ni archivos JSON de cuentas de servicio.
@@ -45,13 +44,24 @@ llamar a Vertex AI o a una integración Google.
 
 Firebase Auth mantiene la sesión de Angeli en el navegador. Firestore contiene
 las entradas compartidas entre dispositivos; Secret Manager conserva solo las
-autorizaciones de Contactos, Calendar y Drive, que pueden pertenecer a cuentas
+autorizaciones de Contactos y Calendar, que pueden pertenecer a cuentas
 distintas de la cuenta propietaria de Angeli.
 
-Los medios se envían directamente desde la PWA al servicio y se crean con
-`drive.file` dentro de `Angeli Secretaria/Fotos/<año>/<mes>` o
-`Angeli Secretaria/Archivos/<año>/<mes>`. El límite actual por adjunto es de
-20 MB; la entrada en Firestore guarda únicamente metadatos y el ID de Drive.
+Los medios se envían directamente desde la PWA al servicio. Cloud Run usa su
+cuenta de servicio, que debe ser editora de la carpeta raíz compartida de
+Angeli; no se solicita OAuth de Drive en el teléfono. Los destinos fijos se
+configuran solo como variables de Cloud Run:
+
+- `ANGELI_DRIVE_ROOT_FOLDER_ID`
+- `ANGELI_DRIVE_IMAGES_FOLDER_ID`
+- `ANGELI_DRIVE_FILES_FOLDER_ID`
+- `ANGELI_DRIVE_INBOX_FOLDER_ID`
+- `ANGELI_DRIVE_VOICE_FOLDER_ID`
+- `ANGELI_DRIVE_DATA_FOLDER_ID`
+
+Actualmente se usan imágenes y archivos; los demás quedan reservados para
+funciones futuras. El límite por adjunto es 20 MB; Firestore guarda únicamente
+metadatos y el ID de Drive.
 
 ## Desarrollo local y pruebas
 

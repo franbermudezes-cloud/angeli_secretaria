@@ -21,6 +21,23 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.20.1] - 2026-08-21
+
+### Fixed
+
+- Al enviar una foto o archivo, Angeli bloquea ambas flechas y muestra un estado de subida hasta que termina; pulsaciones repetidas ya no pueden iniciar varias cargas.
+- Los medios se dirigen a carpetas fijas compartidas con la cuenta de servicio de Cloud Run. Se elimina por completo la creación automática de carpetas raíz, de tipo, año o mes.
+- Una entrada nueva espera la confirmación de Firestore antes de considerarse guardada. Si falla, el borrador y sus adjuntos preparados permanecen disponibles y el estado de sincronización muestra un diagnóstico útil.
+
+### Changed
+
+- Drive deja de requerir una conexión OAuth en cada dispositivo: el servidor usa la cuenta de servicio compartida en la carpeta raíz de Angeli. Quedan configurados destinos para imágenes, archivos, bandeja, notas de voz y datos, aunque por ahora solo se usan imágenes y archivos.
+- Identificación visible y caché PWA actualizadas a `V0.20.1 · Datos y Drive`.
+
+### Pending validation
+
+- Pendiente de desplegar Cloud Run con los IDs de carpetas y comprobar una foto, un archivo y la sincronización de una entrada entre Android y Mac.
+
 ## [0.20.0] - 2026-08-21
 
 ### Added

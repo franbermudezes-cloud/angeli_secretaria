@@ -1,5 +1,5 @@
-import { cleanTemporalText } from "./temporal.js?v=0.20.0";
-import { scheduleTitle } from "./schedule.js?v=0.20.0";
+import { cleanTemporalText } from "./temporal.js?v=0.20.1";
+import { scheduleTitle } from "./schedule.js?v=0.20.1";
 
 const CLIENT_ID = "172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
@@ -7,7 +7,6 @@ const SCOPES = {
   identity: "openid email",
   contacts: "https://www.googleapis.com/auth/contacts.readonly",
   calendar: "https://www.googleapis.com/auth/calendar.events",
-  drive: "https://www.googleapis.com/auth/drive.file"
 };
 const CALENDAR_SEARCH_INTENTS = new Set(["calendar.query", "calendar.update", "calendar.delete"]);
 
@@ -29,7 +28,7 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
       app: identityText,
       contacts: links.contacts ? "Contactos conectados de forma permanente" : signedIn() ? "Contactos: pendiente de conectar" : "Inicia sesión en Angeli primero",
       calendar: links.calendar ? "Calendario conectado de forma permanente" : signedIn() ? "Calendario: pendiente de conectar" : "Inicia sesión en Angeli primero",
-      drive: links.drive ? "Drive conectado de forma permanente" : signedIn() ? "Drive: pendiente de conectar" : "Inicia sesión en Angeli primero"
+      drive: links.drive ? "Drive listo en el servidor" : signedIn() ? "Drive: falta configurar sus carpetas" : "Inicia sesión en Angeli primero"
     });
   }
 
@@ -98,7 +97,12 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
 
   const connectContacts = () => connectPersistent("contacts");
   const connectCalendar = () => connectPersistent("calendar");
-  const connectDrive = () => connectPersistent("drive");
+  async function connectDrive() {
+    await syncLinks();
+    if (links.drive) notify("Drive está listo: fotos y archivos irán a sus carpetas fijas");
+    else notify("Drive no tiene configuradas sus carpetas de destino");
+    return links.drive;
+  }
   async function ensureDrive() { return links.drive || connectDrive(); }
 
   async function callApi(body) {
@@ -124,7 +128,7 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
   }
 
   function disconnectDrive() {
-    notify("Drive sigue vinculado de forma segura en Google Cloud");
+    notify("Drive usa las carpetas compartidas del servidor");
     refresh();
   }
 

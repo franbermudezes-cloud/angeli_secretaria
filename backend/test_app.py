@@ -274,6 +274,18 @@ class InterpretEndpointTests(unittest.TestCase):
         self.assertEqual(service.deleted, "drive-file-123")
         os.environ.pop("ALLOWED_FIREBASE_EMAILS", None)
 
+    def test_drive_requires_fixed_destinations_and_never_creates_folders(self):
+        from google_sessions import GoogleSessions
+
+        os.environ["ANGELI_DRIVE_IMAGES_FOLDER_ID"] = "images-folder-id"
+        os.environ["ANGELI_DRIVE_FILES_FOLDER_ID"] = "files-folder-id"
+        service = GoogleSessions("angeli-secretaria", "client-id")
+        self.assertTrue(service.drive_configured())
+        self.assertEqual(service._drive_folder("image"), "images-folder-id")
+        self.assertEqual(service._drive_folder("file"), "files-folder-id")
+        os.environ.pop("ANGELI_DRIVE_IMAGES_FOLDER_ID", None)
+        os.environ.pop("ANGELI_DRIVE_FILES_FOLDER_ID", None)
+
 
 def request_path(path, payload, authorization="", origin=""):
     body = __import__("json").dumps(payload).encode("utf-8")

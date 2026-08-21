@@ -119,7 +119,7 @@ export function createCloudSync({ notify }) {
       const remoteNotes = snapshot.docs.map(item => fromCloudEntry(item.data(), item.id)).sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
       callbacks.onRemoteNotes?.(remoteNotes, { fromCache: snapshot.metadata.fromCache, pending: snapshot.metadata.hasPendingWrites });
       callbacks.onSyncStatus?.({ state: snapshot.metadata.hasPendingWrites ? "pending" : snapshot.metadata.fromCache ? "offline" : "synced" });
-    }, () => callbacks.onSyncStatus?.({ state: "error" }));
+    }, error => callbacks.onSyncStatus?.({ state: "error", error }));
   }
 
   async function syncNotes(nextNotes, previousNotes) {

@@ -1,4 +1,4 @@
 {
-"name":"Angeli · Asistente","short_name":"Angeli","start_url":"./?v=0.20.0","display":"standalone","background_color":"#111d49","theme_color":"#111d49","lang":"es",
-  "icons":[{"src":"icon-192.png?v=0.20.0","sizes":"192x192","type":"image/png","purpose":"any maskable"},{"src":"icon-512.png?v=0.20.0","sizes":"512x512","type":"image/png","purpose":"any maskable"}]
+"name":"Angeli · Asistente","short_name":"Angeli","start_url":"./?v=0.20.1","display":"standalone","background_color":"#111d49","theme_color":"#111d49","lang":"es",
+  "icons":[{"src":"icon-192.png?v=0.20.1","sizes":"192x192","type":"image/png","purpose":"any maskable"},{"src":"icon-512.png?v=0.20.1","sizes":"512x512","type":"image/png","purpose":"any maskable"}]
 }

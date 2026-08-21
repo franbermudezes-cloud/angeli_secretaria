@@ -1,5 +1,5 @@
-import { typeLabel } from "./classifier.js?v=0.20.0";
-import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.20.0";
+import { typeLabel } from "./classifier.js?v=0.20.1";
+import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.20.1";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -20,8 +20,9 @@ export function createUI({ getMedia }) {
     $("aiStatus").textContent = app;
   }
 
-  function setSyncStatus({ state }) {
-    const labels = { connecting: "Datos: conectando…", pending: "Datos: guardando…", synced: "Datos: sincronizados", offline: "Datos: sin conexión; esperando red", error: "Datos: no se pudieron sincronizar", "signed-out": "Datos: inicia sesión para verlos" };
+  function setSyncStatus({ state, error } = {}) {
+    const detail = error?.code === "permission-denied" ? "Firestore no autoriza esta cuenta" : error?.code === "unavailable" ? "sin conexión con Firestore" : "no se pudieron sincronizar";
+    const labels = { connecting: "Datos: conectando…", pending: "Datos: guardando…", synced: "Datos: sincronizados", offline: "Datos: sin conexión; esperando red", error: "Datos: " + detail, "signed-out": "Datos: inicia sesión para verlos" };
     $("syncStatus").textContent = labels[state] || "Datos: comprobando…";
   }
 
