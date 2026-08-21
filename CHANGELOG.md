@@ -4,12 +4,14 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
-## [0.16.2] - 2026-08-21
+## [0.16.4] - 2026-08-21
 
 ### Fixed
 
 - Se renuevan de forma completa los identificadores de recursos y caché PWA de la interfaz V0.16 para evitar que Android conserve un módulo JavaScript anterior con error de sintaxis y muestre una pantalla sin interacción.
-- La versión se identifica como `V0.16.2 · Angeli Asistente` también dentro de Ajustes.
+- Se corrige una plantilla HTML sin cerrar en `ui.js`, que impedía cargar todo el JavaScript de la PWA y dejaba la interfaz sin interacción.
+- La versión se identifica como `V0.16.4 · Angeli Asistente` en cabecera y Ajustes.
+- El Service Worker usa red primero para JavaScript y CSS, con caché únicamente como respaldo sin conexión.
 
 ## [0.16.0] - 2026-08-21
 

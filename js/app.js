@@ -1,11 +1,11 @@
-import{MEDIA_STORES,readNotes,writeNotes,clearNotes,migrateLegacyImages,putMedia,getMedia,deleteMedia,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.16.2";
-import{classify,actionData}from"./classifier.js?v=0.16.2";
-import{sendEntry}from"./sheets.js?v=0.16.2";
-import{createUI}from"./ui.js?v=0.16.2";
-import{createGoogleIntegration}from"./google.js?v=0.16.2";
-import{interpret,remoteProvider}from"./ai.js?v=0.16.2";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.16.2";
-import{calendarQueryRange}from"./temporal.js?v=0.16.2";
+import{MEDIA_STORES,readNotes,writeNotes,clearNotes,migrateLegacyImages,putMedia,getMedia,deleteMedia,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.16.4";
+import{classify,actionData}from"./classifier.js?v=0.16.4";
+import{sendEntry}from"./sheets.js?v=0.16.4";
+import{createUI}from"./ui.js?v=0.16.4";
+import{createGoogleIntegration}from"./google.js?v=0.16.4";
+import{interpret,remoteProvider}from"./ai.js?v=0.16.4";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.16.4";
+import{calendarQueryRange}from"./temporal.js?v=0.16.4";
 
 const ui=createUI({getMedia:(store,id)=>getMedia(store,id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],selectedFilter="all",selectedType="all",shortcutCapture=false;
@@ -63,7 +63,7 @@ document.querySelectorAll(".filter").forEach(button=>button.onclick=()=>{selecte
 $("shortcuts").onclick=event=>{const button=event.target.closest("button");if(!button)return;if(button.id==="shortcutAdd"){createShortcut();return}const shortcut=shortcuts[Number(button.dataset.shortcut)];if(shortcut)prepareShortcut(shortcut)};
 async function handleEntryAction(event){const button=event.target.closest("button");if(!button)return;const note=notes.find(item=>item.id===button.dataset.id);if(!note)return;if(button.dataset.a==="show-action"){ui.showEntryAction(note);return}if(button.dataset.a==="calendar"){ui.closeLayers();await google.createCalendarEvent(note,{confirmed:true});return}if(button.dataset.a==="search-calendar"){ui.closeLayers();await google.searchCalendar(note);scrollConversation();return}if(button.dataset.a==="calendar-delete"){await google.deleteCalendarEvent(note,button.dataset.eventId);return}if(button.dataset.a==="calendar-update"){await google.updateCalendarEvent(note,button.dataset.eventId);return}if(button.dataset.a==="call"){window.location.href=`tel:${button.dataset.phone}`;return}if(button.dataset.a==="search-contact"){ui.closeLayers();await google.searchContact(note);scrollConversation();return}if(button.dataset.a==="open-file"){try{const media=await getMedia(MEDIA_STORES.files,button.dataset.mediaId);if(!media)throw new Error();const url=URL.createObjectURL(media.blob);window.open(url,"_blank");setTimeout(()=>URL.revokeObjectURL(url),60000)}catch(e){ui.notify("No se pudo abrir el archivo")}return}if(button.dataset.a==="toggle"){note.status=note.status==="done"?"pending":"done";save();return}if(button.dataset.a==="delete"){const nextNotes=notes.filter(item=>item.id!==note.id);if(!save(nextNotes))return;google.clearContactResult(note.id);try{for(const id of note.images||[])await deleteMedia(MEDIA_STORES.images,id);for(const file of note.files||[])if(file.id)await deleteMedia(MEDIA_STORES.files,file.id)}catch(e){ui.notify("La entrada se borró, pero quedó algún medio sin eliminar")}}}
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.16.2",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.16.4",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 function esc(value){return String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[char]))}
