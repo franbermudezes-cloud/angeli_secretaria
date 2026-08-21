@@ -161,3 +161,13 @@ La tarjeta emergente deja de ser un aviso breve y pasa a ser el espacio de traba
 ### 2026-08-21 — V0.16.6 · Compositor y acceso de llamada pendientes de validación
 
 El compositor inferior concentra los controles en dos columnas verticales para priorizar el texto: adjuntar/dictar a la izquierda y enviar/borrar a la derecha. El acceso directo de llamada no debe enviar solo el nombre a la IA: abre el borrador con el prefijo `Llama a ` e inicia dictado, de modo que «Montse» forme la instrucción completa `Llama a Montse`. Pendiente de comprobar en Android, incluida la conexión automática de Contactos y la selección final de teléfono en la tarjeta.
+
+### 2026-08-21 — Estructura de producto y siguiente bloque
+
+Se crea `docs/` como documentación de producto separada de esta memoria técnica: visión, roadmap y especificaciones por bloque. El primer bloque preparado es `docs/specs/01-scheduled-actions.md`: una orden futura como «Llama a Miguel Ibiza mañana a las nueve» debe crear un recordatorio programado, no abrir el marcador en ese momento. La PWA seguirá siendo la interfaz y validará/confirmará acciones; la planificación fiable se estudiará con n8n u otra infraestructura autenticada. El canal acordado combina notificación Android y aviso de Calendar como respaldo.
+
+También se incorpora al roadmap el bloque «Conocimiento de empresa»: consultas de solo lectura sobre las fuentes reales de clientes, presupuestos, proyectos y marketing. Antes de conectarlo habrá que inventariar dónde viven esos datos y diseñar una capa autenticada que consulte solo lo necesario; no se descargará ni expondrá una base completa en la PWA.
+
+### 2026-08-21 — V0.17 · Acciones programadas pendiente de validación
+
+Se añade `js/schedule.js` para representar una acción futura con fecha/hora, zona `Europe/Madrid`, estado, entrega y vínculo al evento de Calendar. Una llamada con fecha y hora se interpreta como `reminder.create` con acción subordinada `contact.call`; nunca abre el marcador en ese momento. La tarjeta permite confirmar, reintentar y cancelar sin borrar la entrada. La confirmación crea un evento privado/transparente con aviso emergente de Google Calendar y guarda su ID/URL para evitar duplicados. Esto ofrece el aviso de Calendar en Android cuando la aplicación Calendar está configurada; una notificación propia y fiable de Angeli con la PWA cerrada requiere todavía un planificador externo autenticado y no se considera implementada.

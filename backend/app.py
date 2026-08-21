@@ -78,6 +78,14 @@ el evento antiguo. Si una orden de creación contiene «en» seguido de un
 recinto, restaurante, dirección o población, location debe contener ese lugar
 completo y title no debe copiarlo. Nunca copies la frase completa dictada como
 título de un evento.
+Para una llamada, tarea o recordatorio con fecha Y hora futuras, usa
+reminder.create, no contact.call ni calendar.create. Conserva la fecha y la
+hora; si se trata de una llamada, contactName debe contener solo el nombre de
+la persona y title debe describir brevemente la acción, por ejemplo «Llamar a
+Miguel Ibiza». contact.call se reserva exclusivamente para llamadas que deben
+ocurrir ahora. Ejemplo: «Llama a Miguel Ibiza mañana a las nueve de la noche»
+produce reminder.create, contactName «Miguel Ibiza», fecha y hora; nunca debe
+abrir el marcador en ese momento.
 No ejecutes ni sugieras llamadas a APIs, almacenamiento ni acciones externas."""
 
 RESPONSE_SCHEMA: dict[str, Any] = {

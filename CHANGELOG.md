@@ -4,6 +4,23 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-08-21
+
+### Added
+
+- Las acciones futuras usan un modelo local `schedule`: fecha/hora, zona horaria, acción prevista, estado, entrega y referencia de Calendar. Una llamada futura se conserva como acción de llamada pendiente y no abre el marcador al crearla.
+- La tarjeta operativa permite confirmar, reintentar, abrir y cancelar un aviso programado sin perder la entrada original.
+- Al confirmar, Angeli crea un evento privado y transparente de Google Calendar con aviso emergente a la hora indicada; el identificador y enlace se guardan junto a la acción para evitar duplicados.
+
+### Changed
+
+- El intérprete de IA y el fallback local distinguen una llamada inmediata de una llamada con fecha y hora. Por ejemplo, «Llama a Miguel Ibiza mañana a las nueve» se propone como recordatorio programado; «Llama a Miguel Ibiza» sigue siendo una llamada inmediata.
+- La PWA se identifica como `V0.17 · Acciones programadas` y renueva todos los recursos de caché.
+
+### Pending validation
+
+- Pendiente de validación manual en Android: creación, aviso de Calendar, persistencia, apertura y cancelación. La notificación propia de Angeli con la PWA cerrada queda pendiente de un planificador externo autenticado; no se simula como implementada.
+
 ## [0.16.6] - 2026-08-21
 
 ### Changed

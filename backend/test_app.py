@@ -113,6 +113,26 @@ class InterpretEndpointTests(unittest.TestCase):
         self.assertEqual(status, "200 OK")
         self.assertTrue(data["requiresConfirmation"])
 
+    def test_accepts_scheduled_call_as_a_reminder_without_opening_a_call_intent(self):
+        app.set_test_dependencies(
+            lambda text, now, timezone: {
+                "intent": "reminder.create",
+                "confidence": 0.95,
+                "title": "Llamar a Miguel Ibiza",
+                "date": "2026-08-21",
+                "time": "21:00",
+                "contactName": "Miguel Ibiza",
+            }
+        )
+        status, data = app.wsgi_request(
+            {"text": "Llama a Miguel Ibiza mañana a las nueve", "now": "2026-08-20T21:20:00+02:00", "timeZone": "Europe/Madrid"}
+        )
+        self.assertEqual(status, "200 OK")
+        self.assertEqual(data["intent"], "reminder.create")
+        self.assertEqual(data["contactName"], "Miguel Ibiza")
+        self.assertEqual(data["date"], "2026-08-21")
+        self.assertEqual(data["time"], "21:00")
+
     def test_rejects_unapproved_identity(self):
         os.environ.pop("ANGELI_AI_DEV_BYPASS_AUTH", None)
         os.environ["ALLOWED_GOOGLE_SUBS"] = "approved-sub"

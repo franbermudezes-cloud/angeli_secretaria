@@ -1,4 +1,5 @@
-import { typeLabel } from "./classifier.js?v=0.16.6";
+import { typeLabel } from "./classifier.js?v=0.17.0";
+import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.17.0";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -88,6 +89,21 @@ export function createUI({ getMedia }) {
   function showEntryAction(note, google) {
     const intent = note.proposal?.intent || "note";
     const base = { title: "Entrada preparada", lead: "Angeli ha entendido esto. Confirma solo si quieres realizar la acción.", body: entryBody(note) };
+    if (note.schedule) {
+      const title = scheduleTitle(note), when = scheduleWhen(note.schedule);
+      const detail = entryBody(note) + '<div class="schedule-box"><strong>⏰ ' + esc(title) + '</strong><span>' + esc(when) + '</span><small>Estado: ' + esc(scheduleState(note.schedule)) + '</small></div>';
+      if (note.schedule.status === "scheduled") {
+        const link = note.schedule.calendarUrl ? '<p><a href="' + esc(note.schedule.calendarUrl) + '" target="_blank" rel="noopener">Abrir aviso en Calendar</a></p>' : "";
+        openModal({ ...base, title: "✓ Aviso programado", lead: "Calendar te avisará a la hora indicada.", body: detail + link, actions: [{ label: "Cancelar aviso", kind: "secondary", dataset: { a: "cancel-schedule", id: note.id } }, { label: "Cerrar", kind: "confirm", onClick: closeLayers }] });
+        return;
+      }
+      if (note.schedule.status === "cancelled") {
+        openModal({ ...base, title: "Aviso cancelado", lead: "La entrada sigue guardada, pero ya no habrá aviso.", body: detail, actions: [{ label: "Cerrar", kind: "confirm", onClick: closeLayers }] });
+        return;
+      }
+      openModal({ ...base, title: note.schedule.status === "error" ? "No se pudo programar" : "¿Programo este aviso?", lead: "Se creará un aviso en Google Calendar para que Android te avise a la hora indicada.", body: detail, actions: [{ label: "Ahora no", kind: "secondary", onClick: closeLayers }, { label: note.schedule.status === "error" ? "Reintentar" : "⏰ Programar", kind: "confirm", dataset: { a: "schedule", id: note.id } }] });
+      return;
+    }
     if (intent === "calendar.create") {
       if (note.calendarStatus === "synced") {
         const link = note.calendarUrl ? '<p><a href="' + esc(note.calendarUrl) + '" target="_blank" rel="noopener">Abrir evento en Calendar</a></p>' : "";
@@ -205,9 +221,19 @@ export function createUI({ getMedia }) {
     const images = (note.images || []).map(imageId => '<img class="thumb" data-image-id="' + esc(imageId) + '" alt="Imagen adjunta">').join("");
     const files = (note.files || []).map(file => '<button class="small-btn" data-a="open-file" data-id="' + id + '" data-media-id="' + esc(file.id) + '">📎 ' + esc(file.name) + "</button>").join(" ");
     const attachments = (images ? '<div class="media">' + images + "</div>" : "") + (files ? '<div class="file-line">' + files + "</div>" : "");
-    const extra = note.type === "calendar" ? calendarActions(note, google) : note.type === "contact" ? contactActions(note, google) : "";
+    const extra = note.schedule ? scheduleActions(note) : note.type === "calendar" ? calendarActions(note, google) : note.type === "contact" ? contactActions(note, google) : "";
     const status = note.status === "done" ? "Reabrir" : "✓ Hecho";
     return '<article data-entry-id="' + id + '"><div class="message me"><div class="bubble">' + esc(note.text || "Entrada con adjunto") + '</div></div><div class="message angeli"><div class="avatar">A</div><div class="bubble"><span class="badge">' + esc(typeLabel(note.type)) + "</span><br>" + esc(note.proposal?.description || "Guardado en Angeli") + location + "</div></div>" + attachments + extra + '<div class="inline-actions"><button class="small-btn" data-a="toggle" data-id="' + id + '">' + status + '</button><button class="small-btn danger" data-a="delete" data-id="' + id + '">Borrar</button></div></article>';
+  }
+
+  function scheduleActions(note) {
+    const schedule = note.schedule;
+    if (schedule.status === "scheduled") {
+      const link = schedule.calendarUrl ? ' <a class="small-btn" href="' + esc(schedule.calendarUrl) + '" target="_blank" rel="noopener">📅 Ver aviso</a>' : "";
+      return '<div class="schedule-status">⏰ ' + esc(scheduleTitle(note)) + '<span>' + esc(scheduleWhen(schedule)) + '</span></div><div class="inline-actions">' + link + actionButton(note.id, "Ver aviso", "show-action") + "</div>";
+    }
+    if (schedule.status === "cancelled") return '<div class="schedule-status muted">Aviso cancelado</div>';
+    return '<div class="schedule-status">⏰ ' + esc(scheduleState(schedule)) + '<span>' + esc(scheduleWhen(schedule)) + '</span></div>' + actionButton(note.id, schedule.status === "error" ? "Reintentar aviso" : "Programar aviso", "show-action");
   }
 
   function showImagePreview(files) {
