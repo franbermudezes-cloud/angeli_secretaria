@@ -89,6 +89,10 @@ La consola confirmó que la base Cloud Firestore creada para Angeli se llama `an
 
 Regla permanente: antes de modificar una integración o almacén externo, confirmar proyecto, ID/nombre, cuenta, permisos, reglas activas, destino y una operación mínima de lectura/escritura. No inferir una configuración correcta a partir de variables, nombres o pantallas parciales.
 
+### 2026-08-21 — V0.20.6 · Bienvenida con Angeli pendiente de validación
+
+La PWA muestra al abrirse una pantalla completa con `assets/angeli-welcome.gif`, proporcionado por el usuario. La animación permanece como mínimo 2,6 segundos mientras se inicializa Angeli y se retira al terminar la carga; un límite de seguridad evita que una incidencia de red deje la pantalla bloqueada. Es un cambio de presentación aislado: no interviene en Firebase, IA, Calendar, Contactos, Drive ni el flujo de acciones.
+
 ### 2026-08-21 — V0.20 · Datos y Drive pendiente de validación
 
 Se sustituye el modelo híbrido de pruebas por una arquitectura única: Firestore es la fuente de verdad de todas las entradas y Google Drive conserva los bytes de fotos y archivos. La PWA no lee, migra ni mezcla `localStorage` o IndexedDB heredados porque el usuario confirmó que todos los datos previos son pruebas. Las entradas remotas guardan únicamente los metadatos y las referencias de Drive; los medios nuevos se organizan en `Angeli Secretaria/Fotos/<año>/<mes>` y `Angeli Secretaria/Archivos/<año>/<mes>`. La autorización `drive.file` se conserva como refresh token solo en Secret Manager, separada de Angeli, Contactos y Calendar. Antes de tratar esta versión como estable hay que desplegar Cloud Run y comprobar foto, archivo, lectura, persistencia, sincronización móvil-escritorio y borrado.

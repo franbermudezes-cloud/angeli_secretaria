@@ -1,9 +1,23 @@
-import { typeLabel } from "./classifier.js?v=0.20.5";
-import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.20.5";
+import { typeLabel } from "./classifier.js?v=0.20.6";
+import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.20.6";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
   let toastTimer;
+  const welcomeStartedAt = performance.now();
+  let welcomeDismissed = false;
+
+  function dismissWelcome() {
+    if (welcomeDismissed) return;
+    welcomeDismissed = true;
+    const welcome = $("welcomeScreen");
+    if (!welcome) return;
+    const minimumRemaining = Math.max(0, 2600 - (performance.now() - welcomeStartedAt));
+    setTimeout(() => welcome.classList.add("is-leaving"), minimumRemaining);
+  }
+
+  // Un fallo de inicialización no debe dejar una pantalla de bienvenida eterna.
+  setTimeout(dismissWelcome, 4500);
 
   function notify(message) {
     const toast = $("toast");
@@ -255,7 +269,7 @@ export function createUI({ getMedia }) {
     $("preview").innerHTML = files.map(file => '<img class="thumb" src="' + URL.createObjectURL(file) + '" alt="Imagen preparada">').join("");
   }
 
-  return { $, notify, setGoogleStatus, setSyncStatus, render, showImagePreview, showEntryAction, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers };
+  return { $, notify, setGoogleStatus, setSyncStatus, render, showImagePreview, showEntryAction, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
 }
 
 function esc(value) {

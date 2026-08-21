@@ -21,6 +21,16 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.20.6] - 2026-08-21
+
+### Added
+
+- Pantalla de bienvenida a pantalla completa con la animación original de Angeli. Se mantiene un mínimo de 2,6 segundos mientras la PWA inicializa sesión y datos, y se retira automáticamente para no bloquear la aplicación si hay un problema de red.
+
+### Changed
+
+- Identificación visible y caché PWA actualizadas a `V0.20.6 · Bienvenida`.
+
 ## [0.20.5] - 2026-08-21
 
 ### Fixed
