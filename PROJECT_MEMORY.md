@@ -153,3 +153,7 @@ La interfaz se rediseña para móvil sin mover la lógica de negocio a `index.ht
 ### 2026-08-21 — V0.16.4 · Recuperación de caché PWA pendiente de validación
 
 Durante la primera prueba de V0.16 se publicó una plantilla HTML sin cerrar dentro de `ui.js`; el navegador no podía analizar el módulo y por eso ninguno de los controles se inicializaba. Se reescribe el renderizado de tarjetas sin plantillas anidadas, preservando las mismas acciones y datos. Los recursos, manifest y Service Worker se renuevan a `0.16.4`; JavaScript y CSS pasan a usar red primero y la caché queda como respaldo offline. La versión se muestra permanentemente en la cabecera durante esta fase de pruebas. Pendiente de comprobar menú, envío y dictado en Android antes de considerar V0.16 operativa.
+
+### 2026-08-21 — V0.16.5 · Flujo operativo pendiente de validación
+
+La tarjeta emergente deja de ser un aviso breve y pasa a ser el espacio de trabajo: muestra el borrador completo al dictar o escribir, y permanece hasta enviar o cancelar. El micrófono grande no se oculta después de una entrada. Para `contact.call`, la tarjeta mantiene la búsqueda abierta; si Contactos no está conectado, inicia la autorización bajo una acción explícita de la persona y, al volver, muestra los teléfonos encontrados para abrir el marcador. El historial inferior conserva los registros, pero no es el lugar donde se debe completar una acción inmediata. Calendar recibe la confirmación desde la tarjeta, por lo que no debe mostrar una segunda confirmación nativa. Pendiente de validación manual completa en Android.

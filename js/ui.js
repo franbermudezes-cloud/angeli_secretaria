@@ -1,4 +1,4 @@
-import { typeLabel } from "./classifier.js?v=0.16.4";
+import { typeLabel } from "./classifier.js?v=0.16.5";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -50,16 +50,50 @@ export function createUI({ getMedia }) {
     $("actionModal").classList.add("show");
   }
 
+  function showDraft({ value = "", onInput, onSend, onCancel }) {
+    const draft = document.createElement("textarea");
+    draft.id = "activeDraft";
+    draft.className = "active-draft";
+    draft.rows = 5;
+    draft.placeholder = "Habla o escribe aquí…";
+    draft.value = value;
+    draft.oninput = () => onInput?.(draft.value);
+    openModal({
+      title: "Te escucho",
+      lead: "Puedes hablar, parar, continuar o corregir antes de enviar.",
+      body: draft,
+      actions: [
+        { label: "Ahora no", kind: "secondary", onClick: onCancel || closeLayers },
+        { label: "➤ Enviar", kind: "confirm", onClick: onSend }
+      ]
+    });
+    setTimeout(() => draft.focus(), 0);
+  }
+
+  function updateDraft(value) {
+    const draft = $("activeDraft");
+    if (draft && draft.value !== value) draft.value = value;
+  }
+
+  function showWorking(title, lead, body) {
+    openModal({ title, lead, body, actions: [] });
+  }
+
   function entryBody(note) {
     const description = note.proposal?.description || "Entrada guardada";
     const location = note.location ? "<br>📍 " + esc(note.location) : "";
     return '<div class="proposal-box"><strong>' + esc(typeLabel(note.type)) + "</strong>" + esc(description) + location + "</div>";
   }
 
-  function showEntryAction(note) {
+  function showEntryAction(note, google) {
     const intent = note.proposal?.intent || "note";
     const base = { title: "Entrada preparada", lead: "Angeli ha entendido esto. Confirma solo si quieres realizar la acción.", body: entryBody(note) };
     if (intent === "calendar.create") {
+      if (note.calendarStatus === "synced") {
+        const link = note.calendarUrl ? '<p><a href="' + esc(note.calendarUrl) + '" target="_blank" rel="noopener">Abrir evento en Calendar</a></p>' : "";
+        openModal({ ...base, title: "✓ Añadido al calendario", lead: "El evento ya está creado.", body: entryBody(note) + link, actions: [{ label: "Cerrar", kind: "confirm", onClick: closeLayers }] });
+        return;
+      }
       openModal({ ...base, title: "¿Lo añado al calendario?", actions: [
         { label: "Seguir editando", kind: "secondary", onClick: () => { closeLayers(); $("text").value = note.text; $("text").focus(); } },
         { label: "📅 Añadir", kind: "confirm", dataset: { a: "calendar", id: note.id } }
@@ -67,6 +101,23 @@ export function createUI({ getMedia }) {
       return;
     }
     if (intent === "contact.call") {
+      const result = !note.phone && google ? google.getContactResult(note.id) : null;
+      if (result) {
+        if (result.error) {
+          openModal({ ...base, title: "Contacto", lead: result.error, actions: [{ label: "Cerrar", kind: "confirm", onClick: closeLayers }] });
+          return;
+        }
+        const options = result.contacts.flatMap(contact => contact.phones.map(phone => {
+          const number = google.contactTel(phone);
+          return '<button class="contact-choice" data-a="call" data-id="' + esc(note.id) + '" data-phone="' + esc(number) + '"><strong>📞 ' + esc(contact.name) + '</strong><span>' + esc(number) + "</span></button>";
+        })).join("");
+        if (options) {
+          openModal({ ...base, title: "¿A qué número llamamos?", lead: "Toca un número para abrir el marcador.", body: entryBody(note) + '<div class="contact-options">' + options + "</div>", actions: [{ label: "Ahora no", kind: "secondary", onClick: closeLayers }] });
+          return;
+        }
+        openModal({ ...base, title: "Contacto", lead: "No he encontrado un teléfono disponible.", actions: [{ label: "Cerrar", kind: "confirm", onClick: closeLayers }] });
+        return;
+      }
       openModal({ ...base, title: "Llamar", actions: [
         { label: "Ahora no", kind: "secondary", onClick: closeLayers },
         { label: note.phone ? "📞 Abrir marcador" : "👥 Buscar contacto", kind: "confirm", dataset: { a: note.phone ? "call" : "search-contact", id: note.id, phone: note.phone || "" } }
@@ -76,7 +127,9 @@ export function createUI({ getMedia }) {
     if (["calendar.query", "calendar.update", "calendar.delete"].includes(intent)) {
       const label = intent === "calendar.query" ? "📅 Consultar" : "Buscar coincidencias";
       const title = intent === "calendar.query" ? "Consultar calendario" : intent === "calendar.update" ? "Modificar evento" : "Cancelar evento";
-      openModal({ ...base, title, actions: [{ label: "Ahora no", kind: "secondary", onClick: closeLayers }, { label, kind: "confirm", dataset: { a: "search-calendar", id: note.id } }] });
+      const result = google?.getCalendarResult(note.id);
+      const body = result ? entryBody(note) + calendarActions(note, google) : base.body;
+      openModal({ ...base, title, body, actions: result ? [{ label: "Cerrar", kind: "confirm", onClick: closeLayers }] : [{ label: "Ahora no", kind: "secondary", onClick: closeLayers }, { label, kind: "confirm", dataset: { a: "search-calendar", id: note.id } }] });
       return;
     }
     openModal({ ...base, title: "Guardado", lead: "La entrada se ha guardado en tu conversación.", actions: [{ label: "Cerrar", kind: "confirm", onClick: closeLayers }] });
@@ -161,7 +214,7 @@ export function createUI({ getMedia }) {
     $("preview").innerHTML = files.map(file => '<img class="thumb" src="' + URL.createObjectURL(file) + '" alt="Imagen preparada">').join("");
   }
 
-  return { $, notify, setGoogleStatus, render, showImagePreview, showEntryAction, openModal, openMenu, closeLayers };
+  return { $, notify, setGoogleStatus, render, showImagePreview, showEntryAction, showDraft, updateDraft, showWorking, openModal, openMenu, closeLayers };
 }
 
 function esc(value) {

@@ -4,6 +4,19 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.16.5] - 2026-08-21
+
+### Changed
+
+- La tarjeta emergente pasa a ser el espacio operativo principal: conserva el borrador de voz o texto hasta enviar y mantiene las acciones de Calendar y Contactos abiertas hasta completar o cancelar el flujo.
+- El micrófono grande permanece disponible durante toda la sesión y la versión de prueba se muestra permanentemente en la cabecera.
+- Al buscar un contacto, la PWA solicita la conexión a Contactos solo si hace falta y, tras volver, muestra los teléfonos encontrados dentro de la misma tarjeta para abrir el marcador con un toque.
+- Calendar crea el evento después de la confirmación de la tarjeta, sin una segunda confirmación nativa.
+
+### Added
+
+- `styles-flow.css`, hoja acotada al flujo de dictado, tarjeta de trabajo y opciones de contacto.
+
 ## [0.16.4] - 2026-08-21
 
 ### Fixed
