@@ -94,6 +94,10 @@ La carpeta raíz de Angeli fue compartida con la cuenta de servicio de Cloud Run
 
 Todas las instrucciones muestran una tarjeta de progreso desde el primer toque de Enviar y bloquean los dos controles de envío hasta terminar. Un fallo de subida de Drive no puede quedar preparado y contaminar la siguiente instrucción de texto: la selección fallida se elimina y se informa claramente. Si el medio ya se subió y falla una fase posterior, la aplicación intenta retirarlo de Drive. Los errores de acceso a medios se registran con diagnóstico seguro en Cloud Run y se muestran como un problema de acceso a la carpeta de Drive, no como un genérico «No autorizado». Pendiente de desplegar Cloud Run y validar texto, Calendar, Contactos, foto y archivo en Android.
 
+### 2026-08-21 — V0.20.3 · Flujo libre pendiente de validación
+
+La interfaz no espera a que Firestore termine una escritura antes de pasar de «Guardando» a la tarjeta operativa. Firestore sigue siendo la fuente remota de verdad y su estado se muestra en Ajustes; si no sincroniza, se informa de que la instrucción sigue pendiente. Esta separación evita que una demora de red bloquee el menú, adjuntos, Calendar o Contactos.
+
 ### 2026-08-20 — Validación estable V0.10
 
 V0.10 se validó manualmente en Android: dictado y texto, cámara, selección de fotos, archivos, persistencia tras actualizar/reabrir la PWA, visualización de medios y envío a Google Sheets. Tratar este estado como referencia estable: los cambios futuros deben preservar esos flujos.

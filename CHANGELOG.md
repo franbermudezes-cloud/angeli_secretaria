@@ -21,6 +21,16 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.20.3] - 2026-08-21
+
+### Fixed
+
+- La confirmación de Firestore ya no mantiene bloqueada la tarjeta de progreso. La sincronización continúa en segundo plano y expone su estado en Ajustes, mientras que la persona puede continuar con la propuesta de Calendar, Contactos o cualquier otra acción.
+
+### Changed
+
+- Identificación visible y caché PWA actualizadas a `V0.20.3 · Flujo libre`.
+
 ## [0.20.2] - 2026-08-21
 
 ### Fixed
