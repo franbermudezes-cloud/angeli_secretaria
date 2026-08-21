@@ -421,9 +421,10 @@ def app(environ: dict[str, Any], start_response: Callable):
     if environ.get("HTTP_ORIGIN") and not origin:
         return json_response(start_response, "403 Forbidden", {"error": "Origen no permitido"})
     try:
+        oauth_payload = None
         if path == "/oauth/exchange":
-            payload = parse_json_body(environ, {"integration", "code", "redirectUri"})
-            integration, code, redirect_uri = payload.get("integration"), payload.get("code"), payload.get("redirectUri")
+            oauth_payload = parse_json_body(environ, {"integration", "code", "redirectUri"})
+            integration, code, redirect_uri = oauth_payload.get("integration"), oauth_payload.get("code"), oauth_payload.get("redirectUri")
             if integration not in {"identity", CONTACTS, CALENDAR} or not isinstance(code, str) or not isinstance(redirect_uri, str) or redirect_uri not in configured_origins():
                 raise ValueError("Autorización no válida")
             if integration == "identity":
@@ -438,8 +439,7 @@ def app(environ: dict[str, Any], start_response: Callable):
         if path == "/session/status":
             return json_response(start_response, "200 OK", session_status(), origin)
         if path == "/oauth/exchange":
-            payload = parse_json_body(environ, {"integration", "code", "redirectUri"})
-            integration, code, redirect_uri = payload.get("integration"), payload.get("code"), payload.get("redirectUri")
+            integration, code, redirect_uri = oauth_payload.get("integration"), oauth_payload.get("code"), oauth_payload.get("redirectUri")
             if integration not in {CONTACTS, CALENDAR} or not isinstance(code, str) or not isinstance(redirect_uri, str) or redirect_uri not in configured_origins():
                 raise ValueError("Autorización no válida")
             return json_response(start_response, "200 OK", sessions().exchange_code(integration, code, redirect_uri), origin)

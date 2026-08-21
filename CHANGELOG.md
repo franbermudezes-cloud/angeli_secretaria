@@ -4,6 +4,12 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.18.3] - 2026-08-21
+
+### Fixed
+
+- Se evita leer dos veces el cuerpo de una autorización OAuth de Contactos o Calendar, que causaba el error `JSON de entrada no válido` tras conectar IA.
+
 ## [0.18.2] - 2026-08-21
 
 ### Fixed

@@ -168,6 +168,10 @@ class InterpretEndpointTests(unittest.TestCase):
                 self.calls.append((integration, method, url, body))
                 return {"results": []} if integration == "contacts" else {"id": "event-1"}
 
+            def exchange_code(self, integration, code, redirect_uri):
+                self.calls.append((integration, "exchange", code, redirect_uri))
+                return {"connected": True}
+
         service = FakeSessions()
         app.set_test_dependencies(
             lambda text, now, timezone: VALID_RESPONSE.copy(),
@@ -187,15 +191,42 @@ class InterpretEndpointTests(unittest.TestCase):
         self.assertEqual(service.calls[1][0:2], ("calendar", "POST"))
         os.environ.pop("ALLOWED_GOOGLE_SUBS", None)
 
+    def test_persistent_grant_body_is_read_once(self):
+        class FakeSessions:
+            def exchange_code(self, integration, code, redirect_uri):
+                self.values = (integration, code, redirect_uri)
+                return {"connected": True}
 
-def request_path(path, payload, authorization=""):
+        service = FakeSessions()
+        app.set_test_dependencies(
+            lambda text, now, timezone: VALID_RESPONSE.copy(),
+            lambda token: {"sub": "approved-sub"},
+            lambda: service,
+        )
+        os.environ.pop("ANGELI_AI_DEV_BYPASS_AUTH", None)
+        os.environ["ALLOWED_GOOGLE_SUBS"] = "approved-sub"
+        os.environ["ALLOWED_ORIGINS"] = "https://franbermudezes-cloud.github.io"
+        status, data = request_path(
+            "/oauth/exchange",
+            {"integration": "contacts", "code": "one-code", "redirectUri": "https://franbermudezes-cloud.github.io"},
+            "Bearer test",
+            "https://franbermudezes-cloud.github.io",
+        )
+        self.assertEqual(status, "200 OK")
+        self.assertEqual(data, {"connected": True})
+        self.assertEqual(service.values, ("contacts", "one-code", "https://franbermudezes-cloud.github.io"))
+        os.environ.pop("ALLOWED_GOOGLE_SUBS", None)
+        os.environ.pop("ALLOWED_ORIGINS", None)
+
+
+def request_path(path, payload, authorization="", origin=""):
     body = __import__("json").dumps(payload).encode("utf-8")
     captured = {}
 
     def start_response(status, headers):
         captured["status"] = status
 
-    response = b"".join(app.app({"REQUEST_METHOD": "POST", "PATH_INFO": path, "CONTENT_LENGTH": str(len(body)), "wsgi.input": BytesIO(body), "HTTP_AUTHORIZATION": authorization}, start_response))
+    response = b"".join(app.app({"REQUEST_METHOD": "POST", "PATH_INFO": path, "CONTENT_LENGTH": str(len(body)), "wsgi.input": BytesIO(body), "HTTP_AUTHORIZATION": authorization, "HTTP_ORIGIN": origin}, start_response))
     return captured["status"], __import__("json").loads(response)
 
 
