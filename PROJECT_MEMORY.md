@@ -44,6 +44,7 @@ La arquitectura visual se separó en V0.12.3 y la lógica se modularizó en V0.1
 - Clasificación local automática de entradas por tipo: nota, tarea, recordatorio, calendario, contacto, foto o archivo.
 - Acciones contextuales: llamada por `tel:` cuando se detecta teléfono, estados visuales de tarea/recordatorio y creación confirmada de eventos en Google Calendar.
 - Persistencia de las entradas en `localStorage` con la clave `angeli_secretaria_notes_v5`.
+- Firebase Auth y Cloud Firestore están preparados como sustitución de la fuente local de entradas: Firebase mantiene una sesión persistente de la cuenta propietaria y Firestore sincroniza las entradas entre móvil y escritorio. Pendiente de desplegar y validar esta migración como V0.19.
 - Captura de cámara, selección de imágenes y selección de archivos. Imágenes y archivos se guardan localmente como blobs en IndexedDB.
 - Dictado en español mediante `SpeechRecognition` o `webkitSpeechRecognition`.
 - Envío de datos de la entrada a un endpoint de Google Apps Script/Google Sheets.
@@ -187,3 +188,9 @@ La autorización persistente de Contactos y Calendar ya se comprobó en Cloud Ru
 Los recordatorios locales entienden `a las dos y cuarto` y `a las 2 y 15 minutos`. Para `reminder.create` con hora y sin día, se calcula la próxima ocurrencia temporal; para eventos de Calendar normales se mantiene la exigencia de fecha explícita. Antes de crear el evento privado de Calendar con aviso emergente, la PWA muestra la hora calculada y requiere la acción `Programar`. Android recibe el aviso de Google Calendar solo si Calendar crea correctamente ese evento y sus notificaciones están activadas; no se implementa todavía una notificación propia de Angeli con la PWA cerrada.
 
 Pendiente de validación manual en Android: cerrar/abrir, comprobar estados, crear un recordatorio de prueba, confirmar `Programar`, verificar el evento/alerta de Calendar y cancelar la prueba.
+
+### 2026-08-21 — V0.19 · Cuenta y sincronización preparado
+
+Se adopta Firebase como infraestructura compartida de Angeli: Firebase Auth mantiene la sesión de la cuenta propietaria y Cloud Firestore pasa a ser la fuente de verdad de las entradas entre dispositivos. La PWA conserva `localStorage` como copia de respaldo y migra de forma idempotente las entradas locales al iniciar una sesión; no borra datos locales durante la migración. Los medios siguen como blobs locales en IndexedDB y sus referencias se conservan en las entradas, pero la sincronización física de fotos/archivos se reserva para un bloque posterior de Storage/Drive para no perder adjuntos existentes.
+
+Cloud Run deja de aceptar el ID token efímero de Google Identity Services y pasa a validar ID tokens de Firebase, restringidos al correo propietario mediante `ALLOWED_FIREBASE_EMAILS`. Contactos y Calendar mantienen sus grants persistentes independientes en Secret Manager y pueden pertenecer a cuentas Google distintas. Antes de publicar hay que desplegar las reglas `firestore.rules`, configurar la variable de Cloud Run y validar inicio de sesión, cierre/reapertura, sincronización móvil-escritorio y la migración de datos locales.

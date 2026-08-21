@@ -1,4 +1,4 @@
-import{nextDateForTime,temporalData}from"./temporal.js?v=0.18.4";
+import{nextDateForTime,temporalData}from"./temporal.js?v=0.19.0";
 
 const CALL_INTENT=/\b(?:llama|llamar|telefonea|telefonear|contacta|contactar)\b/i;
 

@@ -1,5 +1,5 @@
-import { cleanTemporalText } from "./temporal.js?v=0.18.4";
-import { scheduleTitle } from "./schedule.js?v=0.18.4";
+import { cleanTemporalText } from "./temporal.js?v=0.19.0";
+import { scheduleTitle } from "./schedule.js?v=0.19.0";
 
 const CLIENT_ID = "172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
@@ -10,30 +10,24 @@ const SCOPES = {
 };
 const CALENDAR_SEARCH_INTENTS = new Set(["calendar.query", "calendar.update", "calendar.delete"]);
 
-export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes, getNotes }) {
-  let idToken = "";
-  let identityExpiresAt = 0;
-  let account = "";
+export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes, getNotes, getAuthToken, getSession }) {
   let scriptPromise = null;
-  let identityRecoveryAttempted = false;
-  let identityRecoveryPromise = null;
   let links = { contacts: false, calendar: false };
   const contactResults = new Map();
   const calendarResults = new Map();
   const calendarInFlight = new Set();
 
-  function identityValid() {
-    return Boolean(idToken) && Date.now() < identityExpiresAt;
-  }
+  const signedIn = () => Boolean(getSession?.().signedIn);
 
   function updateStatus() {
-    const identityText = identityValid()
-      ? `IA conectada${account ? ` · ${account}` : ""}`
-      : identityRecoveryAttempted ? "IA: toca Conectar para recuperar sesión" : "IA: comprobando sesión…";
+    const session = getSession?.() || {};
+    const identityText = signedIn()
+      ? `Sesión iniciada${session.email ? ` · ${session.email}` : ""}`
+      : "Inicia sesión para sincronizar e interpretar";
     setStatus({
-      ai: identityText,
-      contacts: links.contacts ? "Contactos conectados de forma permanente" : identityValid() ? "Contactos: pendiente de conectar" : "Contactos: confirma primero la IA",
-      calendar: links.calendar ? "Calendario conectado de forma permanente" : identityValid() ? "Calendario: pendiente de conectar" : "Calendario: confirma primero la IA"
+      app: identityText,
+      contacts: links.contacts ? "Contactos conectados de forma permanente" : signedIn() ? "Contactos: pendiente de conectar" : "Inicia sesión en Angeli primero",
+      calendar: links.calendar ? "Calendario conectado de forma permanente" : signedIn() ? "Calendario: pendiente de conectar" : "Inicia sesión en Angeli primero"
     });
   }
 
@@ -66,25 +60,17 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
     });
   }
 
-  async function request(path, body, needsIdentity = true) {
+  async function request(path, body) {
     const headers = { "Content-Type": "application/json" };
-    if (needsIdentity) headers.Authorization = `Bearer ${idToken}`;
+    headers.Authorization = `Bearer ${await getAuthToken()}`;
     const response = await fetch(API + path, { method: "POST", headers, body: JSON.stringify(body) });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || `Google respondió ${response.status}`);
     return data;
   }
 
-  function storeIdentity(token) {
-    const payload = decodeJwt(token);
-    if (payload.aud !== CLIENT_ID || !payload.exp) throw new Error("La credencial de Google no es válida");
-    idToken = token;
-    identityExpiresAt = Number(payload.exp) * 1000 - 30000;
-    account = typeof payload.email === "string" ? payload.email : "";
-  }
-
   async function syncLinks() {
-    if (!identityValid()) return updateStatus();
+    if (!signedIn()) return updateStatus();
     try {
       links = await request("/session/status", {});
     } catch (_) {
@@ -93,80 +79,8 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
     updateStatus();
   }
 
-  async function restoreSession() {
-    if (identityValid()) {
-      await syncLinks();
-      return true;
-    }
-    if (identityRecoveryPromise) return identityRecoveryPromise;
-    identityRecoveryAttempted = true;
-    updateStatus();
-    identityRecoveryPromise = (async () => {
-      try {
-        await loadGoogleIdentity();
-        if (!window.google?.accounts?.id) throw new Error("Google Identity no disponible");
-        const credential = await requestSilentCredential();
-        if (!credential) return false;
-        storeIdentity(credential);
-        await syncLinks();
-        return true;
-      } catch (_) {
-        idToken = "";
-        identityExpiresAt = 0;
-        account = "";
-        updateStatus();
-        return false;
-      } finally {
-        identityRecoveryPromise = null;
-      }
-    })();
-    return identityRecoveryPromise;
-  }
-
-  function requestSilentCredential() {
-    return new Promise(resolve => {
-      let settled = false;
-      const finish = value => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timeout);
-        resolve(value || "");
-      };
-      const timeout = setTimeout(() => finish(""), 3500);
-      google.accounts.id.initialize({
-        client_id: CLIENT_ID,
-        auto_select: true,
-        cancel_on_tap_outside: false,
-        callback: response => finish(response?.credential)
-      });
-      google.accounts.id.prompt(notification => {
-        if (notification.isNotDisplayed?.() || notification.isSkippedMoment?.()) finish("");
-      });
-    });
-  }
-
-  async function connectAI() {
-    if (identityValid()) return true;
-    if (await restoreSession()) return true;
-    try {
-      const code = await requestCode("identity");
-      const data = await request("/oauth/exchange", { integration: "identity", code, redirectUri: location.origin }, false);
-      storeIdentity(data.idToken);
-      await syncLinks();
-      notify("IA conectada");
-      return true;
-    } catch (_) {
-      idToken = "";
-      identityExpiresAt = 0;
-      account = "";
-      updateStatus();
-      notify("No se pudo conectar la IA");
-      return false;
-    }
-  }
-
   async function connectPersistent(kind) {
-    if (!identityValid() && !(await connectAI())) return false;
+    if (!signedIn()) { notify("Inicia sesión en Angeli antes de conectar Google"); return false; }
     try {
       const code = await requestCode(kind);
       await request("/oauth/exchange", { integration: kind, code, redirectUri: location.origin });
@@ -184,21 +98,13 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
   const connectCalendar = () => connectPersistent("calendar");
 
   async function callApi(body) {
-    if (!identityValid() && !(await connectAI())) throw new Error("IA no conectada");
+    if (!signedIn()) throw new Error("Sesión de Angeli no iniciada");
     return request("/google", body);
   }
 
   async function interpretWithAI(text, provider) {
-    if (!identityValid() && !(await connectAI())) throw new Error("IA no conectada");
-    return provider(text, idToken);
-  }
-
-  function disconnectAI() {
-    idToken = "";
-    identityExpiresAt = 0;
-    account = "";
-    identityRecoveryAttempted = true;
-    updateStatus();
+    if (!signedIn()) throw new Error("Sesión de Angeli no iniciada");
+    return provider(text, await getAuthToken());
   }
 
   function disconnectContacts() {
@@ -369,13 +275,11 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
 
   return {
     updateStatus,
-    restoreSession,
+    syncLinks,
     connectContacts,
     connectCalendar,
-    connectAI,
     disconnectContacts,
     disconnectCalendar,
-    disconnectAI,
     interpretWithAI,
     searchContact,
     createCalendarEvent,
@@ -389,13 +293,6 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
     clearContactResult: id => contactResults.delete(id),
     contactTel
   };
-}
-
-function decodeJwt(token) {
-  const part = String(token || "").split(".")[1];
-  if (!part) throw new Error("Credencial no válida");
-  const base64 = part.replace(/-/g, "+").replace(/_/g, "/");
-  return JSON.parse(atob(base64 + "=".repeat((4 - base64.length % 4) % 4)));
 }
 
 function contactTel(value) {

@@ -4,7 +4,7 @@ Este servicio interpreta texto mediante `POST /interpret` y actúa como backend
 seguro para las integraciones persistentes de Google. La PWA nunca recibe ni
 guarda refresh tokens.
 
-Además ofrece, siempre tras comprobar un ID token del propietario:
+Además ofrece, siempre tras comprobar un ID token de Firebase del propietario:
 
 - `POST /session/status`: estado de las vinculaciones de Contactos y Calendar.
 - `POST /oauth/exchange`: intercambia un código OAuth; los refresh tokens de
@@ -32,13 +32,19 @@ Variables necesarias:
 - `GOOGLE_CLOUD_PROJECT`: proyecto de Google Cloud.
 - `VERTEX_LOCATION`: `global` inicialmente.
 - `GOOGLE_WEB_CLIENT_ID`: Client ID web ya usado por la PWA.
-- `ALLOWED_GOOGLE_SUBS`: identificadores `sub` autorizados, separados por coma.
+- `ALLOWED_FIREBASE_EMAILS`: correos propietarios de Angeli autorizados,
+  separados por coma. Actualmente: `franbermudez.es@gmail.com`.
 - `ALLOWED_ORIGINS`: orígenes exactos de GitHub Pages y de desarrollo local,
   separados por coma.
 
-La PWA enviará un ID token de Google en `Authorization: Bearer <id-token>`.
-El servicio verifica firma, audiencia, emisor, expiración y el `sub`, antes de
-llamar a Vertex AI.
+La PWA envía un ID token de Firebase en `Authorization: Bearer <id-token>`.
+El servicio verifica su firma, proyecto, expiración y correo validado antes de
+llamar a Vertex AI o a una integración Google.
+
+Firebase Auth mantiene la sesión de Angeli en el navegador. Firestore contiene
+las entradas compartidas entre dispositivos; Secret Manager conserva solo las
+autorizaciones de Contactos y Calendar, que pueden pertenecer a cuentas
+distintas de la cuenta propietaria de Angeli.
 
 ## Desarrollo local y pruebas
 

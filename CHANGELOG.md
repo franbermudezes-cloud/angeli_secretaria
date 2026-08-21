@@ -21,6 +21,23 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-08-21
+
+### Added
+
+- Firebase Auth como sesión persistente de Angeli y Cloud Firestore como fuente de verdad compartida para las entradas entre móvil y escritorio.
+- Migración segura e idempotente de entradas existentes desde `localStorage`: no elimina la copia local ni los medios IndexedDB mientras no se confirme su sincronización.
+- Reglas de Firestore que restringen cada entrada a su usuario autenticado.
+
+### Changed
+
+- Cloud Run valida tokens de Firebase del correo propietario autorizado mediante `ALLOWED_FIREBASE_EMAILS`; ya no depende del token efímero de Google Identity Services para interpretar una orden o consultar el estado de las conexiones.
+- Ajustes separa la sesión persistente de **Cuenta Angeli** de las conexiones independientes de Contactos y Calendar.
+
+### Pending validation
+
+- Pendiente de desplegar reglas de Firestore y backend, y de validar en Android/escritorio la sesión persistente, la migración y la sincronización en tiempo real.
+
 ## [0.18.3] - 2026-08-21
 
 ### Fixed

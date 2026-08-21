@@ -292,22 +292,27 @@ def verify_identity(environ: dict[str, Any]) -> str:
     token = environ.get("HTTP_AUTHORIZATION", "").removeprefix("Bearer ").strip()
     if not token:
         raise PermissionError("Falta identificación")
-    verifier = _identity_verifier or google_identity_verifier
+    verifier = _identity_verifier or firebase_identity_verifier
     claims = verifier(token)
-    allowed_subs = {value.strip() for value in os.getenv("ALLOWED_GOOGLE_SUBS", "").split(",") if value.strip()}
-    if not allowed_subs or claims.get("sub") not in allowed_subs:
+    allowed_emails = {value.strip().lower() for value in os.getenv("ALLOWED_FIREBASE_EMAILS", "").split(",") if value.strip()}
+    email = str(claims.get("email") or "").lower()
+    if not allowed_emails or not claims.get("email_verified") or email not in allowed_emails:
         raise PermissionError("Usuario no autorizado")
-    return claims["sub"]
+    return str(claims.get("uid") or claims.get("sub") or "")
 
 
-def google_identity_verifier(token: str) -> dict[str, Any]:
-    client_id = os.getenv("GOOGLE_WEB_CLIENT_ID", "")
-    if not client_id:
+def firebase_identity_verifier(token: str) -> dict[str, Any]:
+    project = os.getenv("GOOGLE_CLOUD_PROJECT", "")
+    if not project:
         raise PermissionError("El servidor no está configurado")
-    from google.auth.transport.requests import Request
-    from google.oauth2 import id_token
+    import firebase_admin
+    from firebase_admin import auth as firebase_auth
 
-    return id_token.verify_oauth2_token(token, Request(), client_id)
+    try:
+        firebase_admin.get_app()
+    except ValueError:
+        firebase_admin.initialize_app(options={"projectId": project})
+    return firebase_auth.verify_id_token(token)
 
 
 def enforce_rate_limit(subject: str) -> None:
@@ -427,24 +432,12 @@ def app(environ: dict[str, Any], start_response: Callable):
     if environ.get("HTTP_ORIGIN") and not origin:
         return json_response(start_response, "403 Forbidden", {"error": "Origen no permitido"})
     try:
-        oauth_payload = None
-        if path == "/oauth/exchange":
-            oauth_payload = parse_json_body(environ, {"integration", "code", "redirectUri"})
-            integration, code, redirect_uri = oauth_payload.get("integration"), oauth_payload.get("code"), oauth_payload.get("redirectUri")
-            if integration not in {"identity", CONTACTS, CALENDAR} or not isinstance(code, str) or not isinstance(redirect_uri, str) or redirect_uri not in configured_origins():
-                raise ValueError("Autorización no válida")
-            if integration == "identity":
-                result = sessions().exchange_code(integration, code, redirect_uri)
-                claims = google_identity_verifier(result["idToken"])
-                allowed = {value.strip() for value in os.getenv("ALLOWED_GOOGLE_SUBS", "").split(",") if value.strip()}
-                if not allowed or claims.get("sub") not in allowed:
-                    raise PermissionError("Usuario no autorizado")
-                return json_response(start_response, "200 OK", result, origin)
         subject = verify_identity(environ)
         enforce_rate_limit(subject)
         if path == "/session/status":
             return json_response(start_response, "200 OK", session_status(), origin)
         if path == "/oauth/exchange":
+            oauth_payload = parse_json_body(environ, {"integration", "code", "redirectUri"})
             integration, code, redirect_uri = oauth_payload.get("integration"), oauth_payload.get("code"), oauth_payload.get("redirectUri")
             if integration not in {CONTACTS, CALENDAR} or not isinstance(code, str) or not isinstance(redirect_uri, str) or redirect_uri not in configured_origins():
                 raise ValueError("Autorización no válida")

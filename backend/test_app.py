@@ -135,12 +135,12 @@ class InterpretEndpointTests(unittest.TestCase):
 
     def test_rejects_unapproved_identity(self):
         os.environ.pop("ANGELI_AI_DEV_BYPASS_AUTH", None)
-        os.environ["ALLOWED_GOOGLE_SUBS"] = "approved-sub"
-        app.set_test_dependencies(lambda text, now, timezone: VALID_RESPONSE.copy(), lambda token: {"sub": "other-sub"})
+        os.environ["ALLOWED_FIREBASE_EMAILS"] = "owner@example.com"
+        app.set_test_dependencies(lambda text, now, timezone: VALID_RESPONSE.copy(), lambda token: {"uid": "other-sub", "email": "other@example.com", "email_verified": True})
         status, data = app.wsgi_request({"text": "Idea", "now": "2026-08-20T21:20:00+02:00", "timeZone": "Europe/Madrid"}, "Bearer test")
         self.assertEqual(status, "401 Unauthorized")
         self.assertEqual(data["error"], "No autorizado")
-        os.environ.pop("ALLOWED_GOOGLE_SUBS", None)
+        os.environ.pop("ALLOWED_FIREBASE_EMAILS", None)
 
     def test_preflight_is_empty_and_allows_authorized_origin(self):
         os.environ["ALLOWED_ORIGINS"] = "https://franbermudezes-cloud.github.io"
@@ -175,11 +175,11 @@ class InterpretEndpointTests(unittest.TestCase):
         service = FakeSessions()
         app.set_test_dependencies(
             lambda text, now, timezone: VALID_RESPONSE.copy(),
-            lambda token: {"sub": "approved-sub"},
+            lambda token: {"uid": "approved-sub", "email": "owner@example.com", "email_verified": True},
             lambda: service,
         )
         os.environ.pop("ANGELI_AI_DEV_BYPASS_AUTH", None)
-        os.environ["ALLOWED_GOOGLE_SUBS"] = "approved-sub"
+        os.environ["ALLOWED_FIREBASE_EMAILS"] = "owner@example.com"
         status, data = request_path("/google", {"integration": "contacts", "action": "search", "query": "Montse"}, "Bearer test")
         self.assertEqual(status, "200 OK")
         self.assertEqual(data, {"results": []})
@@ -189,7 +189,7 @@ class InterpretEndpointTests(unittest.TestCase):
         self.assertEqual(status, "200 OK")
         self.assertEqual(data, {"id": "event-1"})
         self.assertEqual(service.calls[1][0:2], ("calendar", "POST"))
-        os.environ.pop("ALLOWED_GOOGLE_SUBS", None)
+        os.environ.pop("ALLOWED_FIREBASE_EMAILS", None)
 
     def test_persistent_grant_body_is_read_once(self):
         class FakeSessions:
@@ -200,11 +200,11 @@ class InterpretEndpointTests(unittest.TestCase):
         service = FakeSessions()
         app.set_test_dependencies(
             lambda text, now, timezone: VALID_RESPONSE.copy(),
-            lambda token: {"sub": "approved-sub"},
+            lambda token: {"uid": "approved-sub", "email": "owner@example.com", "email_verified": True},
             lambda: service,
         )
         os.environ.pop("ANGELI_AI_DEV_BYPASS_AUTH", None)
-        os.environ["ALLOWED_GOOGLE_SUBS"] = "approved-sub"
+        os.environ["ALLOWED_FIREBASE_EMAILS"] = "owner@example.com"
         os.environ["ALLOWED_ORIGINS"] = "https://franbermudezes-cloud.github.io"
         status, data = request_path(
             "/oauth/exchange",
@@ -215,7 +215,7 @@ class InterpretEndpointTests(unittest.TestCase):
         self.assertEqual(status, "200 OK")
         self.assertEqual(data, {"connected": True})
         self.assertEqual(service.values, ("contacts", "one-code", "https://franbermudezes-cloud.github.io"))
-        os.environ.pop("ALLOWED_GOOGLE_SUBS", None)
+        os.environ.pop("ALLOWED_FIREBASE_EMAILS", None)
         os.environ.pop("ALLOWED_ORIGINS", None)
 
 

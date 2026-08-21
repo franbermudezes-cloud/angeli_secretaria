@@ -1,5 +1,5 @@
-import { typeLabel } from "./classifier.js?v=0.18.4";
-import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.18.4";
+import { typeLabel } from "./classifier.js?v=0.19.0";
+import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.19.0";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -13,10 +13,10 @@ export function createUI({ getMedia }) {
     toastTimer = setTimeout(() => toast.classList.remove("show"), 2600);
   }
 
-  function setGoogleStatus({ contacts, calendar, ai }) {
+  function setGoogleStatus({ contacts, calendar, app }) {
     $("contactsStatus").textContent = contacts;
     $("calendarStatus").textContent = calendar;
-    $("aiStatus").textContent = ai;
+    $("aiStatus").textContent = app;
   }
 
   function closeLayers() {
