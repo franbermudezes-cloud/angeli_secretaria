@@ -1,5 +1,5 @@
-import { typeLabel } from "./classifier.js?v=0.20.1";
-import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.20.1";
+import { typeLabel } from "./classifier.js?v=0.20.2";
+import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.20.2";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -85,6 +85,14 @@ export function createUI({ getMedia }) {
 
   function showWorking(title, lead, body) {
     openModal({ title, lead, body, actions: [] });
+  }
+
+  function updateWorking(title, lead, body) {
+    if (!$("actionModal").classList.contains("show")) return showWorking(title, lead, body);
+    $("modalTitle").textContent = title;
+    $("modalLead").textContent = lead;
+    $("modalBody").textContent = body || "";
+    $("modalActions").innerHTML = "";
   }
 
   function entryBody(note) {
@@ -247,7 +255,7 @@ export function createUI({ getMedia }) {
     $("preview").innerHTML = files.map(file => '<img class="thumb" src="' + URL.createObjectURL(file) + '" alt="Imagen preparada">').join("");
   }
 
-  return { $, notify, setGoogleStatus, setSyncStatus, render, showImagePreview, showEntryAction, showDraft, updateDraft, showWorking, openModal, openMenu, closeLayers };
+  return { $, notify, setGoogleStatus, setSyncStatus, render, showImagePreview, showEntryAction, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers };
 }
 
 function esc(value) {

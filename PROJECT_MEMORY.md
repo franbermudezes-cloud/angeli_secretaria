@@ -90,6 +90,10 @@ Se sustituye el modelo híbrido de pruebas por una arquitectura única: Firestor
 
 La carpeta raíz de Angeli fue compartida con la cuenta de servicio de Cloud Run. Los IDs de sus destinos no pertenecen al repositorio: se configuran únicamente como variables de Cloud Run para Imágenes, Archivos, Bandeja de entrada, Notas de voz y Datos. El backend deja de crear carpetas y usa de forma directa las rutas configuradas de imágenes y archivos; por ello no vuelve a pedir conexión OAuth de Drive al móvil o Mac. La interfaz bloquea el envío durante una carga y muestra un estado de trabajo. Las nuevas entradas esperan confirmación de Firestore antes de borrar el borrador; ante error revierte la vista temporal y muestra el estado. Pendiente de despliegue y prueba manual cruzada entre Android y Mac.
 
+### 2026-08-21 — V0.20.2 · Flujo seguro pendiente de validación
+
+Todas las instrucciones muestran una tarjeta de progreso desde el primer toque de Enviar y bloquean los dos controles de envío hasta terminar. Un fallo de subida de Drive no puede quedar preparado y contaminar la siguiente instrucción de texto: la selección fallida se elimina y se informa claramente. Si el medio ya se subió y falla una fase posterior, la aplicación intenta retirarlo de Drive. Los errores de acceso a medios se registran con diagnóstico seguro en Cloud Run y se muestran como un problema de acceso a la carpeta de Drive, no como un genérico «No autorizado». Pendiente de desplegar Cloud Run y validar texto, Calendar, Contactos, foto y archivo en Android.
+
 ### 2026-08-20 — Validación estable V0.10
 
 V0.10 se validó manualmente en Android: dictado y texto, cámara, selección de fotos, archivos, persistencia tras actualizar/reabrir la PWA, visualización de medios y envío a Google Sheets. Tratar este estado como referencia estable: los cambios futuros deben preservar esos flujos.

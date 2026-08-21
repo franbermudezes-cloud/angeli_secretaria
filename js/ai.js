@@ -1,4 +1,4 @@
-import{calendarQueryRange,cleanTemporalText,temporalData}from"./temporal.js?v=0.20.1";
+import{calendarQueryRange,cleanTemporalText,temporalData}from"./temporal.js?v=0.20.2";
 
 export const VALID_INTENTS=["note","task.create","reminder.create","calendar.create","calendar.query","calendar.update","calendar.delete","contact.call","file.store","photo.store"];
 const SENSITIVE_INTENTS=new Set(["calendar.update","calendar.delete","contact.call"]);

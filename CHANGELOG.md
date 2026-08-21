@@ -21,6 +21,19 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.20.2] - 2026-08-21
+
+### Fixed
+
+- Cada envío muestra de inmediato una tarjeta de progreso y bloquea las dos flechas hasta que Angeli termina, evitando pulsaciones repetidas durante la comunicación con el servidor.
+- Un adjunto que Drive no puede subir se elimina de la petición fallida para que no bloquee órdenes posteriores de IA, Calendar o Contactos.
+- Si un medio ya llegó a Drive pero después falla la interpretación o el guardado remoto, Angeli intenta retirarlo para evitar adjuntos huérfanos.
+- Los errores de acceso de medios indican que Drive no puede acceder a la carpeta configurada y dejan un diagnóstico técnico seguro en Cloud Run.
+
+### Changed
+
+- Identificación visible y caché PWA actualizadas a `V0.20.2 · Flujo seguro`.
+
 ## [0.20.1] - 2026-08-21
 
 ### Fixed

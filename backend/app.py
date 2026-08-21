@@ -508,8 +508,12 @@ def app(environ: dict[str, Any], start_response: Callable):
         except ValueError as error:
             raise OutputValidationError(str(error)) from error
         return json_response(start_response, "200 OK", interpretation, origin)
-    except PermissionError:
-        return json_response(start_response, "401 Unauthorized", {"error": "No autorizado"}, origin)
+    except PermissionError as error:
+        message = "No autorizado"
+        if path.startswith("/media/"):
+            message = "Drive no puede acceder a la carpeta configurada"
+            print(f"media_authorization_error path={path} reason={str(error)}", file=sys.stderr, flush=True)
+        return json_response(start_response, "401 Unauthorized", {"error": message}, origin)
     except OutputValidationError as error:
         log_interpreter_error("invalid_model_output", error)
         return json_response(start_response, "503 Service Unavailable", {"error": "Interpretación no disponible"}, origin)
