@@ -1,15 +1,15 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.4";
-import{classify,actionData}from"./classifier.js?v=0.21.4";
-import{sendEntry}from"./sheets.js?v=0.21.4";
-import{createUI}from"./ui.js?v=0.21.4";
-import{createGoogleIntegration}from"./google.js?v=0.21.4";
-import{interpret,remoteProvider}from"./ai.js?v=0.21.4";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.4";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.4";
-import{normalizeFutureCall,normalizeReminderSchedule,scheduleFor}from"./schedule.js?v=0.21.4";
-import{createCloudSync}from"./firebase.js?v=0.21.4";
-import{createMediaService}from"./media.js?v=0.21.4";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn}from"./conversation.js?v=0.21.4";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.5";
+import{classify,actionData}from"./classifier.js?v=0.21.5";
+import{sendEntry}from"./sheets.js?v=0.21.5";
+import{createUI}from"./ui.js?v=0.21.5";
+import{createGoogleIntegration}from"./google.js?v=0.21.5";
+import{interpret,remoteProvider}from"./ai.js?v=0.21.5";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.5";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.5";
+import{normalizeFutureCall,normalizeReminderSchedule,scheduleFor}from"./schedule.js?v=0.21.5";
+import{createCloudSync}from"./firebase.js?v=0.21.5";
+import{createMediaService}from"./media.js?v=0.21.5";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn}from"./conversation.js?v=0.21.5";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],selectedFilter="all",selectedType="all",shortcutCapture=false,saving=false;
@@ -169,7 +169,7 @@ async function handleEntryAction(event){
  }
 }
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.4",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.5",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}

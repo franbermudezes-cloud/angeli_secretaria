@@ -90,6 +90,15 @@ La primera fase automatiza las integraciones reales ya aislables:
 - `P11`: localizar un evento y actualizar su hora en el mismo calendario.
 - Base de `P06/P07`: subir un adjunto a Drive y eliminarlo.
 
-Los casos conversacionales, de Firestore, notificación PWA y negocio siguen
-marcados como manuales hasta que exista un perfil de Firebase de prueba y una
-autorización OAuth de pruebas separada.
+La misma puerta ejecuta además `tests/conversation.test.mjs`, que protege el
+coordinador local sin simular éxitos de Google: P01 pregunta únicamente la
+hora pendiente, P02 conserva la intención y el identificador de la operación,
+un recordatorio completo evita preguntas redundantes y cancelar/completar
+cierra la interacción activa. La comprobación real de esta sesión confirmó
+también el mismo recorrido contra la IA remota antes de incorporar la prueba.
+
+Firestore, notificación PWA y los recorridos visuales completos siguen
+marcados como manuales hasta que exista un perfil Firebase aislado para el
+arnés. Las pruebas del coordinador no sustituyen la validación periódica del
+proveedor real: evitan que una respuesta corta vuelva a convertirse en una
+orden independiente si la IA falla o responde con baja confianza.

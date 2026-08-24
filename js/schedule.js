@@ -1,9 +1,12 @@
-import{nextDateForTime,temporalData}from"./temporal.js?v=0.21.4";
+import{nextDateForTime,temporalData}from"./temporal.js?v=0.21.5";
 
 const CALL_INTENT=/\b(?:llama|llamar|telefonea|telefonear|contacta|contactar)\b/i;
 
 export function normalizeFutureCall(interpretation,text){
-  if(interpretation?.intent!=="contact.call"||!interpretation.date||!interpretation.time)return interpretation;
+  // Cualquier referencia temporal cambia la intención: «llama a Miguel» es
+  // inmediata, pero «llama a Miguel mañana» o «a las siete» es un aviso que
+  // puede necesitar completar el dato temporal que falta.
+  if(interpretation?.intent!=="contact.call"||(!interpretation.date&&!interpretation.time))return interpretation;
   const contactName=interpretation.contactName||null;
   return{...interpretation,intent:"reminder.create",title:interpretation.title||`Llamar a ${contactName||interpretation.phone||"contacto"}`,requiresConfirmation:true};
 }
