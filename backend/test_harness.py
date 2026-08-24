@@ -46,7 +46,7 @@ class IntegrationHarness:
     def run(self) -> list[TestResult]:
         """Ejecuta las integraciones ya automatizables de P01–P16.
 
-        P01–P03 y P05/P12 requieren además el coordinador de conversación,
+        P01/P02 y P05/P12 requieren además el coordinador de conversación,
         Firestore y/o una notificación en dispositivo. Se registran como
         pendientes manuales de esta primera fase; nunca se simulan como éxito.
         """
@@ -181,7 +181,8 @@ class IntegrationHarness:
             "runAt": datetime.now(timezone.utc).isoformat(), "prefix": self.prefix,
             "grantPrefix": TEST_GRANT_PREFIX,
             "results": [result.__dict__ for result in self.results],
-            "manualCases": ["P01", "P02", "P03", "P05", "P07", "P08", "P09", "P12", "P13", "P14", "P15", "P16"],
+            "automatedLocalCases": ["P01", "P02", "P03"],
+            "manualCases": ["P05", "P07", "P08", "P09", "P12", "P13", "P14", "P15", "P16"],
         }
         (REPORT_DIRECTORY / f"{self.prefix}.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
 

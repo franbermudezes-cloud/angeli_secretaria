@@ -167,6 +167,21 @@ class InterpretEndpointTests(unittest.TestCase):
         self.assertEqual(data["date"], "2026-08-21")
         self.assertEqual(data["time"], "21:00")
 
+    def test_accepts_completion_intent_and_preserves_its_target(self):
+        app.set_test_dependencies(
+            lambda text, now, timezone: {
+                "intent": "task.complete",
+                "confidence": 0.96,
+                "target": {"title": "Miguel"},
+            }
+        )
+        status, data = app.wsgi_request(
+            {"text": "Ya he llamado a Miguel", "now": "2026-08-24T08:00:00+02:00", "timeZone": "Europe/Madrid"}
+        )
+        self.assertEqual(status, "200 OK")
+        self.assertEqual(data["intent"], "task.complete")
+        self.assertEqual(data["target"], {"title": "Miguel", "date": None, "time": None})
+
     def test_ignores_irrelevant_calendar_fields_on_a_reminder(self):
         app.set_test_dependencies(
             lambda text, now, timezone: {

@@ -28,6 +28,7 @@ RATE_LIMIT_PER_MINUTE = 30
 VALID_INTENTS = {
     "note",
     "task.create",
+    "task.complete",
     "reminder.create",
     "calendar.create",
     "calendar.query",
@@ -103,6 +104,11 @@ Interpreta «a las dos y cuarto», «a las 2 y 15 minutos» y expresiones
 equivalentes con la hora natural más próxima según `now`; conserva siempre la
 hora en formato de 24 horas. El aviso nunca se programa sin confirmación de la
 persona usuaria.
+Para indicar que un pendiente ya se ha realizado, como «Ya he llamado a
+Miguel», usa task.complete. target.title debe identificar brevemente el
+pendiente existente, por ejemplo «Miguel» o «Llamar a Miguel». No crees
+una tarea, nota ni llamada nueva. Si hay varias coincidencias, la aplicación
+pedirá a la persona que elija una.
 Si faltan datos imprescindibles para calendar.create o reminder.create, indica
 en missingFields los nombres de los campos que faltan (date, time, title,
 location, contactName, phone o target) y formula una única pregunta breve en
@@ -425,7 +431,7 @@ def validate_interpretation(raw: Any) -> dict[str, Any]:
     # Gemini puede completar campos auxiliares que no aplican a la intención
     # solicitada. No dejamos que esos datos inofensivos conviertan una orden
     # válida de recordatorio en un fallo global de interpretación.
-    if result["intent"] not in {"calendar.update", "calendar.delete"}:
+    if result["intent"] not in {"calendar.update", "calendar.delete", "task.complete"}:
         result["target"] = None
     if result["intent"] != "calendar.update":
         result["changes"] = None
