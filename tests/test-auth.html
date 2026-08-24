@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Angeli · Autorización de pruebas</title>
+<style>
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:#09153e;color:#f8fbff;font:16px system-ui,sans-serif}
+  main{width:min(92vw,560px);padding:28px;border:1px solid #5d71c4;border-radius:22px;background:#101f56;box-shadow:0 18px 65px #0008}
+  h1{margin-top:0} p{line-height:1.45;color:#d6ddff}.warn{background:#312451;border-radius:12px;padding:12px}.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}button{border:0;border-radius:12px;padding:12px 15px;background:#5d55e8;color:white;font-weight:700;cursor:pointer}button.secondary{background:#26366f}button:disabled{opacity:.5;cursor:wait}#status{margin-top:20px;padding:12px;border-radius:10px;background:#07112d;white-space:pre-wrap}
+</style>
+<main>
+  <h1>Angeli · pruebas reales</h1>
+  <p>Esta página crea exclusivamente autorizaciones de prueba para <strong>buengusto.es@gmail.com</strong>. No muestra ni modifica las conexiones personales de Angeli.</p>
+  <p class="warn">Primero inicia sesión como propietario de Angeli. Después, al conectar cada integración, elige la cuenta de pruebas.</p>
+  <div class="row"><button id="sign-in">Iniciar sesión de propietario</button><button class="secondary" id="refresh">Comprobar estado</button></div>
+  <div class="row"><button data-kind="contacts">Conectar Contactos de prueba</button><button data-kind="calendar">Conectar Calendar de prueba</button><button data-kind="drive">Conectar Drive de prueba</button></div>
+  <div id="status">Preparado.</div>
+</main>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+  import { GoogleAuthProvider, browserLocalPersistence, getAuth, onAuthStateChanged, setPersistence, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+  const config={apiKey:"AIzaSyAFM5NjcxX9lC5MpfII4B3Kx7lV9SsUAsc",authDomain:"angeli-secretaria.firebaseapp.com",projectId:"angeli-secretaria",storageBucket:"angeli-secretaria.firebasestorage.app",messagingSenderId:"172772694205",appId:"1:172772694205:web:6ce976de4a3658c12f3fd4"};
+  const clientId="172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
+  const api="https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
+  const scopes={contacts:"https://www.googleapis.com/auth/contacts.readonly",calendar:"https://www.googleapis.com/auth/calendar.events",drive:"https://www.googleapis.com/auth/drive.file"};
+  const owner="franbermudez.es@gmail.com";
+  const auth=getAuth(initializeApp(config)); let user=null; const status=document.querySelector("#status");
+  await setPersistence(auth,browserLocalPersistence);
+  const show=text=>status.textContent=text;
+  async function request(path,body){if(!user)throw new Error("Inicia sesión como propietario primero");const response=await fetch(api+path,{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${await user.getIdToken()}`},body:JSON.stringify(body)});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||`Error ${response.status}`);return data;}
+  async function loadGIS(){if(window.google?.accounts?.oauth2)return;await new Promise((ok,fail)=>{const script=document.createElement("script");script.src="https://accounts.google.com/gsi/client";script.onload=ok;script.onerror=fail;document.head.append(script);});}
+  async function code(kind){await loadGIS();return new Promise((ok,fail)=>google.accounts.oauth2.initCodeClient({client_id:clientId,scope:scopes[kind],ux_mode:"popup",prompt:"consent select_account",callback:result=>result.code?ok(result.code):fail(new Error(result.error||"Google no autorizó")),error_callback:()=>fail(new Error("Google no pudo abrir la autorización"))}).requestCode());}
+  async function refresh(){try{const data=await request("/test/session/status",{});show(`Cuenta propietaria: ${user.email}\nContactos: ${data.contacts?"conectado":"pendiente"}\nCalendar: ${data.calendar?"conectado":"pendiente"}\nDrive: ${data.drive?"conectado":"pendiente"}`);}catch(error){show(error.message);}}
+  document.querySelector("#sign-in").onclick=async()=>{try{await signInWithPopup(auth,new GoogleAuthProvider());}catch(error){show(error.message);}};
+  document.querySelector("#refresh").onclick=refresh;
+  document.querySelectorAll("[data-kind]").forEach(button=>button.onclick=async()=>{const kind=button.dataset.kind;try{button.disabled=true;show(`Abriendo autorización de ${kind}… elige buengusto.es@gmail.com.`);await request("/test/oauth/exchange",{integration:kind,code:await code(kind),redirectUri:location.origin});show(`${kind} de prueba conectado.`);await refresh();}catch(error){show(`No se pudo conectar ${kind}: ${error.message}`);}finally{button.disabled=false;}});
+  onAuthStateChanged(auth,next=>{user=next;if(user&&user.email?.toLowerCase()!==owner){show("Esta no es la cuenta propietaria de Angeli.");return;}if(user)refresh();else show("Inicia sesión como propietario de Angeli.");});
+</script>

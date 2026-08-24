@@ -1,5 +1,24 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-08-24 — Entorno de pruebas aislado: autorización separada preparada
+
+El arnés de integración real dispone ahora de un perfil OAuth estrictamente
+separado del uso diario: las rutas de Cloud Run `/test/session/status` y
+`/test/oauth/exchange` solo existen si `ANGELI_TEST_HARNESS_ENABLED=1` y solo
+aceptan a la cuenta propietaria de Firebase. Esas rutas escriben únicamente los
+secretos `angeli-test-google-{contacts,calendar,drive}-grant`; nunca leen ni
+sobrescriben `angeli-google-*-grant` de producción. La página estática
+`tests/test-auth.html` permite que la persona propietaria conecte
+`buengusto.es@gmail.com` para Contactos, Calendar y Drive de pruebas. Antes de
+ejecutar casos reales P04, P06 y P10 hay que crear esos tres secretos, asignar
+al Service Account los roles de acceso/creación de versiones sobre ellos,
+desplegar Cloud Run con la bandera de pruebas y completar esa autorización.
+
+Esta infraestructura no modifica la PWA, Firestore ni las cuentas personales.
+Los resultados de los ensayos seguirán siendo no concluyentes hasta que se
+realice una operación real aislada de crear/listar/borrar Calendar y
+subir/borrar Drive.
+
 ## Estado de referencia
 
 - Repositorio remoto/fuente de verdad: `origin` → `git@github.com:franbermudezes-cloud/angeli_secretaria.git`.

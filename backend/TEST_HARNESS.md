@@ -20,9 +20,10 @@ Cada ejecución elimina sus eventos y adjuntos incluso cuando una prueba falla.
    `angeli-ai-interpreter@angeli-secretaria.iam.gserviceaccount.com` los roles
    `Secret Manager Secret Accessor` y `Secret Manager Secret Version Adder`
    sobre esos secretos, no sobre los de producción.
-2. Autorizar con `buengusto.es@gmail.com` los scopes mínimos independientes de
-   Contacts, Calendar y Drive y guardar cada refresh token en su secreto de
-   prueba. Esta vinculación se implementará como perfil de pruebas separado;
+2. Desplegar Cloud Run con `ANGELI_TEST_HARNESS_ENABLED=1` y abrir
+   `/tests/test-auth.html` en GitHub Pages. Iniciar sesión allí como propietario
+   de Angeli y elegir `buengusto.es@gmail.com` para cada una de las tres
+   conexiones. La página escribe exclusivamente en los secretos de prueba;
    **no** se debe usar el botón de conexiones de la PWA de producción.
 3. Verificar desde Cloud Run: crear, listar y borrar un evento de la agenda de
    prueba; crear y borrar un archivo en `Angeli - Pruebas`.

@@ -320,6 +320,27 @@ class InterpretEndpointTests(unittest.TestCase):
         os.environ.pop("ALLOWED_FIREBASE_EMAILS", None)
         os.environ.pop("ALLOWED_ORIGINS", None)
 
+    def test_test_oauth_profile_is_disabled_unless_explicitly_enabled(self):
+        class FakeSessions:
+            def exchange_code(self, integration, code, redirect_uri):
+                return {"connected": True}
+            def connected(self, integration):
+                return False
+
+        os.environ.pop("ANGELI_AI_DEV_BYPASS_AUTH", None)
+        os.environ["ALLOWED_FIREBASE_EMAILS"] = "owner@example.com"
+        os.environ["ALLOWED_ORIGINS"] = "https://franbermudezes-cloud.github.io"
+        os.environ.pop("ANGELI_TEST_HARNESS_ENABLED", None)
+        app.set_test_dependencies(lambda text, now, timezone: VALID_RESPONSE.copy(), lambda token: {"uid": "owner", "email": "owner@example.com", "email_verified": True}, lambda: FakeSessions())
+        status, data = request_path("/test/session/status", {}, "Bearer test", "https://franbermudezes-cloud.github.io")
+        self.assertEqual(status, "404 Not Found")
+        os.environ["ANGELI_TEST_HARNESS_ENABLED"] = "1"
+        status, data = request_path("/test/oauth/exchange", {"integration": "calendar", "code": "test-code", "redirectUri": "https://franbermudezes-cloud.github.io"}, "Bearer test", "https://franbermudezes-cloud.github.io")
+        self.assertEqual(status, "200 OK")
+        self.assertEqual(data, {"connected": True})
+        for key in ("ALLOWED_FIREBASE_EMAILS", "ALLOWED_ORIGINS", "ANGELI_TEST_HARNESS_ENABLED"):
+            os.environ.pop(key, None)
+
     def test_drive_upload_and_download_use_persistent_drive_grant(self):
         class FakeSessions:
             def upload_drive_file(self, data, name, mime_type, kind):

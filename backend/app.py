@@ -300,9 +300,24 @@ def sessions() -> GoogleSessions:
     return GoogleSessions(project, client_id)
 
 
+def test_sessions() -> GoogleSessions:
+    """Perfil de pruebas, aislado por secretos de las sesiones reales."""
+    if _sessions_factory:
+        return _sessions_factory()
+    project, client_id = os.getenv("GOOGLE_CLOUD_PROJECT", ""), os.getenv("GOOGLE_WEB_CLIENT_ID", "")
+    if not project or not client_id:
+        raise RuntimeError("El servidor no está configurado")
+    return GoogleSessions(project, client_id, grant_prefix="angeli-test-google")
+
+
 def session_status() -> dict[str, Any]:
     service = sessions()
     return {"ai": True, "contacts": service.connected(CONTACTS), "calendar": service.connected(CALENDAR), "drive": service.connected(DRIVE)}
+
+
+def test_session_status() -> dict[str, Any]:
+    service = test_sessions()
+    return {"contacts": service.connected(CONTACTS), "calendar": service.connected(CALENDAR), "drive": service.connected(DRIVE)}
 
 
 def parse_media_upload(environ: dict[str, Any]) -> tuple[bytes, str, str, str]:
@@ -529,7 +544,7 @@ def app(environ: dict[str, Any], start_response: Callable):
     if environ.get("REQUEST_METHOD") == "OPTIONS":
         return cors_preflight_response(start_response, origin)
     path = environ.get("PATH_INFO")
-    if environ.get("REQUEST_METHOD") != "POST" or path not in {"/interpret", "/session/status", "/oauth/exchange", "/google", "/media/upload", "/media/download", "/media/delete"}:
+    if environ.get("REQUEST_METHOD") != "POST" or path not in {"/interpret", "/session/status", "/oauth/exchange", "/google", "/media/upload", "/media/download", "/media/delete", "/test/session/status", "/test/oauth/exchange"}:
         return json_response(start_response, "404 Not Found", {"error": "No encontrado"}, origin)
     if environ.get("HTTP_ORIGIN") and not origin:
         return json_response(start_response, "403 Forbidden", {"error": "Origen no permitido"})
@@ -544,14 +559,24 @@ def app(environ: dict[str, Any], start_response: Callable):
         return json_response(start_response, "401 Unauthorized", {"error": "No autorizado"}, origin)
     try:
         enforce_rate_limit(subject)
+        if path.startswith("/test/") and os.getenv("ANGELI_TEST_HARNESS_ENABLED") != "1":
+            return json_response(start_response, "404 Not Found", {"error": "No encontrado"}, origin)
         if path == "/session/status":
             return json_response(start_response, "200 OK", session_status(), origin)
+        if path == "/test/session/status":
+            return json_response(start_response, "200 OK", test_session_status(), origin)
         if path == "/oauth/exchange":
             oauth_payload = parse_json_body(environ, {"integration", "code", "redirectUri"})
             integration, code, redirect_uri = oauth_payload.get("integration"), oauth_payload.get("code"), oauth_payload.get("redirectUri")
             if integration not in {CONTACTS, CALENDAR, DRIVE} or not isinstance(code, str) or not isinstance(redirect_uri, str) or redirect_uri not in configured_origins():
                 raise ValueError("Autorización no válida")
             return json_response(start_response, "200 OK", sessions().exchange_code(integration, code, redirect_uri), origin)
+        if path == "/test/oauth/exchange":
+            oauth_payload = parse_json_body(environ, {"integration", "code", "redirectUri"})
+            integration, code, redirect_uri = oauth_payload.get("integration"), oauth_payload.get("code"), oauth_payload.get("redirectUri")
+            if integration not in {CONTACTS, CALENDAR, DRIVE} or not isinstance(code, str) or not isinstance(redirect_uri, str) or redirect_uri not in configured_origins():
+                raise ValueError("Autorización no válida")
+            return json_response(start_response, "200 OK", test_sessions().exchange_code(integration, code, redirect_uri), origin)
         if path == "/google":
             try:
                 result = persistent_google_action(parse_json_body(environ, {"integration", "action", "query", "event", "eventId", "params"}))
