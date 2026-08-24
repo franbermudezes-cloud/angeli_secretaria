@@ -37,7 +37,15 @@ class FakeGoogleSessions:
 
 class TestHarnessTests(unittest.TestCase):
     def setUp(self):
-        self.previous = {key: os.environ.get(key) for key in ("ANGELI_TEST_MODE", "GOOGLE_CLOUD_PROJECT", "GOOGLE_WEB_CLIENT_ID")}
+        self.previous = {
+            key: os.environ.get(key)
+            for key in (
+                "ANGELI_TEST_MODE",
+                "GOOGLE_CLOUD_PROJECT",
+                "GOOGLE_WEB_CLIENT_ID",
+                "ANGELI_TEST_GOOGLE_WEB_CLIENT_ID",
+            )
+        }
 
     def tearDown(self):
         for key, value in self.previous.items():
@@ -50,6 +58,28 @@ class TestHarnessTests(unittest.TestCase):
         os.environ.pop("ANGELI_TEST_MODE", None)
         with self.assertRaises(HarnessConfigurationError):
             configured_harness()
+
+    def test_requires_dedicated_test_client_id_and_never_falls_back_to_production(self):
+        os.environ["ANGELI_TEST_MODE"] = "1"
+        os.environ["GOOGLE_CLOUD_PROJECT"] = "angeli-secretaria"
+        os.environ["GOOGLE_WEB_CLIENT_ID"] = "production-client-id"
+        os.environ.pop("ANGELI_TEST_GOOGLE_WEB_CLIENT_ID", None)
+        with self.assertRaises(HarnessConfigurationError):
+            configured_harness()
+
+        os.environ["ANGELI_TEST_GOOGLE_WEB_CLIENT_ID"] = "test-client-id"
+        harness = configured_harness()
+        self.assertEqual(harness.service.client_id, "test-client-id")
+
+    def test_test_profile_uses_only_test_oauth_secret(self):
+        service = FakeGoogleSessions()
+        session = __import__("google_sessions").GoogleSessions(
+            "angeli-secretaria", "client-id", grant_prefix="angeli-test-google"
+        )
+        requested = []
+        session._read_secret = lambda name: requested.append(name) or "test-secret"
+        self.assertEqual(session._oauth_secret(), "test-secret")
+        self.assertEqual(requested, ["angeli-test-google-oauth-client-secret"])
 
     def test_calendar_cases_use_and_remove_only_generated_events(self):
         service = FakeGoogleSessions()

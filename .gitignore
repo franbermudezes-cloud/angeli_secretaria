@@ -1,2 +1,4 @@
 .DS_Store
 backend/test-reports/
+# Credenciales efímeras generadas por google-github-actions/auth.
+gha-creds-*.json

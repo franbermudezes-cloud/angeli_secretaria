@@ -422,6 +422,28 @@ class InterpretEndpointTests(unittest.TestCase):
         self.assertEqual(testing._secret_name("calendar"), "angeli-test-google-calendar-grant")
         self.assertNotEqual(production._secret_name("drive"), testing._secret_name("drive"))
 
+    def test_test_profile_requires_its_own_client_id(self):
+        previous = {
+            key: os.environ.get(key)
+            for key in ("GOOGLE_CLOUD_PROJECT", "GOOGLE_WEB_CLIENT_ID", "ANGELI_TEST_GOOGLE_WEB_CLIENT_ID")
+        }
+        app.set_test_dependencies()
+        try:
+            os.environ["GOOGLE_CLOUD_PROJECT"] = "angeli-secretaria"
+            os.environ["GOOGLE_WEB_CLIENT_ID"] = "production-client-id"
+            os.environ.pop("ANGELI_TEST_GOOGLE_WEB_CLIENT_ID", None)
+            with self.assertRaises(RuntimeError):
+                app.test_sessions()
+
+            os.environ["ANGELI_TEST_GOOGLE_WEB_CLIENT_ID"] = "test-client-id"
+            self.assertEqual(app.test_sessions().client_id, "test-client-id")
+        finally:
+            for key, value in previous.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
+
 
 def request_path(path, payload, authorization="", origin=""):
     body = __import__("json").dumps(payload).encode("utf-8")

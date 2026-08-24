@@ -8,10 +8,12 @@ autorizaciones, calendarios ni carpetas de producción.
 - Cuenta de prueba: `buengusto.es@gmail.com`.
 - Carpeta Drive de prueba: `Angeli - Pruebas` (`1A1iuK8xwn3icpNezmB2JeOvD8_fsKuEx`).
 - Secretos exclusivos: `angeli-test-google-contacts-grant`,
-  `angeli-test-google-calendar-grant` y `angeli-test-google-drive-grant`.
+  `angeli-test-google-calendar-grant`, `angeli-test-google-drive-grant` y
+  `angeli-test-google-oauth-client-secret`.
 - Prefijo de todos los datos creados: `ANGELI-TEST-<id>`.
 
-El arnés no lee secretos `angeli-google-*-grant`, que pertenecen a producción.
+El arnés no lee secretos `angeli-google-*-grant` ni
+`angeli-oauth-client-secret`, que pertenecen a producción.
 Cada ejecución elimina sus eventos y adjuntos incluso cuando una prueba falla.
 
 ## Preparación pendiente antes de la primera ejecución
@@ -40,7 +42,7 @@ cd backend
 python3 -m pip install --user -r requirements.txt
 export ANGELI_TEST_MODE=1
 export GOOGLE_CLOUD_PROJECT=angeli-secretaria
-export GOOGLE_WEB_CLIENT_ID='…client-id-web…'
+export ANGELI_TEST_GOOGLE_WEB_CLIENT_ID='…client-id-web-exclusivo-de-pruebas…'
 python3 test_harness.py
 ```
 
@@ -48,6 +50,36 @@ El resultado queda en `backend/test-reports/`, ruta ignorada por Git. Todavía
 no se envía a Google Sheets: el Apps Script actual registra entradas de Angeli,
 no ejecuciones de pruebas. Antes de registrar resultados allí hay que crear un
 destino de pruebas separado con un contrato específico.
+
+## Puerta automática de GitHub
+
+Cada Pull Request contra `main` ejecuta `.github/workflows/integration-gate.yml`.
+GitHub obtiene credenciales efímeras de Google mediante Workload Identity
+Federation e impersona exclusivamente
+`angeli-integration-gate@angeli-secretaria.iam.gserviceaccount.com`; no existe
+una clave JSON permanente en GitHub. La cuenta solo puede leer los secretos
+OAuth aislados que necesita el arnés.
+
+El primer PR de implantación (`codex/integration-gate`) queda excluido del
+auto-merge para revisar manualmente que la puerta bloquea y publica el informe.
+Los PR posteriores de ramas `codex/*` sí se fusionan automáticamente al pasar.
+
+La configuración inicial de Google se instala de forma idempotente con
+`scripts/setup-integration-gate.sh`. El script no imprime secretos y verifica
+al final el proveedor federado y los cuatro permisos mínimos de lectura. Falla
+de forma segura si alguno de los cuatro secretos aislados no existe o no tiene
+una versión habilitada: nunca crea, copia ni consulta un secreto de producción.
+El arnés exige además `ANGELI_TEST_GOOGLE_WEB_CLIENT_ID`; nunca acepta
+`GOOGLE_WEB_CLIENT_ID` como sustituto. El cliente web de pruebas y su secreto
+pertenecen exclusivamente a `Angeli Integration Gate Tests`.
+La configuración del repositorio se instala con
+`scripts/setup-github-integration-gate.sh`: activa auto-merge, protege `main`
+con el check obligatorio y abre el primer PR sin fusionarlo.
+
+El check obligatorio se llama `integration-gate`. Un resultado `FAIL` deja el
+Pull Request abierto. Cuando pasa y la rama empieza por `codex/`, el mismo
+workflow activa la fusión automática. El informe JSON se conserva como
+artefacto de GitHub durante 30 días.
 
 ## Cobertura inicial
 

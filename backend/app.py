@@ -304,9 +304,10 @@ def test_sessions() -> GoogleSessions:
     """Perfil de pruebas, aislado por secretos de las sesiones reales."""
     if _sessions_factory:
         return _sessions_factory()
-    project, client_id = os.getenv("GOOGLE_CLOUD_PROJECT", ""), os.getenv("GOOGLE_WEB_CLIENT_ID", "")
+    project = os.getenv("GOOGLE_CLOUD_PROJECT", "")
+    client_id = os.getenv("ANGELI_TEST_GOOGLE_WEB_CLIENT_ID", "")
     if not project or not client_id:
-        raise RuntimeError("El servidor no está configurado")
+        raise RuntimeError("El perfil OAuth aislado de pruebas no está configurado")
     return GoogleSessions(project, client_id, grant_prefix="angeli-test-google")
 
 
