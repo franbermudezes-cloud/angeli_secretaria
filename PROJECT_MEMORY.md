@@ -28,6 +28,7 @@ Regla permanente de versionado: cada commit funcional incrementa la versión vis
 | `js/classifier.js` | Tipos, prioridades, teléfonos y datos derivados de la clasificación. |
 | `js/temporal.js` | Detección temporal actual, sin reglas de negocio adicionales. |
 | `js/ai.js` | Interpretación estructurada, proveedor intercambiable, validación y fallback. |
+| `js/conversation.js` | Estado persistente de una interacción, datos recogidos, preguntas pendientes y cierre de la operación. |
 | `js/intents.js` | Propuestas de acción derivadas de intenciones validadas, sin ejecutar integraciones. |
 | `js/google.js` | OAuth, People API y Calendar API. |
 | `js/sheets.js` | Envío actual al Apps Script público de Google Sheets. |
@@ -66,6 +67,8 @@ La arquitectura visual se separó en V0.12.3 y la lógica se modularizó en V0.1
 - Contactos y Calendar se conectan por separado porque pueden pertenecer a cuentas distintas. La interfaz muestra el estado de cada integración solo durante la sesión, permite elegir o cambiar cuenta por separado y permite desconectar la sesión local sin revocar permisos en Google.
 - La opción `⚙️ Mantenimiento · Borrar todos los datos` elimina solo la clave local de notas y la base IndexedDB de medios tras confirmación; nunca modifica Google Sheets.
 - La versión visible y las referencias de caché PWA deben mantenerse alineadas. Antes de cambios futuros de versión o caché, revisar en conjunto `index.html`, `manifest.json`, `sw.js` y los recursos versionados.
+- La IA interpreta una instrucción, pero nunca ejecuta por sí sola una acción externa. Cuando falte un dato, la entrada conserva una interacción activa en Firestore y la siguiente respuesta completa esa misma operación; no se crea una nota nueva ni se cambia de intención por una respuesta corta.
+- Si la IA no responde, supera el tiempo de espera o devuelve un JSON no válido, la interfaz debe indicarlo y aplicar solo un respaldo local explícito. No debe presentar ese respaldo como si fuera una interpretación de IA ni ejecutar una acción sensible incorrecta.
 - La caché del Service Worker puede retener recursos en el navegador. Tras cambios de PWA, validar actualización, activación y recursos precargados.
 - Angeli Secretaria debe mantenerse como PWA lo más autónoma posible. n8n es auxiliar futuro para automatizaciones en segundo plano, correo, seguimientos, procesos programados o workflows complejos, nunca el motor de sus funciones básicas. Contacts y Calendar continúan por Google APIs directas; al llegar Drive se estudiará primero conexión directa y segura desde la PWA. No se deben incrustar secretos de webhooks ni credenciales de n8n en la PWA pública.
 - El intérprete IA se ejecuta de forma aislada en Cloud Run (`angeli-ai-interpreter`, región `europe-southwest1`) y usa la cuenta de servicio dedicada con `roles/aiplatform.user` y ADC. No usa API key ni archivo JSON. La URL del servicio es pública solo a nivel de red: el endpoint exige un ID token de Google válido, con audiencia del Client ID web y `sub` incluido en la lista privada `ALLOWED_GOOGLE_SUBS` del servicio.
@@ -100,6 +103,10 @@ El GIF se muestra también dentro del modal único de trabajo, no en los modales
 ### 2026-08-21 — V0.20.8 · Drive OAuth persistente pendiente de validación
 
 La prueba directa confirmó que la cuenta de servicio puede ver y editar la carpeta de Imágenes, pero Google Drive no permite que una cuenta de servicio cree archivos en Mi unidad porque no tiene cuota de almacenamiento. Abrir las carpetas a cualquier persona no lo resuelve y no es necesario. V0.20.8 conserva las carpetas fijas, pero las operaciones de medios pasan a usar una autorización OAuth persistente del Gmail propietario, con el alcance mínimo `drive.file`. El refresh token se conserva solo en Secret Manager (`angeli-google-drive-grant`) y puede pertenecer a una cuenta distinta de Angeli, Contactos o Calendar. La primera conexión de Drive debe hacerse desde Ajustes; después fotos y archivos se crean como archivos de ese Gmail. Pendiente de crear el secreto, desplegar Cloud Run y validar una foto y un archivo desde Android y Mac.
+
+### 2026-08-24 — V0.21 · Conversación persistente pendiente de validación
+
+La aplicación pasa de tratar cada frase como una entrada independiente a conservar una interacción activa dentro de la propia entrada Firestore. `js/conversation.js` reúne intención, datos ya recogidos, campos pendientes, pregunta breve e historial acotado. El backend de IA recibe ese contexto y debe completar la misma operación salvo que la persona indique expresamente un cambio o cancelación. La interfaz distingue entre una propuesta lista para confirmar, una pregunta pendiente y un respaldo local; no debe ejecutar Calendar, llamadas o cualquier acción externa sin el paso de confirmación existente. La interacción se replica entre móvil y escritorio porque se guarda junto a la entrada, no en memoria local. Esta versión requiere desplegar el backend Cloud Run junto con la PWA antes de validarla en Android.
 
 ### 2026-08-21 — V0.20 · Datos y Drive pendiente de validación
 

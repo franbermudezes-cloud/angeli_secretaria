@@ -21,6 +21,28 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.21.0] - 2026-08-24
+
+### Added
+
+- Conversación persistente para completar una misma instrucción en varios turnos: Angeli conserva intención, datos recogidos y la pregunta pendiente dentro de la entrada sincronizada.
+- Nuevo módulo `js/conversation.js`, dedicado a resolver, cancelar o completar interacciones sin mezclar esta lógica con la interfaz o las integraciones.
+
+### Changed
+
+- La IA recibe el contexto limitado de la interacción activa. Respuestas como una hora o una confirmación completan la misma operación en lugar de crear una nota independiente.
+- Los accesos directos, texto y dictado entran por el mismo coordinador de conversación.
+- Las acciones externas completadas o canceladas cierran su interacción activa para no bloquear la siguiente petición.
+- Identificación visible y caché PWA actualizadas a `V0.21 · Conversación`.
+
+### Fixed
+
+- Los fallos de IA, JSON inválido o baja confianza dejan un aviso claro de respaldo local; ya no se presentan silenciosamente como una interpretación correcta de IA.
+
+### Pending validation
+
+- Requiere desplegar el backend Cloud Run y comprobar en Android/móvil-escritorio una instrucción incompleta, su respuesta posterior, confirmación, cancelación y el respaldo visible cuando falle IA.
+
 ## [0.20.8] - 2026-08-21
 
 ### Fixed

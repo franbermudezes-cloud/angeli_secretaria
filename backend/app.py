@@ -53,10 +53,15 @@ ALLOWED_FIELDS = {
     "target",
     "changes",
     "requiresConfirmation",
+    "missingFields",
+    "question",
 }
 
 SYSTEM_INSTRUCTION = """Eres el intérprete de una secretaria personal en español.
-Interpreta únicamente la orden actual usando la fecha/hora y zona horaria dadas.
+Interpreta la orden actual usando la fecha/hora y zona horaria dadas. Si se
+incluye CONTEXTO ACTIVO, la orden actual es una respuesta a esa misma operación:
+completa sus datos y conserva su intención, salvo que la persona cancele
+explícitamente la operación.
 Usa exclusivamente las intenciones permitidas por el esquema. Extrae solo datos
 explícitos o inequívocos; no inventes fechas, horas, personas, teléfonos ni
 ubicaciones. Si existe ambigüedad material, baja la confianza.
@@ -96,6 +101,11 @@ Interpreta «a las dos y cuarto», «a las 2 y 15 minutos» y expresiones
 equivalentes con la hora natural más próxima según `now`; conserva siempre la
 hora en formato de 24 horas. El aviso nunca se programa sin confirmación de la
 persona usuaria.
+Si faltan datos imprescindibles para calendar.create o reminder.create, indica
+en missingFields los nombres de los campos que faltan (date, time, title,
+location, contactName, phone o target) y formula una única pregunta breve en
+question. No inventes ni conviertas una operación incompleta en una nota. Si no
+falta nada, missingFields debe ser [] y question debe ser null.
 No ejecutes ni sugieras llamadas a APIs, almacenamiento ni acciones externas."""
 
 RESPONSE_SCHEMA: dict[str, Any] = {
@@ -146,6 +156,8 @@ RESPONSE_SCHEMA: dict[str, Any] = {
             ]
         },
         "requiresConfirmation": {"type": "boolean"},
+        "missingFields": {"type": "array", "items": {"type": "string", "enum": ["title", "date", "time", "location", "contactName", "phone", "target"]}, "maxItems": 7},
+        "question": {"type": ["string", "null"]},
     },
 }
 
@@ -212,7 +224,7 @@ def configured_origins() -> set[str]:
     return {value.strip() for value in os.getenv("ALLOWED_ORIGINS", "").split(",") if value.strip()}
 
 
-def parse_request(environ: dict[str, Any]) -> tuple[str, str, str]:
+def parse_request(environ: dict[str, Any]) -> tuple[str, str, str, dict[str, Any] | None]:
     length = int(environ.get("CONTENT_LENGTH") or 0)
     if length > MAX_BODY_BYTES:
         raise ValueError("La petición supera el tamaño permitido")
@@ -220,9 +232,9 @@ def parse_request(environ: dict[str, Any]) -> tuple[str, str, str]:
         payload = json.loads(environ["wsgi.input"].read(length or MAX_BODY_BYTES).decode("utf-8"))
     except (KeyError, UnicodeDecodeError, json.JSONDecodeError) as error:
         raise ValueError("JSON de entrada no válido") from error
-    if not isinstance(payload, dict) or set(payload) != {"text", "now", "timeZone"}:
+    if not isinstance(payload, dict) or not {"text", "now", "timeZone"}.issubset(payload) or not set(payload).issubset({"text", "now", "timeZone", "context"}):
         raise ValueError("Campos de entrada no válidos")
-    text, now, timezone = payload["text"], payload["now"], payload["timeZone"]
+    text, now, timezone, context = payload["text"], payload["now"], payload["timeZone"], payload.get("context")
     if not isinstance(text, str) or not text.strip() or len(text) > MAX_TEXT_LENGTH:
         raise ValueError("El texto debe tener entre 1 y 500 caracteres")
     if not isinstance(now, str) or len(now) > 40 or not isinstance(timezone, str) or len(timezone) > 64:
@@ -233,7 +245,35 @@ def parse_request(environ: dict[str, Any]) -> tuple[str, str, str]:
         ZoneInfo(timezone)
     except ValueError as error:
         raise ValueError("Contexto temporal no válido") from error
-    return text.strip(), now, timezone
+    return text.strip(), now, timezone, validate_context(context)
+
+
+def validate_context(value: Any) -> dict[str, Any] | None:
+    """Acepta solo el resumen de una interacción, nunca estado arbitrario de UI."""
+    if value is None:
+        return None
+    if not isinstance(value, dict) or not set(value).issubset({"interactionId", "intent", "status", "collectedData", "missingFields", "question", "turns"}):
+        raise ValueError("Contexto conversacional no válido")
+    interaction_id = value.get("interactionId")
+    intent = value.get("intent")
+    status = value.get("status")
+    if not isinstance(interaction_id, str) or len(interaction_id) > 100 or intent not in VALID_INTENTS or status not in {"awaiting_input", "pending_confirmation", "executing"}:
+        raise ValueError("Contexto conversacional no válido")
+    collected = value.get("collectedData", {})
+    if not isinstance(collected, dict) or not set(collected).issubset({"title", "date", "time", "rangeStart", "rangeEnd", "location", "contactName", "phone", "notes", "target", "changes"}):
+        raise ValueError("Contexto conversacional no válido")
+    missing = value.get("missingFields", [])
+    if not isinstance(missing, list) or len(missing) > 7 or any(item not in {"title", "date", "time", "location", "contactName", "phone", "target"} for item in missing):
+        raise ValueError("Contexto conversacional no válido")
+    turns = value.get("turns", [])
+    if not isinstance(turns, list) or len(turns) > 6:
+        raise ValueError("Contexto conversacional no válido")
+    safe_turns = []
+    for turn in turns:
+        if not isinstance(turn, dict) or set(turn) != {"role", "text"} or turn["role"] not in {"user", "assistant"} or not isinstance(turn["text"], str) or len(turn["text"]) > MAX_TEXT_LENGTH:
+            raise ValueError("Contexto conversacional no válido")
+        safe_turns.append({"role": turn["role"], "text": turn["text"]})
+    return {"interactionId": interaction_id, "intent": intent, "status": status, "collectedData": collected, "missingFields": missing, "question": value.get("question") if isinstance(value.get("question"), str) else None, "turns": safe_turns}
 
 
 def parse_json_body(environ: dict[str, Any], allowed: set[str]) -> dict[str, Any]:
@@ -373,7 +413,7 @@ def validate_interpretation(raw: Any) -> dict[str, Any]:
     if result["intent"] != "calendar.query":
         result["rangeStart"] = None
         result["rangeEnd"] = None
-    for key in ("title", "location", "contactName", "phone", "notes"):
+    for key in ("title", "location", "contactName", "phone", "notes", "question"):
         value = result[key]
         if value is not None and (not isinstance(value, str) or len(value) > MAX_TEXT_LENGTH):
             raise ValueError("Texto de salida no válido")
@@ -384,6 +424,18 @@ def validate_interpretation(raw: Any) -> dict[str, Any]:
         raise ValueError("Intervalo no válido")
     validate_target(result["target"])
     validate_changes(result["changes"])
+    missing = result["missingFields"]
+    allowed_missing = {"title", "date", "time", "location", "contactName", "phone", "target"}
+    if missing is None:
+        result["missingFields"] = []
+    elif not isinstance(missing, list) or len(missing) > 7 or any(item not in allowed_missing for item in missing):
+        raise ValueError("Campos pendientes no válidos")
+    else:
+        result["missingFields"] = list(dict.fromkeys(missing))
+    if result["missingFields"] and not result["question"]:
+        result["question"] = None
+    if not result["missingFields"]:
+        result["question"] = None
     if result["requiresConfirmation"] is None:
         result["requiresConfirmation"] = False
     if not isinstance(result["requiresConfirmation"], bool):
@@ -437,7 +489,7 @@ def validate_changes(value: Any) -> None:
             raise ValueError("Cambio de texto no válido")
 
 
-def vertex_interpret(text: str, now: str, timezone: str) -> dict[str, Any]:
+def vertex_interpret(text: str, now: str, timezone: str, context: dict[str, Any] | None = None) -> dict[str, Any]:
     project = os.getenv("GOOGLE_CLOUD_PROJECT", "")
     if not project:
         raise RuntimeError("Falta GOOGLE_CLOUD_PROJECT")
@@ -450,7 +502,8 @@ def vertex_interpret(text: str, now: str, timezone: str) -> dict[str, Any]:
         location=os.getenv("VERTEX_LOCATION", "global"),
         http_options=types.HttpOptions(timeout=REQUEST_TIMEOUT_SECONDS * 1000),
     )
-    prompt = f"Fecha/hora actual: {now}\nZona horaria: {timezone}\nOrden: {text}"
+    context_text = json.dumps(context, ensure_ascii=False) if context else "ninguno"
+    prompt = f"Fecha/hora actual: {now}\nZona horaria: {timezone}\nCONTEXTO ACTIVO: {context_text}\nOrden actual: {text}"
     response = client.models.generate_content(
         model="gemini-2.5-flash-lite",
         contents=prompt,
@@ -521,10 +574,11 @@ def app(environ: dict[str, Any], start_response: Callable):
                 print(f"media_drive_error path={path} reason={str(error)}", file=sys.stderr, flush=True)
                 return json_response(start_response, "401 Unauthorized", {"error": "Drive no puede borrar este adjunto"}, origin)
             return json_response(start_response, "200 OK", {"deleted": True}, origin)
-        text, now, timezone = parse_request(environ)
+        text, now, timezone, context = parse_request(environ)
         interpreter = _interpreter or vertex_interpret
         try:
-            interpretation = validate_interpretation(interpreter(text, now, timezone))
+            raw = interpreter(text, now, timezone) if _interpreter else interpreter(text, now, timezone, context)
+            interpretation = validate_interpretation(raw)
         except ValueError as error:
             raise OutputValidationError(str(error)) from error
         return json_response(start_response, "200 OK", interpretation, origin)

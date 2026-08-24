@@ -20,6 +20,8 @@ VALID_RESPONSE = {
     "target": None,
     "changes": None,
     "requiresConfirmation": True,
+    "missingFields": [],
+    "question": None,
 }
 
 
@@ -57,6 +59,37 @@ class InterpretEndpointTests(unittest.TestCase):
         self.assertEqual(data["intent"], "calendar.delete")
         self.assertEqual(data["target"], {"title": "Cena con Pedro", "date": None, "time": None})
         self.assertTrue(data["requiresConfirmation"])
+
+    def test_accepts_a_contextual_question_for_missing_time(self):
+        app.set_test_dependencies(
+            lambda text, now, timezone: {
+                "intent": "reminder.create",
+                "confidence": 0.93,
+                "title": "Llamar a Pepe",
+                "date": "2026-08-21",
+                "missingFields": ["time"],
+                "question": "¿A qué hora?",
+            }
+        )
+        status, data = app.wsgi_request(
+            {
+                "text": "Mañana tengo que llamar a Pepe",
+                "now": "2026-08-20T21:20:00+02:00",
+                "timeZone": "Europe/Madrid",
+                "context": {
+                    "interactionId": "interaction-1",
+                    "intent": "reminder.create",
+                    "status": "awaiting_input",
+                    "collectedData": {"title": "Llamar a Pepe", "date": "2026-08-21"},
+                    "missingFields": ["time"],
+                    "question": "¿A qué hora?",
+                    "turns": [{"role": "user", "text": "Mañana tengo que llamar a Pepe"}],
+                },
+            }
+        )
+        self.assertEqual(status, "200 OK")
+        self.assertEqual(data["missingFields"], ["time"])
+        self.assertEqual(data["question"], "¿A qué hora?")
 
     def test_preserves_structured_calendar_title_and_location(self):
         app.set_test_dependencies(

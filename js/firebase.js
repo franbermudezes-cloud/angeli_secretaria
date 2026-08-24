@@ -46,7 +46,7 @@ const SYNCABLE_FIELDS = new Set([
   "id", "date", "updatedAt", "text", "status", "type", "scheduledDate",
   "scheduledTime", "phone", "location", "calendarTitle", "contactQuery",
   "calendarStatus", "calendarEventId", "calendarUrl", "aiIntent", "proposal",
-  "schedule", "images", "files"
+  "schedule", "images", "files", "interaction"
 ]);
 
 export function createCloudSync({ notify }) {

@@ -1,5 +1,5 @@
-import { typeLabel } from "./classifier.js?v=0.20.8";
-import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.20.8";
+import { typeLabel } from "./classifier.js?v=0.21.0";
+import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.0";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -102,7 +102,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.20.8";
+    image.src = "assets/angeli-welcome.gif?v=0.21.0";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -198,6 +198,20 @@ export function createUI({ getMedia }) {
     openModal({ ...base, title: "Guardado", lead: "La entrada se ha guardado en tu conversación.", actions: [{ label: "Cerrar", kind: "confirm", onClick: closeLayers }] });
   }
 
+  function showInteractionQuestion(note, { onContinue, onCancel } = {}) {
+    const interaction = note.interaction || {};
+    const fallback = interaction.source === "fallback";
+    openModal({
+      title: fallback ? "Necesito confirmarlo contigo" : "Me falta un dato",
+      lead: interaction.question || "¿Puedes completar la información que falta?",
+      body: entryBody(note) + (fallback ? '<p class="card-details meta">La IA no ha podido completar esta interpretación; no se ejecutará ninguna acción hasta que la confirmes.</p>' : ""),
+      actions: [
+        { label: "Cancelar", kind: "secondary", onClick: onCancel || closeLayers },
+        { label: "Responder", kind: "confirm", onClick: onContinue || closeLayers }
+      ]
+    });
+  }
+
   function calendarActions(note, google) {
     const intent = note.proposal?.intent;
     if (note.calendarStatus === "synced") {
@@ -287,7 +301,7 @@ export function createUI({ getMedia }) {
     $("preview").innerHTML = files.map(file => '<img class="thumb" src="' + URL.createObjectURL(file) + '" alt="Imagen preparada">').join("");
   }
 
-  return { $, notify, setGoogleStatus, setSyncStatus, render, showImagePreview, showEntryAction, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
+  return { $, notify, setGoogleStatus, setSyncStatus, render, showImagePreview, showEntryAction, showInteractionQuestion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
 }
 
 function esc(value) {
