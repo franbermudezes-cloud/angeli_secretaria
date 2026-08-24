@@ -86,6 +86,12 @@ La arquitectura visual se separó en V0.12.3 y la lógica se modularizó en V0.1
 
 Añadir aquí, con fecha, el contexto, la decisión tomada, los archivos implicados y cómo se verificó. No sustituir decisiones anteriores sin explicar el motivo del cambio.
 
+### 2026-08-24 — Entorno de pruebas aislado (en preparación)
+
+La especificación oficial de producto está en la hoja `ANGELI — Investigación de Mercado y Producto`, pestaña `01 — Pruebas de Producto`, con los casos P01–P16. Se inicia un arnés independiente en `backend/test_harness.py`: usa únicamente la cuenta `buengusto.es@gmail.com`, la carpeta `Angeli - Pruebas` (`1A1iuK8xwn3icpNezmB2JeOvD8_fsKuEx`) y secretos con prefijo `angeli-test-google-`. Producción conserva el prefijo `angeli-google-` y no se puede mezclar con el arnés.
+
+La primera fase automatiza operaciones reales aislables: P04 (crear/buscar/cancelar Calendar), P10 (consulta de agenda por intervalo) y la base de adjuntos P06/P07 (subida y borrado en Drive). Los casos conversacionales, Firestore, notificaciones PWA y negocio no se simulan: quedan manuales hasta habilitar un perfil Firebase/OAuth exclusivo de pruebas y un destino de resultados distinto del Apps Script de entradas. Antes de declarar validada una integración se exige una operación mínima real de lectura/escritura/borrado en los recursos de prueba.
+
 ### 2026-08-21 — V0.20.5 · Base Firestore real pendiente de validación
 
 La consola confirmó que la base Cloud Firestore creada para Angeli se llama `angelifirebase`. El cliente PWA apuntaba a `(default)`, que es otra base distinta; por ello móvil/Mac no podían sincronizar por el registro que se comprobaba en la consola. V0.20.5 selecciona explícitamente `angelifirebase` y espera la confirmación remota de las escrituras pendientes antes de declarar los datos sincronizados. No modifica IA, Calendar, Contactos, Drive ni diseño. Pendiente de comprobación cruzada Android/Mac con la cuenta Angeli.

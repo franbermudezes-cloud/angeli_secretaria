@@ -81,3 +81,8 @@ Para una prueba local real contra Vertex AI se requiere autenticación ADC de
 una cuenta con `roles/aiplatform.user`; se usa `gcloud auth application-default
 login`, nunca un JSON de cuenta de servicio. En Cloud Run no se configura
 `GOOGLE_APPLICATION_CREDENTIALS`.
+
+Las pruebas reales contra Google están documentadas en
+[`TEST_HARNESS.md`](TEST_HARNESS.md). Se ejecutan manualmente con una cuenta,
+secretos y carpeta exclusivos de pruebas; nunca reutilizan las autorizaciones
+ni los datos de producción.

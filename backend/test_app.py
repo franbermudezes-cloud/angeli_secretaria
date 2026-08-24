@@ -392,6 +392,15 @@ class InterpretEndpointTests(unittest.TestCase):
         os.environ.pop("ANGELI_DRIVE_IMAGES_FOLDER_ID", None)
         os.environ.pop("ANGELI_DRIVE_FILES_FOLDER_ID", None)
 
+    def test_test_profile_uses_different_secret_names_from_production(self):
+        from google_sessions import GoogleSessions
+
+        production = GoogleSessions("angeli-secretaria", "client-id")
+        testing = GoogleSessions("angeli-secretaria", "client-id", grant_prefix="angeli-test-google")
+        self.assertEqual(production._secret_name("calendar"), "angeli-google-calendar-grant")
+        self.assertEqual(testing._secret_name("calendar"), "angeli-test-google-calendar-grant")
+        self.assertNotEqual(production._secret_name("drive"), testing._secret_name("drive"))
+
 
 def request_path(path, payload, authorization="", origin=""):
     body = __import__("json").dumps(payload).encode("utf-8")

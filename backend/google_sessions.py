@@ -22,11 +22,19 @@ SCOPES = {
 
 
 class GoogleSessions:
-    def __init__(self, project: str, client_id: str):
-        self.project, self.client_id = project, client_id
+    def __init__(self, project: str, client_id: str, grant_prefix: str = "angeli-google"):
+        """Sesiones OAuth persistentes de un perfil de Angeli.
+
+        ``angeli-google`` es siempre el perfil de producción. El arnés de
+        pruebas usa explícitamente ``angeli-test-google`` para que una prueba
+        no pueda leer, sustituir ni invalidar una autorización real.
+        """
+        if not grant_prefix or not grant_prefix.replace("-", "").isalnum():
+            raise ValueError("Prefijo de autorizaciones no válido")
+        self.project, self.client_id, self.grant_prefix = project, client_id, grant_prefix
 
     def _secret_name(self, integration: str) -> str:
-        return f"angeli-google-{integration}-grant"
+        return f"{self.grant_prefix}-{integration}-grant"
 
     def _client(self):
         from google.cloud import secretmanager

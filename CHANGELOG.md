@@ -21,6 +21,14 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+### Added
+
+- Arnés de integración real aislado para Calendar y Drive. Usa secretos de prueba independientes (`angeli-test-google-*-grant`), la cuenta de pruebas y datos con prefijo borrable; no accede a las autorizaciones de producción.
+
+### Changed
+
+- La documentación y las reglas de proyecto exigen comprobar de extremo a extremo los recursos externos y ejecutar el arnés aislado cuando esté configurado antes de declarar validado un cambio funcional de integración.
+
 ## [0.21.4] - 2026-08-24
 
 ### Fixed
