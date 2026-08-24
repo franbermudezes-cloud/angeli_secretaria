@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.21.6] - 2026-08-24
+
+### Añadido
+
+- `Ya he llamado a Miguel` completa el pendiente existente y no crea una nota
+  ni una tarea duplicada.
+- Si hay varios pendientes coincidentes, Angeli muestra las opciones y exige
+  elegir uno; si no encuentra ninguno, lo indica sin alterar los datos.
+
+### Pruebas
+
+- P03 queda cubierto en la puerta automática para coincidencia única,
+  ambigüedad, exclusión de entradas terminadas y ausencia de coincidencias.
+
 ## [0.21.5] - 2026-08-24
 
 ### Corregido

@@ -93,8 +93,9 @@ La primera fase automatiza las integraciones reales ya aislables:
 La misma puerta ejecuta además `tests/conversation.test.mjs`, que protege el
 coordinador local sin simular éxitos de Google: P01 pregunta únicamente la
 hora pendiente, P02 conserva la intención y el identificador de la operación,
-un recordatorio completo evita preguntas redundantes y cancelar/completar
-cierra la interacción activa. La comprobación real de esta sesión confirmó
+P03 localiza y completa el pendiente existente sin crear otra entrada (y exige
+elegir si encuentra varios), un recordatorio completo evita preguntas
+redundantes y cancelar/completar cierra la interacción activa. La comprobación real de esta sesión confirmó
 también el mismo recorrido contra la IA remota antes de incorporar la prueba.
 
 Firestore, notificación PWA y los recorridos visuales completos siguen

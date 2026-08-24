@@ -10,6 +10,8 @@ import {
   resolveConversationTurn,
 } from "../js/conversation.js";
 import { normalizeFutureCall, normalizeReminderSchedule } from "../js/schedule.js";
+import { completionTarget, completePending, findPendingMatches } from "../js/pending.js";
+import { mockProvider } from "../js/ai.js";
 
 const NOW = "2026-08-24T08:00:00.000Z";
 
@@ -168,4 +170,32 @@ test("una llamada con hora pero sin día programa la próxima ocurrencia", () =>
 test("una llamada sin referencia temporal sigue siendo inmediata", () => {
   const immediate = intent({ intent: "contact.call", date: null, time: null });
   assert.equal(normalizeFutureCall(immediate, "Llama a Pepe").intent, "contact.call");
+});
+
+test("P03 completa el único pendiente existente sin crear otra entrada", async () => {
+  const pending = { id: "task-miguel", text: "Llamar a Miguel", type: "reminder", status: "pending", interaction: { status: "pending_confirmation" }, schedule: { status: "pending", title: "Llamar a Miguel" } };
+  const interpretation = await mockProvider("Ya he llamado a Miguel");
+  const matches = findPendingMatches([pending], interpretation);
+
+  assert.equal(interpretation.intent, "task.complete");
+  assert.equal(matches.length, 1);
+  assert.equal(matches[0].id, pending.id);
+  const completed = completePending(matches[0], NOW);
+  assert.equal(completed.status, "done");
+  assert.equal(completed.interaction.status, INTERACTION_STATUS.COMPLETED);
+  assert.equal(completed.schedule.status, "completed");
+});
+
+test("P03 pide elegir cuando existen varios pendientes coincidentes", () => {
+  const entries = [
+    { id: "one", text: "Llamar a Miguel", type: "task", status: "pending" },
+    { id: "two", text: "Llamar a Miguel por el presupuesto", type: "reminder", status: "pending" },
+    { id: "done", text: "Llamar a Miguel", type: "task", status: "done" },
+  ];
+  assert.deepEqual(findPendingMatches(entries, { target: { title: "Miguel" } }).map(entry => entry.id), ["one", "two"]);
+});
+
+test("P03 extrae el objetivo y no inventa coincidencias", () => {
+  assert.equal(completionTarget("Ya he llamado a Miguel."), "Miguel");
+  assert.deepEqual(findPendingMatches([{ id: "pepe", text: "Llamar a Pepe", type: "task", status: "pending" }], { target: { title: "Miguel" } }), []);
 });

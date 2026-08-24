@@ -1,5 +1,5 @@
-import { typeLabel } from "./classifier.js?v=0.21.5";
-import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.5";
+import { typeLabel } from "./classifier.js?v=0.21.6";
+import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.6";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -107,7 +107,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.5";
+    image.src = "assets/angeli-welcome.gif?v=0.21.6";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -138,6 +138,29 @@ export function createUI({ getMedia }) {
     completionTimer = setTimeout(closeLayers, 1800);
   }
 
+  function showPendingChoices(matches, { onSelect, onCancel } = {}) {
+    const body = document.createElement("div");
+    body.className = "contact-options";
+    matches.forEach(entry => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "contact-choice";
+      const title = document.createElement("strong");
+      title.textContent = entry.aiIntent?.title || entry.text || "Pendiente";
+      const when = document.createElement("span");
+      when.textContent = entry.schedule ? scheduleWhen(entry.schedule) : "Pendiente";
+      button.append(title, when);
+      button.onclick = () => onSelect?.(entry);
+      body.append(button);
+    });
+    openModal({
+      title: "¿Cuál has completado?",
+      lead: "He encontrado varios pendientes parecidos. Elige el correcto.",
+      body,
+      actions: [{ label: "Ahora no", kind: "secondary", onClick: onCancel || closeLayers }]
+    });
+  }
+
   function entryBody(note) {
     const description = note.proposal?.description || "Entrada guardada";
     const location = note.location ? "<br>📍 " + esc(note.location) : "";
@@ -157,6 +180,10 @@ export function createUI({ getMedia }) {
       }
       if (note.schedule.status === "cancelled") {
         showCompletion({ title: "Aviso cancelado", lead: "La entrada sigue guardada, pero ya no habrá aviso.", body: detail });
+        return;
+      }
+      if (note.schedule.status === "completed") {
+        showCompletion({ title: "✓ Pendiente completado", lead: "Lo he marcado como hecho.", body: detail });
         return;
       }
       openModal({ ...base, title: note.schedule.status === "error" ? "No se pudo programar" : "¿Programo este aviso?", lead: "Se creará un aviso en Google Calendar para que Android te avise a la hora indicada.", body: detail, actions: [{ label: "Ahora no", kind: "secondary", onClick: closeLayers }, { label: note.schedule.status === "error" ? "Reintentar" : "⏰ Programar", kind: "confirm", dataset: { a: "schedule", id: note.id } }] });
@@ -352,6 +379,7 @@ export function createUI({ getMedia }) {
       return '<div class="schedule-status">⏰ ' + esc(scheduleTitle(note)) + '<span>' + esc(scheduleWhen(schedule)) + '</span></div><div class="inline-actions">' + link + actionButton(note.id, "Ver aviso", "show-action") + "</div>";
     }
     if (schedule.status === "cancelled") return '<div class="schedule-status muted">Aviso cancelado</div>';
+    if (schedule.status === "completed") return '<div class="schedule-status muted">✓ Pendiente completado</div>';
     return '<div class="schedule-status">⏰ ' + esc(scheduleState(schedule)) + '<span>' + esc(scheduleWhen(schedule)) + '</span></div>' + actionButton(note.id, schedule.status === "error" ? "Reintentar aviso" : "Programar aviso", "show-action");
   }
 
@@ -359,7 +387,7 @@ export function createUI({ getMedia }) {
     $("preview").innerHTML = files.map(file => '<img class="thumb" src="' + URL.createObjectURL(file) + '" alt="Imagen preparada">').join("");
   }
 
-  return { $, notify, setGoogleStatus, setSyncStatus, render, showImagePreview, showEntryAction, showInteractionQuestion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
+  return { $, notify, setGoogleStatus, setSyncStatus, render, showImagePreview, showEntryAction, showInteractionQuestion, showPendingChoices, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
 }
 
 function esc(value) {
