@@ -23,6 +23,17 @@ jobs:
       GOOGLE_CLOUD_PROJECT: angeli-secretaria
       ANGELI_TEST_GOOGLE_WEB_CLIENT_ID: ${{ vars.ANGELI_TEST_GOOGLE_WEB_CLIENT_ID }}
     steps:
+      - name: Verificar que el PR procede del repositorio autorizado
+        env:
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          test "$HEAD_REPOSITORY" = "$GITHUB_REPOSITORY"
+          case "$HEAD_BRANCH" in
+            codex/*) ;;
+            *) echo "Rama no autorizada para recibir credenciales de integración" >&2; exit 1 ;;
+          esac
+
       - name: Obtener el código
         uses: actions/checkout@v4
 

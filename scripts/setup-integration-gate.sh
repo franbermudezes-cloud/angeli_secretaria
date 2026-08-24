@@ -7,6 +7,8 @@ REPOSITORY="franbermudezes-cloud/angeli_secretaria"
 POOL_ID="github-actions"
 PROVIDER_ID="angeli-secretaria"
 SERVICE_ACCOUNT="angeli-integration-gate@${PROJECT_ID}.iam.gserviceaccount.com"
+RUNTIME_SERVICE_ACCOUNT="angeli-ai-interpreter@${PROJECT_ID}.iam.gserviceaccount.com"
+GITHUB_ACTOR="franbermudezes-cloud"
 WORKLOAD_POOL="projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/${POOL_ID}"
 WORKLOAD_MEMBER="principalSet://iam.googleapis.com/${WORKLOAD_POOL}/attribute.repository/${REPOSITORY}"
 TEST_SECRETS=(
@@ -38,8 +40,15 @@ if ! gcloud iam workload-identity-pools providers describe "${PROVIDER_ID}" \
     --workload-identity-pool="${POOL_ID}" \
     --location=global \
     --issuer-uri="https://token.actions.githubusercontent.com" \
-    --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository,attribute.event_name=assertion.event_name" \
-    --attribute-condition="assertion.repository == '${REPOSITORY}' && assertion.event_name == 'pull_request'" >/dev/null
+    --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository,attribute.event_name=assertion.event_name,attribute.actor=assertion.actor" \
+    --attribute-condition="assertion.repository == '${REPOSITORY}' && assertion.event_name == 'pull_request' && assertion.actor == '${GITHUB_ACTOR}'" >/dev/null
+else
+  gcloud iam workload-identity-pools providers update-oidc "${PROVIDER_ID}" \
+    --workload-identity-pool="${POOL_ID}" \
+    --location=global \
+    --issuer-uri="https://token.actions.githubusercontent.com" \
+    --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository,attribute.event_name=assertion.event_name,attribute.actor=assertion.actor" \
+    --attribute-condition="assertion.repository == '${REPOSITORY}' && assertion.event_name == 'pull_request' && assertion.actor == '${GITHUB_ACTOR}'" >/dev/null
 fi
 
 gcloud iam service-accounts add-iam-policy-binding "${SERVICE_ACCOUNT}" \
@@ -61,6 +70,12 @@ for secret_name in "${TEST_SECRETS[@]}"; do
     --role="roles/secretmanager.secretAccessor" >/dev/null
 done
 
+# El runtime comparte los endpoints de autorización aislada, pero solo necesita
+# leer el secreto del cliente OAuth de pruebas; nunca los grants del arnés.
+gcloud secrets add-iam-policy-binding "angeli-test-google-oauth-client-secret" \
+  --member="serviceAccount:${RUNTIME_SERVICE_ACCOUNT}" \
+  --role="roles/secretmanager.secretAccessor" >/dev/null
+
 provider_name="$(gcloud iam workload-identity-pools providers describe "${PROVIDER_ID}" \
   --workload-identity-pool="${POOL_ID}" --location=global --format="value(name)")"
 
@@ -78,5 +93,13 @@ for secret_name in "${TEST_SECRETS[@]}"; do
     exit 1
   fi
 done
+
+if ! gcloud secrets get-iam-policy "angeli-test-google-oauth-client-secret" \
+  --flatten="bindings[].members" \
+  --filter="bindings.role:roles/secretmanager.secretAccessor AND bindings.members:serviceAccount:${RUNTIME_SERVICE_ACCOUNT}" \
+  --format="value(bindings.role)" | grep -qx "roles/secretmanager.secretAccessor"; then
+  echo "ERROR: el runtime no puede leer el secreto OAuth aislado" >&2
+  exit 1
+fi
 
 echo "ANGELI_GATE_GCP_READY"
