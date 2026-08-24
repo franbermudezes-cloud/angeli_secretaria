@@ -122,7 +122,11 @@ Una vez que la persona confirma y Angeli ejecuta con éxito una acción, la tarj
 
 ### 2026-08-24 — V0.21.3 · Calendar fiable pendiente de validación
 
-Se corrige una regresión crítica de búsqueda. Las consultas de agenda por intervalo no pueden usar el texto natural de la pregunta como parámetro `q` de Google Calendar: una frase como «¿Qué tengo mañana?» filtraba por esas palabras y producía falsos resultados vacíos. Las consultas generales usan solo `timeMin` y `timeMax`; las operaciones de modificar/cancelar usan únicamente el título objetivo, sin el verbo de orden ni referencias temporales. El backend usa y devuelve explícitamente el mismo calendario `primary` para crear, leer, modificar y borrar. Los fallos técnicos de Calendar se devuelven como error distinguible, nunca como «No he encontrado coincidencias». Pruebas locales cubren lectura/escritura sobre el mismo `calendarId` y la separación entre error técnico y resultado vacío. Pendiente de publicar PWA y desplegar Cloud Run antes de la validación manual.
+Se corrige una regresión crítica de búsqueda. Las consultas de agenda por intervalo no pueden usar el texto natural de la pregunta como parámetro `q` de Google Calendar: una frase como «¿Qué tengo mañana?» filtraba por esas palabras y producía falsos resultados vacíos. Las consultas generales usan solo `timeMin` y `timeMax`; las operaciones de modificar/cancelar usan únicamente el título objetivo, sin el verbo de orden ni referencias temporales. El backend usa y devuelve explícitamente el mismo calendario `primary` para crear, leer, modificar y borrar. Los fallos técnicos de Calendar se devuelven como error distinguible, nunca como «No he encontrado coincidencias». Pruebas locales cubren lectura/escritura sobre el mismo `calendarId` y la separación entre error técnico y resultado vacío. PWA y Cloud Run se publicaron; pendiente de validación manual.
+
+### 2026-08-24 — V0.21.4 · Flujo aislado pendiente de validación
+
+Una interacción pendiente no es un contexto global. Solo puede continuar cuando la persona responde desde el popup de esa misma interacción; el compositor principal y el dictado normal siempre crean una instrucción nueva. Esto evita que una pregunta o confirmación antigua secuestre órdenes posteriores y produzca tarjetas incoherentes. Pendiente de validar una orden nueva mientras exista una interacción antigua pendiente.
 
 ### 2026-08-21 — V0.20 · Datos y Drive pendiente de validación
 

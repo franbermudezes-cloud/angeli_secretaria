@@ -1,15 +1,15 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.3";
-import{classify,actionData}from"./classifier.js?v=0.21.3";
-import{sendEntry}from"./sheets.js?v=0.21.3";
-import{createUI}from"./ui.js?v=0.21.3";
-import{createGoogleIntegration}from"./google.js?v=0.21.3";
-import{interpret,remoteProvider}from"./ai.js?v=0.21.3";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.3";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.3";
-import{normalizeFutureCall,normalizeReminderSchedule,scheduleFor}from"./schedule.js?v=0.21.3";
-import{createCloudSync}from"./firebase.js?v=0.21.3";
-import{createMediaService}from"./media.js?v=0.21.3";
-import{cancelInteraction,completeInteraction,contextFor,findActiveInteraction,resolveConversationTurn}from"./conversation.js?v=0.21.3";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.4";
+import{classify,actionData}from"./classifier.js?v=0.21.4";
+import{sendEntry}from"./sheets.js?v=0.21.4";
+import{createUI}from"./ui.js?v=0.21.4";
+import{createGoogleIntegration}from"./google.js?v=0.21.4";
+import{interpret,remoteProvider}from"./ai.js?v=0.21.4";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.4";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.4";
+import{normalizeFutureCall,normalizeReminderSchedule,scheduleFor}from"./schedule.js?v=0.21.4";
+import{createCloudSync}from"./firebase.js?v=0.21.4";
+import{createMediaService}from"./media.js?v=0.21.4";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn}from"./conversation.js?v=0.21.4";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],selectedFilter="all",selectedType="all",shortcutCapture=false,saving=false;
@@ -35,11 +35,14 @@ const cloud=createCloudSync({notify:ui.notify});
 const google=createGoogleIntegration({notify:ui.notify,refresh:render,setStatus:ui.setGoogleStatus,saveNotes:save,getNotes:()=>notes,getAuthToken:cloud.getAuthToken,getSession:cloud.session});
 media=createMediaService({getAuthToken:cloud.getAuthToken,ensureDrive:google.ensureDrive});
 function openDraft(){ui.showDraft({value:$("text").value,onInput:value=>{$("text").value=value;finalText=value;autosize()},onSend:add,onCancel:ui.closeLayers})}
-function continueConversation(entry){ui.showInteractionQuestion(entry,{onSend:value=>{$("text").value=value;finalText=value;autosize();add()},onMic:()=>start({inConversation:true}),onCancel:()=>cancelActive(entry)})}
+// Una interacción solo puede continuar desde su propio popup. El compositor
+// principal inicia siempre una instrucción nueva: una pregunta anterior no
+// puede secuestrar órdenes posteriores como «llama a Montse».
+function continueConversation(entry){ui.showInteractionQuestion(entry,{onSend:value=>{$("text").value=value;finalText=value;autosize();add({interactionId:entry.id})},onMic:()=>start({inConversation:true}),onCancel:()=>cancelActive(entry)})}
 async function load(){notes=[];renderShortcuts();google.updateStatus();ui.setSyncStatus({state:"connecting"});render();await cloud.initialize({onRemoteNotes:remote=>{notes=remote;render()},onSyncStatus:ui.setSyncStatus,onAuthChange:async()=>{google.updateStatus();if(cloud.isSignedIn())await google.syncLinks();render()}});render();ui.dismissWelcome()}
-async function add(){
+async function add({interactionId=null}={}){
  if(saving)return;
- const text=$("text").value.trim(),active=findActiveInteraction(notes);
+ const text=$("text").value.trim(),active=interactionId?notes.find(item=>item.id===interactionId&&item.interaction?.status==="awaiting_input")||null:null;
  if(!text&&!pendingImages.length&&!pendingFiles.length){ui.notify("No hay nada que enviar");return}
  if(!cloud.isSignedIn()){ui.notify("Inicia sesión en Angeli antes de guardar");return}
  if(active?.interaction?.status==="pending_confirmation"){
@@ -166,7 +169,7 @@ async function handleEntryAction(event){
  }
 }
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.3",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.4",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}

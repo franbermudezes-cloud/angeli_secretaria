@@ -21,6 +21,17 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.21.4] - 2026-08-24
+
+### Fixed
+
+- Una conversación pendiente ya no intercepta órdenes nuevas escritas o dictadas en el compositor principal. Por ejemplo, una confirmación antigua sobre Pepe no puede convertir «¿Qué tengo mañana?» ni «Llama a Montse» en una respuesta a esa operación.
+- Solo el campo `Continuar` del popup asociado a una pregunta puede completar esa misma interacción.
+
+### Changed
+
+- Identificación visible y caché PWA actualizadas a `V0.21.4 · Flujo aislado`.
+
 ## [0.21.3] - 2026-08-24
 
 ### Fixed
