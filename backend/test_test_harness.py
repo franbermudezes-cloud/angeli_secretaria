@@ -51,6 +51,16 @@ class TestHarnessTests(unittest.TestCase):
         with self.assertRaises(HarnessConfigurationError):
             configured_harness()
 
+    def test_test_profile_uses_only_test_oauth_secret(self):
+        service = FakeGoogleSessions()
+        session = __import__("google_sessions").GoogleSessions(
+            "angeli-secretaria", "client-id", grant_prefix="angeli-test-google"
+        )
+        requested = []
+        session._read_secret = lambda name: requested.append(name) or "test-secret"
+        self.assertEqual(session._oauth_secret(), "test-secret")
+        self.assertEqual(requested, ["angeli-test-google-oauth-client-secret"])
+
     def test_calendar_cases_use_and_remove_only_generated_events(self):
         service = FakeGoogleSessions()
         harness = IntegrationHarness(service, prefix="ANGELI-TEST-unit")

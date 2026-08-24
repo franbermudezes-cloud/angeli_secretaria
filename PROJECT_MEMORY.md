@@ -31,7 +31,10 @@ permanente es rama `codex/*` → Pull Request → check obligatorio
 `integration-gate` → fusión automática si pasa. GitHub Actions ejecuta pruebas
 unitarias y el arnés real contra la cuenta aislada. La autenticación con Google
 usa Workload Identity Federation y una cuenta de servicio dedicada, sin claves
-JSON permanentes. Los informes JSON quedan como artefactos durante 30 días; no
+JSON permanentes. Esa cuenta solo puede leer
+`angeli-test-google-oauth-client-secret` y los tres grants
+`angeli-test-google-{contacts,calendar,drive}-grant`; el arnés no lee el secreto
+OAuth de producción. Los informes JSON quedan como artefactos durante 30 días; no
 se amplía por ahora el contrato del Apps Script ni se escriben resultados en la
 hoja operativa de Sheets.
 

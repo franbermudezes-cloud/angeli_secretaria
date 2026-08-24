@@ -57,7 +57,12 @@ class GoogleSessions:
         )
 
     def _oauth_secret(self) -> str:
-        value = self._read_secret("angeli-oauth-client-secret")
+        secret_name = (
+            "angeli-test-google-oauth-client-secret"
+            if self.grant_prefix == "angeli-test-google"
+            else "angeli-oauth-client-secret"
+        )
+        value = self._read_secret(secret_name)
         if not value:
             raise RuntimeError("Falta el secreto OAuth del servidor")
         return value

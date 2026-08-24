@@ -8,10 +8,12 @@ autorizaciones, calendarios ni carpetas de producción.
 - Cuenta de prueba: `buengusto.es@gmail.com`.
 - Carpeta Drive de prueba: `Angeli - Pruebas` (`1A1iuK8xwn3icpNezmB2JeOvD8_fsKuEx`).
 - Secretos exclusivos: `angeli-test-google-contacts-grant`,
-  `angeli-test-google-calendar-grant` y `angeli-test-google-drive-grant`.
+  `angeli-test-google-calendar-grant`, `angeli-test-google-drive-grant` y
+  `angeli-test-google-oauth-client-secret`.
 - Prefijo de todos los datos creados: `ANGELI-TEST-<id>`.
 
-El arnés no lee secretos `angeli-google-*-grant`, que pertenecen a producción.
+El arnés no lee secretos `angeli-google-*-grant` ni
+`angeli-oauth-client-secret`, que pertenecen a producción.
 Cada ejecución elimina sus eventos y adjuntos incluso cuando una prueba falla.
 
 ## Preparación pendiente antes de la primera ejecución
@@ -57,6 +59,10 @@ Federation e impersona exclusivamente
 `angeli-integration-gate@angeli-secretaria.iam.gserviceaccount.com`; no existe
 una clave JSON permanente en GitHub. La cuenta solo puede leer los secretos
 OAuth aislados que necesita el arnés.
+
+El primer PR de implantación (`codex/integration-gate`) queda excluido del
+auto-merge para revisar manualmente que la puerta bloquea y publica el informe.
+Los PR posteriores de ramas `codex/*` sí se fusionan automáticamente al pasar.
 
 El check obligatorio se llama `integration-gate`. Un resultado `FAIL` deja el
 Pull Request abierto. Cuando pasa y la rama empieza por `codex/`, el mismo
