@@ -1,0 +1,77 @@
+name: Integration gate
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: integration-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  integration-gate:
+    name: integration-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      ANGELI_TEST_MODE: "1"
+      GOOGLE_CLOUD_PROJECT: angeli-secretaria
+      GOOGLE_WEB_CLIENT_ID: 172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com
+    steps:
+      - name: Obtener el código
+        uses: actions/checkout@v4
+
+      - name: Preparar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Autenticar en Google Cloud sin claves permanentes
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: angeli-secretaria
+          workload_identity_provider: projects/172772694205/locations/global/workloadIdentityPools/github-actions/providers/angeli-secretaria
+          service_account: angeli-integration-gate@angeli-secretaria.iam.gserviceaccount.com
+
+      - name: Instalar dependencias
+        run: python -m pip install -r backend/requirements.txt
+
+      - name: Ejecutar pruebas unitarias del backend
+        working-directory: backend
+        run: python -m unittest test_app.py test_test_harness.py
+
+      - name: Ejecutar arnés real aislado
+        run: python backend/test_harness.py
+
+      - name: Conservar el informe de la ejecución
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-gate-report-${{ github.event.pull_request.number }}-${{ github.run_attempt }}
+          path: backend/test-reports/*.json
+          if-no-files-found: error
+          retention-days: 30
+
+  auto-merge:
+    name: auto-merge
+    needs: integration-gate
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      startsWith(github.event.pull_request.head.ref, 'codex/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Fusionar automáticamente el PR validado
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: gh pr merge --auto --squash "$PR_URL"

@@ -49,6 +49,20 @@ no se envía a Google Sheets: el Apps Script actual registra entradas de Angeli,
 no ejecuciones de pruebas. Antes de registrar resultados allí hay que crear un
 destino de pruebas separado con un contrato específico.
 
+## Puerta automática de GitHub
+
+Cada Pull Request contra `main` ejecuta `.github/workflows/integration-gate.yml`.
+GitHub obtiene credenciales efímeras de Google mediante Workload Identity
+Federation e impersona exclusivamente
+`angeli-integration-gate@angeli-secretaria.iam.gserviceaccount.com`; no existe
+una clave JSON permanente en GitHub. La cuenta solo puede leer los secretos
+OAuth aislados que necesita el arnés.
+
+El check obligatorio se llama `integration-gate`. Un resultado `FAIL` deja el
+Pull Request abierto. Cuando pasa y la rama empieza por `codex/`, el mismo
+workflow activa la fusión automática. El informe JSON se conserva como
+artefacto de GitHub durante 30 días.
+
 ## Cobertura inicial
 
 La primera fase automatiza las integraciones reales ya aislables:

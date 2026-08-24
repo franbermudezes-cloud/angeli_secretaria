@@ -24,6 +24,17 @@ Firestore ni las cuentas personales y no equivale a validar los casos
 conversacionales, notificaciones o negocio todavía pendientes de perfil de
 Firebase y pruebas manuales específicas.
 
+## 2026-08-24 — Puerta técnica obligatoria antes de `main`
+
+Las publicaciones dejan de hacerse mediante `push` directo a `main`. El flujo
+permanente es rama `codex/*` → Pull Request → check obligatorio
+`integration-gate` → fusión automática si pasa. GitHub Actions ejecuta pruebas
+unitarias y el arnés real contra la cuenta aislada. La autenticación con Google
+usa Workload Identity Federation y una cuenta de servicio dedicada, sin claves
+JSON permanentes. Los informes JSON quedan como artefactos durante 30 días; no
+se amplía por ahora el contrato del Apps Script ni se escriben resultados en la
+hoja operativa de Sheets.
+
 ## Estado de referencia
 
 - Repositorio remoto/fuente de verdad: `origin` → `git@github.com:franbermudezes-cloud/angeli_secretaria.git`.

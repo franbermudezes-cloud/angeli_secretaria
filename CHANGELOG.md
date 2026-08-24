@@ -25,6 +25,7 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 - Arnés de integración real aislado para Calendar y Drive. Usa secretos de prueba independientes (`angeli-test-google-*-grant`), la cuenta de pruebas y datos con prefijo borrable; no accede a las autorizaciones de producción.
 - Página de autorización exclusiva de pruebas y rutas de Cloud Run desactivadas por defecto. Solo al habilitarlas expresamente pueden guardar los tres grants de prueba; las sesiones personales de Contactos, Calendar y Drive no se consultan ni se modifican.
+- Puerta automática de integración para Pull Requests: autentica GitHub Actions mediante Workload Identity Federation, ejecuta el arnés real y conserva su informe como artefacto. Los PR de ramas `codex/*` se fusionan automáticamente solo después de superar el check obligatorio.
 
 ### Changed
 
