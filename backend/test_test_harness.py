@@ -19,6 +19,10 @@ class FakeGoogleSessions:
             return {"id": event_id}
         if method == "GET":
             return {"items": [{"id": event_id, "summary": event["summary"]} for event_id, event in self.events.items()]}
+        if method == "PATCH":
+            event_id = url.rsplit("/", 1)[-1]
+            self.events[event_id].update(body)
+            return {"id": event_id, **self.events[event_id]}
         if method == "DELETE":
             self.events.pop(url.rsplit("/", 1)[-1], None)
             return {}
@@ -52,6 +56,7 @@ class TestHarnessTests(unittest.TestCase):
         harness = IntegrationHarness(service, prefix="ANGELI-TEST-unit")
         harness._calendar_cancel()
         harness._calendar_query()
+        harness._calendar_update()
         harness.cleanup()
         self.assertEqual(service.events, {})
 

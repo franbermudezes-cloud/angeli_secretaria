@@ -30,6 +30,10 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 - La documentación y las reglas de proyecto exigen comprobar de extremo a extremo los recursos externos y ejecutar el arnés aislado cuando esté configurado antes de declarar validado un cambio funcional de integración.
 
+### Verified
+
+- Ejecución real aislada en la cuenta de pruebas: P04 (cancelación), P10 (consulta), P11 (modificación de hora) de Calendar y P06 (subida/eliminación en Drive). Los recursos generados usan el prefijo `ANGELI-TEST-*` y se eliminan al finalizar.
+
 ## [0.21.4] - 2026-08-24
 
 ### Fixed

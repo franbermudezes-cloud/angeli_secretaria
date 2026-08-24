@@ -1,6 +1,6 @@
 # Memoria del proyecto — Angeli Secretaria
 
-## 2026-08-24 — Entorno de pruebas aislado: autorización separada preparada
+## 2026-08-24 — Entorno de pruebas aislado: validación real inicial completada
 
 El arnés de integración real dispone ahora de un perfil OAuth estrictamente
 separado del uso diario: las rutas de Cloud Run `/test/session/status` y
@@ -14,10 +14,15 @@ ejecutar casos reales P04, P06 y P10 hay que crear esos tres secretos, asignar
 al Service Account los roles de acceso/creación de versiones sobre ellos,
 desplegar Cloud Run con la bandera de pruebas y completar esa autorización.
 
-Esta infraestructura no modifica la PWA, Firestore ni las cuentas personales.
-Los resultados de los ensayos seguirán siendo no concluyentes hasta que se
-realice una operación real aislada de crear/listar/borrar Calendar y
-subir/borrar Drive.
+La cuenta de pruebas `buengusto.es@gmail.com` quedó conectada correctamente en
+los tres grants aislados y el arnés se ejecutó realmente desde Cloud Shell con
+resultado `PASS` en P04 (crear, localizar y cancelar Calendar), P10 (consulta
+por intervalo), P11 (localizar y modificar la hora del mismo evento) y P06
+(subir y eliminar un adjunto en Drive de pruebas). Cada ejecución elimina los
+recursos `ANGELI-TEST-*` que crea. Esta validación no modifica la PWA,
+Firestore ni las cuentas personales y no equivale a validar los casos
+conversacionales, notificaciones o negocio todavía pendientes de perfil de
+Firebase y pruebas manuales específicas.
 
 ## Estado de referencia
 

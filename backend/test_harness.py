@@ -46,13 +46,14 @@ class IntegrationHarness:
     def run(self) -> list[TestResult]:
         """Ejecuta las integraciones ya automatizables de P01–P16.
 
-        P01–P03 y P05/P11/P12 requieren además el coordinador de conversación,
+        P01–P03 y P05/P12 requieren además el coordinador de conversación,
         Firestore y/o una notificación en dispositivo. Se registran como
         pendientes manuales de esta primera fase; nunca se simulan como éxito.
         """
         try:
             self._run("P04", self._calendar_cancel)
             self._run("P10", self._calendar_query)
+            self._run("P11", self._calendar_update)
             self._run("P06", self._drive_upload_and_cleanup)
         finally:
             self.cleanup()
@@ -112,6 +113,32 @@ class IntegrationHarness:
         if missing:
             raise RuntimeError("Calendar no devolvió los eventos de prueba: " + ", ".join(missing))
 
+    def _calendar_update(self) -> None:
+        """P11: localiza y cambia la hora de un evento en la agenda de pruebas."""
+        start = (datetime.now(timezone.utc) + timedelta(days=1)).replace(hour=18, minute=0, second=0, microsecond=0)
+        title = f"{self.prefix} Reunión modificable"
+        event = self._create_event(title, start, start + timedelta(hours=1))
+        listed = self.service.api(CALENDAR, "GET", self._calendar_base() + "?" + urlencode({
+            "singleEvents": "true", "orderBy": "startTime", "q": title,
+            "timeMin": (start - timedelta(hours=1)).isoformat(),
+            "timeMax": (start + timedelta(days=1)).isoformat(),
+        }))
+        found = next((item for item in listed.get("items", []) if item.get("id") == event["id"]), None)
+        if not found:
+            raise RuntimeError("Calendar creó el evento pero no pudo localizarlo para modificarlo")
+        updated_start = start + timedelta(hours=1)
+        updated_end = updated_start + timedelta(hours=1)
+        updated = self.service.api(CALENDAR, "PATCH", self._calendar_base() + "/" + event["id"], {
+            "start": {"dateTime": updated_start.isoformat(), "timeZone": "Europe/Madrid"},
+            "end": {"dateTime": updated_end.isoformat(), "timeZone": "Europe/Madrid"},
+        })
+        start_value = updated.get("start", {}).get("dateTime")
+        if not isinstance(start_value, str):
+            raise RuntimeError("Calendar no devolvió la nueva hora del evento actualizado")
+        received = datetime.fromisoformat(start_value.replace("Z", "+00:00"))
+        if received.astimezone(timezone.utc) != updated_start:
+            raise RuntimeError("Calendar no guardó la hora actualizada del evento de prueba")
+
     def _drive_upload_and_cleanup(self) -> None:
         """P06/P07 base: adjunto real a Drive de pruebas y eliminación posterior."""
         old_images = os.environ.get("ANGELI_DRIVE_IMAGES_FOLDER_ID")
@@ -154,7 +181,7 @@ class IntegrationHarness:
             "runAt": datetime.now(timezone.utc).isoformat(), "prefix": self.prefix,
             "grantPrefix": TEST_GRANT_PREFIX,
             "results": [result.__dict__ for result in self.results],
-            "manualCases": ["P01", "P02", "P03", "P05", "P07", "P08", "P09", "P11", "P12", "P13", "P14", "P15", "P16"],
+            "manualCases": ["P01", "P02", "P03", "P05", "P07", "P08", "P09", "P12", "P13", "P14", "P15", "P16"],
         }
         (REPORT_DIRECTORY / f"{self.prefix}.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
 

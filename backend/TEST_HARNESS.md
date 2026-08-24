@@ -37,6 +37,7 @@ Solo después de completar la preparación:
 
 ```bash
 cd backend
+python3 -m pip install --user -r requirements.txt
 export ANGELI_TEST_MODE=1
 export GOOGLE_CLOUD_PROJECT=angeli-secretaria
 export GOOGLE_WEB_CLIENT_ID='…client-id-web…'
@@ -54,6 +55,7 @@ La primera fase automatiza las integraciones reales ya aislables:
 
 - `P04`: crear, buscar y cancelar un evento en Calendar.
 - `P10`: crear dos eventos y recuperarlos por intervalo de fecha.
+- `P11`: localizar un evento y actualizar su hora en el mismo calendario.
 - Base de `P06/P07`: subir un adjunto a Drive y eliminarlo.
 
 Los casos conversacionales, de Firestore, notificación PWA y negocio siguen
