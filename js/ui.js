@@ -1,5 +1,5 @@
-import { typeLabel } from "./classifier.js?v=0.21.0";
-import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.0";
+import { typeLabel } from "./classifier.js?v=0.21.1";
+import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.1";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -52,7 +52,7 @@ export function createUI({ getMedia }) {
   }
 
   function openModal({ title, lead, body, actions = [] }) {
-    $("actionModal").classList.remove("working-modal");
+    $("actionModal").classList.remove("working-modal", "conversation-modal");
     $("modalTitle").textContent = title;
     $("modalLead").textContent = lead;
     const bodyElement = $("modalBody");
@@ -94,15 +94,17 @@ export function createUI({ getMedia }) {
   }
 
   function updateDraft(value) {
-    const draft = $("activeDraft");
-    if (draft && draft.value !== value) draft.value = value;
+    ["activeDraft", "conversationDraft"].forEach(id => {
+      const draft = $(id);
+      if (draft && draft.value !== value) draft.value = value;
+    });
   }
 
   function workingBody(detail) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.0";
+    image.src = "assets/angeli-welcome.gif?v=0.21.1";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -198,18 +200,65 @@ export function createUI({ getMedia }) {
     openModal({ ...base, title: "Guardado", lead: "La entrada se ha guardado en tu conversación.", actions: [{ label: "Cerrar", kind: "confirm", onClick: closeLayers }] });
   }
 
-  function showInteractionQuestion(note, { onContinue, onCancel } = {}) {
+  function showInteractionQuestion(note, { onSend, onMic, onCancel, value = "" } = {}) {
     const interaction = note.interaction || {};
     const fallback = interaction.source === "fallback";
+    const draft = document.createElement("textarea");
+    draft.id = "conversationDraft";
+    draft.className = "active-draft conversation-draft";
+    draft.rows = 3;
+    draft.placeholder = "Responde por voz o escribe aquí…";
+    draft.value = value;
+
+    const controls = document.createElement("div");
+    controls.className = "conversation-controls";
+    const mic = document.createElement("button");
+    mic.type = "button";
+    mic.className = "conversation-mic";
+    mic.textContent = "🎙️ Hablar";
+    mic.setAttribute("aria-label", "Responder por voz");
+    mic.onclick = () => onMic?.();
+    const send = document.createElement("button");
+    send.type = "button";
+    send.className = "confirm conversation-send";
+    send.textContent = "Continuar ➤";
+    const submit = () => {
+      const response = draft.value.trim();
+      if (!response) {
+        notify("Dime o escribe la respuesta para continuar");
+        return;
+      }
+      onSend?.(response);
+    };
+    send.onclick = submit;
+    draft.onkeydown = event => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        submit();
+      }
+    };
+    controls.append(mic, send);
+
+    const content = document.createElement("div");
+    content.className = "conversation-question";
+    content.innerHTML = entryBody(note);
+    if (fallback) {
+      const explanation = document.createElement("p");
+      explanation.className = "card-details meta";
+      explanation.textContent = "No quiero asumir una acción: confírmame o completa este detalle.";
+      content.append(explanation);
+    }
+    content.append(draft, controls);
     openModal({
-      title: fallback ? "Necesito confirmarlo contigo" : "Me falta un dato",
+      title: fallback ? "Necesito asegurarme" : "Solo me falta un dato",
       lead: interaction.question || "¿Puedes completar la información que falta?",
-      body: entryBody(note) + (fallback ? '<p class="card-details meta">La IA no ha podido completar esta interpretación; no se ejecutará ninguna acción hasta que la confirmes.</p>' : ""),
+      body: content,
       actions: [
-        { label: "Cancelar", kind: "secondary", onClick: onCancel || closeLayers },
-        { label: "Responder", kind: "confirm", onClick: onContinue || closeLayers }
+        { label: "Cancelar", kind: "secondary", onClick: onCancel || closeLayers }
       ]
     });
+    $("actionModal").classList.add("conversation-modal");
+    setTimeout(() => draft.focus(), 0);
   }
 
   function calendarActions(note, google) {

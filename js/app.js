@@ -1,15 +1,15 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.0";
-import{classify,actionData}from"./classifier.js?v=0.21.0";
-import{sendEntry}from"./sheets.js?v=0.21.0";
-import{createUI}from"./ui.js?v=0.21.0";
-import{createGoogleIntegration}from"./google.js?v=0.21.0";
-import{interpret,remoteProvider}from"./ai.js?v=0.21.0";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.0";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.0";
-import{normalizeFutureCall,normalizeReminderSchedule,scheduleFor}from"./schedule.js?v=0.21.0";
-import{createCloudSync}from"./firebase.js?v=0.21.0";
-import{createMediaService}from"./media.js?v=0.21.0";
-import{cancelInteraction,completeInteraction,contextFor,findActiveInteraction,resolveConversationTurn}from"./conversation.js?v=0.21.0";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.1";
+import{classify,actionData}from"./classifier.js?v=0.21.1";
+import{sendEntry}from"./sheets.js?v=0.21.1";
+import{createUI}from"./ui.js?v=0.21.1";
+import{createGoogleIntegration}from"./google.js?v=0.21.1";
+import{interpret,remoteProvider}from"./ai.js?v=0.21.1";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.1";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.1";
+import{normalizeFutureCall,normalizeReminderSchedule,scheduleFor}from"./schedule.js?v=0.21.1";
+import{createCloudSync}from"./firebase.js?v=0.21.1";
+import{createMediaService}from"./media.js?v=0.21.1";
+import{cancelInteraction,completeInteraction,contextFor,findActiveInteraction,resolveConversationTurn}from"./conversation.js?v=0.21.1";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],selectedFilter="all",selectedType="all",shortcutCapture=false,saving=false;
@@ -35,6 +35,7 @@ const cloud=createCloudSync({notify:ui.notify});
 const google=createGoogleIntegration({notify:ui.notify,refresh:render,setStatus:ui.setGoogleStatus,saveNotes:save,getNotes:()=>notes,getAuthToken:cloud.getAuthToken,getSession:cloud.session});
 media=createMediaService({getAuthToken:cloud.getAuthToken,ensureDrive:google.ensureDrive});
 function openDraft(){ui.showDraft({value:$("text").value,onInput:value=>{$("text").value=value;finalText=value;autosize()},onSend:add,onCancel:ui.closeLayers})}
+function continueConversation(entry){ui.showInteractionQuestion(entry,{onSend:value=>{$("text").value=value;finalText=value;autosize();add()},onMic:()=>start({inConversation:true}),onCancel:()=>cancelActive(entry)})}
 async function load(){notes=[];renderShortcuts();google.updateStatus();ui.setSyncStatus({state:"connecting"});render();await cloud.initialize({onRemoteNotes:remote=>{notes=remote;render()},onSyncStatus:ui.setSyncStatus,onAuthChange:async()=>{google.updateStatus();if(cloud.isSignedIn())await google.syncLinks();render()}});render();ui.dismissWelcome()}
 async function add(){
  if(saving)return;
@@ -44,7 +45,7 @@ async function add(){
  if(active?.interaction?.status==="pending_confirmation"){
    if(/^(?:sí|si|vale|de acuerdo|confirmo|adelante)\b/i.test(text)){clearComposer();ui.showEntryAction(active,google);return}
    if(/^(?:no|cancelar|cancela|anula|anular)\b/i.test(text)){await saveConfirmed(notes.map(item=>item.id===active.id?cancelInteraction(item):item));clearComposer();ui.closeLayers();ui.notify("Operación cancelada");return}
-   ui.showInteractionQuestion(active,{onContinue:openDraft,onCancel:()=>cancelActive(active)});return;
+   ui.showEntryAction(active,google);return;
  }
  const now=new Date(),id=active?.id||crypto.randomUUID(),images=[],files=[],hasMedia=Boolean(pendingImages.length||pendingFiles.length);let mediaUploaded=false;saving=true;setSending(true);ui.showWorking("Procesando tu instrucción","Angeli ha recibido tu petición.","Un momento, no pulses Enviar otra vez.");try{
    if(hasMedia)ui.updateWorking("Subiendo adjunto","Angeli está enviando el archivo a Drive…","No pulses Enviar otra vez; te avisaré cuando termine.");
@@ -54,7 +55,7 @@ async function add(){
    ui.updateWorking("Interpretando tu instrucción","Angeli está preparando la acción adecuada…","");
    const fallbackType=active?.type||classify(text,images,files);
    const rawInterpretation=await interpret(text,{provider:(value,context)=>google.interpretWithAI(value,remoteProvider,context),fallback:()=>localInterpretation(text,fallbackType,active),context:contextFor(active)});
-   if(rawInterpretation.source==="fallback")ui.updateWorking("Interpretación local de respaldo","La IA no ha podido completar esta petición; Angeli no ejecutará ninguna acción sin tu confirmación.","");
+   if(rawInterpretation.source==="fallback")ui.updateWorking("Estoy revisando tu petición","Necesito confirmarla contigo antes de continuar.","");
    const turn=resolveConversationTurn({active,text,interpretation:normalizeReminderSchedule(normalizeFutureCall(rawInterpretation,text),text,now),now:now.toISOString()});
    const interpretation=turn.interpretation,proposal=planIntent(interpretation,fallbackType),type=entryTypeForIntent(proposal,fallbackType);
    const data={...(interpretation.date?{scheduledDate:interpretation.date}:{}),...(interpretation.time?{scheduledTime:interpretation.time}:{}),...(interpretation.phone?{phone:interpretation.phone}:{}),...(interpretation.location?{location:interpretation.location}:{}),...(type==="calendar"&&interpretation.title?{calendarTitle:interpretation.title}:{}),...(type==="contact"&&interpretation.contactName?{contactQuery:interpretation.contactName}:{})};
@@ -65,7 +66,7 @@ async function add(){
    if(!await saveConfirmed(nextNotes)){if(hasMedia)await Promise.allSettled([...images,...files].map(item=>media.remove(item.driveFileId||item.id)));ui.closeLayers();return}
    clearComposer();
    if(!active){try{await sendEntry(entry,now);ui.notify("Entrada registrada en Google")}catch(e){ui.notify("Entrada sincronizada · Google Sheets no respondió")}}
-   if(entry.interaction.status==="awaiting_input")ui.showInteractionQuestion(entry,{onContinue:openDraft,onCancel:()=>cancelActive(entry)});else ui.showEntryAction(entry,google);
+   if(entry.interaction.status==="awaiting_input")continueConversation(entry);else ui.showEntryAction(entry,google);
  }catch(error){
    if(hasMedia&&!mediaUploaded){clearPendingMedia();ui.closeLayers();ui.notify("No se pudo subir el adjunto. Se ha quitado de la petición; puedes volver a elegirlo e intentarlo.");return}
    if(mediaUploaded)await Promise.allSettled([...images,...files].map(item=>media.remove(item.driveFileId||item.id)));
@@ -77,7 +78,7 @@ async function cancelActive(entry){await saveConfirmed(notes.map(item=>item.id==
 function localInterpretation(text,type,active=null){const reminder=type==="reminder"&&!active,data={...actionData(text,type),...temporalData(text,new Date(),{inferDateFromTime:reminder})},isCalendarQuery=/\b(?:qué|que)\s+(?:tengo|hay)|\b(?:muéstrame|muestrame|consulta)\s+(?:mi\s+)?(?:agenda|calendario)\b/i.test(text),futureCall=type==="contact"&&Boolean(data.scheduledDate||data.scheduledTime),intent=isCalendarQuery?"calendar.query":futureCall?"reminder.create":{note:"note",task:"task.create",reminder:"reminder.create",calendar:"calendar.create",contact:"contact.call",file:"file.store",photo:"photo.store"}[type]||"note";return{intent,confidence:.5,title:text||null,date:data.scheduledDate||null,time:data.scheduledTime||null,...(isCalendarQuery?(calendarQueryRange(text)||{}):{}),location:null,contactName:data.contactQuery||null,phone:data.phone||null,notes:null,target:null,changes:null,missingFields:[],question:null,requiresConfirmation:Boolean(data.scheduledDate&&data.scheduledTime)}}
 function setMicState(active){$("mic").classList.toggle("listening",active);$("micMini").classList.toggle("listening",active);$("micLabel").textContent=active?"Escuchando… toca otra vez para parar":"Toca para hablar"}
 function stop(){listening=false;if(rec){try{rec.stop()}catch(e){}}rec=null;setMicState(false);$("hint").textContent="Dictado terminado. Puedes continuar o pulsar Enviar cuando acabes.";autosize()}
-function start(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){ui.notify("Este navegador no admite dictado");return}if(listening){stop();return}openDraft();finalText=$("text").value.trim();rec=new SR();rec.lang="es-ES";rec.continuous=false;rec.interimResults=true;rec.maxAlternatives=1;let sessionFinal=finalText||"",lastInterim="";rec.onstart=()=>{listening=true;setMicState(true);$("hint").textContent="Escuchando. Pulsa Enviar cuando la instrucción esté completa."};rec.onresult=e=>{let finalPart="",interimPart="";for(let i=e.resultIndex;i<e.results.length;i++){const result=e.results[i],phrase=(result[0]?.transcript||"").trim();if(!phrase)continue;if(result.isFinal)finalPart+=(finalPart?" ":"")+phrase;else interimPart+=(interimPart?" ":"")+phrase}if(finalPart){sessionFinal+=(sessionFinal?" ":"")+finalPart;lastInterim=""}else lastInterim=interimPart;finalText=sessionFinal;$("text").value=(sessionFinal+(lastInterim?" "+lastInterim:"")).trim();ui.updateDraft($("text").value);autosize()};rec.onerror=e=>{listening=false;setMicState(false);$("hint").textContent="Dictado detenido.";ui.notify(e.error==="not-allowed"?"Permiso de micrófono denegado":"Error de dictado: "+e.error)};rec.onend=()=>{finalText=sessionFinal;$("text").value=finalText;ui.updateDraft(finalText);listening=false;setMicState(false);$("hint").textContent="Dictado terminado. Puedes continuar o pulsar Enviar cuando acabes.";if(shortcutCapture&&finalText){shortcutCapture=false;createShortcut(finalText);$("text").value="";finalText=""}autosize()};try{rec.start()}catch(e){listening=false;setMicState(false);ui.notify("No se pudo iniciar el dictado")}}
+function start({inConversation=false}={}){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){ui.notify("Este navegador no admite dictado");return}if(listening){stop();return}if(!inConversation)openDraft();finalText=$("text").value.trim();rec=new SR();rec.lang="es-ES";rec.continuous=false;rec.interimResults=true;rec.maxAlternatives=1;let sessionFinal=finalText||"",lastInterim="";rec.onstart=()=>{listening=true;setMicState(true);$("hint").textContent="Escuchando. Pulsa Enviar cuando la instrucción esté completa."};rec.onresult=e=>{let finalPart="",interimPart="";for(let i=e.resultIndex;i<e.results.length;i++){const result=e.results[i],phrase=(result[0]?.transcript||"").trim();if(!phrase)continue;if(result.isFinal)finalPart+=(finalPart?" ":"")+phrase;else interimPart+=(interimPart?" ":"")+phrase}if(finalPart){sessionFinal+=(sessionFinal?" ":"")+finalPart;lastInterim=""}else lastInterim=interimPart;finalText=sessionFinal;$("text").value=(sessionFinal+(lastInterim?" "+lastInterim:"")).trim();ui.updateDraft($("text").value);autosize()};rec.onerror=e=>{listening=false;setMicState(false);$("hint").textContent="Dictado detenido.";ui.notify(e.error==="not-allowed"?"Permiso de micrófono denegado":"Error de dictado: "+e.error)};rec.onend=()=>{finalText=sessionFinal;$("text").value=finalText;ui.updateDraft(finalText);listening=false;setMicState(false);$("hint").textContent="Dictado terminado. Puedes continuar o pulsar Enviar cuando acabes.";if(shortcutCapture&&finalText){shortcutCapture=false;createShortcut(finalText);$("text").value="";finalText=""}autosize()};try{rec.start()}catch(e){listening=false;setMicState(false);ui.notify("No se pudo iniciar el dictado")}}
 function readImages(files,msg){pendingImages=files;ui.showImagePreview(files);ui.notify(msg)}
 
 $("mic").onclick=start;$("micMini").onclick=start;
@@ -98,7 +99,7 @@ $("text").onfocus=()=>{if(!$("actionModal").classList.contains("show"))setTimeou
 $("text").onkeydown=event=>{if(event.key==="Enter"&&!event.shiftKey){event.preventDefault();add()}};
 $("attachToggle").onclick=()=>$("attachmentChoices").classList.toggle("show");
 $("searchToggle").onclick=()=>$("searchPanel").classList.toggle("show");
-$("menuOpen").onclick=ui.openMenu;$("menuClose").onclick=ui.closeLayers;$("scrim").onclick=ui.closeLayers;
+$("menuOpen").onclick=ui.openMenu;$("menuClose").onclick=ui.closeLayers;$("scrim").onclick=()=>{if(!$("actionModal").classList.contains("conversation-modal"))ui.closeLayers()};
 $("clearView").onclick=()=>{if(confirm("Esto limpia solo la conversación visible. Tus entradas, fotos y archivos seguirán guardados. ¿Continuar?")){$("list").innerHTML='<div class="empty">Vista limpia. Tus datos siguen guardados.</div>';ui.notify("Vista limpiada")}};
 $("shortcutManual").onclick=()=>createShortcut();
 $("shortcutVoice").onclick=()=>{shortcutCapture=true;$("text").value="";$("text").placeholder="Di la orden que ejecutará el acceso directo…";ui.closeLayers();start()};
@@ -165,7 +166,7 @@ async function handleEntryAction(event){
  }
 }
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.0",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.1",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}

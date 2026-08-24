@@ -21,6 +21,18 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.21.1] - 2026-08-24
+
+### Fixed
+
+- Cuando Angeli necesita un dato, la misma tarjeta de conversación conserva la pregunta, el campo de respuesta, el micrófono, `Continuar` y `Cancelar`; ya no obliga a cerrar una ventana y abrir otra para responder.
+- La tarjeta no se cierra al tocar accidentalmente el fondo durante una interacción activa.
+- Los mensajes y tarjetas dejan de exponer detalles técnicos de interpretación local o IA; Angeli explica únicamente cuándo necesita confirmar un dato antes de actuar.
+
+### Changed
+
+- Identificación visible y caché PWA actualizadas a `V0.21.1 · Conversación fluida`.
+
 ## [0.21.0] - 2026-08-24
 
 ### Added
