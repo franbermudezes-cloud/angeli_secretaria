@@ -112,6 +112,14 @@ La aplicación pasa de tratar cada frase como una entrada independiente a conser
 
 La interfaz conserva la conversación activa en una sola tarjeta: si Angeli necesita fecha, hora u otro dato, la pregunta, el campo de respuesta, el dictado, `Continuar` y `Cancelar` permanecen disponibles sin obligar a buscar el compositor general ni cerrar ventanas. Durante la interpretación se muestra el estado de trabajo y, al terminar, la misma posición pasa a la siguiente pregunta o a la confirmación de la acción. Los mensajes normales no revelan si se usó IA o respaldo local; si Angeli no está segura, pide el detalle o la confirmación con texto comprensible. No cambia Firebase, Cloud Run, Google Contacts, Calendar, Drive ni las acciones externas existentes. Pendiente de prueba manual en Android.
 
+### 2026-08-24 — Regla permanente de publicación funcional
+
+Cuando el cambio solicitado está claro, se han ejecutado las comprobaciones disponibles y no hay una decisión, riesgo o autorización externa pendiente, Codex debe versionar, hacer commit y publicar directamente en `origin/main`. La publicación es necesaria para probar la PWA real en Android; no se debe dejar una corrección funcional solo en el árbol local esperando una autorización redundante. Si falta una decisión del usuario, existe riesgo de regresión no resuelto o el usuario pide expresamente detenerse, se informa antes de publicar.
+
+### 2026-08-24 — V0.21.2 · Flujo directo pendiente de validación
+
+Una vez que la persona confirma y Angeli ejecuta con éxito una acción, la tarjeta final solo sirve como confirmación visual breve y se cierra automáticamente. Las tarjetas se mantienen abiertas únicamente cuando aún hay una elección, un dato pendiente, una confirmación o un error que resolver. Pendiente de validación manual en Android.
+
 ### 2026-08-21 — V0.20 · Datos y Drive pendiente de validación
 
 Se sustituye el modelo híbrido de pruebas por una arquitectura única: Firestore es la fuente de verdad de todas las entradas y Google Drive conserva los bytes de fotos y archivos. La PWA no lee, migra ni mezcla `localStorage` o IndexedDB heredados porque el usuario confirmó que todos los datos previos son pruebas. Las entradas remotas guardan únicamente los metadatos y las referencias de Drive; los medios nuevos se organizan en `Angeli Secretaria/Fotos/<año>/<mes>` y `Angeli Secretaria/Archivos/<año>/<mes>`. La autorización `drive.file` se conserva como refresh token solo en Secret Manager, separada de Angeli, Contactos y Calendar. Antes de tratar esta versión como estable hay que desplegar Cloud Run y comprobar foto, archivo, lectura, persistencia, sincronización móvil-escritorio y borrado.

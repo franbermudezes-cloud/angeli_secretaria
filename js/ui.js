@@ -1,9 +1,10 @@
-import { typeLabel } from "./classifier.js?v=0.21.1";
-import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.1";
+import { typeLabel } from "./classifier.js?v=0.21.2";
+import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.2";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
   let toastTimer;
+  let completionTimer;
   const welcomeStartedAt = performance.now();
   let welcomeDismissed = false;
 
@@ -41,6 +42,7 @@ export function createUI({ getMedia }) {
   }
 
   function closeLayers() {
+    clearTimeout(completionTimer);
     $("actionModal").classList.remove("show");
     $("settingsMenu").classList.remove("show");
     $("scrim").classList.remove("show");
@@ -52,6 +54,7 @@ export function createUI({ getMedia }) {
   }
 
   function openModal({ title, lead, body, actions = [] }) {
+    clearTimeout(completionTimer);
     $("actionModal").classList.remove("working-modal", "conversation-modal");
     $("modalTitle").textContent = title;
     $("modalLead").textContent = lead;
@@ -104,7 +107,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.1";
+    image.src = "assets/angeli-welcome.gif?v=0.21.2";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -129,6 +132,12 @@ export function createUI({ getMedia }) {
     $("modalActions").innerHTML = "";
   }
 
+  function showCompletion({ title, lead, body = "" }) {
+    openModal({ title, lead, body, actions: [] });
+    $("actionModal").classList.add("completion-modal");
+    completionTimer = setTimeout(closeLayers, 1800);
+  }
+
   function entryBody(note) {
     const description = note.proposal?.description || "Entrada guardada";
     const location = note.location ? "<br>📍 " + esc(note.location) : "";
@@ -143,11 +152,11 @@ export function createUI({ getMedia }) {
       const detail = entryBody(note) + '<div class="schedule-box"><strong>⏰ ' + esc(title) + '</strong><span>' + esc(when) + '</span><small>Estado: ' + esc(scheduleState(note.schedule)) + '</small></div>';
       if (note.schedule.status === "scheduled") {
         const link = note.schedule.calendarUrl ? '<p><a href="' + esc(note.schedule.calendarUrl) + '" target="_blank" rel="noopener">Abrir aviso en Calendar</a></p>' : "";
-        openModal({ ...base, title: "✓ Aviso programado", lead: "Calendar te avisará a la hora indicada.", body: detail + link, actions: [{ label: "Cancelar aviso", kind: "secondary", dataset: { a: "cancel-schedule", id: note.id } }, { label: "Cerrar", kind: "confirm", onClick: closeLayers }] });
+        showCompletion({ title: "✓ Aviso programado", lead: "Calendar te avisará a la hora indicada.", body: detail + link });
         return;
       }
       if (note.schedule.status === "cancelled") {
-        openModal({ ...base, title: "Aviso cancelado", lead: "La entrada sigue guardada, pero ya no habrá aviso.", body: detail, actions: [{ label: "Cerrar", kind: "confirm", onClick: closeLayers }] });
+        showCompletion({ title: "Aviso cancelado", lead: "La entrada sigue guardada, pero ya no habrá aviso.", body: detail });
         return;
       }
       openModal({ ...base, title: note.schedule.status === "error" ? "No se pudo programar" : "¿Programo este aviso?", lead: "Se creará un aviso en Google Calendar para que Android te avise a la hora indicada.", body: detail, actions: [{ label: "Ahora no", kind: "secondary", onClick: closeLayers }, { label: note.schedule.status === "error" ? "Reintentar" : "⏰ Programar", kind: "confirm", dataset: { a: "schedule", id: note.id } }] });
@@ -156,7 +165,7 @@ export function createUI({ getMedia }) {
     if (intent === "calendar.create") {
       if (note.calendarStatus === "synced") {
         const link = note.calendarUrl ? '<p><a href="' + esc(note.calendarUrl) + '" target="_blank" rel="noopener">Abrir evento en Calendar</a></p>' : "";
-        openModal({ ...base, title: "✓ Añadido al calendario", lead: "El evento ya está creado.", body: entryBody(note) + link, actions: [{ label: "Cerrar", kind: "confirm", onClick: closeLayers }] });
+        showCompletion({ title: "✓ Añadido al calendario", lead: "El evento ya está creado.", body: entryBody(note) + link });
         return;
       }
       openModal({ ...base, title: "¿Lo añado al calendario?", actions: [
@@ -197,7 +206,7 @@ export function createUI({ getMedia }) {
       openModal({ ...base, title, body, actions: result ? [{ label: "Cerrar", kind: "confirm", onClick: closeLayers }] : [{ label: "Ahora no", kind: "secondary", onClick: closeLayers }, { label, kind: "confirm", dataset: { a: "search-calendar", id: note.id } }] });
       return;
     }
-    openModal({ ...base, title: "Guardado", lead: "La entrada se ha guardado en tu conversación.", actions: [{ label: "Cerrar", kind: "confirm", onClick: closeLayers }] });
+    showCompletion({ title: "Guardado", lead: "La entrada se ha guardado en tu conversación." });
   }
 
   function showInteractionQuestion(note, { onSend, onMic, onCancel, value = "" } = {}) {

@@ -21,6 +21,16 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.21.2] - 2026-08-24
+
+### Fixed
+
+- Las confirmaciones finales de éxito se muestran brevemente y se cierran solas; ya no se exige un toque adicional para cerrar una acción de Calendar, un aviso programado o un guardado simple.
+
+### Changed
+
+- Identificación visible y caché PWA actualizadas a `V0.21.2 · Flujo directo`.
+
 ## [0.21.1] - 2026-08-24
 
 ### Fixed
