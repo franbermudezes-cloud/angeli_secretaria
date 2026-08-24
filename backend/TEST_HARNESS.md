@@ -64,6 +64,15 @@ El primer PR de implantación (`codex/integration-gate`) queda excluido del
 auto-merge para revisar manualmente que la puerta bloquea y publica el informe.
 Los PR posteriores de ramas `codex/*` sí se fusionan automáticamente al pasar.
 
+La configuración inicial de Google se instala de forma idempotente con
+`scripts/setup-integration-gate.sh`. El script no imprime secretos y verifica
+al final el proveedor federado y los cuatro permisos mínimos de lectura. Falla
+de forma segura si alguno de los cuatro secretos aislados no existe o no tiene
+una versión habilitada: nunca crea, copia ni consulta un secreto de producción.
+La configuración del repositorio se instala con
+`scripts/setup-github-integration-gate.sh`: activa auto-merge, protege `main`
+con el check obligatorio y abre el primer PR sin fusionarlo.
+
 El check obligatorio se llama `integration-gate`. Un resultado `FAIL` deja el
 Pull Request abierto. Cuando pasa y la rama empieza por `codex/`, el mismo
 workflow activa la fusión automática. El informe JSON se conserva como
