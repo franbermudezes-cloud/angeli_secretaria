@@ -21,6 +21,19 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 
 ## [Unreleased]
 
+## [0.21.3] - 2026-08-24
+
+### Fixed
+
+- Las preguntas de rango a Calendar, como `¿Qué tengo mañana?`, ya no envían la frase completa como filtro textual de título. Se consultan únicamente por el intervalo solicitado.
+- Las búsquedas de modificación o cancelación limpian el verbo de orden y los datos temporales del texto antes de enviarlo como coincidencia de Calendar.
+- Un fallo de autorización o de API de Calendar se informa como error de integración, no como si la agenda estuviera vacía.
+
+### Changed
+
+- Creación, consulta, modificación y borrado confirman explícitamente el mismo calendario efectivo: `primary`.
+- Identificación visible y caché PWA actualizadas a `V0.21.3 · Calendar fiable`.
+
 ## [0.21.2] - 2026-08-24
 
 ### Fixed

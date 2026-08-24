@@ -80,7 +80,9 @@ si se menciona, su fecha u hora. Para modificar usa calendar.update: target
 identifica el evento actual y changes contiene solo los nuevos datos. Para
 preguntas sobre la agenda usa calendar.query. En una consulta de intervalo,
 como «qué tengo la semana que viene», usa rangeStart y rangeEnd en formato
-YYYY-MM-DD, con el inicio inclusivo y el fin exclusivo. Para «pasa la cena con
+YYYY-MM-DD, con el inicio inclusivo y el fin exclusivo. En calendar.query,
+title debe ser null: la pregunta completa nunca es el título de un evento ni
+un filtro de texto. Para «pasa la cena con
 Vicente para el lunes que viene», target debe identificar «Cena con Vicente»
 y changes debe contener la nueva fecha; nunca uses esa nueva fecha para buscar
 el evento antiguo. Si una orden de creación contiene «en» seguido de un
@@ -341,20 +343,21 @@ def persistent_google_action(payload: dict[str, Any]) -> dict[str, Any]:
         return service.api(CONTACTS, "GET", url)
     if integration != CALENDAR:
         raise ValueError("Integración no válida")
-    base = "https://www.googleapis.com/calendar/v3/calendars/primary/events"
+    calendar_id = "primary"
+    base = f"https://www.googleapis.com/calendar/v3/calendars/{calendar_id}/events"
     if action == "create" and isinstance(payload.get("event"), dict):
-        return service.api(CALENDAR, "POST", base, payload["event"])
+        return {"calendarId": calendar_id, **service.api(CALENDAR, "POST", base, payload["event"])}
     if action == "list" and isinstance(payload.get("params"), dict):
         params = {key: str(value) for key, value in payload["params"].items() if key in {"singleEvents", "orderBy", "maxResults", "timeMin", "timeMax", "q"}}
-        return service.api(CALENDAR, "GET", base + "?" + urlencode(params))
+        return {"calendarId": calendar_id, **service.api(CALENDAR, "GET", base + "?" + urlencode(params))}
     event_id = payload.get("eventId")
     if not isinstance(event_id, str) or not event_id or len(event_id) > 300:
         raise ValueError("Evento no válido")
     url = base + "/" + quote(event_id, safe="")
     if action == "delete":
-        return service.api(CALENDAR, "DELETE", url)
+        return {"calendarId": calendar_id, **service.api(CALENDAR, "DELETE", url)}
     if action == "patch" and isinstance(payload.get("event"), dict):
-        return service.api(CALENDAR, "PATCH", url, payload["event"])
+        return {"calendarId": calendar_id, **service.api(CALENDAR, "PATCH", url, payload["event"])}
     raise ValueError("Acción no válida")
 
 
@@ -413,6 +416,10 @@ def validate_interpretation(raw: Any) -> dict[str, Any]:
     if result["intent"] != "calendar.query":
         result["rangeStart"] = None
         result["rangeEnd"] = None
+    else:
+        # Una pregunta de agenda se resuelve por intervalo, no con sus
+        # propias palabras como filtro de título de Calendar.
+        result["title"] = None
     for key in ("title", "location", "contactName", "phone", "notes", "question"):
         value = result[key]
         if value is not None and (not isinstance(value, str) or len(value) > MAX_TEXT_LENGTH):
@@ -546,7 +553,13 @@ def app(environ: dict[str, Any], start_response: Callable):
                 raise ValueError("Autorización no válida")
             return json_response(start_response, "200 OK", sessions().exchange_code(integration, code, redirect_uri), origin)
         if path == "/google":
-            return json_response(start_response, "200 OK", persistent_google_action(parse_json_body(environ, {"integration", "action", "query", "event", "eventId", "params"})), origin)
+            try:
+                result = persistent_google_action(parse_json_body(environ, {"integration", "action", "query", "event", "eventId", "params"}))
+            except PermissionError:
+                return json_response(start_response, "401 Unauthorized", {"error": "Calendar no está autorizado; conéctalo de nuevo"}, origin)
+            except RuntimeError:
+                return json_response(start_response, "502 Bad Gateway", {"error": "Calendar no pudo completar la consulta"}, origin)
+            return json_response(start_response, "200 OK", result, origin)
         if path == "/media/upload":
             data, name, mime_type, kind = parse_media_upload(environ)
             try:

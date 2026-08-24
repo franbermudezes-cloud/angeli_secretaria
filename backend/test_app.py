@@ -123,6 +123,7 @@ class InterpretEndpointTests(unittest.TestCase):
         self.assertEqual(data["intent"], "calendar.query")
         self.assertEqual(data["rangeStart"], "2026-08-23")
         self.assertEqual(data["rangeEnd"], "2026-08-24")
+        self.assertIsNone(data["title"])
 
     def test_rejects_invalid_calendar_query_interval(self):
         app.set_test_dependencies(
@@ -243,8 +244,53 @@ class InterpretEndpointTests(unittest.TestCase):
         self.assertIn("readMask=names%2CphoneNumbers", service.calls[0][2])
         status, data = request_path("/google", {"integration": "calendar", "action": "create", "event": {"summary": "Cena"}}, "Bearer test")
         self.assertEqual(status, "200 OK")
-        self.assertEqual(data, {"id": "event-1"})
+        self.assertEqual(data, {"calendarId": "primary", "id": "event-1"})
         self.assertEqual(service.calls[1][0:2], ("calendar", "POST"))
+        os.environ.pop("ALLOWED_FIREBASE_EMAILS", None)
+
+    def test_calendar_read_and_write_use_the_same_primary_calendar(self):
+        class FakeSessions:
+            def __init__(self):
+                self.calls = []
+
+            def api(self, integration, method, url, body=None):
+                self.calls.append((integration, method, url, body))
+                return {"items": []} if method == "GET" else {"id": "event-1"}
+
+        service = FakeSessions()
+        app.set_test_dependencies(
+            lambda text, now, timezone: VALID_RESPONSE.copy(),
+            lambda token: {"uid": "approved-sub", "email": "owner@example.com", "email_verified": True},
+            lambda: service,
+        )
+        os.environ.pop("ANGELI_AI_DEV_BYPASS_AUTH", None)
+        os.environ["ALLOWED_FIREBASE_EMAILS"] = "owner@example.com"
+        status, created = request_path("/google", {"integration": "calendar", "action": "create", "event": {"summary": "Cena"}}, "Bearer test")
+        self.assertEqual(status, "200 OK")
+        self.assertEqual(created["calendarId"], "primary")
+        status, listed = request_path("/google", {"integration": "calendar", "action": "list", "params": {"timeMin": "2026-08-25T00:00:00.000Z", "timeMax": "2026-08-26T00:00:00.000Z", "q": "Cena"}}, "Bearer test")
+        self.assertEqual(status, "200 OK")
+        self.assertEqual(listed["calendarId"], "primary")
+        self.assertEqual(len(service.calls), 2)
+        self.assertTrue(all("/calendars/primary/events" in call[2] for call in service.calls))
+        self.assertIn("q=Cena", service.calls[1][2])
+        os.environ.pop("ALLOWED_FIREBASE_EMAILS", None)
+
+    def test_calendar_failure_is_not_reported_as_an_empty_result(self):
+        class FailingSessions:
+            def api(self, integration, method, url, body=None):
+                raise RuntimeError("upstream failed")
+
+        app.set_test_dependencies(
+            lambda text, now, timezone: VALID_RESPONSE.copy(),
+            lambda token: {"uid": "approved-sub", "email": "owner@example.com", "email_verified": True},
+            lambda: FailingSessions(),
+        )
+        os.environ.pop("ANGELI_AI_DEV_BYPASS_AUTH", None)
+        os.environ["ALLOWED_FIREBASE_EMAILS"] = "owner@example.com"
+        status, data = request_path("/google", {"integration": "calendar", "action": "list", "params": {}}, "Bearer test")
+        self.assertEqual(status, "502 Bad Gateway")
+        self.assertEqual(data["error"], "Calendar no pudo completar la consulta")
         os.environ.pop("ALLOWED_FIREBASE_EMAILS", None)
 
     def test_persistent_grant_body_is_read_once(self):

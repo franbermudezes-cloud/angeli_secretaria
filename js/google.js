@@ -1,5 +1,5 @@
-import { cleanTemporalText } from "./temporal.js?v=0.21.2";
-import { scheduleTitle } from "./schedule.js?v=0.21.2";
+import { cleanTemporalText } from "./temporal.js?v=0.21.3";
+import { scheduleTitle } from "./schedule.js?v=0.21.3";
 
 const CLIENT_ID = "172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
@@ -184,6 +184,7 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
         ...item,
         calendarStatus: "synced",
         calendarEventId: saved.id,
+        calendarId: saved.calendarId || "primary",
         calendarUrl: saved.htmlLink || ""
       } : item));
       notify("Evento añadido al calendario");
@@ -209,7 +210,7 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
       });
       saveNotes(getNotes().map(item => item.id === note.id ? {
         ...item,
-        schedule: { ...item.schedule, status: "scheduled", calendarEventId: saved.id, calendarUrl: saved.htmlLink || "" }
+        schedule: { ...item.schedule, status: "scheduled", calendarEventId: saved.id, calendarId: saved.calendarId || "primary", calendarUrl: saved.htmlLink || "" }
       } : item));
       notify("Aviso programado en Calendar");
     } catch (_) {
@@ -237,20 +238,16 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
     if (!CALENDAR_SEARCH_INTENTS.has(note.proposal?.intent)) return;
     try {
       const interpretation = note.aiIntent || {};
-      const target = interpretation.target || {};
-      const range = calendarRange(target.date || null, interpretation.rangeStart, interpretation.rangeEnd);
-      const params = new URLSearchParams({
-        singleEvents: "true",
-        orderBy: "startTime",
-        maxResults: "20",
-        timeMin: range.from.toISOString(),
-        timeMax: range.to.toISOString()
+      const search = buildCalendarSearch(interpretation, note.proposal?.intent);
+      const data = await calendarRequest("GET", `?${search.params}`);
+      calendarResults.set(note.id, {
+        events: (data.items || []).filter(item => item.status !== "cancelled").map(calendarCandidate),
+        calendarId: data.calendarId || "primary",
+        range: search.range,
+        query: search.query
       });
-      if (target.title || interpretation.title) params.set("q", target.title || interpretation.title);
-      const data = await calendarRequest("GET", `?${params}`);
-      calendarResults.set(note.id, { events: (data.items || []).filter(item => item.status !== "cancelled").map(calendarCandidate) });
-    } catch (_) {
-      calendarResults.set(note.id, { events: [], error: "No se pudo consultar Calendar" });
+    } catch (error) {
+      calendarResults.set(note.id, { events: [], error: `No se pudo consultar Calendar: ${error.message || "error desconocido"}` });
     }
     refresh();
   }
@@ -352,6 +349,38 @@ function calendarRange(date, rangeStart, rangeEnd) {
   const to = new Date(from);
   to.setDate(to.getDate() + (date ? 1 : 90));
   return { from, to };
+}
+
+// Calendar distingue una consulta de rango ("¿qué tengo mañana?") de una
+// búsqueda de un evento concreto. La primera jamás debe mandar la pregunta
+// completa como `q`, porque Google la interpreta como texto del título y deja
+// fuera todos los eventos reales.
+export function buildCalendarSearch(interpretation = {}, intent = "calendar.query") {
+  const target = interpretation.target || {};
+  const range = calendarRange(target.date || null, interpretation.rangeStart, interpretation.rangeEnd);
+  const params = new URLSearchParams({
+    singleEvents: "true",
+    orderBy: "startTime",
+    maxResults: "20",
+    timeMin: range.from.toISOString(),
+    timeMax: range.to.toISOString()
+  });
+  const query = intent === "calendar.query" ? "" : calendarTargetQuery(target.title);
+  if (query) params.set("q", query);
+  return {
+    params,
+    query,
+    range: { from: params.get("timeMin"), to: params.get("timeMax") }
+  };
+}
+
+function calendarTargetQuery(value) {
+  const withoutCommand = String(value || "")
+    .replace(/^\s*(?:cancela(?:r)?|borra(?:r)?|anula(?:r)?|pasa|cambia|mueve|modifica)\s+(?:la\s+|el\s+)?/i, "");
+  return cleanTemporalText(withoutCommand)
+    .replace(/\b(?:de|del|el|la)\s+(?=con\b)/gi, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 }
 
 function calendarCandidate(event) {
