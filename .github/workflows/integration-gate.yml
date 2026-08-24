@@ -58,6 +58,9 @@ jobs:
         working-directory: backend
         run: python -m unittest test_app.py test_test_harness.py
 
+      - name: Ejecutar pruebas del coordinador conversacional
+        run: node --test tests/conversation.test.mjs
+
       - name: Ejecutar arnés real aislado
         run: python backend/test_harness.py
 

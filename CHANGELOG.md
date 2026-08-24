@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.21.5] - 2026-08-24
+
+### Corregido
+
+- Una llamada con una referencia temporal parcial ya no abre el marcador de
+  inmediato: `llama a Miguel mañana` pregunta la hora y `llama a Miguel a las
+  siete` programa la próxima ocurrencia.
+- La llamada sin fecha ni hora conserva el comportamiento inmediato.
+
+### Pruebas
+
+- La puerta automática incorpora pruebas del coordinador conversacional para
+  P01/P02, recordatorios completos, cierre de interacciones y llamadas futuras.
+- Recorrido P01/P02 comprobado también en la PWA publicada con la IA real,
+  sin errores de consola y sin ejecutar la acción externa de prueba.
+
 ## [0.18.4] - 2026-08-21
 
 ### Fixed
