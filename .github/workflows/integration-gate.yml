@@ -21,7 +21,7 @@ jobs:
     env:
       ANGELI_TEST_MODE: "1"
       GOOGLE_CLOUD_PROJECT: angeli-secretaria
-      GOOGLE_WEB_CLIENT_ID: 172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com
+      ANGELI_TEST_GOOGLE_WEB_CLIENT_ID: ${{ vars.ANGELI_TEST_GOOGLE_WEB_CLIENT_ID }}
     steps:
       - name: Obtener el código
         uses: actions/checkout@v4

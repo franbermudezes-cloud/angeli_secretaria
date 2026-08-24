@@ -34,6 +34,9 @@ Variables necesarias:
 - `GOOGLE_CLOUD_PROJECT`: proyecto de Google Cloud.
 - `VERTEX_LOCATION`: `global` inicialmente.
 - `GOOGLE_WEB_CLIENT_ID`: Client ID web ya usado por la PWA.
+- `ANGELI_TEST_GOOGLE_WEB_CLIENT_ID`: Client ID web exclusivo de
+  `Angeli Integration Gate Tests`; solo lo usan `/test/*` y el arnés, y nunca
+  puede sustituirse por el cliente de producción.
 - `ALLOWED_FIREBASE_EMAILS`: correos propietarios de Angeli autorizados,
   separados por coma. Actualmente: `franbermudez.es@gmail.com`.
 - `ALLOWED_ORIGINS`: orígenes exactos de GitHub Pages y de desarrollo local,

@@ -42,7 +42,7 @@ cd backend
 python3 -m pip install --user -r requirements.txt
 export ANGELI_TEST_MODE=1
 export GOOGLE_CLOUD_PROJECT=angeli-secretaria
-export GOOGLE_WEB_CLIENT_ID='…client-id-web…'
+export ANGELI_TEST_GOOGLE_WEB_CLIENT_ID='…client-id-web-exclusivo-de-pruebas…'
 python3 test_harness.py
 ```
 
@@ -69,6 +69,9 @@ La configuración inicial de Google se instala de forma idempotente con
 al final el proveedor federado y los cuatro permisos mínimos de lectura. Falla
 de forma segura si alguno de los cuatro secretos aislados no existe o no tiene
 una versión habilitada: nunca crea, copia ni consulta un secreto de producción.
+El arnés exige además `ANGELI_TEST_GOOGLE_WEB_CLIENT_ID`; nunca acepta
+`GOOGLE_WEB_CLIENT_ID` como sustituto. El cliente web de pruebas y su secreto
+pertenecen exclusivamente a `Angeli Integration Gate Tests`.
 La configuración del repositorio se instala con
 `scripts/setup-github-integration-gate.sh`: activa auto-merge, protege `main`
 con el check obligatorio y abre el primer PR sin fusionarlo.

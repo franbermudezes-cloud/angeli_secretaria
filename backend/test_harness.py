@@ -190,9 +190,9 @@ def configured_harness() -> IntegrationHarness:
     if os.getenv("ANGELI_TEST_MODE") != "1":
         raise HarnessConfigurationError("Rechazo seguro: exporta ANGELI_TEST_MODE=1 para ejecutar pruebas reales")
     project = os.getenv("GOOGLE_CLOUD_PROJECT", "").strip()
-    client_id = os.getenv("GOOGLE_WEB_CLIENT_ID", "").strip()
+    client_id = os.getenv("ANGELI_TEST_GOOGLE_WEB_CLIENT_ID", "").strip()
     if not project or not client_id:
-        raise HarnessConfigurationError("Faltan GOOGLE_CLOUD_PROJECT o GOOGLE_WEB_CLIENT_ID")
+        raise HarnessConfigurationError("Faltan GOOGLE_CLOUD_PROJECT o ANGELI_TEST_GOOGLE_WEB_CLIENT_ID")
     return IntegrationHarness(GoogleSessions(project, client_id, grant_prefix=TEST_GRANT_PREFIX))
 
 

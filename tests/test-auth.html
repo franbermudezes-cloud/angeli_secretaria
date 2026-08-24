@@ -20,7 +20,9 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
   import { GoogleAuthProvider, browserLocalPersistence, getAuth, onAuthStateChanged, setPersistence, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
   const config={apiKey:"AIzaSyAFM5NjcxX9lC5MpfII4B3Kx7lV9SsUAsc",authDomain:"angeli-secretaria.firebaseapp.com",projectId:"angeli-secretaria",storageBucket:"angeli-secretaria.firebasestorage.app",messagingSenderId:"172772694205",appId:"1:172772694205:web:6ce976de4a3658c12f3fd4"};
-  const clientId="172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
+  // Este valor se sustituye exclusivamente por el Client ID de
+  // "Angeli Integration Gate Tests". No usar aquí el cliente de producción.
+  const clientId="172772694205-1s74m59nb512hhm9n0pus06t3j3kusbb.apps.googleusercontent.com";
   const api="https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
   const scopes={contacts:"https://www.googleapis.com/auth/contacts.readonly",calendar:"https://www.googleapis.com/auth/calendar.events",drive:"https://www.googleapis.com/auth/drive.file"};
   const owner="franbermudez.es@gmail.com";
@@ -29,7 +31,7 @@
   const show=text=>status.textContent=text;
   async function request(path,body){if(!user)throw new Error("Inicia sesión como propietario primero");const response=await fetch(api+path,{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${await user.getIdToken()}`},body:JSON.stringify(body)});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||`Error ${response.status}`);return data;}
   async function loadGIS(){if(window.google?.accounts?.oauth2)return;await new Promise((ok,fail)=>{const script=document.createElement("script");script.src="https://accounts.google.com/gsi/client";script.onload=ok;script.onerror=fail;document.head.append(script);});}
-  async function code(kind){await loadGIS();return new Promise((ok,fail)=>google.accounts.oauth2.initCodeClient({client_id:clientId,scope:scopes[kind],ux_mode:"popup",prompt:"consent select_account",callback:result=>result.code?ok(result.code):fail(new Error(result.error||"Google no autorizó")),error_callback:()=>fail(new Error("Google no pudo abrir la autorización"))}).requestCode());}
+  async function code(kind){if(!clientId.endsWith(".apps.googleusercontent.com"))throw new Error("Falta configurar el Client ID exclusivo de pruebas");await loadGIS();return new Promise((ok,fail)=>google.accounts.oauth2.initCodeClient({client_id:clientId,scope:scopes[kind],ux_mode:"popup",prompt:"consent select_account",callback:result=>result.code?ok(result.code):fail(new Error(result.error||"Google no autorizó")),error_callback:()=>fail(new Error("Google no pudo abrir la autorización"))}).requestCode());}
   async function refresh(){try{const data=await request("/test/session/status",{});show(`Cuenta propietaria: ${user.email}\nContactos: ${data.contacts?"conectado":"pendiente"}\nCalendar: ${data.calendar?"conectado":"pendiente"}\nDrive: ${data.drive?"conectado":"pendiente"}`);}catch(error){show(error.message);}}
   document.querySelector("#sign-in").onclick=async()=>{try{await signInWithPopup(auth,new GoogleAuthProvider());}catch(error){show(error.message);}};
   document.querySelector("#refresh").onclick=refresh;

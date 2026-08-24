@@ -12,6 +12,7 @@
 - La protección de `main` exige el check `integration-gate`; no desactivar, omitir ni sustituir esta puerta para publicar. Un fallo bloquea la fusión hasta corregirlo. Una prueba no automatizable se registra como manual, nunca como aprobada.
 - Toda regresión reproducida de integración debe incorporarse al arnés o a una prueba manual concreta antes de darla por resuelta.
 - El Action usa exclusivamente `buengusto.es@gmail.com`, la carpeta Drive `Angeli - Pruebas` y secretos `angeli-test-google-*-grant`; jamás reutiliza datos ni autorizaciones de producción. Para un comportamiento todavía no cubierto, el mismo PR debe añadir la prueba automática correspondiente cuando sea viable. Si solo puede validarse manualmente, debe documentarlo de forma explícita y no afirmar que esa parte está validada.
+- El arnés debe usar un cliente OAuth web exclusivo identificado como `Angeli Integration Gate Tests`, configurado mediante `ANGELI_TEST_GOOGLE_WEB_CLIENT_ID` y `angeli-test-google-oauth-client-secret`. Está prohibido usar como respaldo el Client ID o el secreto OAuth de producción.
 
 ## Arquitectura actual
 

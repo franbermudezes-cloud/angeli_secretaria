@@ -34,7 +34,10 @@ usa Workload Identity Federation y una cuenta de servicio dedicada, sin claves
 JSON permanentes. Esa cuenta solo puede leer
 `angeli-test-google-oauth-client-secret` y los tres grants
 `angeli-test-google-{contacts,calendar,drive}-grant`; el arnés no lee el secreto
-OAuth de producción. Los informes JSON quedan como artefactos durante 30 días; no
+OAuth de producción. El cliente web exclusivo se llama
+`Angeli Integration Gate Tests` y se inyecta mediante
+`ANGELI_TEST_GOOGLE_WEB_CLIENT_ID`; no existe fallback al Client ID de
+producción. Los informes JSON quedan como artefactos durante 30 días; no
 se amplía por ahora el contrato del Apps Script ni se escriben resultados en la
 hoja operativa de Sheets.
 
