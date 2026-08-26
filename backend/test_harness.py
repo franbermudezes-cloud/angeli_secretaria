@@ -54,6 +54,7 @@ class IntegrationHarness:
         """
         try:
             self._run("P04", self._calendar_cancel)
+            self._run("P04-name", self._calendar_cancel_by_name)
             self._run("P10", self._calendar_query)
             self._run("P11", self._calendar_update)
             self._run("P05-summary", self._reminder_summary)
@@ -101,6 +102,37 @@ class IntegrationHarness:
             raise RuntimeError("Calendar creó el evento pero no lo recuperó en la misma agenda primaria")
         self.service.api(CALENDAR, "DELETE", self._calendar_base() + "/" + event["id"])
         self.created_events.remove(event["id"])
+
+    def _calendar_cancel_by_name(self) -> None:
+        """Busca sin fecha tres llamadas reales y cancela solo la seleccionada."""
+        fixture = Path(__file__).resolve().parents[1] / "tests/cancel-search-fixture.mjs"
+        search = json.loads(subprocess.run(["node", str(fixture)], check=True,
+            capture_output=True, text=True, timeout=20).stdout)
+        if search["query"] != "Miguel Ibiza":
+            raise RuntimeError("La búsqueda no utiliza el nombre de la llamada")
+        now = datetime.now(timezone.utc)
+        events = [self._create_event(f"{self.prefix} Llamar a Miguel Ibiza {i}",
+            now + timedelta(days=i+1), now + timedelta(days=i+1, hours=1)) for i in range(3)]
+        # Solo el espacio de pruebas; no añade fechas suministradas por el usuario.
+        url = self._calendar_base() + "?" + search["params"]
+        found = self.service.api(CALENDAR, "GET", url)
+        expected = {item["id"] for item in events}
+        if not expected.issubset({item["id"] for item in found.get("items", [])}):
+            raise RuntimeError("No se encontraron las tres llamadas por nombre")
+        selected = events[1]["id"]
+        self.service.api(CALENDAR, "DELETE", self._calendar_base() + "/" + selected)
+        self.created_events.remove(selected)
+        remaining = {item["id"] for item in self.service.api(CALENDAR, "GET", url).get("items", [])
+            if item.get("status") != "cancelled"}
+        if selected in remaining or not (expected - {selected}).issubset(remaining):
+            raise RuntimeError("La cancelación no conservó las otras dos llamadas")
+        later = (now + timedelta(days=120)).replace(hour=10, minute=0, second=0, microsecond=0)
+        distant = self._create_event(f"{self.prefix} Llamar a Miguel Ibiza lejano", later, later + timedelta(hours=1))
+        dated = json.loads(subprocess.run(["node", str(fixture), later.date().isoformat()],
+            check=True, capture_output=True, text=True, timeout=20).stdout)
+        found_later = self.service.api(CALENDAR, "GET", self._calendar_base() + "?" + dated["params"])
+        if distant["id"] not in {item["id"] for item in found_later.get("items", [])}:
+            raise RuntimeError("La búsqueda por fecha no recupera una llamada a más de 90 días")
 
     def _calendar_query(self) -> None:
         """P10: consulta un día con dos eventos reales y comprueba ambos."""

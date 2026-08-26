@@ -18,6 +18,6 @@ const entries = [
   {id:'pending', type:'reminder', status:'pending', text:'Llamar a Miguel Ibiza',
    interaction:{status:'completed'}, schedule:{status:'scheduled', dueAt:'2026-08-27T13:00:00'}}
 ];
-ui.showReminderResults(findReminderMatches(entries, {target:{title:'Miguel'}}), 'Miguel');
+ui.showReminderResults(findReminderMatches(entries, {target:{title:'Miguel'}}), 'Miguel', {onSelect:entry=>ui.showReminderCancellation(entry)});
 </script>
 </body></html>

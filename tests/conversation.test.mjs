@@ -15,6 +15,83 @@ import { mockProvider, interpret, localReminderQuery } from "../js/ai.js";
 import { fixtureTitle, reminderFixture } from './reminder-event-fixture.mjs';
 import { scheduledReminderEvent } from '../js/google.js';
 import { temporalData, calendarQueryRange } from '../js/temporal.js';
+import { preserveCancellation } from '../js/conversation.js';
+import { localCalendarCancellation } from '../js/ai.js';
+import { createUI } from '../js/ui.js';
+import { markCancelledReminder } from '../js/pending.js';
+
+test('tras cancelar en Calendar solo deja de estar pendiente el recordatorio elegido',()=>{
+  const entries=[1,2,3].map(i=>({id:`note-${i}`,type:'reminder',status:'pending',text:'Llamar a Miguel Ibiza',
+    interaction:{status:'completed'},schedule:{status:'scheduled',calendarEventId:`event-${i}`}}));
+  const updated=markCancelledReminder(entries,'event-2');
+  assert.deepEqual(findReminderMatches(updated,{target:{title:'Miguel Ibiza'}}).map(e=>e.id),['note-1','note-3']);
+  assert.equal(entries[1].schedule.status,'scheduled');
+  assert.equal(updated[0],entries[0]);
+  assert.equal(updated[2],entries[2]);
+});
+
+test('los resultados son seleccionables y piden confirmar el ID elegido antes de cancelar', t => {
+  class Element {
+    constructor(tag='div') { this.tagName=tag; this.children=[]; this.dataset={}; this.classList={add(){},remove(){},contains(){return false}}; }
+    set innerHTML(value) { this.children=[]; this.html=value; }
+    append(...children) { this.children.push(...children); }
+  }
+  const elements=new Map();
+  const old=globalThis.document;
+  globalThis.document={createElement:tag=>new Element(tag), getElementById:id=>{
+    if(!elements.has(id))elements.set(id,new Element());return elements.get(id);
+  }};
+  t.after(()=>{if(old===undefined)delete globalThis.document;else globalThis.document=old});
+  t.mock.method(globalThis,'setTimeout',()=>0);
+  const ui=createUI({getMedia:async()=>null});
+  const entries=[1,2,3].map(i=>({id:`reminder-${i}`,text:'Llamar a Miguel Ibiza',schedule:{status:'scheduled',dueAt:`2026-08-${26+i}T10:00:00`}}));
+  let selected=null;
+  ui.showReminderResults(entries,'Miguel Ibiza',{onSelect:entry=>{selected=entry;ui.showReminderCancellation(entry)}});
+  const buttons=elements.get('modalBody').children[0].children;
+  assert.equal(buttons.length,3);
+  assert.ok(buttons.every(button=>button.tagName==='button'));
+  assert.equal(selected,null);
+  buttons[1].onclick();
+  assert.equal(selected.id,'reminder-2');
+  assert.equal(elements.get('modalTitle').textContent,'¿Cancelar este recordatorio?');
+  const confirm=elements.get('modalActions').children[1];
+  assert.equal(confirm.dataset.id,'reminder-2');
+  assert.equal(confirm.dataset.a,'cancel-schedule');
+  assert.ok(entries.every(entry=>entry.schedule.status==='scheduled'));
+  ui.showEntryAction({id:'search',text:'Anula llamada a Miguel Ibiza',proposal:{intent:'calendar.delete'},aiIntent:{target:{title:'Miguel Ibiza'}}},
+    {getCalendarResult:()=>({events:[]})});
+  assert.match(elements.get('modalLead').textContent,/90 días/);
+  assert.equal(elements.get('modalBody').children[0].children[0].children[0].type,'date');
+  assert.equal(elements.get('modalActions').children[1].dataset.a,'search-calendar-date');
+});
+
+test('cancelar por nombre busca sin exigir día ni hora, incluso si la IA los pide', () => {
+  const parsed = localCalendarCancellation('Anula llamada a Miguel Ibiza');
+  assert.equal(parsed.intent, 'calendar.delete');
+  assert.equal(parsed.target.title, 'Miguel Ibiza');
+  const result = resolveConversationTurn({text:'Anula llamada a Miguel Ibiza',
+    interpretation:{...parsed,source:'ai',missingFields:['date','time'],question:'¿Qué día y a qué hora?'}});
+  assert.equal(result.interaction.status,'pending_confirmation');
+  assert.deepEqual(result.interaction.missingFields,[]);
+  assert.equal(result.interaction.question,null);
+  assert.equal(localCalendarCancellation('Borra los datos del dispositivo'),null);
+  assert.equal(localCalendarCancellation('Recuérdame llamar a Miguel'),null);
+  const unknown = resolveConversationTurn({text:'Cancela',interpretation:{...parsed,target:null}});
+  assert.deepEqual(unknown.interaction.missingFields,['target']);
+});
+
+test('no lo sé no convierte una cancelación activa en una consulta sin acciones', () => {
+  const original=localCalendarCancellation('Anula llamada a Miguel Ibiza');
+  const active={aiIntent:original,interaction:{status:'awaiting_input'}};
+  for(const intent of ['reminder.query','calendar.query','note']) {
+    const next=preserveCancellation(active,{intent,source:'ai',target:null});
+    assert.equal(next.intent,'calendar.delete');
+    assert.equal(next.target.title,original.target.title);
+    assert.equal(resolveConversationTurn({active,text:'No lo sé',interpretation:next}).interaction.status,'pending_confirmation');
+  }
+  assert.equal(preserveCancellation(null,{intent:'reminder.query'}).intent,'reminder.query');
+  assert.equal(preserveCancellation(active,{intent:'contact.call'}).intent,'contact.call');
+});
 
 test('BUG 3: mañana y pasado mañana son días distintos desde el 26/08/2026', () => {
   const now = new Date(2026, 7, 26, 12);

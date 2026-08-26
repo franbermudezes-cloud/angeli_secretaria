@@ -1,5 +1,5 @@
-import { typeLabel } from "./classifier.js?v=0.21.10";
-import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.10";
+import { typeLabel } from "./classifier.js?v=0.21.12";
+import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.12";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -107,7 +107,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.10";
+    image.src = "assets/angeli-welcome.gif?v=0.21.12";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -161,7 +161,7 @@ export function createUI({ getMedia }) {
     });
   }
 
-  function showReminderResults(matches, query = "") {
+  function showReminderResults(matches, query = "", { onSelect } = {}) {
     if (!matches.length) {
       showCompletion({
         title: "No hay recordatorios pendientes",
@@ -172,7 +172,8 @@ export function createUI({ getMedia }) {
     const body = document.createElement("div");
     body.className = "contact-options";
     matches.forEach(entry => {
-      const item = document.createElement("div");
+      const item = document.createElement(onSelect ? "button" : "div");
+      if (onSelect) { item.type = "button"; item.onclick = () => onSelect(entry); }
       item.className = "contact-choice";
       const title = document.createElement("strong");
       title.textContent = entry.aiIntent?.title || entry.text || "Recordatorio";
@@ -186,6 +187,18 @@ export function createUI({ getMedia }) {
       lead: query ? `Pendientes relacionados con ${query}.` : "Estos son tus recordatorios pendientes.",
       body,
       actions: [{ label: "Cerrar", kind: "confirm", onClick: closeLayers }]
+    });
+  }
+
+  function showReminderCancellation(entry) {
+    openModal({
+      title: "¿Cancelar este recordatorio?",
+      lead: `${scheduleTitle(entry)}${entry.schedule ? " · " + scheduleWhen(entry.schedule) : ""}`,
+      body: "Solo se cancelará el recordatorio seleccionado.",
+      actions: [
+        { label: "Ahora no", kind: "secondary", onClick: closeLayers },
+        { label: "Cancelar recordatorio", kind: "danger", dataset: { a: "cancel-schedule", id: entry.id } }
+      ]
     });
   }
 
@@ -254,9 +267,30 @@ export function createUI({ getMedia }) {
       return;
     }
     if (["calendar.query", "calendar.update", "calendar.delete"].includes(intent)) {
+      if (intent === "calendar.delete" && note.proposal?.actionStatus === "completed") {
+        showCompletion({ title: "Evento cancelado", lead: "He cancelado el evento seleccionado." });
+        return;
+      }
       const label = intent === "calendar.query" ? "📅 Consultar" : "Buscar coincidencias";
       const title = intent === "calendar.query" ? "Consultar calendario" : intent === "calendar.update" ? "Modificar evento" : "Cancelar evento";
       const result = google?.getCalendarResult(note.id);
+      if (intent === "calendar.delete" && result && !result.error && !result.events.length) {
+        const body = document.createElement("div");
+        const label = document.createElement("label");
+        label.textContent = "Fecha en la que quieres buscar";
+        const date = document.createElement("input");
+        date.id = "cancelSearchDate";
+        date.type = "date";
+        label.append(date);
+        body.append(label);
+        openModal({ ...base, title: "No encuentro coincidencias en ese periodo",
+          lead: note.aiIntent?.target?.date ? "Puedes buscar en otra fecha." : "He buscado en los próximos 90 días. Si la llamada es posterior, indica su fecha para buscarla.",
+          body, actions: [
+            { label: "Ahora no", kind: "secondary", onClick: closeLayers },
+            { label: "Buscar en esa fecha", kind: "confirm", dataset: { a: "search-calendar-date", id: note.id } }
+          ] });
+        return;
+      }
       const body = result ? entryBody(note) + calendarActions(note, google) : base.body;
       openModal({ ...base, title, body, actions: result ? [{ label: "Cerrar", kind: "confirm", onClick: closeLayers }] : [{ label: "Ahora no", kind: "secondary", onClick: closeLayers }, { label, kind: "confirm", dataset: { a: "search-calendar", id: note.id } }] });
       return;
@@ -415,7 +449,7 @@ export function createUI({ getMedia }) {
     $("preview").innerHTML = files.map(file => '<img class="thumb" src="' + URL.createObjectURL(file) + '" alt="Imagen preparada">').join("");
   }
 
-  return { $, notify, setGoogleStatus, setSyncStatus, render, showImagePreview, showEntryAction, showInteractionQuestion, showPendingChoices, showReminderResults, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
+  return { $, notify, setGoogleStatus, setSyncStatus, render, showImagePreview, showEntryAction, showInteractionQuestion, showPendingChoices, showReminderResults, showReminderCancellation, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
 }
 
 function esc(value) {
