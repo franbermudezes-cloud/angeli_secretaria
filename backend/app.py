@@ -377,7 +377,9 @@ def persistent_google_action(payload: dict[str, Any]) -> dict[str, Any]:
     if action == "create" and isinstance(payload.get("event"), dict):
         return {"calendarId": calendar_id, **service.api(CALENDAR, "POST", base, payload["event"])}
     if action == "list" and isinstance(payload.get("params"), dict):
-        params = {key: str(value) for key, value in payload["params"].items() if key in {"singleEvents", "orderBy", "maxResults", "timeMin", "timeMax", "q"}}
+        params = {key: str(value) for key, value in payload["params"].items() if key in {"singleEvents", "orderBy", "maxResults", "timeMin", "timeMax", "q", "pageToken"}}
+        if len(params.get("pageToken", "")) > 2000:
+            raise ValueError("Página de Calendar no válida")
         return {"calendarId": calendar_id, **service.api(CALENDAR, "GET", base + "?" + urlencode(params))}
     event_id = payload.get("eventId")
     if not isinstance(event_id, str) or not event_id or len(event_id) > 300:

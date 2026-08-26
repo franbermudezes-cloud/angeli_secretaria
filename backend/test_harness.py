@@ -135,17 +135,26 @@ class IntegrationHarness:
             raise RuntimeError("La búsqueda por fecha no recupera una llamada a más de 90 días")
 
     def _calendar_query(self) -> None:
-        """P10: consulta un día con dos eventos reales y comprueba ambos."""
+        """P10: fuerza dos páginas reales de un día y comprueba ambos eventos."""
         tomorrow = (datetime.now(timezone.utc) + timedelta(days=1)).replace(hour=10, minute=0, second=0, microsecond=0)
         expected = [f"{self.prefix} Agenda A", f"{self.prefix} Agenda B"]
         for index, title in enumerate(expected):
             self._create_event(title, tomorrow + timedelta(hours=index * 2), tomorrow + timedelta(hours=index * 2 + 1))
-        listed = self.service.api(CALENDAR, "GET", self._calendar_base() + "?" + urlencode({
-            "singleEvents": "true", "orderBy": "startTime", "maxResults": "50",
+        params = {
+            "singleEvents": "true", "orderBy": "startTime", "maxResults": "1",
             "timeMin": tomorrow.replace(hour=0).isoformat(),
             "timeMax": (tomorrow + timedelta(days=1)).replace(hour=0).isoformat(),
-        }))
-        found = {item.get("summary") for item in listed.get("items", []) if isinstance(item, dict)}
+        }
+        pages = [self.service.api(CALENDAR, "GET", self._calendar_base() + "?" + urlencode(params))]
+        token = pages[0].get("nextPageToken")
+        if not isinstance(token, str) or not token:
+            raise RuntimeError("Calendar no entregó el token de la segunda página")
+        while token:
+            pages.append(self.service.api(CALENDAR, "GET", self._calendar_base() + "?" + urlencode({**params, "pageToken": token})))
+            token = pages[-1].get("nextPageToken")
+            if len(pages) > 50:
+                raise RuntimeError("Calendar no terminó la paginación de prueba")
+        found = {item.get("summary") for page in pages for item in page.get("items", []) if isinstance(item, dict)}
         missing = [title for title in expected if title not in found]
         if missing:
             raise RuntimeError("Calendar no devolvió los eventos de prueba: " + ", ".join(missing))

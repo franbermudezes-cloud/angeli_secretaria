@@ -322,6 +322,11 @@ class InterpretEndpointTests(unittest.TestCase):
         self.assertEqual(len(service.calls), 2)
         self.assertTrue(all("/calendars/primary/events" in call[2] for call in service.calls))
         self.assertIn("q=Cena", service.calls[1][2])
+        status, _ = request_path("/google", {"integration": "calendar", "action": "list", "params": {"pageToken": "next page", "ignored": "no"}}, "Bearer test")
+        self.assertEqual(status, "200 OK")
+        self.assertIn("pageToken=next+page", service.calls[2][2])
+        self.assertNotIn("ignored", service.calls[2][2])
+        self.assertEqual(len(service.calls), 3)
         os.environ.pop("ALLOWED_FIREBASE_EMAILS", None)
 
     def test_calendar_failure_is_not_reported_as_an_empty_result(self):

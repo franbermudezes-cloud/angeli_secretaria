@@ -1,6 +1,7 @@
 import os
 import unittest
 from datetime import datetime, timezone
+from urllib.parse import parse_qs, urlparse
 
 from test_harness import HarnessConfigurationError, IntegrationHarness, configured_harness
 
@@ -21,7 +22,14 @@ class FakeGoogleSessions:
             event_id = url.rsplit("/", 1)[-1]
             if event_id in self.events:
                 return {"id": event_id, **self.events[event_id]}
-            return {"items": [{"id": event_id, "summary": event["summary"]} for event_id, event in self.events.items()]}
+            items = [{"id": event_id, "summary": event["summary"]} for event_id, event in self.events.items()]
+            params = parse_qs(urlparse(url).query)
+            size = int(params.get("maxResults", [len(items) or 1])[0])
+            offset = int(params.get("pageToken", ["0"])[0])
+            page = {"items": items[offset:offset + size]}
+            if offset + size < len(items):
+                page["nextPageToken"] = str(offset + size)
+            return page
         if method == "PATCH":
             event_id = url.rsplit("/", 1)[-1]
             self.events[event_id].update(body)

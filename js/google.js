@@ -1,5 +1,5 @@
-import { cleanTemporalText } from "./temporal.js?v=0.21.15";
-import { scheduleTitle } from "./schedule.js?v=0.21.15";
+import { cleanTemporalText } from "./temporal.js?v=0.21.16";
+import { scheduleTitle } from "./schedule.js?v=0.21.16";
 
 const CLIENT_ID = "172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
@@ -233,7 +233,7 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
     try {
       const interpretation = note.aiIntent || {};
       const search = buildCalendarSearch(interpretation, note.proposal?.intent);
-      const data = await calendarRequest("GET", `?${search.params}`);
+      const data = await listAllCalendarPages(params => calendarRequest("GET", `?${params}`), search.params);
       calendarResults.set(note.id, {
         events: (data.items || []).filter(item => item.status !== "cancelled").map(calendarCandidate),
         calendarId: data.calendarId || "primary",
@@ -311,6 +311,22 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
     clearContactResult: id => contactResults.delete(id),
     contactTel
   };
+}
+
+// Google puede devolver menos eventos que maxResults y continuar mediante
+// nextPageToken. Nunca presentar una página parcial como si fuera toda la agenda.
+export async function listAllCalendarPages(requestPage, initialParams, maxPages = 50) {
+  const params = new URLSearchParams(initialParams);
+  const items = [];
+  let calendarId = "primary";
+  for (let page = 0; page < maxPages; page++) {
+    const data = await requestPage(params);
+    items.push(...(Array.isArray(data.items) ? data.items : []));
+    calendarId = data.calendarId || calendarId;
+    if (!data.nextPageToken) return { ...data, calendarId, items, nextPageToken: undefined };
+    params.set("pageToken", data.nextPageToken);
+  }
+  throw new Error("Calendar devolvió demasiadas páginas; concreta un periodo más corto");
 }
 
 // Constructor compartido por la PWA y la prueba real de Calendar.

@@ -13,7 +13,23 @@ import { normalizeFutureCall, normalizeReminderSchedule, scheduleFor, scheduleTi
 import { completionTarget, completePending, findPendingMatches, findReminderMatches } from "../js/pending.js";
 import { mockProvider, interpret, localReminderQuery } from "../js/ai.js";
 import { fixtureTitle, reminderFixture } from './reminder-event-fixture.mjs';
-import { scheduledReminderEvent } from '../js/google.js';
+import { scheduledReminderEvent, listAllCalendarPages } from '../js/google.js';
+
+test('agenda: reúne todas las páginas de Calendar sin duplicar acciones parciales',async()=>{
+  const received=[];
+  const result=await listAllCalendarPages(async params=>{
+    received.push(new URLSearchParams(params).get('pageToken'));
+    if(received.length===1)return{calendarId:'primary',items:Array.from({length:20},(_,i)=>({id:`e${i}`})),nextPageToken:'page-2'};
+    return{calendarId:'primary',items:Array.from({length:7},(_,i)=>({id:`e${i+20}`}))};
+  },new URLSearchParams({maxResults:'20',timeMin:'2026-08-27T00:00:00Z'}));
+  assert.equal(result.items.length,27);
+  assert.equal(new Set(result.items.map(item=>item.id)).size,27);
+  assert.deepEqual(received,[null,'page-2']);
+});
+
+test('agenda: un ciclo anómalo de páginas se muestra como error, no como lista incompleta',async()=>{
+  await assert.rejects(()=>listAllCalendarPages(async()=>({items:[{id:'one'}],nextPageToken:'loop'}),new URLSearchParams(),2),/demasiadas páginas/);
+});
 import { temporalData, calendarQueryRange } from '../js/temporal.js';
 import { preserveCancellation } from '../js/conversation.js';
 import { localCalendarCancellation } from '../js/ai.js';
