@@ -1,5 +1,5 @@
-import { typeLabel } from "./classifier.js?v=0.21.13";
-import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.13";
+import { typeLabel } from "./classifier.js?v=0.21.14";
+import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.14";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -107,7 +107,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.13";
+    image.src = "assets/angeli-welcome.gif?v=0.21.14";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -359,6 +359,18 @@ export function createUI({ getMedia }) {
     setTimeout(() => draft.focus(), 0);
   }
 
+  function showCalendarEvent(note, google, eventId) {
+    const event = google.getCalendarResult(note.id)?.events?.find(item => item.id === eventId);
+    if (!event) { showEntryAction(note, google); return; }
+    openModal({title: event.summary, lead: event.when,
+      body: '<p>' + (event.allDay ? 'Todo el día' : 'Inicio: ' + esc(event.when)) + '</p>' +
+        (event.end ? '<p>Fin: ' + esc(event.allDay ? event.end + ' (fecha de fin exclusiva)' : new Date(event.end).toLocaleString('es-ES')) + '</p>' : ''),
+      actions: [
+        {label:'Volver a la agenda', kind:'soft', onClick:()=>showEntryAction(note,google)},
+        {label:'Anular este evento', kind:'danger', dataset:{a:'agenda-delete',id:note.id,eventId:event.id}}
+      ]});
+  }
+
   function calendarActions(note, google) {
     const intent = note.proposal?.intent;
     if (note.calendarStatus === "synced") {
@@ -373,6 +385,7 @@ export function createUI({ getMedia }) {
     if (!result.events.length) return '<div class="card-details meta">No he encontrado coincidencias.</div>';
     const choices = result.events.map(event => {
       let button = "";
+      if (intent === "calendar.query") button = '<div class="inline-actions">' + eventButton(note.id, event.id, "Ver", "primary", "agenda-view") + eventButton(note.id, event.id, "Anular", "danger", "agenda-delete") + '</div>';
       if (intent === "calendar.delete") button = eventButton(note.id, event.id, "Cancelar", "danger", "calendar-delete");
       if (intent === "calendar.update") button = eventButton(note.id, event.id, "Modificar", "primary", "calendar-update");
       return '<div class="choice"><div><b>' + esc(event.summary) + "</b><span>" + esc(event.when) + "</span></div>" + button + "</div>";
@@ -449,7 +462,7 @@ export function createUI({ getMedia }) {
     $("preview").innerHTML = files.map(file => '<img class="thumb" src="' + URL.createObjectURL(file) + '" alt="Imagen preparada">').join("");
   }
 
-  return { $, notify, setGoogleStatus, setSyncStatus, render, showImagePreview, showEntryAction, showInteractionQuestion, showPendingChoices, showReminderResults, showReminderCancellation, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
+  return { $, notify, setGoogleStatus, setSyncStatus, render, showImagePreview, showEntryAction, showCalendarEvent, showInteractionQuestion, showPendingChoices, showReminderResults, showReminderCancellation, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
 }
 
 function esc(value) {

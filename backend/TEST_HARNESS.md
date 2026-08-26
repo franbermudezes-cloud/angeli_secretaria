@@ -1,5 +1,12 @@
 # Entorno automático de pruebas reales
 
+V0.21.14: acciones de consulta de agenda automatizadas en `tests/conversation.test.mjs`:
+Ver/Anular por ID, volver al listado, refrescar tras DELETE correcto, no marcar éxito
+si se rechaza/falla y bloqueo de doble pulsación. `tests/agenda-long.html` permite
+comprobar la presentación con 40 eventos ficticios. El arnés real P04/P04-name
+mantiene la cobertura de consulta y cancelación selectiva en Calendar de pruebas;
+la interacción completa PWA autenticada sigue siendo comprobación manual.
+
 Comprobación previa al cambio de título (26/08/2026): arnés ejecutado desde
 Cloud Shell en `angeli-secretaria`, cliente OAuth exclusivo de pruebas,
 secretos `angeli-test-google-*`, Calendar `primary` de la cuenta de pruebas.
