@@ -8,3 +8,4 @@
 .action-modal:not(.conversation-modal)>h2,
 .action-modal:not(.conversation-modal)>p,
 .action-modal:not(.conversation-modal)>.modal-actions{flex-shrink:0}
+.call-choice-modal #modalActions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}

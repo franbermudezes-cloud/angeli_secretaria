@@ -1,6 +1,25 @@
-import{nextDateForTime,temporalData,explicitRelativeDate}from"./temporal.js?v=0.21.14";
+import{nextDateForTime,temporalData,explicitRelativeDate}from"./temporal.js?v=0.21.15";
 
 const CALL_INTENT=/\b(?:llama|llamar|telefonea|telefonear|contacta|contactar)\b/i;
+
+// Una orden nueva de llamada sin tiempo no es un recordatorio por defecto.
+// No aplicar a respuestas cortas dentro de una programación ya iniciada.
+export function normalizeUndatedCall(interpretation,text,active=null,now=new Date()){
+  if(active || !/^\s*(?:(?:quiero|necesito)\s+)?(?:llama|llamar|telefonea|telefonear)\s+(?:a\s+|al\s+)?\S/i.test(text||''))return interpretation;
+  const local=temporalData(text,now);
+  if(/\b(?:horas?|minutos?|segundos?|días?|dias?|cuando|tras)\b|\bel\s+\d|\d[/-]\d/i.test(text))return interpretation;
+  if(local.scheduledDate||local.scheduledTime||/\b(?:recuerd|record|avis|agend|program|luego|después|despues|tarde|noche|semana|mes|dentro|próxim|proxim|lunes|martes|jueves|viernes|domingo)\w*\b|miércoles|sábado|\d{4}-\d{2}-\d{2}/i.test(text))return interpretation;
+  if(!['contact.call','reminder.create','calendar.create','note'].includes(interpretation.intent))return interpretation;
+  const name=callName(text.replace(/\s+(?:ahora(?:\s+mismo)?|ya|por favor)[.!?]*\s*$/i,''));
+  return {...interpretation,intent:'contact.call',title:`Llamar a ${name||interpretation.contactName||interpretation.phone||'contacto'}`,
+    contactName:name||interpretation.contactName||null,date:null,time:null,missingFields:[],question:null,requiresConfirmation:true};
+}
+
+export function deferredCallIntent(note,intent){
+  if(!['reminder.create','calendar.create'].includes(intent))throw new Error('Destino de llamada no válido');
+  return {...note.aiIntent,intent,date:null,time:null,missingFields:['date','time'],
+    question:'¿Qué día y a qué hora quieres llamar?',requiresConfirmation:true};
+}
 
 export function normalizeFutureCall(interpretation,text){
   // Cualquier referencia temporal cambia la intención: «llama a Miguel» es

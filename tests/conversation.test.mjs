@@ -20,6 +20,42 @@ import { localCalendarCancellation } from '../js/ai.js';
 import { createUI } from '../js/ui.js';
 import { readFileSync } from 'node:fs';
 import { createAgendaActions } from '../js/agenda.js';
+import { normalizeUndatedCall, deferredCallIntent } from '../js/schedule.js';
+
+test('llamar a Miguel sin fecha no hereda la programación inventada por IA',()=>{
+  for(const source of ['ai','fallback'])for(const text of ['Llamar a Miguel','Llama a Miguel Ibiza','Quiero llamar a Miguel ahora']){
+    const wrong={intent:'reminder.create',contactName:'Miguel',date:'2026-08-27',time:null,missingFields:['time'],question:'¿Cuándo quieres que te recuerde?',source};
+    const fixed=normalizeUndatedCall(wrong,text);
+    const turn=resolveConversationTurn({text,interpretation:fixed});
+    assert.equal(turn.interpretation.intent,'contact.call');
+    assert.deepEqual(turn.interaction.missingFields,[]);
+    assert.equal(turn.interpretation.date,null);
+    assert.equal(turn.interpretation.time,null);
+    assert.equal(turn.interpretation.source,source);
+    assert.equal(scheduleFor(fixed,text),null);
+  }
+});
+
+test('llamadas futuras, recordatorios explícitos y respuestas activas conservan su intención',()=>{
+  const ai={intent:'reminder.create',date:'2026-08-27',time:null};
+  for(const text of ['Recuérdame llamar a Miguel','Llamar a Miguel mañana','Llamar a Miguel a las siete','Llamar a Miguel en dos horas','Llamar a Miguel el 29','Llamar a Miguel la semana que viene','Anula llamada a Miguel'])assert.equal(normalizeUndatedCall(ai,text),ai);
+  assert.equal(normalizeUndatedCall(ai,'Llamar a Miguel',{id:'active'}),ai);
+});
+
+test('elegir programar conserva el contacto y pide fecha/hora en la misma entrada',()=>{
+  const note={id:'call',text:'Llamar a Miguel Ibiza',aiIntent:normalizeUndatedCall({intent:'reminder.create',source:'ai'},'Llamar a Miguel Ibiza')};
+  for(const intent of ['reminder.create','calendar.create']){
+    const next=deferredCallIntent(note,intent);
+    const turn=resolveConversationTurn({text:'Programar',interpretation:next});
+    assert.equal(turn.interpretation.intent,intent);
+    assert.equal(turn.interpretation.contactName,'Miguel Ibiza');
+    assert.deepEqual(turn.interaction.missingFields,['date','time']);
+    const continued=resolveConversationTurn({active:{...note,aiIntent:next,interaction:turn.interaction},text:'Mañana a las diez',interpretation:{...next,date:'2026-08-27',time:'10:00',missingFields:[],question:null}});
+    assert.equal(continued.interaction.status,'pending_confirmation');
+    assert.equal(continued.interpretation.title,'Llamar a Miguel Ibiza');
+    assert.equal(continued.interaction.sourceEntryId,'call');
+  }
+});
 
 test('agenda: cancelar el ID seleccionado refresca la misma consulta y bloquea doble clic',async()=>{
   const note={id:'query',proposal:{intent:'calendar.query'}};
@@ -79,6 +115,12 @@ test('los resultados son seleccionables y piden confirmar el ID elegido antes de
   t.after(()=>{if(old===undefined)delete globalThis.document;else globalThis.document=old});
   t.mock.method(globalThis,'setTimeout',()=>0);
   const ui=createUI({getMedia:async()=>null});
+  ui.showEntryAction({id:'call-choice',type:'contact',text:'Llamar a Miguel',proposal:{intent:'contact.call'}},{getContactResult:()=>null});
+  const callActions=elements.get('modalActions').children;
+  assert.deepEqual(callActions.map(b=>b.textContent),['Ahora no','📞 Llamar ahora','Crear recordatorio','Agendar llamada']);
+  assert.equal(callActions[1].dataset.a,'search-contact');
+  assert.equal(callActions[2].dataset.a,'defer-call-reminder');
+  assert.equal(callActions[3].dataset.a,'defer-call-calendar');
   const entries=[1,2,3].map(i=>({id:`reminder-${i}`,text:'Llamar a Miguel Ibiza',schedule:{status:'scheduled',dueAt:`2026-08-${26+i}T10:00:00`}}));
   let selected=null;
   ui.showReminderResults(entries,'Miguel Ibiza',{onSelect:entry=>{selected=entry;ui.showReminderCancellation(entry)}});

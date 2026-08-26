@@ -1,5 +1,5 @@
-import { typeLabel } from "./classifier.js?v=0.21.14";
-import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.14";
+import { typeLabel } from "./classifier.js?v=0.21.15";
+import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.15";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -55,7 +55,7 @@ export function createUI({ getMedia }) {
 
   function openModal({ title, lead, body, actions = [] }) {
     clearTimeout(completionTimer);
-    $("actionModal").classList.remove("working-modal", "conversation-modal");
+    $("actionModal").classList.remove("working-modal", "conversation-modal", "call-choice-modal");
     $("modalTitle").textContent = title;
     $("modalLead").textContent = lead;
     const bodyElement = $("modalBody");
@@ -107,7 +107,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.14";
+    image.src = "assets/angeli-welcome.gif?v=0.21.15";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -260,10 +260,13 @@ export function createUI({ getMedia }) {
         openModal({ ...base, title: "Contacto", lead: "No he encontrado un teléfono disponible.", actions: [{ label: "Cerrar", kind: "confirm", onClick: closeLayers }] });
         return;
       }
-      openModal({ ...base, title: "Llamar", actions: [
+      openModal({ ...base, title: note.aiIntent?.title || "Llamar", lead: "Puedes llamar ahora o dejar la llamada programada.", actions: [
         { label: "Ahora no", kind: "secondary", onClick: closeLayers },
-        { label: note.phone ? "📞 Abrir marcador" : "👥 Buscar contacto", kind: "confirm", dataset: { a: note.phone ? "call" : "search-contact", id: note.id, phone: note.phone || "" } }
+        { label: "📞 Llamar ahora", kind: "confirm", dataset: { a: note.phone ? "call" : "search-contact", id: note.id, phone: note.phone || "" } },
+        { label: "Crear recordatorio", kind: "secondary", dataset: { a: "defer-call-reminder", id: note.id } },
+        { label: "Agendar llamada", kind: "secondary", dataset: { a: "defer-call-calendar", id: note.id } }
       ] });
+      $("actionModal").classList.add("call-choice-modal");
       return;
     }
     if (["calendar.query", "calendar.update", "calendar.delete"].includes(intent)) {
