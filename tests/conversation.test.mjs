@@ -10,7 +10,7 @@ import {
   resolveConversationTurn,
 } from "../js/conversation.js";
 import { normalizeFutureCall, normalizeReminderSchedule, scheduleFor, scheduleTitle } from "../js/schedule.js";
-import { completionTarget, completePending, findPendingMatches, findReminderMatches } from "../js/pending.js";
+import { completionTarget, completePending, completePendingWithCalendar, findPendingMatches, findReminderMatches } from "../js/pending.js";
 import { mockProvider, interpret, localReminderQuery } from "../js/ai.js";
 import { fixtureTitle, reminderFixture } from './reminder-event-fixture.mjs';
 import { scheduledReminderEvent, listAllCalendarPages } from '../js/google.js';
@@ -417,17 +417,29 @@ test("una llamada sin referencia temporal sigue siendo inmediata", () => {
 });
 
 test("P03 completa el único pendiente existente sin crear otra entrada", async () => {
-  const pending = { id: "task-miguel", text: "Llamar a Miguel", type: "reminder", status: "pending", interaction: { status: "pending_confirmation" }, schedule: { status: "pending", title: "Llamar a Miguel" } };
+  const pending = { id: "task-miguel", text: "Llamar a Miguel", type: "reminder", status: "pending", interaction: { status: "completed" }, schedule: { status: "scheduled", title: "Llamar a Miguel", calendarEventId: "calendar-miguel" } };
   const interpretation = await mockProvider("Ya he llamado a Miguel");
   const matches = findPendingMatches([pending], interpretation);
 
   assert.equal(interpretation.intent, "task.complete");
   assert.equal(matches.length, 1);
   assert.equal(matches[0].id, pending.id);
-  const completed = completePending(matches[0], NOW);
+  const removed = [];
+  const completed = await completePendingWithCalendar(matches[0], async entry => removed.push(entry.schedule.calendarEventId), NOW);
+  assert.deepEqual(removed, ["calendar-miguel"]);
   assert.equal(completed.status, "done");
   assert.equal(completed.interaction.status, INTERACTION_STATUS.COMPLETED);
   assert.equal(completed.schedule.status, "completed");
+});
+
+test("P03 no marca el pendiente como completado si Calendar no puede retirar el aviso", async () => {
+  const pending = { id: "task-miguel", text: "Llamar a Miguel", type: "reminder", status: "pending", interaction: { status: "completed" }, schedule: { status: "scheduled", calendarEventId: "calendar-miguel" } };
+  await assert.rejects(
+    completePendingWithCalendar(pending, async () => { throw new Error("Calendar no disponible"); }, NOW),
+    /Calendar no disponible/
+  );
+  assert.equal(pending.status, "pending");
+  assert.equal(pending.schedule.status, "scheduled");
 });
 
 test("P03 pide elegir cuando existen varios pendientes coincidentes", () => {

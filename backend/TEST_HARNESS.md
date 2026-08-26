@@ -1,5 +1,10 @@
 # Entorno automático de pruebas reales
 
+V0.21.17: P03 localiza recordatorios programados cuya conversación ya terminó,
+retira el evento antes de cambiar el estado de Angeli y conserva ambos como
+pendientes si Calendar falla. `P03-complete` crea y elimina un aviso real en la
+cuenta aislada; la escritura de Firestore permanece como comprobación manual.
+
 V0.21.16: comprobación previa registrada desde `integration-gate` V0.21.15:
 cuenta aislada `buengusto.es@gmail.com`, Calendar `primary`, cliente OAuth y
 grant `angeli-test-google-*`; P04/P04-name/P10/P11/P05/P06 PASS. El cambio
@@ -127,6 +132,10 @@ La primera fase automatiza las integraciones reales ya aislables:
   en directo. Prueba manual: dictar la frase, elegir una de tres coincidencias,
   confirmar y comprobar que las otras permanecen sin preguntas temporales.
   También verifica que indicar una fecha permite recuperar una llamada a 120 días.
+- `P03-complete`: crear un aviso real de llamada, retirarlo al completarlo y
+  comprobar que ya no continúa activo en Calendar. La prueba local verifica
+  además que Angeli solo cambia Firestore a completado después de que Google
+  confirme el borrado; Firestore real continúa cubierto por la prueba manual.
 - `P10`: crear dos eventos y recuperarlos por intervalo de fecha.
 - `P11`: localizar un evento y actualizar su hora en el mismo calendario.
 - `P05-model-time`: replay de la respuesta Gemini capturada con `10:00:00`,
