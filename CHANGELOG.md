@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.21.18] - 2026-08-26
+
+- Los borradores y preguntas conversacionales incluyen un micrófono propio en
+  el modal; no es necesario recurrir al micrófono del teclado del teléfono.
+- El teclado deja de abrirse automáticamente y el modal se adapta al viewport
+  visible para mantenerse por encima del teclado o del panel de dictado.
+- El botón del modal muestra cuándo Angeli está escuchando. Prueba automática
+  del control de voz, ausencia de autofoco y contrato visual móvil.
+
 ## [0.21.17] - 2026-08-26
 
 - «Ya he llamado a Miguel» vuelve a encontrar recordatorios programados aunque

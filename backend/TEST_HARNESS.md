@@ -1,5 +1,10 @@
 # Entorno automático de pruebas reales
 
+V0.21.18: prueba local del modal conversacional con micrófono propio, sin
+autofoco que abra el teclado y limitado por `visualViewport`. La autorización
+real del micrófono y la convivencia con el teclado se mantienen como prueba
+manual en dispositivo móvil; no cambia ninguna integración externa.
+
 V0.21.17: P03 localiza recordatorios programados cuya conversación ya terminó,
 retira el evento antes de cambiar el estado de Angeli y conserva ambos como
 pendientes si Calendar falla. `P03-complete` crea y elimina un aviso real en la

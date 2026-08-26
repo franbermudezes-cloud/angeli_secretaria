@@ -105,6 +105,36 @@ test('los listados limitan el modal y desplazan solo el contenido, conservando e
   assert.match(css,/#modalBody\{[^}]*min-height:0;overflow-y:auto/);
   assert.match(css,/>\.modal-actions\{flex-shrink:0\}/);
 });
+
+test('el modal conversacional conserva micrófono propio y cabe en el viewport visible', t => {
+  class Element {
+    constructor() { this.children=[]; this.classList={values:new Set(),add:(...names)=>names.forEach(name=>this.classList.values.add(name)),remove:(...names)=>names.forEach(name=>this.classList.values.delete(name)),contains:name=>this.classList.values.has(name)}; this.blurCount=0; this.focusCount=0; }
+    set innerHTML(value) { this.children=[]; this.html=value; }
+    append(...children) { this.children.push(...children); }
+    blur() { this.blurCount++; }
+    focus() { this.focusCount++; }
+  }
+  const elements=new Map();
+  const old=globalThis.document;
+  globalThis.document={createElement:()=>new Element(),getElementById:id=>{if(!elements.has(id))elements.set(id,new Element());return elements.get(id)}};
+  t.after(()=>{if(old===undefined)delete globalThis.document;else globalThis.document=old});
+  t.mock.method(globalThis,'setTimeout',()=>0);
+  let spoken=0;
+  const ui=createUI({getMedia:async()=>null});
+  ui.showDraft({onMic:()=>spoken++});
+  const actions=elements.get('modalActions').children;
+  const draft=elements.get('modalBody').children[0];
+  assert.deepEqual(actions.map(button=>button.textContent),['Ahora no','🎙️ Hablar','➤ Enviar']);
+  assert.ok(elements.get('actionModal').classList.contains('conversation-modal'));
+  assert.equal(draft.focusCount,0);
+  actions[1].onclick();
+  assert.equal(draft.blurCount,1);
+  assert.equal(spoken,1);
+  const css=readFileSync(new URL('../styles-flow.css',import.meta.url),'utf8');
+  assert.match(css,/--angeli-viewport-height,100dvh/);
+  assert.match(css,/--angeli-viewport-top,0px/);
+  assert.match(css,/\.modal-actions \.voice/);
+});
 import { markCancelledReminder } from '../js/pending.js';
 
 test('tras cancelar en Calendar solo deja de estar pendiente el recordatorio elegido',()=>{
