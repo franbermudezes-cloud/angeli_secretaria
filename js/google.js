@@ -1,5 +1,5 @@
-import { cleanTemporalText } from "./temporal.js?v=0.21.16";
-import { scheduleTitle } from "./schedule.js?v=0.21.16";
+import { cleanTemporalText } from "./temporal.js?v=0.21.17";
+import { scheduleTitle } from "./schedule.js?v=0.21.17";
 
 const CLIENT_ID = "172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
@@ -228,6 +228,12 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
     }
   }
 
+  async function completeScheduledReminder(note) {
+    const eventId = note.schedule?.calendarEventId;
+    if (!eventId) return;
+    await calendarRequest("DELETE", `/${encodeURIComponent(eventId)}`);
+  }
+
   async function searchCalendar(note) {
     if (!CALENDAR_SEARCH_INTENTS.has(note.proposal?.intent)) return;
     try {
@@ -303,6 +309,7 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
     createCalendarEvent,
     createScheduledReminder,
     cancelScheduledReminder,
+    completeScheduledReminder,
     searchCalendar,
     deleteCalendarEvent,
     updateCalendarEvent,

@@ -53,6 +53,7 @@ class IntegrationHarness:
         pendientes manuales de esta primera fase; nunca se simulan como éxito.
         """
         try:
+            self._run("P03-complete", self._complete_reminder)
             self._run("P04", self._calendar_cancel)
             self._run("P04-name", self._calendar_cancel_by_name)
             self._run("P10", self._calendar_query)
@@ -102,6 +103,22 @@ class IntegrationHarness:
             raise RuntimeError("Calendar creó el evento pero no lo recuperó en la misma agenda primaria")
         self.service.api(CALENDAR, "DELETE", self._calendar_base() + "/" + event["id"])
         self.created_events.remove(event["id"])
+
+    def _complete_reminder(self) -> None:
+        """P03: completar un recordatorio retira su aviso real de Calendar."""
+        now = datetime.now(timezone.utc)
+        title = f"{self.prefix} Llamar a Miguel"
+        event = self._create_event(title, now + timedelta(hours=2), now + timedelta(hours=3))
+        self.service.api(CALENDAR, "DELETE", self._calendar_base() + "/" + event["id"])
+        self.created_events.remove(event["id"])
+        listed = self.service.api(CALENDAR, "GET", self._calendar_base() + "?" + urlencode({
+            "singleEvents": "true", "q": title,
+            "timeMin": now.isoformat(), "timeMax": (now + timedelta(days=1)).isoformat(),
+        }))
+        active_ids = {item.get("id") for item in listed.get("items", [])
+            if isinstance(item, dict) and item.get("status") != "cancelled"}
+        if event["id"] in active_ids:
+            raise RuntimeError("El recordatorio completado continúa activo en Calendar")
 
     def _calendar_cancel_by_name(self) -> None:
         """Busca sin fecha tres llamadas reales y cancela solo la seleccionada."""

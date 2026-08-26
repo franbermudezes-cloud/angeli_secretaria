@@ -1,4 +1,4 @@
-import { completeInteraction, cancelInteraction } from "./conversation.js?v=0.21.16";
+import { completeInteraction, cancelInteraction } from "./conversation.js?v=0.21.17";
 
 // Solo tras confirmar el éxito del borrado que acaba de ejecutar Angeli.
 export function markCancelledReminder(entries, eventId) {
@@ -51,6 +51,14 @@ export function completePending(entry, now = new Date().toISOString()) {
   };
 }
 
+// El aviso de Calendar se retira antes de confirmar el cambio en Angeli. Así,
+// un fallo de Google no puede dejar la entrada como hecha mientras el móvil
+// continúa mostrando la notificación pendiente.
+export async function completePendingWithCalendar(entry, removeCalendarEvent, now = new Date().toISOString()) {
+  if (entry.schedule?.calendarEventId) await removeCalendarEvent(entry);
+  return completePending(entry, now);
+}
+
 export function completionTarget(text = "") {
   const cleaned = text
     .replace(/^\s*(?:ya\s+)?(?:he\s+)?(?:llamado|terminado|completado|hecho)\s+(?:a\s+)?/i, "")
@@ -61,6 +69,7 @@ export function completionTarget(text = "") {
 
 function isCompletable(entry) {
   if (!entry || entry.status === "done" || !COMPLETABLE_TYPES.has(entry.type)) return false;
+  if (entry.schedule) return !["cancelled", "completed"].includes(entry.schedule.status);
   return !["cancelled", "completed"].includes(entry.interaction?.status);
 }
 

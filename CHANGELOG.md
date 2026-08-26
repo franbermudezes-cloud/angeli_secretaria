@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.21.17] - 2026-08-26
+
+- «Ya he llamado a Miguel» vuelve a encontrar recordatorios programados aunque
+  su conversación de creación ya esté cerrada.
+- Completar un recordatorio retira primero su aviso de Google Calendar y solo
+  después lo marca como hecho en Angeli. Si Google falla, ambos quedan pendientes.
+- P03 comprueba el orden de la operación localmente y elimina un aviso real en
+  el Calendar aislado del arnés.
+
 ## [0.21.16] - 2026-08-26
 
 - Las consultas de agenda recorren todas las páginas devueltas por Calendar; dejan de quedar cortadas en 20 eventos.
