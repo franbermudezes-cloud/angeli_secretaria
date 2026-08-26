@@ -18,6 +18,14 @@ import { temporalData, calendarQueryRange } from '../js/temporal.js';
 import { preserveCancellation } from '../js/conversation.js';
 import { localCalendarCancellation } from '../js/ai.js';
 import { createUI } from '../js/ui.js';
+import { readFileSync } from 'node:fs';
+
+test('los listados limitan el modal y desplazan solo el contenido, conservando el cierre',()=>{
+  const css=readFileSync(new URL('../styles.css',import.meta.url),'utf8');
+  assert.match(css,/\.action-modal:not\(\.conversation-modal\)\{[^}]*max-height:calc\(100% - 48px\)[^}]*overflow:hidden/);
+  assert.match(css,/#modalBody\{[^}]*min-height:0;overflow-y:auto/);
+  assert.match(css,/>\.modal-actions\{flex-shrink:0\}/);
+});
 import { markCancelledReminder } from '../js/pending.js';
 
 test('tras cancelar en Calendar solo deja de estar pendiente el recordatorio elegido',()=>{

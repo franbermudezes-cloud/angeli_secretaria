@@ -90,6 +90,11 @@ artefacto de GitHub durante 30 días.
 
 ## Cobertura inicial
 
+Listado largo: prueba automática del contrato de estilos en conversation.test.mjs
+y fixture `tests/agenda-long.html` con 40 eventos ficticios. La geometría, el
+desplazamiento real y el cierre se verifican en navegador; no se confunden con
+una prueba automática de Calendar o de dispositivos físicos.
+
 La primera fase automatiza las integraciones reales ya aislables:
 
 - `P04`: crear, buscar y cancelar un evento en Calendar.

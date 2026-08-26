@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Agenda larga · prueba aislada</title><body>
+<script type="module">
+import {createUI} from '../js/ui.js';
+const page=new DOMParser().parseFromString(await (await fetch('../index.html')).text(),'text/html');
+page.querySelectorAll('script,link').forEach(node=>node.remove());
+document.body.append(...page.body.childNodes);
+for(const href of ['../styles.css','../styles-flow.css']){const css=document.createElement('link');css.rel='stylesheet';css.href=href;document.head.append(css)}
+const ui=createUI({getMedia:async()=>null});
+ui.dismissWelcome();
+const note={id:'test-agenda',type:'calendar',text:'Qué tengo pendiente en la agenda',proposal:{intent:'calendar.query'},aiIntent:{intent:'calendar.query'}};
+const events=Array.from({length:40},(_,i)=>({id:`event-${i+1}`,summary:`Evento de prueba ${i+1}`,when:'27 ago 2026, 10:00'}));
+ui.showEntryAction(note,{getCalendarResult:()=>({events})});
+</script></body></html>

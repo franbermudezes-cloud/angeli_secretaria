@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.21.13] - 2026-08-26
+
+- Los listados largos se desplazan dentro del emergente sin sacar el cierre
+  de la pantalla. No cambia las acciones ni las búsquedas de agenda.
+- Fixture visual de 40 eventos y prueba automática del contrato de estilos.
+
 ## [0.21.12] - 2026-08-26
 
 - Revisión del mismo PR de cancelación: si no hay coincidencias en los próximos
