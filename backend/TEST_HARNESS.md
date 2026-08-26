@@ -1,5 +1,11 @@
 # Entorno automático de pruebas reales
 
+V0.21.15: `tests/conversation.test.mjs` cubre llamada sin fecha mal clasificada
+por IA/fallback, protección de llamadas futuras y conversaciones activas,
+botones de elección y continuidad al programar sin perder el contacto.
+La apertura del marcador telefónico del móvil permanece como prueba manual;
+las pruebas automáticas no efectúan llamadas reales.
+
 V0.21.14: acciones de consulta de agenda automatizadas en `tests/conversation.test.mjs`:
 Ver/Anular por ID, volver al listado, refrescar tras DELETE correcto, no marcar éxito
 si se rechaza/falla y bloqueo de doble pulsación. `tests/agenda-long.html` permite

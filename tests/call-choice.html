@@ -1,0 +1,23 @@
+<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Elección de llamada · prueba aislada</title><body>
+<script type="module">
+import {createUI} from '../js/ui.js';
+import {normalizeUndatedCall,deferredCallIntent} from '../js/schedule.js';
+import {resolveConversationTurn} from '../js/conversation.js';
+const page=new DOMParser().parseFromString(await(await fetch('../index.html')).text(),'text/html');
+page.querySelectorAll('script,link').forEach(n=>n.remove());document.body.append(...page.body.childNodes);
+for(const href of ['../styles.css','../styles-flow.css']){const css=document.createElement('link');css.rel='stylesheet';css.href=href;document.head.append(css)}
+const ui=createUI({getMedia:async()=>null});ui.dismissWelcome();
+const note={id:'fixture-call',text:'Llamar a Miguel',type:'contact',proposal:{intent:'contact.call'},aiIntent:normalizeUndatedCall({intent:'reminder.create',source:'ai'},'Llamar a Miguel')};
+let result=null;
+const google={getContactResult:()=>result,contactTel:p=>p};
+ui.showEntryAction(note,google);
+document.getElementById('actionModal').addEventListener('click',e=>{
+  const a=e.target.closest('button')?.dataset.a;
+  if(a==='search-contact'){result={contacts:[{name:'Miguel (ficticio)',phones:['000000000']}]};ui.showEntryAction(note,google)}
+  if(a==='defer-call-reminder'||a==='defer-call-calendar'){
+    const interpretation=deferredCallIntent(note,a==='defer-call-calendar'?'calendar.create':'reminder.create');
+    const turn=resolveConversationTurn({text:'Programar',interpretation});
+    ui.showInteractionQuestion({...note,aiIntent:interpretation,interaction:turn.interaction},{onCancel:ui.closeLayers});
+  }
+});
+</script></body></html>

@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.21.15] - 2026-08-26
+
+- «Llamar a Miguel» sin tiempo explícito deja de convertirse por defecto en recordatorio aunque la IA pida una fecha.
+- La tarjeta permite Llamar ahora, Crear recordatorio o Agendar llamada. Solo las dos últimas piden fecha/hora, reutilizando la misma entrada.
+- Pruebas de interpretación IA/fallback, llamadas futuras y continuidad al elegir programar. Sin cambios en conexiones ni APIs.
+
 ## [0.21.14] - 2026-08-26
 
 - Cada resultado de una consulta permite Ver y Anular el evento elegido.
