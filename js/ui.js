@@ -1,5 +1,5 @@
-import { typeLabel } from "./classifier.js?v=0.21.17";
-import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.17";
+import { typeLabel } from "./classifier.js?v=0.21.18";
+import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.18";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -7,6 +7,18 @@ export function createUI({ getMedia }) {
   let completionTimer;
   const welcomeStartedAt = performance.now();
   let welcomeDismissed = false;
+
+  function syncVisualViewport() {
+    const viewport = globalThis.window?.visualViewport;
+    const root = globalThis.document?.documentElement;
+    if (!viewport || !root?.style) return;
+    root.style.setProperty("--angeli-viewport-height", `${viewport.height}px`);
+    root.style.setProperty("--angeli-viewport-top", `${viewport.offsetTop}px`);
+  }
+
+  syncVisualViewport();
+  globalThis.window?.visualViewport?.addEventListener("resize", syncVisualViewport);
+  globalThis.window?.visualViewport?.addEventListener("scroll", syncVisualViewport);
 
   function dismissWelcome() {
     if (welcomeDismissed) return;
@@ -76,7 +88,7 @@ export function createUI({ getMedia }) {
     $("actionModal").classList.add("show");
   }
 
-  function showDraft({ value = "", onInput, onSend, onCancel }) {
+  function showDraft({ value = "", onInput, onSend, onMic, onCancel }) {
     const draft = document.createElement("textarea");
     draft.id = "activeDraft";
     draft.className = "active-draft";
@@ -90,10 +102,11 @@ export function createUI({ getMedia }) {
       body: draft,
       actions: [
         { label: "Ahora no", kind: "secondary", onClick: onCancel || closeLayers },
+        { label: "🎙️ Hablar", kind: "voice", onClick: () => { draft.blur(); onMic?.(); } },
         { label: "➤ Enviar", kind: "confirm", onClick: onSend }
       ]
     });
-    setTimeout(() => draft.focus(), 0);
+    $("actionModal").classList.add("conversation-modal");
   }
 
   function updateDraft(value) {
@@ -107,7 +120,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.17";
+    image.src = "assets/angeli-welcome.gif?v=0.21.18";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -318,7 +331,7 @@ export function createUI({ getMedia }) {
     mic.className = "conversation-mic";
     mic.textContent = "🎙️ Hablar";
     mic.setAttribute("aria-label", "Responder por voz");
-    mic.onclick = () => onMic?.();
+    mic.onclick = () => { draft.blur(); onMic?.(); };
     const send = document.createElement("button");
     send.type = "button";
     send.className = "confirm conversation-send";
@@ -359,7 +372,6 @@ export function createUI({ getMedia }) {
       ]
     });
     $("actionModal").classList.add("conversation-modal");
-    setTimeout(() => draft.focus(), 0);
   }
 
   function showCalendarEvent(note, google, eventId) {
