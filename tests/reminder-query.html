@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Prueba aislada de consulta</title></head>
+<body>
+<script type="module">
+import { createUI } from '../js/ui.js';
+import { findReminderMatches } from '../js/pending.js';
+const page = new DOMParser().parseFromString(await (await fetch('../index.html')).text(), 'text/html');
+page.querySelectorAll('script, link').forEach(node => node.remove());
+document.body.append(...page.body.childNodes);
+for (const href of ['../styles.css', '../styles-flow.css']) {
+  const css = document.createElement('link');
+  css.rel = 'stylesheet'; css.href = href; document.head.append(css);
+}
+const ui = createUI({getMedia: async () => null});
+ui.dismissWelcome();
+const entries = [
+  {id:'done', type:'reminder', status:'done', text:'Llamar a Miguel'},
+  {id:'pending', type:'reminder', status:'pending', text:'Llamar a Miguel Ibiza',
+   interaction:{status:'completed'}, schedule:{status:'scheduled', dueAt:'2026-08-27T13:00:00'}}
+];
+ui.showReminderResults(findReminderMatches(entries, {target:{title:'Miguel'}}), 'Miguel');
+</script>
+</body></html>

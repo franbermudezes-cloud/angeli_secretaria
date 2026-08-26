@@ -1,10 +1,20 @@
-import{calendarQueryRange,cleanTemporalText,temporalData}from"./temporal.js?v=0.21.6";
+import{calendarQueryRange,cleanTemporalText,temporalData}from"./temporal.js?v=0.21.7";
 
-export const VALID_INTENTS=["note","task.create","task.complete","reminder.create","calendar.create","calendar.query","calendar.update","calendar.delete","contact.call","file.store","photo.store"];
+export const VALID_INTENTS=["note","task.create","task.complete","reminder.create","reminder.query","calendar.create","calendar.query","calendar.update","calendar.delete","contact.call","file.store","photo.store"];
 const SENSITIVE_INTENTS=new Set(["calendar.update","calendar.delete","contact.call"]);
 const MAX_TEXT_LENGTH=500,MIN_CONFIDENCE=0.75;
 const INTERPRETER_URL="https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app/interpret";
 const EMPTY={title:null,date:null,time:null,rangeStart:null,rangeEnd:null,location:null,contactName:null,phone:null,notes:null,target:null,changes:null,missingFields:[],question:null};
+
+// Respaldo de lectura: la IA sigue siendo la primera opción en producción.
+export function localReminderQuery(text = "") {
+  const normalized = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (!/\b(?:que|cuales|dime|muestrame|consulta)\b.*\brecordatorios?\b/i.test(normalized)) return null;
+  const match = text.match(/\brecordatorios?\b(?:\s+(?:tengo|tenía|tenia|hay))?\s+(?:de|sobre)\s+(.+?)(?:[.!?,;]|$)/i);
+  return { ...EMPTY, intent: "reminder.query", confidence: .5,
+    target: match ? { title: match[1].trim(), date: null, time: null } : null,
+    requiresConfirmation: false };
+}
 
 export async function interpret(text,{provider=mockProvider,fallback,context=null}={}){try{const intent=validateIntent(await provider(text,context));if(intent.confidence<MIN_CONFIDENCE)throw new Error("Baja confianza");return{...intent,source:"ai",fallbackReason:null}}catch(error){const local=typeof fallback==="function"?fallback(text,context):fallback;return{...validateIntent(local),source:"fallback",fallbackReason:failureReason(error)}}}
 

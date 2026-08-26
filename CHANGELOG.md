@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.21.7] - 2026-08-26
+
+### Corregido
+
+- `¿Qué recordatorios tengo de Miguel?` consulta los recordatorios pendientes
+  guardados en Angeli y muestra el que sigue activo después de completar otro.
+- La consulta no crea una nota, no incluye recordatorios terminados y no se
+  desvía hacia Google Calendar.
+- Un recordatorio programado sigue pendiente aunque su conversación esté cerrada.
+
+### Pruebas
+
+- Añadida una regresión posterior a P03 con dos recordatorios de Miguel: uno
+  completado y otro pendiente, verificando que solo se recupera el pendiente.
+- Cobertura de consulta general, coincidencia por persona, estados cerrados y
+  respaldo de solo lectura cuando falla la IA (proveedor simulado).
+
 ## [0.21.6] - 2026-08-24
 
 ### Añadido

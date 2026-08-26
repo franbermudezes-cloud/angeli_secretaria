@@ -94,7 +94,13 @@ La misma puerta ejecuta además `tests/conversation.test.mjs`, que protege el
 coordinador local sin simular éxitos de Google: P01 pregunta únicamente la
 hora pendiente, P02 conserva la intención y el identificador de la operación,
 P03 localiza y completa el pendiente existente sin crear otra entrada (y exige
-elegir si encuentra varios), un recordatorio completo evita preguntas
+elegir si encuentra varios), y su prueba de regresión consulta después solo
+los recordatorios que continúan pendientes aunque su conversación esté cerrada.
+La consulta general, el filtro por persona y el respaldo de consulta se prueban
+localmente con proveedor simulado, no se presentan como pruebas de Gemini real.
+`tests/reminder-query.html` permite comprobar la tarjeta de resultados sin
+autenticación ni escrituras externas; usa exclusivamente dos entradas ficticias.
+Un recordatorio completo evita preguntas
 redundantes y cancelar/completar cierra la interacción activa. La comprobación real de esta sesión confirmó
 también el mismo recorrido contra la IA remota antes de incorporar la prueba.
 
