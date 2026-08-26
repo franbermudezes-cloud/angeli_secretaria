@@ -1,0 +1,6 @@
+{
+  "text": "Recuérdame llamar a Miguel Ibiza mañana a las diez de la mañana",
+  "now": "2026-08-26T13:09:00+00:00",
+  "timeZone": "Europe/Madrid",
+  "raw": {"changes":null,"confidence":1,"contactName":"Miguel Ibiza","date":"2026-08-27","intent":"reminder.create","location":null,"missingFields":[],"notes":null,"phone":null,"question":null,"rangeEnd":null,"rangeStart":null,"requiresConfirmation":true,"target":null,"time":"10:00:00","title":"Llamar a Miguel Ibiza"}
+}

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.21.10] - 2026-08-26
+
+- Se acepta la hora Gemini HH:MM:00 normalizándola a HH:MM, sin alterar su
+  valor. Segundos no nulos y horas imposibles siguen rechazándose.
+- Evidencia completa y muestra de regresión documentadas para BUG 4.
+- Test del endpoint (503 antes / 200 después) y P05-model-time con Calendar
+  real, además de pruebas negativas y límites de hora.
+
 ## [0.21.9] - 2026-08-26
 
 - `Pasado mañana` suma dos días, antes de reconocer `mañana`. La expresión
