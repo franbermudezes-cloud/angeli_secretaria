@@ -19,6 +19,33 @@ import { preserveCancellation } from '../js/conversation.js';
 import { localCalendarCancellation } from '../js/ai.js';
 import { createUI } from '../js/ui.js';
 import { readFileSync } from 'node:fs';
+import { createAgendaActions } from '../js/agenda.js';
+
+test('agenda: cancelar el ID seleccionado refresca la misma consulta y bloquea doble clic',async()=>{
+  const note={id:'query',proposal:{intent:'calendar.query'}};
+  let result={events:[{id:'one'},{id:'two'}]},release;
+  const calls=[];
+  const google={getCalendarResult:()=>result,
+    deleteCalendarEvent:async(n,id)=>{calls.push(['delete',n.id,id]);await new Promise(r=>release=r);result=undefined},
+    searchCalendar:async n=>{assert.equal(n,note);calls.push('search');result={events:[{id:'one'}]}}
+  };
+  const cancel=createAgendaActions({google,onDeleted:id=>calls.push(['deleted',id]),showWorking:()=>calls.push('working'),showList:n=>calls.push(['list',n.id])});
+  await cancel(note,'missing');assert.deepEqual(calls,[]);
+  const first=cancel(note,'two');await cancel(note,'two');release();await first;
+  assert.deepEqual(calls,[['delete','query','two'],['deleted','two'],'working','search',['list','query']]);
+  assert.deepEqual(result.events,[{id:'one'}]);
+});
+
+test('agenda: rechazar o fallar el borrado conserva la lista sin marcar éxito',async()=>{
+  for(const mode of ['cancel','error']){
+    const result={events:[{id:'one'}]},calls=[];
+    const cancel=createAgendaActions({google:{getCalendarResult:()=>result,deleteCalendarEvent:async()=>{if(mode==='error')throw Error('red')},searchCalendar:()=>calls.push('search')},
+      onDeleted:()=>calls.push('deleted'),showWorking:()=>{},showList:()=>calls.push('list')});
+    const operation=cancel({id:'query',proposal:{intent:'calendar.query'}},'one');
+    if(mode==='error')await assert.rejects(operation,/red/);else await operation;
+    assert.deepEqual(calls,['list']);assert.equal(result.events.length,1);
+  }
+});
 
 test('los listados limitan el modal y desplazan solo el contenido, conservando el cierre',()=>{
   const css=readFileSync(new URL('../styles.css',import.meta.url),'utf8');
@@ -71,6 +98,19 @@ test('los resultados son seleccionables y piden confirmar el ID elegido antes de
   assert.match(elements.get('modalLead').textContent,/90 días/);
   assert.equal(elements.get('modalBody').children[0].children[0].children[0].type,'date');
   assert.equal(elements.get('modalActions').children[1].dataset.a,'search-calendar-date');
+  const query={id:'agenda',text:'Qué tengo mañana',type:'calendar',proposal:{intent:'calendar.query'}};
+  const google={getCalendarResult:()=>({events:[{id:'event-1',summary:'Cena <Carlos>',when:'27 ago, 23:00'},{id:'event-2',summary:'Llamar a Miguel',when:'28 ago, 10:00'}]})};
+  ui.showEntryAction(query,google);
+  const html=elements.get('modalBody').html;
+  assert.equal((html.match(/data-a="agenda-view"/g)||[]).length,2);
+  assert.equal((html.match(/data-a="agenda-delete"/g)||[]).length,2);
+  assert.match(html,/Cena &lt;Carlos&gt;/);
+  assert.match(html,/data-event-id="event-2"/);
+  ui.showCalendarEvent(query,google,'event-2');
+  assert.equal(elements.get('modalTitle').textContent,'Llamar a Miguel');
+  assert.equal(elements.get('modalActions').children[1].dataset.eventId,'event-2');
+  elements.get('modalActions').children[0].onclick();
+  assert.match(elements.get('modalBody').html,/Cena &lt;Carlos&gt;/);
 });
 
 test('cancelar por nombre busca sin exigir día ni hora, incluso si la IA los pide', () => {

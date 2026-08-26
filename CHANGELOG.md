@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.14] - 2026-08-26
+
+- Cada resultado de una consulta permite Ver y Anular el evento elegido.
+- El detalle vuelve a la misma agenda. Anular conserva la confirmación existente; solo tras éxito se consulta de nuevo y se actualiza el recordatorio asociado.
+- Doble pulsación bloqueada durante la cancelación. Rechazar o fallar no marca el evento como cancelado.
+- Pruebas automáticas de botones/ID, detalle/vuelta, cancelación/refresco y rechazo/error. No cambia OAuth, Calendar API ni Firestore.
+
 ## [0.21.13] - 2026-08-26
 
 - Los listados largos se desplazan dentro del emergente sin sacar el cierre

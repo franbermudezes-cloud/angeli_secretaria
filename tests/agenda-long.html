@@ -2,6 +2,7 @@
 <html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Agenda larga · prueba aislada</title><body>
 <script type="module">
 import {createUI} from '../js/ui.js';
+import {createAgendaActions} from '../js/agenda.js';
 const page=new DOMParser().parseFromString(await (await fetch('../index.html')).text(),'text/html');
 page.querySelectorAll('script,link').forEach(node=>node.remove());
 document.body.append(...page.body.childNodes);
@@ -9,6 +10,18 @@ for(const href of ['../styles.css','../styles-flow.css']){const css=document.cre
 const ui=createUI({getMedia:async()=>null});
 ui.dismissWelcome();
 const note={id:'test-agenda',type:'calendar',text:'Qué tengo pendiente en la agenda',proposal:{intent:'calendar.query'},aiIntent:{intent:'calendar.query'}};
-const events=Array.from({length:40},(_,i)=>({id:`event-${i+1}`,summary:`Evento de prueba ${i+1}`,when:'27 ago 2026, 10:00'}));
-ui.showEntryAction(note,{getCalendarResult:()=>({events})});
+let events=Array.from({length:40},(_,i)=>({id:`event-${i+1}`,summary:`Evento de prueba ${i+1}`,when:'27 ago 2026, 10:00'}));
+let result={events};
+const google={getCalendarResult:()=>result,
+  deleteCalendarEvent:async(_,id)=>{if(confirm('¿Anular este evento ficticio?')){events=events.filter(e=>e.id!==id);result=undefined}},
+  searchCalendar:async()=>{result={events}}
+};
+const showList=()=>ui.showEntryAction(note,google);
+const cancel=createAgendaActions({google,onDeleted:()=>{},showList,showWorking:()=>ui.showWorking('Actualizando agenda','Prueba ficticia','')});
+document.getElementById('actionModal').addEventListener('click',e=>{
+  const button=e.target.closest('button');if(!button)return;
+  if(button.dataset.a==='agenda-view')ui.showCalendarEvent(note,google,button.dataset.eventId);
+  if(button.dataset.a==='agenda-delete')cancel(note,button.dataset.eventId);
+});
+showList();
 </script></body></html>
