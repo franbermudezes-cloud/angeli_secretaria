@@ -27,5 +27,7 @@ No se cambian permisos, sesiones, esquema Firestore ni APIs de Google.
 Se utilizan las funciones existentes para buscar y cancelar; tras éxito se
 actualiza el recordatorio vinculado al ID. Los borrados realizados fuera de
 Angeli siguen pendientes de reconciliación, como documenta el roadmap.
-La búsqueda conserva el rango vigente de Calendar (90 días si no hay fecha).
+La búsqueda inicial conserva el rango vigente de Calendar (90 días sin fecha).
+Si no encuentra coincidencias, explica ese límite y permite indicar otra fecha
+en el mismo modal. Esta salida también permite recuperar eventos más lejanos.
 La selección en esta iteración se hace pulsando; no se añade selección por voz.

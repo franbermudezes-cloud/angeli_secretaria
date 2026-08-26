@@ -100,6 +100,7 @@ La primera fase automatiza las integraciones reales ya aislables:
   confirmación del ID elegido. No prueban el micrófono ni una respuesta de Gemini
   en directo. Prueba manual: dictar la frase, elegir una de tres coincidencias,
   confirmar y comprobar que las otras permanecen sin preguntas temporales.
+  También verifica que indicar una fecha permite recuperar una llamada a 120 días.
 - `P10`: crear dos eventos y recuperarlos por intervalo de fecha.
 - `P11`: localizar un evento y actualizar su hora en el mismo calendario.
 - `P05-model-time`: replay de la respuesta Gemini capturada con `10:00:00`,

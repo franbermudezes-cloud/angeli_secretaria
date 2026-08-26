@@ -58,6 +58,11 @@ test('los resultados son seleccionables y piden confirmar el ID elegido antes de
   assert.equal(confirm.dataset.id,'reminder-2');
   assert.equal(confirm.dataset.a,'cancel-schedule');
   assert.ok(entries.every(entry=>entry.schedule.status==='scheduled'));
+  ui.showEntryAction({id:'search',text:'Anula llamada a Miguel Ibiza',proposal:{intent:'calendar.delete'},aiIntent:{target:{title:'Miguel Ibiza'}}},
+    {getCalendarResult:()=>({events:[]})});
+  assert.match(elements.get('modalLead').textContent,/90 días/);
+  assert.equal(elements.get('modalBody').children[0].children[0].children[0].type,'date');
+  assert.equal(elements.get('modalActions').children[1].dataset.a,'search-calendar-date');
 });
 
 test('cancelar por nombre busca sin exigir día ni hora, incluso si la IA los pide', () => {

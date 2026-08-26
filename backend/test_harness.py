@@ -126,6 +126,13 @@ class IntegrationHarness:
             if item.get("status") != "cancelled"}
         if selected in remaining or not (expected - {selected}).issubset(remaining):
             raise RuntimeError("La cancelación no conservó las otras dos llamadas")
+        later = (now + timedelta(days=120)).replace(hour=10, minute=0, second=0, microsecond=0)
+        distant = self._create_event(f"{self.prefix} Llamar a Miguel Ibiza lejano", later, later + timedelta(hours=1))
+        dated = json.loads(subprocess.run(["node", str(fixture), later.date().isoformat()],
+            check=True, capture_output=True, text=True, timeout=20).stdout)
+        found_later = self.service.api(CALENDAR, "GET", self._calendar_base() + "?" + dated["params"])
+        if distant["id"] not in {item["id"] for item in found_later.get("items", [])}:
+            raise RuntimeError("La búsqueda por fecha no recupera una llamada a más de 90 días")
 
     def _calendar_query(self) -> None:
         """P10: consulta un día con dos eventos reales y comprueba ambos."""

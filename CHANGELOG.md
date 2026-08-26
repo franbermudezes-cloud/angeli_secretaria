@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.21.12] - 2026-08-26
+
+- Revisión del mismo PR de cancelación: si no hay coincidencias en los próximos
+  90 días, se informa del límite y se permite buscar otra fecha dentro del modal.
+  No se exige fecha al inicio ni se presenta el rango vacío como ausencia global.
+
 ## [0.21.11] - 2026-08-26
 
 - Cancelar por nombre busca directamente en Calendar sin exigir fecha ni hora.
