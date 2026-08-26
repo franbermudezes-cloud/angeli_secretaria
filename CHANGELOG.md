@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.21.8] - 2026-08-26
+
+### Corregido
+
+- Las llamadas programadas recuperan el nombre del título interpretado o del
+  dictado cuando falta `contactName`; modal y Calendar comparten el título.
+- Calendar conserva también la instrucción original en la descripción.
+- Regresión P05-summary: constructor PWA con transcripción y respuesta IA
+  parcial controladas, creación y lectura en Calendar real de pruebas.
+- Documentada la falta de reconciliación con cambios externos de Calendar;
+  no se modifica la sincronización en esta versión.
+
 ## [0.21.7] - 2026-08-26
 
 ### Corregido

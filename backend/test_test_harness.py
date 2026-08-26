@@ -18,6 +18,9 @@ class FakeGoogleSessions:
             self.events[event_id] = body
             return {"id": event_id}
         if method == "GET":
+            event_id = url.rsplit("/", 1)[-1]
+            if event_id in self.events:
+                return {"id": event_id, **self.events[event_id]}
             return {"items": [{"id": event_id, "summary": event["summary"]} for event_id, event in self.events.items()]}
         if method == "PATCH":
             event_id = url.rsplit("/", 1)[-1]
@@ -90,6 +93,17 @@ class TestHarnessTests(unittest.TestCase):
         harness.cleanup()
         self.assertEqual(service.events, {})
 
+    def test_reminder_payload_uses_pwa_constructor_and_cleans_up(self):
+        service = FakeGoogleSessions()
+        harness = IntegrationHarness(service, prefix="ANGELI-TEST-unit")
+        try:
+            harness._reminder_summary()
+            event = next(iter(service.events.values()))
+            self.assertEqual(event["summary"], "ANGELI-TEST-unit Llamar a Miguel Ibiza")
+        finally:
+            harness.cleanup()
+        self.assertEqual(service.events, {})
+
     def test_drive_case_removes_generated_file_and_restores_environment(self):
         service = FakeGoogleSessions()
         harness = IntegrationHarness(service, prefix="ANGELI-TEST-unit")
@@ -98,6 +112,21 @@ class TestHarnessTests(unittest.TestCase):
         harness.cleanup()
         self.assertEqual(service.deleted_files, ["file-1"])
         self.assertEqual((os.environ.get("ANGELI_DRIVE_IMAGES_FOLDER_ID"), os.environ.get("ANGELI_DRIVE_FILES_FOLDER_ID")), before)
+
+    def test_reminder_case_fails_if_calendar_loses_the_title(self):
+        service = FakeGoogleSessions()
+        original_api = service.api
+        def broken_api(integration, method, url, body=None):
+            result = original_api(integration, method, url, body)
+            return {**result, "summary": "Llamar a contacto"} if method == "GET" else result
+        service.api = broken_api
+        harness = IntegrationHarness(service, prefix="ANGELI-TEST-unit")
+        try:
+            with self.assertRaisesRegex(RuntimeError, "summary"):
+                harness._reminder_summary()
+        finally:
+            harness.cleanup()
+        self.assertEqual(service.events, {})
 
 
 if __name__ == "__main__":

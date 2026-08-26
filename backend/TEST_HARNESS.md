@@ -1,5 +1,12 @@
 # Entorno automático de pruebas reales
 
+Comprobación previa al cambio de título (26/08/2026): arnés ejecutado desde
+Cloud Shell en `angeli-secretaria`, cliente OAuth exclusivo de pruebas,
+secretos `angeli-test-google-*`, Calendar `primary` de la cuenta de pruebas.
+P04/P10/P11/P06: PASS (crear, leer, modificar y eliminar recursos aislados).
+La PWA usa igualmente Calendar `primary` mediante la autorización Calendar;
+este cambio no cambia identidad, permisos, calendario ni Firestore.
+
 El arnés `test_harness.py` prueba integraciones reales sin tocar las cuentas,
 autorizaciones, calendarios ni carpetas de producción.
 
@@ -88,6 +95,11 @@ La primera fase automatiza las integraciones reales ya aislables:
 - `P04`: crear, buscar y cancelar un evento en Calendar.
 - `P10`: crear dos eventos y recuperarlos por intervalo de fecha.
 - `P11`: localizar un evento y actualizar su hora en el mismo calendario.
+- `P05-summary`: transcripción «Recuérdame llamar a Miguel Ibiza mañana a las
+  diez de la mañana», IA parcial controlada sin nombre, constructor compartido
+  con la PWA y creación/lectura en Calendar real. Comprueba summary y description
+  y elimina el evento. Requiere Node en PATH (ya disponible en el runner).
+  No prueba micrófono ni Gemini; las notificaciones Android siguen manuales.
 - Base de `P06/P07`: subir un adjunto a Drive y eliminarlo.
 
 La misma puerta ejecuta además `tests/conversation.test.mjs`, que protege el

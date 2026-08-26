@@ -1,4 +1,4 @@
-import{nextDateForTime,temporalData}from"./temporal.js?v=0.21.7";
+import{nextDateForTime,temporalData}from"./temporal.js?v=0.21.8";
 
 const CALL_INTENT=/\b(?:llama|llamar|telefonea|telefonear|contacta|contactar)\b/i;
 
@@ -28,7 +28,7 @@ export function scheduleFor(interpretation,text){
   return{
     dueAt:`${interpretation.date}T${interpretation.time}:00`,
     timeZone:"Europe/Madrid",
-    action:{kind:call?"contact.call":"reminder",contactName:interpretation.contactName||null,phone:interpretation.phone||null},
+    action:{kind:call?"contact.call":"reminder",contactName:call?(usableName(interpretation.contactName)||callName(interpretation.title)||callName(text)):null,phone:interpretation.phone||null},
     status:"pending_confirmation",
     delivery:{calendar:"pending",android:"pending"},
     calendarEventId:null,
@@ -40,8 +40,26 @@ export function scheduleFor(interpretation,text){
 
 export function scheduleTitle(note){
   const action=note.schedule?.action||{};
-  if(action.kind==="contact.call")return`Llamar a ${action.contactName||action.phone||"contacto"}`;
+  if(action.kind==="contact.call"){
+    const name=usableName(action.contactName)||usableName(note.aiIntent?.contactName)||callName(note.aiIntent?.title)||callName(note.text);
+    if(name||action.phone)return`Llamar a ${name||action.phone}`;
+    // No desechar la instrucción original si no pudimos separar el nombre.
+    return(note.text||note.aiIntent?.title||"Llamar a contacto").trim();
+  }
   return(note.aiIntent?.title||note.text||"Recordatorio").trim();
+}
+
+function usableName(value){
+  const name=String(value||"").trim();
+  return name&&!/^(?:un\s+|el\s+)?contacto$|^persona$/i.test(name)?name:null;
+}
+
+function callName(text){
+  const match=String(text||"").match(/\b(?:llamar|llama|telefonear|telefonea|contactar|contacta)\s+(?:a\s+|al\s+)?(.+)/i);
+  if(!match)return null;
+  const name=match[1].split(/\s+(?:pasado\s+mañana|mañana|hoy|a\s+las?\b|el\s+(?:lunes|martes|miércoles|jueves|viernes|sábado|domingo|\d)|por\s+la\s+(?:mañana|tarde|noche)\b)|[.!?;,]/i)[0].trim();
+  if(/^(?:mañana|hoy|pasado\s+mañana|a\s+las?\b)/i.test(name))return null;
+  return usableName(name);
 }
 
 export function scheduleWhen(schedule){
