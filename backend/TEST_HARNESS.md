@@ -1,5 +1,13 @@
 # Entorno automático de pruebas reales
 
+V0.21.16: comprobación previa registrada desde `integration-gate` V0.21.15:
+cuenta aislada `buengusto.es@gmail.com`, Calendar `primary`, cliente OAuth y
+grant `angeli-test-google-*`; P04/P04-name/P10/P11/P05/P06 PASS. El cambio
+añade `pageToken` sin cambiar identidad, calendario ni permisos. P10 fuerza
+dos páginas reales (`maxResults=1`) y exige recuperar ambos eventos. Las
+pruebas JS reúnen 27 resultados y rechazan un ciclo anómalo; la fixture visual
+con 40 eventos comprueba scroll y acciones.
+
 V0.21.15: `tests/conversation.test.mjs` cubre llamada sin fecha mal clasificada
 por IA/fallback, protección de llamadas futuras y conversaciones activas,
 botones de elección y continuidad al programar sin perder el contacto.

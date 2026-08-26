@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.21.16] - 2026-08-26
+
+- Las consultas de agenda recorren todas las páginas devueltas por Calendar; dejan de quedar cortadas en 20 eventos.
+- Un límite defensivo convierte una paginación anómala en error visible, nunca en un falso listado completo.
+- P10 fuerza dos páginas reales en Calendar de pruebas; el modal de 40 eventos conserva scroll, Ver, Anular y Cerrar.
+
 ## [0.21.15] - 2026-08-26
 
 - «Llamar a Miguel» sin tiempo explícito deja de convertirse por defecto en recordatorio aunque la IA pida una fecha.
