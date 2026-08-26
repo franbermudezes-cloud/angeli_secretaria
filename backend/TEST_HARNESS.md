@@ -95,6 +95,9 @@ La primera fase automatiza las integraciones reales ya aislables:
 - `P04`: crear, buscar y cancelar un evento en Calendar.
 - `P10`: crear dos eventos y recuperarlos por intervalo de fecha.
 - `P11`: localizar un evento y actualizar su hora en el mismo calendario.
+- `P05-relative`: constructor PWA desde referencia fija 26/08/2026; mañana
+  debe guardarse el 27 y pasado mañana el 28, ambos a las 11:00 Madrid.
+  Crea y lee ambos eventos de Calendar real, con limpieza posterior.
 - `P05-summary`: transcripción «Recuérdame llamar a Miguel Ibiza mañana a las
   diez de la mañana», IA parcial controlada sin nombre, constructor compartido
   con la PWA y creación/lectura en Calendar real. Comprueba summary y description

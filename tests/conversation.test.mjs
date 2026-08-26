@@ -14,6 +14,25 @@ import { completionTarget, completePending, findPendingMatches, findReminderMatc
 import { mockProvider, interpret, localReminderQuery } from "../js/ai.js";
 import { fixtureTitle, reminderFixture } from './reminder-event-fixture.mjs';
 import { scheduledReminderEvent } from '../js/google.js';
+import { temporalData, calendarQueryRange } from '../js/temporal.js';
+
+test('BUG 3: mañana y pasado mañana son días distintos desde el 26/08/2026', () => {
+  const now = new Date(2026, 7, 26, 12);
+  for (const [phrase, expected] of [['mañana','2026-08-27'],['pasado mañana','2026-08-28']]) {
+    const text = `Recuérdame llamar a Carlos Ferrer ${phrase} a las once de la mañana`;
+    assert.equal(temporalData(text,now).scheduledDate, expected);
+    assert.equal(temporalData(text,now).scheduledTime, '11:00');
+    assert.equal(calendarQueryRange(`Qué tengo ${phrase}`,now).rangeStart, expected);
+    assert.equal(normalizeReminderSchedule({intent:'reminder.create',date:'2026-08-27',time:'11:00'},text,now).date, expected);
+  }
+});
+
+test('fechas relativas cruzan mes/año y de la mañana no es un día', () => {
+  assert.equal(temporalData('pasado mañana',new Date(2026,7,31,12)).scheduledDate,'2026-09-02');
+  assert.equal(temporalData('pasado mañana',new Date(2026,11,31,12)).scheduledDate,'2027-01-02');
+  assert.equal(temporalData('hoy a las diez de la mañana',new Date(2026,7,26,8)).scheduledDate,'2026-08-26');
+  assert.equal(temporalData('a las once de la mañana',new Date(2026,7,26,8)).scheduledDate,undefined);
+});
 
 test('P05 conserva Miguel Ibiza aunque la IA omita contactName', () => {
   assert.equal(fixtureTitle(), 'Llamar a Miguel Ibiza');

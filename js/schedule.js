@@ -1,4 +1,4 @@
-import{nextDateForTime,temporalData}from"./temporal.js?v=0.21.8";
+import{nextDateForTime,temporalData,explicitRelativeDate}from"./temporal.js?v=0.21.9";
 
 const CALL_INTENT=/\b(?:llama|llamar|telefonea|telefonear|contacta|contactar)\b/i;
 
@@ -18,7 +18,7 @@ export function normalizeReminderSchedule(interpretation,text,now=new Date()){
   if(interpretation?.intent!=="reminder.create")return interpretation;
   const local=temporalData(text,now,{inferDateFromTime:true});
   const time=interpretation.time||local.scheduledTime||null;
-  const date=interpretation.date||local.scheduledDate||(time?dateKey(nextDateForTime(time,now)):null);
+  const date=explicitRelativeDate(text,now)||interpretation.date||local.scheduledDate||(time?dateKey(nextDateForTime(time,now)):null);
   return{...interpretation,date,time,requiresConfirmation:Boolean(date&&time)};
 }
 
