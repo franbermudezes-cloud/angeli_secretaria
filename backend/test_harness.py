@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import sys
 import uuid
 from dataclasses import dataclass, field
@@ -54,6 +55,7 @@ class IntegrationHarness:
             self._run("P04", self._calendar_cancel)
             self._run("P10", self._calendar_query)
             self._run("P11", self._calendar_update)
+            self._run("P05-summary", self._reminder_summary)
             self._run("P06", self._drive_upload_and_cleanup)
         finally:
             self.cleanup()
@@ -138,6 +140,27 @@ class IntegrationHarness:
         received = datetime.fromisoformat(start_value.replace("Z", "+00:00"))
         if received.astimezone(timezone.utc) != updated_start:
             raise RuntimeError("Calendar no guardó la hora actualizada del evento de prueba")
+
+    def _reminder_summary(self) -> None:
+        """Transcripción + IA parcial simulada → constructor PWA → Calendar real."""
+        fixture = Path(__file__).resolve().parents[1] / "tests" / "reminder-event-fixture.mjs"
+        payload = json.loads(subprocess.run(
+            ["node", str(fixture), "--calendar-payload"],
+            check=True, capture_output=True, text=True, timeout=20,
+        ).stdout)
+        if payload.get("summary") != "Llamar a Miguel Ibiza":
+            raise RuntimeError("El constructor PWA perdió el nombre antes de enviar a Calendar")
+        payload["summary"] = f"{self.prefix} {payload['summary']}"
+        event = self.service.api(CALENDAR, "POST", self._calendar_base(), payload)
+        event_id = event.get("id")
+        if not event_id:
+            raise RuntimeError("Calendar no devolvió el ID del recordatorio de prueba")
+        self.created_events.append(event_id)
+        saved = self.service.api(CALENDAR, "GET", self._calendar_base() + "/" + event_id)
+        if saved.get("summary") != payload["summary"]:
+            raise RuntimeError("El summary leído de Calendar no conserva Miguel Ibiza")
+        if "Miguel Ibiza" not in saved.get("description", ""):
+            raise RuntimeError("Calendar no conserva el dictado original en description")
 
     def _drive_upload_and_cleanup(self) -> None:
         """P06/P07 base: adjunto real a Drive de pruebas y eliminación posterior."""

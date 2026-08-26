@@ -1,16 +1,16 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.7";
-import{classify,actionData}from"./classifier.js?v=0.21.7";
-import{sendEntry}from"./sheets.js?v=0.21.7";
-import{createUI}from"./ui.js?v=0.21.7";
-import{createGoogleIntegration}from"./google.js?v=0.21.7";
-import{interpret,remoteProvider,localReminderQuery}from"./ai.js?v=0.21.7";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.7";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.7";
-import{normalizeFutureCall,normalizeReminderSchedule,scheduleFor}from"./schedule.js?v=0.21.7";
-import{createCloudSync}from"./firebase.js?v=0.21.7";
-import{createMediaService}from"./media.js?v=0.21.7";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn}from"./conversation.js?v=0.21.7";
-import{completionTarget,completePending,findPendingMatches,findReminderMatches}from"./pending.js?v=0.21.7";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.8";
+import{classify,actionData}from"./classifier.js?v=0.21.8";
+import{sendEntry}from"./sheets.js?v=0.21.8";
+import{createUI}from"./ui.js?v=0.21.8";
+import{createGoogleIntegration}from"./google.js?v=0.21.8";
+import{interpret,remoteProvider,localReminderQuery}from"./ai.js?v=0.21.8";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.8";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.8";
+import{normalizeFutureCall,normalizeReminderSchedule,scheduleFor}from"./schedule.js?v=0.21.8";
+import{createCloudSync}from"./firebase.js?v=0.21.8";
+import{createMediaService}from"./media.js?v=0.21.8";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn}from"./conversation.js?v=0.21.8";
+import{completionTarget,completePending,findPendingMatches,findReminderMatches}from"./pending.js?v=0.21.8";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],selectedFilter="all",selectedType="all",shortcutCapture=false,saving=false;
@@ -176,7 +176,7 @@ async function handleEntryAction(event){
  }
 }
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.7",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.8",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}

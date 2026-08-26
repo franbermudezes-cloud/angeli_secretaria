@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Prueba aislada del título de llamada</title></head><body>
+<script type="module">
+import { createUI } from '../js/ui.js';
+import { reminderFixture } from './reminder-event-fixture.mjs';
+const page = new DOMParser().parseFromString(await (await fetch('../index.html')).text(), 'text/html');
+page.querySelectorAll('script').forEach(node => node.remove());
+const base = document.createElement('base'); base.href = new URL('../', location.href).href;
+document.head.append(base, ...page.head.querySelectorAll('link[rel="stylesheet"], style'));
+document.body.append(...page.body.childNodes);
+const ui = createUI({getMedia:async()=>null});
+ui.dismissWelcome();
+ui.showEntryAction(reminderFixture());
+</script></body></html>

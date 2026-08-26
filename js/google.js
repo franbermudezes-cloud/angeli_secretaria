@@ -1,5 +1,5 @@
-import { cleanTemporalText } from "./temporal.js?v=0.21.7";
-import { scheduleTitle } from "./schedule.js?v=0.21.7";
+import { cleanTemporalText } from "./temporal.js?v=0.21.8";
+import { scheduleTitle } from "./schedule.js?v=0.21.8";
 
 const CLIENT_ID = "172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
@@ -201,13 +201,7 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
     if (!schedule?.dueAt || calendarInFlight.has(note.id)) return;
     calendarInFlight.add(note.id);
     try {
-      const saved = await calendarRequest("POST", "", {
-        id: schedule.calendarEventId || `angelirem${note.id.replace(/-/g, "")}`,
-        summary: scheduleTitle(note),
-        start: { dateTime: schedule.dueAt, timeZone: "Europe/Madrid" },
-        end: { dateTime: calendarEnd(schedule.dueAt.slice(0, 10), schedule.dueAt.slice(11, 16)), timeZone: "Europe/Madrid" },
-        reminders: { useDefault: false, overrides: [{ method: "popup", minutes: 0 }] }
-      });
+      const saved = await calendarRequest("POST", "", scheduledReminderEvent(note));
       saveNotes(getNotes().map(item => item.id === note.id ? {
         ...item,
         schedule: { ...item.schedule, status: "scheduled", calendarEventId: saved.id, calendarId: saved.calendarId || "primary", calendarUrl: saved.htmlLink || "" }
@@ -316,6 +310,19 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
     getCalendarResult: id => calendarResults.get(id),
     clearContactResult: id => contactResults.delete(id),
     contactTel
+  };
+}
+
+// Constructor compartido por la PWA y la prueba real de Calendar.
+export function scheduledReminderEvent(note) {
+  const schedule = note.schedule;
+  return {
+    id: schedule.calendarEventId || `angelirem${note.id.replace(/-/g, "")}`,
+    summary: scheduleTitle(note),
+    description: note.text || note.aiIntent?.title || "",
+    start: { dateTime: schedule.dueAt, timeZone: "Europe/Madrid" },
+    end: { dateTime: calendarEnd(schedule.dueAt.slice(0, 10), schedule.dueAt.slice(11, 16)), timeZone: "Europe/Madrid" },
+    reminders: { useDefault: false, overrides: [{ method: "popup", minutes: 0 }] }
   };
 }
 

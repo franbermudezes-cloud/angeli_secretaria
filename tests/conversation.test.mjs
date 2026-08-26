@@ -9,9 +9,36 @@ import {
   findActiveInteraction,
   resolveConversationTurn,
 } from "../js/conversation.js";
-import { normalizeFutureCall, normalizeReminderSchedule } from "../js/schedule.js";
+import { normalizeFutureCall, normalizeReminderSchedule, scheduleFor, scheduleTitle } from "../js/schedule.js";
 import { completionTarget, completePending, findPendingMatches, findReminderMatches } from "../js/pending.js";
 import { mockProvider, interpret, localReminderQuery } from "../js/ai.js";
+import { fixtureTitle, reminderFixture } from './reminder-event-fixture.mjs';
+import { scheduledReminderEvent } from '../js/google.js';
+
+test('P05 conserva Miguel Ibiza aunque la IA omita contactName', () => {
+  assert.equal(fixtureTitle(), 'Llamar a Miguel Ibiza');
+  const note = reminderFixture();
+  const payload = scheduledReminderEvent(note);
+  assert.equal(payload.summary, 'Llamar a Miguel Ibiza');
+  assert.equal(payload.description, note.text);
+  assert.equal(payload.start.dateTime, '2026-08-27T10:00:00');
+  assert.equal(payload.end.dateTime, '2026-08-27T11:00:00');
+  assert.equal(payload.start.timeZone, 'Europe/Madrid');
+  assert.equal(note.schedule.action.contactName, 'Miguel Ibiza');
+  assert.equal(scheduleTitle({...note, schedule:{...note.schedule, action:{kind:'contact.call'}}}), payload.summary);
+});
+
+test('P05 respeta nombre explícito, título IA y recordatorios que no son llamadas', () => {
+  const note = reminderFixture();
+  for (const title of ['Llamar a Miguel Ibiza', note.text]) {
+    const ai = {...note.aiIntent, title};
+    assert.equal(scheduleTitle({...note, aiIntent:ai, schedule:scheduleFor(ai,note.text)}), 'Llamar a Miguel Ibiza');
+  }
+  const ai = {...note.aiIntent, contactName:'Miguel Ibiza oficina'};
+  assert.equal(scheduleTitle({...note, aiIntent:ai, schedule:scheduleFor(ai,note.text)}), 'Llamar a Miguel Ibiza oficina');
+  assert.equal(scheduleTitle({text:'Comprar pan', schedule:{action:{kind:'reminder'}}}), 'Comprar pan');
+  assert.equal(scheduleTitle({text:'Llamar', schedule:{action:{kind:'contact.call',phone:'123456789'}}}), 'Llamar a 123456789');
+});
 
 const NOW = "2026-08-24T08:00:00.000Z";
 

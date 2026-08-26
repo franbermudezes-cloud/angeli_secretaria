@@ -22,6 +22,22 @@ Primero se inventariarán las fuentes reales y sus permisos. Después se diseña
 
 ## Bloque 3 — Agenda y contactos operativos
 
+### Pendiente conocido — Cambios externos de Calendar (26/08/2026)
+
+Confirmado por el usuario en producción V0.21.7: al borrar eventos de prueba
+directamente mediante Google Calendar API, desaparecen de Calendar pero las
+entradas vinculadas de Angeli siguen pendientes y aparecen al consultar los
+recordatorios de Miguel. Las modificaciones externas tampoco se reconcilian.
+Firestore guarda esas entradas compartidas; borrar caché local no lo resuelve.
+La sincronización móvil/ordenador no implica sincronización inversa de Calendar.
+
+**No resuelto en V0.21.8.** Pendiente diseñar reconciliación mediante
+`calendarId` + `calendarEventId`, distinguiendo borrado/cancelación de errores
+de red o autorización y reflejando cambios sin duplicar entradas.
+Aceptación futura: crear desde Angeli, modificar/borrar desde otro cliente y
+ver fechas/estado actualizados en ambos dispositivos al consultar. Un fallo
+técnico nunca debe marcar falsamente el recordatorio como cancelado.
+
 **Objetivo:** completar la gestión bidireccional de Calendar y convertir Contactos en acciones completas.
 
 - Consultar agenda por periodos naturales.
