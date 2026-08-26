@@ -17,6 +17,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlencode
+from zoneinfo import ZoneInfo
 
 from google_sessions import CALENDAR, GoogleSessions
 
@@ -56,6 +57,7 @@ class IntegrationHarness:
             self._run("P10", self._calendar_query)
             self._run("P11", self._calendar_update)
             self._run("P05-summary", self._reminder_summary)
+            self._run("P05-relative", self._relative_reminders)
             self._run("P06", self._drive_upload_and_cleanup)
         finally:
             self.cleanup()
@@ -161,6 +163,21 @@ class IntegrationHarness:
             raise RuntimeError("El summary leído de Calendar no conserva Miguel Ibiza")
         if "Miguel Ibiza" not in saved.get("description", ""):
             raise RuntimeError("Calendar no conserva el dictado original en description")
+
+    def _relative_reminders(self) -> None:
+        fixture = Path(__file__).resolve().parents[1] / "tests" / "relative-reminder-fixture.mjs"
+        cases = json.loads(subprocess.run(["node", str(fixture)], check=True,
+            capture_output=True, text=True, timeout=20).stdout)
+        for case in cases:
+            payload = case["event"]
+            payload["summary"] = f"{self.prefix} {payload['summary']}"
+            event = self.service.api(CALENDAR, "POST", self._calendar_base(), payload)
+            self.created_events.append(event["id"])
+            saved = self.service.api(CALENDAR, "GET", self._calendar_base() + "/" + event["id"])
+            actual = datetime.fromisoformat(saved["start"]["dateTime"].replace("Z", "+00:00"))
+            actual = actual.astimezone(ZoneInfo("Europe/Madrid"))
+            if actual.strftime("%Y-%m-%dT%H:%M") != case["expected"] + "T11:00":
+                raise RuntimeError("Calendar no conservó la fecha relativa y hora esperadas")
 
     def _drive_upload_and_cleanup(self) -> None:
         """P06/P07 base: adjunto real a Drive de pruebas y eliminación posterior."""

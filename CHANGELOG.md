@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.21.9] - 2026-08-26
+
+- `Pasado mañana` suma dos días, antes de reconocer `mañana`. La expresión
+  `de la mañana` no impone por sí sola un día futuro.
+- Las fechas relativas explícitas de recordatorios se contrastan con la
+  referencia actual, incluso si la IA propone incorrectamente el día siguiente.
+- Pruebas fijas de días, límites de mes/año y P05-relative en Calendar real.
+- Evidencia del formato de hora de Gemini documentada antes de corregirlo,
+  en `docs/BUGS-2026-08-26.md`; su arreglo irá en un PR separado.
+
 ## [0.21.8] - 2026-08-26
 
 ### Corregido
