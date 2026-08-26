@@ -11,9 +11,58 @@ import {
 } from "../js/conversation.js";
 import { normalizeFutureCall, normalizeReminderSchedule, scheduleFor, scheduleTitle } from "../js/schedule.js";
 import { completionTarget, completePending, completePendingWithCalendar, findPendingMatches, findReminderMatches } from "../js/pending.js";
-import { mockProvider, interpret, localReminderQuery } from "../js/ai.js";
+import { mockProvider, interpret, localCalendarUpdate, localReminderQuery } from "../js/ai.js";
 import { fixtureTitle, reminderFixture } from './reminder-event-fixture.mjs';
-import { scheduledReminderEvent, listAllCalendarPages } from '../js/google.js';
+import { applyCalendarUpdateToEntries, buildCalendarSearch, scheduledReminderEvent, listAllCalendarPages } from '../js/google.js';
+
+test('reprogramar entiende frases naturales y separa objetivo de nueva fecha y hora',()=>{
+  const now=new Date(2026,7,26,12);
+  const cases=[
+    ['Pasa la llamada de Miguel al viernes a las 11','Miguel','2026-08-28','11:00'],
+    ['La llamada de Miguel ahora cambia de hora a las 11','Miguel',undefined,'11:00'],
+    ['Retrasa el recordatorio de Carlos hasta mañana','Carlos','2026-08-27',undefined]
+  ];
+  for(const [text,title,date,time] of cases){
+    const intent=localCalendarUpdate(text,now);
+    assert.equal(intent.intent,'calendar.update');
+    assert.equal(intent.target.title,title);
+    assert.equal(intent.changes?.date,date);
+    assert.equal(intent.changes?.time,time);
+    assert.equal(resolveConversationTurn({text,interpretation:intent}).interaction.status,INTERACTION_STATUS.PENDING_CONFIRMATION);
+  }
+});
+
+test('reprogramar sin hora mantiene el modal y una respuesta corta completa la misma operación',()=>{
+  const now=new Date(2026,7,26,12);
+  const firstIntent=localCalendarUpdate('Cambia la llamada de Miguel',now);
+  const first=resolveConversationTurn({text:'Cambia la llamada de Miguel',interpretation:firstIntent});
+  assert.equal(first.interaction.status,INTERACTION_STATUS.AWAITING_INPUT);
+  assert.equal(first.interaction.question,'¿Para qué día u hora quieres cambiarlo?');
+  const active={id:'update-miguel',aiIntent:first.interpretation,interaction:first.interaction};
+  const answer=localCalendarUpdate('A las once',now,active);
+  const second=resolveConversationTurn({active,text:'A las once',interpretation:answer});
+  assert.equal(second.interpretation.intent,'calendar.update');
+  assert.equal(second.interpretation.target.title,'Miguel');
+  assert.deepEqual(second.interpretation.changes,{time:'11:00'});
+  assert.equal(second.interaction.status,INTERACTION_STATUS.PENDING_CONFIRMATION);
+});
+
+test('reprogramar busca por la persona y actualiza Calendar y el recordatorio local elegido',()=>{
+  const search=buildCalendarSearch({target:{title:'Llamada de Miguel'}},'calendar.update');
+  assert.equal(search.query,'Miguel');
+  const entries=[
+    {id:'action',proposal:{intent:'calendar.update',actionStatus:'pending_confirmation'}},
+    {id:'miguel',type:'reminder',scheduledDate:'2026-08-27',scheduledTime:'09:00',schedule:{status:'scheduled',calendarEventId:'event-miguel',dueAt:'2026-08-27T09:00:00'}},
+    {id:'carlos',type:'reminder',schedule:{status:'scheduled',calendarEventId:'event-carlos',dueAt:'2026-08-27T10:00:00'}}
+  ];
+  const updated=applyCalendarUpdateToEntries(entries,entries[0],'event-miguel','update',{}, {date:'2026-08-28',time:'11:00'});
+  assert.equal(updated[0].proposal.actionStatus,'completed');
+  assert.equal(updated[1].scheduledDate,'2026-08-28');
+  assert.equal(updated[1].scheduledTime,'11:00');
+  assert.equal(updated[1].schedule.dueAt,'2026-08-28T11:00:00');
+  assert.equal(updated[1].schedule.status,'scheduled');
+  assert.deepEqual(updated[2],entries[2]);
+});
 
 test('agenda: reúne todas las páginas de Calendar sin duplicar acciones parciales',async()=>{
   const received=[];
@@ -199,6 +248,13 @@ test('los resultados son seleccionables y piden confirmar el ID elegido antes de
   assert.equal(elements.get('modalActions').children[1].dataset.eventId,'event-2');
   elements.get('modalActions').children[0].onclick();
   assert.match(elements.get('modalBody').html,/Cena &lt;Carlos&gt;/);
+  const update={id:'update',text:'Pasa la llamada de Miguel al viernes a las 11',proposal:{intent:'calendar.update',actionStatus:'pending_confirmation'},aiIntent:{target:{title:'Miguel'},changes:{date:'2026-08-28',time:'11:00'}}};
+  ui.showEntryAction(update,{getCalendarResult:()=>({events:[{id:'event-1',summary:'Llamar a Miguel',when:'27 ago, 09:00'},{id:'event-2',summary:'Llamar a Miguel Ibiza',when:'27 ago, 10:00'}]})});
+  assert.equal(elements.get('modalTitle').textContent,'Modificar evento');
+  assert.equal((elements.get('modalBody').html.match(/data-a="calendar-update"/g)||[]).length,2);
+  assert.match(elements.get('modalBody').html,/data-event-id="event-2"/);
+  ui.showEntryAction({...update,proposal:{...update.proposal,actionStatus:'completed'}},{getCalendarResult:()=>null});
+  assert.equal(elements.get('modalTitle').textContent,'Evento modificado');
 });
 
 test('cancelar por nombre busca sin exigir día ni hora, incluso si la IA los pide', () => {

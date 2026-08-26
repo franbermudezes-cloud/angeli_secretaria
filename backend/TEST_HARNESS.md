@@ -1,5 +1,12 @@
 # Entorno automático de pruebas reales
 
+V0.21.19: pruebas locales de reprogramación con variantes naturales, operación
+incompleta continuada por voz/texto, búsqueda normalizada por persona y
+actualización exclusiva del recordatorio vinculado al evento seleccionado. El
+arnés real P11 continúa verificando búsqueda y PATCH en Calendar aislado; la
+elección visual entre varias coincidencias se valida en la PWA y permanece como
+comprobación manual final en móvil.
+
 V0.21.18: prueba local del modal conversacional con micrófono propio, sin
 autofoco que abra el teclado y limitado por `visualViewport`. La autorización
 real del micrófono y la convivencia con el teclado se mantienen como prueba

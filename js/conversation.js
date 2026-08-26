@@ -141,6 +141,11 @@ function collectData(intent) {
 
 function missingFor(intent) {
   if (intent.intent === "calendar.delete") return intent.target?.title ? [] : ["target"];
+  if (intent.intent === "calendar.update") {
+    if (!intent.target?.title) return ["target"];
+    if (!intent.changes || !Object.keys(intent.changes).length) return ["date", "time"];
+    return [];
+  }
   if (Array.isArray(intent.missingFields) && intent.missingFields.length) return uniqueKnownFields(intent.missingFields);
   if (intent.intent === "calendar.create") return [!intent.date && "date", !intent.time && "time"].filter(Boolean);
   if (intent.intent === "reminder.create") return [!intent.date && "date", !intent.time && "time"].filter(Boolean);
@@ -154,6 +159,7 @@ function uniqueKnownFields(fields) {
 }
 
 function questionFor(intent, missingFields) {
+  if (intent.intent === "calendar.update" && missingFields.includes("date") && missingFields.includes("time")) return "¿Para qué día u hora quieres cambiarlo?";
   if (missingFields.includes("date") && missingFields.includes("time")) return "¿Qué día y a qué hora?";
   if (missingFields.includes("date")) return "¿Qué día quieres hacerlo?";
   if (missingFields.includes("time")) return "¿A qué hora?";
