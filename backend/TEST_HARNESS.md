@@ -95,6 +95,9 @@ La primera fase automatiza las integraciones reales ya aislables:
 - `P04`: crear, buscar y cancelar un evento en Calendar.
 - `P10`: crear dos eventos y recuperarlos por intervalo de fecha.
 - `P11`: localizar un evento y actualizar su hora en el mismo calendario.
+- `P05-model-time`: replay de la respuesta Gemini capturada con `10:00:00`,
+  validación backend, constructor PWA y creación/lectura Calendar real a las
+  10:00 Madrid del 27/08/2026. No invoca al modelo en cada ejecución.
 - `P05-relative`: constructor PWA desde referencia fija 26/08/2026; mañana
   debe guardarse el 27 y pasado mañana el 28, ambos a las 11:00 Madrid.
   Crea y lee ambos eventos de Calendar real, con limpieza posterior.

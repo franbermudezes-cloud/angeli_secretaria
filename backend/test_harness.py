@@ -58,6 +58,7 @@ class IntegrationHarness:
             self._run("P11", self._calendar_update)
             self._run("P05-summary", self._reminder_summary)
             self._run("P05-relative", self._relative_reminders)
+            self._run("P05-model-time", self._model_time_reminder)
             self._run("P06", self._drive_upload_and_cleanup)
         finally:
             self.cleanup()
@@ -178,6 +179,24 @@ class IntegrationHarness:
             actual = actual.astimezone(ZoneInfo("Europe/Madrid"))
             if actual.strftime("%Y-%m-%dT%H:%M") != case["expected"] + "T11:00":
                 raise RuntimeError("Calendar no conservó la fecha relativa y hora esperadas")
+
+    def _model_time_reminder(self) -> None:
+        from app import validate_interpretation
+        root = Path(__file__).resolve().parents[1]
+        sample = json.loads((root / "tests/fixtures/gemini-zero-seconds.json").read_text())
+        interpreted = validate_interpretation(sample["raw"])
+        if interpreted["time"] != "10:00":
+            raise RuntimeError("La hora de Gemini no se normalizó a HH:MM")
+        payload = json.loads(subprocess.run(["node", str(root / "tests/model-reminder-payload.mjs")],
+            input=json.dumps({"text": sample["text"], "interpretation": interpreted}),
+            check=True, capture_output=True, text=True, timeout=20).stdout)
+        payload["summary"] = f"{self.prefix} {payload['summary']}"
+        event = self.service.api(CALENDAR, "POST", self._calendar_base(), payload)
+        self.created_events.append(event["id"])
+        saved = self.service.api(CALENDAR, "GET", self._calendar_base() + "/" + event["id"])
+        actual = datetime.fromisoformat(saved["start"]["dateTime"].replace("Z", "+00:00")).astimezone(ZoneInfo("Europe/Madrid"))
+        if actual.strftime("%Y-%m-%dT%H:%M:%S") != "2026-08-27T10:00:00" or "Miguel Ibiza" not in saved.get("summary", ""):
+            raise RuntimeError("Calendar no conservó la hora y el contacto de la muestra Gemini")
 
     def _drive_upload_and_cleanup(self) -> None:
         """P06/P07 base: adjunto real a Drive de pruebas y eliminación posterior."""

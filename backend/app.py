@@ -454,6 +454,10 @@ def validate_interpretation(raw: Any) -> dict[str, Any]:
         if value is not None and (not isinstance(value, str) or len(value) > MAX_TEXT_LENGTH):
             raise ValueError("Texto de salida no válido")
         result[key] = value.strip() if isinstance(value, str) else None
+    # Gemini puede incluir segundos cero: no cambian la hora del contrato HH:MM.
+    # No truncar segundos reales ni convertir horas fuera de rango.
+    if isinstance(result["time"], str) and re.fullmatch(r"(?:[01]\d|2[0-3]):[0-5]\d:00", result["time"]):
+        result["time"] = result["time"][:5]
     for key in ("date", "time", "rangeStart", "rangeEnd"):
         validate_temporal(key, result[key])
     if result["rangeStart"] and result["rangeEnd"] and result["rangeStart"] >= result["rangeEnd"]:

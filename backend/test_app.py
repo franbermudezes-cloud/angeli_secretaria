@@ -46,11 +46,29 @@ class InterpretEndpointTests(unittest.TestCase):
         self.assertEqual(status, "400 Bad Request")
         self.assertIn("500", data["error"])
 
+    def test_accepts_gemini_zero_seconds_without_changing_the_hour(self):
+        app.set_test_dependencies(lambda text, now, timezone: VALID_RESPONSE | {
+            "intent": "reminder.create", "title": "Llamar a Miguel Ibiza",
+            "contactName": "Miguel Ibiza", "date": "2026-08-27", "time": "10:00:00"})
+        status, data = app.wsgi_request({"text": "Recuérdame llamar a Miguel Ibiza mañana a las diez de la mañana",
+            "now": "2026-08-26T13:09:00+00:00", "timeZone": "Europe/Madrid"})
+        self.assertEqual(status, "200 OK")
+        self.assertEqual(data["time"], "10:00")
+        self.assertEqual(data["contactName"], "Miguel Ibiza")
+
     def test_rejects_malformed_model_response(self):
         app.set_test_dependencies(lambda text, now, timezone: {"intent": "javascript.eval"})
         status, data = app.wsgi_request({"text": "Idea", "now": "2026-08-20T21:20:00+02:00", "timeZone": "Europe/Madrid"})
         self.assertEqual(status, "503 Service Unavailable")
         self.assertEqual(data["error"], "Interpretación no disponible")
+
+    def test_does_not_truncate_real_seconds_or_accept_impossible_times(self):
+        for time in ("10:00:01", "24:00:00", "10:60:00", "25:30", "diez", 10):
+            with self.subTest(time=time):
+                with self.assertRaises(ValueError):
+                    app.validate_interpretation(VALID_RESPONSE | {"time": time})
+        for time, expected in (("00:00:00", "00:00"), ("23:59:00", "23:59"), ("10:00", "10:00"), (None, None)):
+            self.assertEqual(app.validate_interpretation(VALID_RESPONSE | {"time": time})["time"], expected)
 
     def test_accepts_partial_safe_model_response_and_normalizes_it(self):
         app.set_test_dependencies(lambda text, now, timezone: {"intent": "calendar.delete", "confidence": 0.91, "target": {"title": "Cena con Pedro"}})

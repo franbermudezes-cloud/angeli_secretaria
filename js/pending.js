@@ -1,4 +1,4 @@
-import { completeInteraction } from "./conversation.js?v=0.21.9";
+import { completeInteraction } from "./conversation.js?v=0.21.10";
 
 const COMPLETABLE_TYPES = new Set(["task", "reminder", "contact"]);
 const STOP_WORDS = new Set([
