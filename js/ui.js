@@ -1,5 +1,5 @@
-import { typeLabel } from "./classifier.js?v=0.21.6";
-import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.6";
+import { typeLabel } from "./classifier.js?v=0.21.7";
+import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.7";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -107,7 +107,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.6";
+    image.src = "assets/angeli-welcome.gif?v=0.21.7";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -158,6 +158,34 @@ export function createUI({ getMedia }) {
       lead: "He encontrado varios pendientes parecidos. Elige el correcto.",
       body,
       actions: [{ label: "Ahora no", kind: "secondary", onClick: onCancel || closeLayers }]
+    });
+  }
+
+  function showReminderResults(matches, query = "") {
+    if (!matches.length) {
+      showCompletion({
+        title: "No hay recordatorios pendientes",
+        lead: query ? `No encuentro ninguno relacionado con ${query}.` : "No tienes recordatorios pendientes."
+      });
+      return;
+    }
+    const body = document.createElement("div");
+    body.className = "contact-options";
+    matches.forEach(entry => {
+      const item = document.createElement("div");
+      item.className = "contact-choice";
+      const title = document.createElement("strong");
+      title.textContent = entry.aiIntent?.title || entry.text || "Recordatorio";
+      const when = document.createElement("span");
+      when.textContent = entry.schedule ? scheduleWhen(entry.schedule) : "Pendiente";
+      item.append(title, when);
+      body.append(item);
+    });
+    openModal({
+      title: matches.length === 1 ? "Tienes este recordatorio" : "Tienes estos recordatorios",
+      lead: query ? `Pendientes relacionados con ${query}.` : "Estos son tus recordatorios pendientes.",
+      body,
+      actions: [{ label: "Cerrar", kind: "confirm", onClick: closeLayers }]
     });
   }
 
@@ -387,7 +415,7 @@ export function createUI({ getMedia }) {
     $("preview").innerHTML = files.map(file => '<img class="thumb" src="' + URL.createObjectURL(file) + '" alt="Imagen preparada">').join("");
   }
 
-  return { $, notify, setGoogleStatus, setSyncStatus, render, showImagePreview, showEntryAction, showInteractionQuestion, showPendingChoices, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
+  return { $, notify, setGoogleStatus, setSyncStatus, render, showImagePreview, showEntryAction, showInteractionQuestion, showPendingChoices, showReminderResults, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
 }
 
 function esc(value) {

@@ -10,10 +10,25 @@ import {
   resolveConversationTurn,
 } from "../js/conversation.js";
 import { normalizeFutureCall, normalizeReminderSchedule } from "../js/schedule.js";
-import { completionTarget, completePending, findPendingMatches } from "../js/pending.js";
-import { mockProvider } from "../js/ai.js";
+import { completionTarget, completePending, findPendingMatches, findReminderMatches } from "../js/pending.js";
+import { mockProvider, interpret, localReminderQuery } from "../js/ai.js";
 
 const NOW = "2026-08-24T08:00:00.000Z";
+
+test("la consulta de recordatorios usa IA y mantiene un fallback de solo lectura", async () => {
+  const response = { ...localReminderQuery("¿Qué recordatorios tengo de Miguel?"), confidence: .96 };
+  const live = await interpret("¿Qué recordatorios tengo de Miguel?", { provider: async () => response });
+  assert.equal(live.source, "ai");
+  assert.equal(live.intent, "reminder.query");
+  const fallback = await interpret("¿Qué recordatorios tengo de Miguel?", {
+    provider: async () => { throw new Error("IA no disponible"); }, fallback: localReminderQuery,
+  });
+  assert.equal(fallback.source, "fallback");
+  assert.equal(fallback.target.title, "Miguel");
+  assert.equal(localReminderQuery("¿Qué recordatorios tengo?").target, null);
+  assert.equal(localReminderQuery("Recuérdame llamar a Miguel"), null);
+  assert.equal(localReminderQuery("Ya he llamado a Miguel"), null);
+});
 
 function intent(overrides = {}) {
   return {
@@ -198,4 +213,28 @@ test("P03 pide elegir cuando existen varios pendientes coincidentes", () => {
 test("P03 extrae el objetivo y no inventa coincidencias", () => {
   assert.equal(completionTarget("Ya he llamado a Miguel."), "Miguel");
   assert.deepEqual(findPendingMatches([{ id: "pepe", text: "Llamar a Pepe", type: "task", status: "pending" }], { target: { title: "Miguel" } }), []);
+});
+
+test("la consulta posterior a P03 devuelve solo el recordatorio pendiente que queda", () => {
+  const entries = [
+    { id: "miguel", text: "Llamar a Miguel", type: "reminder", status: "done", schedule: { status: "completed", title: "Llamar a Miguel" } },
+    { id: "ibiza", text: "Llamar a Miguel Ibiza", type: "reminder", status: "pending", interaction: { status: "completed" }, schedule: { status: "scheduled", title: "Llamar a Miguel Ibiza" } },
+    { id: "task", text: "Preparar presupuesto de Miguel", type: "task", status: "pending" },
+  ];
+
+  assert.deepEqual(findReminderMatches(entries, { target: { title: "Miguel" } }).map(entry => entry.id), ["ibiza"]);
+});
+
+test("consultar todos los recordatorios excluye cancelados y completados sin mutar entradas", () => {
+  const entries = [
+    { id: "one", type: "reminder", status: "pending", text: "Llamar a Miguel", interaction: { status: "completed" }, schedule: { status: "scheduled" } },
+    { id: "two", type: "reminder", status: "pending", text: "Llamar a Miguel Ibiza" },
+    { id: "cancelled", type: "reminder", status: "pending", schedule: { status: "cancelled" } },
+    { id: "completed", type: "reminder", status: "pending", schedule: { status: "completed" } },
+  ];
+  const original = JSON.stringify(entries);
+  assert.deepEqual(findReminderMatches(entries, { title: "Qué recordatorios tengo" }).map(entry => entry.id), ["one", "two"]);
+  assert.deepEqual(findReminderMatches(entries, { target: { title: "Miguel Ibiza" } }).map(entry => entry.id), ["two"]);
+  assert.deepEqual(findReminderMatches(entries, { target: { title: "Pepe" } }), []);
+  assert.equal(JSON.stringify(entries), original);
 });

@@ -30,6 +30,7 @@ VALID_INTENTS = {
     "task.create",
     "task.complete",
     "reminder.create",
+    "reminder.query",
     "calendar.create",
     "calendar.query",
     "calendar.update",
@@ -109,6 +110,12 @@ Miguel», usa task.complete. target.title debe identificar brevemente el
 pendiente existente, por ejemplo «Miguel» o «Llamar a Miguel». No crees
 una tarea, nota ni llamada nueva. Si hay varias coincidencias, la aplicación
 pedirá a la persona que elija una.
+Para consultar recordatorios pendientes guardados en Angeli, como «¿Qué
+recordatorios tengo de Miguel?», usa reminder.query. target.title debe contener
+solo el criterio solicitado, por ejemplo «Miguel». Si pide todos los
+recordatorios, target y contactName deben ser null. title debe ser null;
+la pregunta completa nunca es un filtro. Esta consulta no crea una
+entrada nueva ni consulta Google Calendar.
 Si faltan datos imprescindibles para calendar.create o reminder.create, indica
 en missingFields los nombres de los campos que faltan (date, time, title,
 location, contactName, phone o target) y formula una única pregunta breve en
@@ -431,7 +438,7 @@ def validate_interpretation(raw: Any) -> dict[str, Any]:
     # Gemini puede completar campos auxiliares que no aplican a la intención
     # solicitada. No dejamos que esos datos inofensivos conviertan una orden
     # válida de recordatorio en un fallo global de interpretación.
-    if result["intent"] not in {"calendar.update", "calendar.delete", "task.complete"}:
+    if result["intent"] not in {"calendar.update", "calendar.delete", "task.complete", "reminder.query"}:
         result["target"] = None
     if result["intent"] != "calendar.update":
         result["changes"] = None

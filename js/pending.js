@@ -1,4 +1,4 @@
-import { completeInteraction } from "./conversation.js?v=0.21.6";
+import { completeInteraction } from "./conversation.js?v=0.21.7";
 
 const COMPLETABLE_TYPES = new Set(["task", "reminder", "contact"]);
 const STOP_WORDS = new Set([
@@ -15,6 +15,21 @@ export function findPendingMatches(entries = [], interpretation = {}) {
     .filter(isCompletable)
     .map(entry => ({ entry, score: matchScore(entry, tokens) }))
     .filter(candidate => candidate.score > 0)
+    .sort((left, right) => right.score - left.score || recent(right.entry).localeCompare(recent(left.entry)))
+    .map(candidate => candidate.entry);
+}
+
+export function findReminderMatches(entries = [], interpretation = {}) {
+  const query = interpretation.target?.title || interpretation.contactName || "";
+  const tokens = meaningfulTokens(query);
+
+  return entries
+    // Cerrar la conversación al programar no significa realizar el recordatorio.
+    .filter(entry => entry?.type === "reminder" && entry.status !== "done"
+      && entry.interaction?.status !== "cancelled"
+      && !["cancelled", "completed"].includes(entry.schedule?.status))
+    .map(entry => ({ entry, score: tokens.length ? matchScore(entry, tokens) : 1 }))
+    .filter(candidate => candidate.score === 1)
     .sort((left, right) => right.score - left.score || recent(right.entry).localeCompare(recent(left.entry)))
     .map(candidate => candidate.entry);
 }
