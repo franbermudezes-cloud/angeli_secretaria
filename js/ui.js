@@ -1,5 +1,5 @@
-import { typeLabel } from "./classifier.js?v=0.21.18";
-import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.18";
+import { typeLabel } from "./classifier.js?v=0.21.19";
+import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.19";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -120,7 +120,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.18";
+    image.src = "assets/angeli-welcome.gif?v=0.21.19";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -285,6 +285,10 @@ export function createUI({ getMedia }) {
     if (["calendar.query", "calendar.update", "calendar.delete"].includes(intent)) {
       if (intent === "calendar.delete" && note.proposal?.actionStatus === "completed") {
         showCompletion({ title: "Evento cancelado", lead: "He cancelado el evento seleccionado." });
+        return;
+      }
+      if (intent === "calendar.update" && note.proposal?.actionStatus === "completed") {
+        showCompletion({ title: "Evento modificado", lead: "He actualizado el recordatorio seleccionado." });
         return;
       }
       const label = intent === "calendar.query" ? "📅 Consultar" : "Buscar coincidencias";

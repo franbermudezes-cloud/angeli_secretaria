@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.21.19] - 2026-08-26
+
+- Las órdenes para pasar, cambiar, mover, retrasar, adelantar o reprogramar
+  recordatorios existentes aceptan frases naturales y separan el objetivo de
+  la nueva fecha u hora.
+- Si falta el nuevo momento, la conversación permanece abierta y una respuesta
+  breve como «a las once» completa la misma modificación.
+- Angeli busca automáticamente las coincidencias en Calendar, permite elegir
+  cuando hay varias y, después de modificar la seleccionada, actualiza también
+  la fecha y hora del recordatorio guardado en Angeli.
+- Pruebas automáticas del lenguaje flexible, continuidad conversacional,
+  búsqueda normalizada y sincronización del recordatorio seleccionado.
+
 ## [0.21.18] - 2026-08-26
 
 - Los borradores y preguntas conversacionales incluyen un micrófono propio en

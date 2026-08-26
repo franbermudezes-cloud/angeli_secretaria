@@ -1,4 +1,4 @@
-import{calendarQueryRange,cleanTemporalText,temporalData}from"./temporal.js?v=0.21.18";
+import{calendarQueryRange,cleanTemporalText,temporalData}from"./temporal.js?v=0.21.19";
 
 export const VALID_INTENTS=["note","task.create","task.complete","reminder.create","reminder.query","calendar.create","calendar.query","calendar.update","calendar.delete","contact.call","file.store","photo.store"];
 const SENSITIVE_INTENTS=new Set(["calendar.update","calendar.delete","contact.call"]);
@@ -20,6 +20,41 @@ export function localCalendarCancellation(text = "") {
     requiresConfirmation: true };
 }
 
+// Respaldo seguro para reprogramar: identifica el evento y separa los datos
+// nuevos. También completa una modificación activa cuando la respuesta es tan
+// breve como «a las once» y la IA remota no está disponible.
+export function localCalendarUpdate(text = "", now = new Date(), active = null) {
+  const value = String(text || "").trim();
+  const verb = /\b(?:pasa|cambia|mueve|modifica|retrasa|adelanta|reprograma)(?:r)?\b/i;
+  const continuing = active?.interaction?.status === "awaiting_input" && active.aiIntent?.intent === "calendar.update";
+  if (!verb.test(value) && !continuing) return null;
+  const temporal = temporalData(value, now);
+  const changes = {
+    ...(temporal.scheduledDate ? { date: temporal.scheduledDate } : {}),
+    ...(temporal.scheduledTime ? { time: temporal.scheduledTime } : {})
+  };
+  const match = verb.exec(value);
+  let target = active?.aiIntent?.target?.title || "";
+  if (match) {
+    const before = value.slice(0, match.index).replace(/\bahora\b/gi, "").trim();
+    let candidate = /\b(?:llamada|recordatorio|aviso|evento|cita|cena|comida|reuni[oó]n)\b/i.test(before)
+      ? before
+      : value.slice(match.index + match[0].length);
+    candidate = candidate
+      .replace(/^\s*(?:de\s+hora\s+)?(?:la\s+|el\s+)?/i, "")
+      .replace(/\b(?:para|hasta|al?)\s+(?=(?:el\s+)?(?:hoy|mañana|pasado\s+mañana|domingo|lunes|martes|miércoles|jueves|viernes|sábado|\d))/i, " ")
+      .replace(/\bahora\b/gi, " ");
+    candidate = cleanTemporalText(candidate)
+      .replace(/^(?:la\s+|el\s+)?(?:(?:recordatorio|aviso)\s+(?:de|para)|(?:llamada|llamar)\s+(?:a|de|con))\s+/i, "")
+      .replace(/\s{2,}/g, " ").trim();
+    if (candidate) target = candidate;
+  }
+  return { ...EMPTY, intent: "calendar.update", confidence: .5,
+    target: target ? { title: target, date: null, time: null } : null,
+    changes: Object.keys(changes).length ? changes : null,
+    requiresConfirmation: true };
+}
+
 // Respaldo de lectura: la IA sigue siendo la primera opción en producción.
 export function localReminderQuery(text = "") {
   const normalized = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -34,7 +69,7 @@ export async function interpret(text,{provider=mockProvider,fallback,context=nul
 
 export async function remoteProvider(text,idToken,context=null){if(!idToken)throw new Error("IA sin conexión");const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),8000);try{const response=await fetch(INTERPRETER_URL,{method:"POST",headers:{Authorization:`Bearer ${idToken}`,"Content-Type":"application/json"},body:JSON.stringify({text,now:new Date().toISOString(),timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone||"Europe/Madrid",context}),signal:controller.signal});if(!response.ok)throw new Error(`IA no disponible (${response.status})`);return await response.json()}finally{clearTimeout(timeout)}}
 
-export async function mockProvider(text){const value=(text||"").trim(),lower=value.toLowerCase(),temporal=temporalData(value),reminderTemporal=temporalData(value,new Date(),{inferDateFromTime:true}),base={...EMPTY,confidence:.9,requiresConfirmation:false};if(/\b(?:ya\s+)?he\s+(?:llamado|terminado|completado|hecho)\b/.test(lower))return{...base,intent:"task.complete",confidence:.92,target:{title:completionTitle(value),date:null,time:null}};if(/\b(?:cancela|cancelar|borra|borrar|anula|anular)\b/.test(lower))return{...base,intent:"calendar.delete",confidence:.94,target:{title:targetTitle(value,/^(?:cancela(?:r)?|borra(?:r)?|anula(?:r)?)\s+(?:la\s+|el\s+)?/i),date:temporal.scheduledDate||null,time:temporal.scheduledTime||null},requiresConfirmation:true};if(/\b(?:pasa|cambia|mueve|modifica)\b/.test(lower)&&/\b(?:reunión|cita|evento|visita|cena)\b/.test(lower))return{...base,intent:"calendar.update",confidence:.91,target:{title:targetTitle(value,/^(?:pasa|cambia|mueve|modifica)\s+(?:la\s+|el\s+)?/i),date:null,time:null},changes:{date:temporal.scheduledDate||null,time:temporal.scheduledTime||null},requiresConfirmation:true};if(/\b(?:qué|que)\s+(?:tengo|hay)|\b(?:muéstrame|muestrame|consulta)\s+(?:mi\s+)?(?:agenda|calendario)\b/.test(lower))return{...base,intent:"calendar.query",confidence:.91,...(calendarQueryRange(value)||{}),requiresConfirmation:false};if(/\b(?:recuérdame|recordar)\b/.test(lower))return{...base,intent:"reminder.create",confidence:.92,title:value,date:reminderTemporal.scheduledDate||null,time:reminderTemporal.scheduledTime||null,contactName:contactName(value),requiresConfirmation:Boolean(reminderTemporal.scheduledDate&&reminderTemporal.scheduledTime)};if(/\b(?:hacer|comprar|preparar|enviar|revisar)\b/.test(lower))return{...base,intent:"task.create",confidence:.9,title:value,date:temporal.scheduledDate||null,time:temporal.scheduledTime||null,requiresConfirmation:false};if(/\b(?:llama|llamar|telefonea|telefonear|contacta|contactar)\b/.test(lower)){const contactNameValue=contactName(value);if(temporal.scheduledDate&&temporal.scheduledTime)return{...base,intent:"reminder.create",confidence:.94,title:`Llamar a ${contactNameValue||"contacto"}`,date:temporal.scheduledDate,time:temporal.scheduledTime,contactName:contactNameValue,phone:null,requiresConfirmation:true};return{...base,intent:"contact.call",confidence:.92,contactName:contactNameValue,phone:null,requiresConfirmation:true}}if(temporal.scheduledDate&&temporal.scheduledTime)return{...base,intent:"calendar.create",confidence:.93,title:calendarTitle(value),date:temporal.scheduledDate,time:temporal.scheduledTime,location:location(value),requiresConfirmation:true};return{...base,intent:"note",confidence:.8,title:value,requiresConfirmation:false}}
+export async function mockProvider(text){const value=(text||"").trim(),lower=value.toLowerCase(),temporal=temporalData(value),reminderTemporal=temporalData(value,new Date(),{inferDateFromTime:true}),base={...EMPTY,confidence:.9,requiresConfirmation:false};if(/\b(?:ya\s+)?he\s+(?:llamado|terminado|completado|hecho)\b/.test(lower))return{...base,intent:"task.complete",confidence:.92,target:{title:completionTitle(value),date:null,time:null}};if(/\b(?:cancela|cancelar|borra|borrar|anula|anular)\b/.test(lower))return{...base,intent:"calendar.delete",confidence:.94,target:{title:targetTitle(value,/^(?:cancela(?:r)?|borra(?:r)?|anula(?:r)?)\s+(?:la\s+|el\s+)?/i),date:temporal.scheduledDate||null,time:temporal.scheduledTime||null},requiresConfirmation:true};const update=localCalendarUpdate(value);if(update)return{...update,confidence:.91};if(/\b(?:qué|que)\s+(?:tengo|hay)|\b(?:muéstrame|muestrame|consulta)\s+(?:mi\s+)?(?:agenda|calendario)\b/.test(lower))return{...base,intent:"calendar.query",confidence:.91,...(calendarQueryRange(value)||{}),requiresConfirmation:false};if(/\b(?:recuérdame|recordar)\b/.test(lower))return{...base,intent:"reminder.create",confidence:.92,title:value,date:reminderTemporal.scheduledDate||null,time:reminderTemporal.scheduledTime||null,contactName:contactName(value),requiresConfirmation:Boolean(reminderTemporal.scheduledDate&&reminderTemporal.scheduledTime)};if(/\b(?:hacer|comprar|preparar|enviar|revisar)\b/.test(lower))return{...base,intent:"task.create",confidence:.9,title:value,date:temporal.scheduledDate||null,time:temporal.scheduledTime||null,requiresConfirmation:false};if(/\b(?:llama|llamar|telefonea|telefonear|contacta|contactar)\b/.test(lower)){const contactNameValue=contactName(value);if(temporal.scheduledDate&&temporal.scheduledTime)return{...base,intent:"reminder.create",confidence:.94,title:`Llamar a ${contactNameValue||"contacto"}`,date:temporal.scheduledDate,time:temporal.scheduledTime,contactName:contactNameValue,phone:null,requiresConfirmation:true};return{...base,intent:"contact.call",confidence:.92,contactName:contactNameValue,phone:null,requiresConfirmation:true}}if(temporal.scheduledDate&&temporal.scheduledTime)return{...base,intent:"calendar.create",confidence:.93,title:calendarTitle(value),date:temporal.scheduledDate,time:temporal.scheduledTime,location:location(value),requiresConfirmation:true};return{...base,intent:"note",confidence:.8,title:value,requiresConfirmation:false}}
 
 export function validateIntent(raw){if(!raw||typeof raw!=="object"||Array.isArray(raw))throw new Error("Respuesta IA no válida");const allowed=new Set(["intent","confidence","title","date","time","rangeStart","rangeEnd","location","contactName","phone","notes","target","changes","requiresConfirmation","missingFields","question"]);if(Object.keys(raw).some(key=>!allowed.has(key)))throw new Error("Campo IA no permitido");if(!VALID_INTENTS.includes(raw.intent))throw new Error("Intent IA no permitido");if(typeof raw.confidence!=="number"||raw.confidence<0||raw.confidence>1)throw new Error("Confianza IA no válida");const normalized={...EMPTY,intent:raw.intent,confidence:raw.confidence,requiresConfirmation:Boolean(raw.requiresConfirmation)};for(const key of["title","location","contactName","phone","notes","question"]){if(raw[key]!==undefined&&raw[key]!==null){if(typeof raw[key]!=="string"||raw[key].length>MAX_TEXT_LENGTH)throw new Error("Texto IA no válido");normalized[key]=raw[key].trim()||null}}for(const key of["date","time","rangeStart","rangeEnd"]){if(raw[key]!==undefined&&raw[key]!==null){if(!isValidTemporal(key,raw[key]))throw new Error("Fecha u hora IA no válida");normalized[key]=raw[key]}}if(normalized.rangeStart&&normalized.rangeEnd&&normalized.rangeStart>=normalized.rangeEnd)throw new Error("Intervalo IA no válido");normalized.target=normalizeTarget(raw.target);normalized.changes=normalizeChanges(raw.changes);normalized.missingFields=normalizeMissingFields(raw.missingFields);if(normalized.missingFields.length&&!normalized.question)normalized.question=null;if(SENSITIVE_INTENTS.has(normalized.intent))normalized.requiresConfirmation=true;return normalized}
 

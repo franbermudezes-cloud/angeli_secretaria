@@ -1,5 +1,5 @@
-import { cleanTemporalText } from "./temporal.js?v=0.21.18";
-import { scheduleTitle } from "./schedule.js?v=0.21.18";
+import { cleanTemporalText } from "./temporal.js?v=0.21.19";
+import { scheduleTitle } from "./schedule.js?v=0.21.19";
 
 const CLIENT_ID = "172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
@@ -278,19 +278,7 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
 
   function completeCalendarAction(note, eventId, action, saved, changes) {
     calendarResults.delete(note.id);
-    saveNotes(getNotes().map(item => {
-      if (item.id === note.id) return { ...item, proposal: { ...item.proposal, actionStatus: "completed" } };
-      if (item.calendarEventId !== eventId) return item;
-      if (action === "delete") return { ...item, calendarStatus: "cancelled", calendarUrl: "" };
-      return {
-        ...item,
-        calendarStatus: "synced",
-        calendarUrl: saved?.htmlLink || item.calendarUrl || "",
-        ...(changes?.location ? { location: changes.location } : {}),
-        ...(changes?.date ? { scheduledDate: changes.date } : {}),
-        ...(changes?.time ? { scheduledTime: changes.time } : {})
-      };
-    }));
+    saveNotes(applyCalendarUpdateToEntries(getNotes(), note, eventId, action, saved, changes));
     refresh();
   }
 
@@ -408,9 +396,32 @@ function calendarTargetQuery(value) {
   const withoutCommand = String(value || "")
     .replace(/^\s*(?:cancela(?:r)?|borra(?:r)?|anula(?:r)?|pasa|cambia|mueve|modifica)\s+(?:la\s+|el\s+)?/i, "");
   return cleanTemporalText(withoutCommand)
+    .replace(/^(?:la\s+|el\s+)?(?:(?:recordatorio|aviso)\s+(?:de|para)|(?:llamada|llamar)\s+(?:a|de|con))\s+/i, "")
     .replace(/\b(?:de|del|el|la)\s+(?=con\b)/gi, "")
     .replace(/\s{2,}/g, " ")
     .trim();
+}
+
+export function applyCalendarUpdateToEntries(entries, note, eventId, action, saved, changes = {}) {
+  return entries.map(item => {
+    if (item.id === note.id) return { ...item, proposal: { ...item.proposal, actionStatus: "completed" } };
+    const directEvent = item.calendarEventId === eventId;
+    const reminderEvent = item.schedule?.calendarEventId === eventId;
+    if (!directEvent && !reminderEvent) return item;
+    if (action === "delete") return reminderEvent
+      ? { ...item, schedule: { ...item.schedule, status: "cancelled" } }
+      : { ...item, calendarStatus: "cancelled", calendarUrl: "" };
+    const date = changes.date || item.scheduledDate || item.schedule?.dueAt?.slice(0, 10);
+    const time = changes.time || item.scheduledTime || item.schedule?.dueAt?.slice(11, 16);
+    return {
+      ...item,
+      ...(directEvent ? { calendarStatus: "synced", calendarUrl: saved?.htmlLink || item.calendarUrl || "" } : {}),
+      ...(changes.location ? { location: changes.location } : {}),
+      ...(changes.date ? { scheduledDate: changes.date } : {}),
+      ...(changes.time ? { scheduledTime: changes.time } : {}),
+      ...(reminderEvent && date && time ? { schedule: { ...item.schedule, status: "scheduled", dueAt: `${date}T${time}:00` } } : {})
+    };
+  });
 }
 
 function calendarCandidate(event) {
