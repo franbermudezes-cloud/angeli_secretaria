@@ -7,8 +7,10 @@ import { findReminderMatches } from '../js/pending.js';
 const page = new DOMParser().parseFromString(await (await fetch('../index.html')).text(), 'text/html');
 page.querySelectorAll('script, link').forEach(node => node.remove());
 document.body.append(...page.body.childNodes);
-const css = document.createElement('link');
-css.rel = 'stylesheet'; css.href = '../styles.css'; document.head.append(css);
+for (const href of ['../styles.css', '../styles-flow.css']) {
+  const css = document.createElement('link');
+  css.rel = 'stylesheet'; css.href = href; document.head.append(css);
+}
 const ui = createUI({getMedia: async () => null});
 ui.dismissWelcome();
 const entries = [
