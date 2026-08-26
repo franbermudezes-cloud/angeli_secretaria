@@ -93,6 +93,13 @@ artefacto de GitHub durante 30 días.
 La primera fase automatiza las integraciones reales ya aislables:
 
 - `P04`: crear, buscar y cancelar un evento en Calendar.
+- `P04-name`: «Anula llamada a Miguel Ibiza» sin fecha/hora recorre el
+  coordinador y constructor de búsqueda PWA; recupera tres llamadas reales,
+  cancela una por ID y comprueba que las otras dos permanecen. Limpieza aislada.
+  Pruebas locales adicionales verifican «no lo sé», botones seleccionables y
+  confirmación del ID elegido. No prueban el micrófono ni una respuesta de Gemini
+  en directo. Prueba manual: dictar la frase, elegir una de tres coincidencias,
+  confirmar y comprobar que las otras permanecen sin preguntas temporales.
 - `P10`: crear dos eventos y recuperarlos por intervalo de fecha.
 - `P11`: localizar un evento y actualizar su hora en el mismo calendario.
 - `P05-model-time`: replay de la respuesta Gemini capturada con `10:00:00`,

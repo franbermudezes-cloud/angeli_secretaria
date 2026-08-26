@@ -1,4 +1,11 @@
-import { completeInteraction } from "./conversation.js?v=0.21.10";
+import { completeInteraction, cancelInteraction } from "./conversation.js?v=0.21.11";
+
+// Solo tras confirmar el éxito del borrado que acaba de ejecutar Angeli.
+export function markCancelledReminder(entries, eventId) {
+  return entries.map(entry => entry.schedule?.calendarEventId === eventId
+    ? { ...cancelInteraction(entry), schedule: { ...entry.schedule, status: "cancelled" } }
+    : entry);
+}
 
 const COMPLETABLE_TYPES = new Set(["task", "reminder", "contact"]);
 const STOP_WORDS = new Set([

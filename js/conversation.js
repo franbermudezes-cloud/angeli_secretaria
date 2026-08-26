@@ -79,6 +79,19 @@ export function resolveConversationTurn({ active, text, interpretation, now = ne
   };
 }
 
+// Buscar para cancelar no requiere conocer cuándo se creó el aviso. Una
+// respuesta «no lo sé» no convierte esa operación en una consulta sin acciones.
+export function preserveCancellation(active, interpretation) {
+  if (active?.interaction?.status === "awaiting_input"
+      && active.aiIntent?.intent === "calendar.delete"
+      && active.aiIntent.target?.title
+      && ["reminder.query", "calendar.query", "note"].includes(interpretation.intent)) {
+    return { ...interpretation, intent: "calendar.delete", target: active.aiIntent.target,
+      missingFields: [], question: null, requiresConfirmation: true };
+  }
+  return interpretation;
+}
+
 export function cancelInteraction(entry, now = new Date().toISOString()) {
   if (!entry?.interaction) return entry;
   return {
@@ -127,6 +140,7 @@ function collectData(intent) {
 }
 
 function missingFor(intent) {
+  if (intent.intent === "calendar.delete") return intent.target?.title ? [] : ["target"];
   if (Array.isArray(intent.missingFields) && intent.missingFields.length) return uniqueKnownFields(intent.missingFields);
   if (intent.intent === "calendar.create") return [!intent.date && "date", !intent.time && "time"].filter(Boolean);
   if (intent.intent === "reminder.create") return [!intent.date && "date", !intent.time && "time"].filter(Boolean);

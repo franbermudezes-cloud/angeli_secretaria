@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.21.11] - 2026-08-26
+
+- Cancelar por nombre busca directamente en Calendar sin exigir fecha ni hora.
+- «No lo sé» mantiene una cancelación activa; no la convierte en una lista de consulta sin acciones.
+- Las consultas de recordatorios permiten elegir uno y confirmar su cancelación.
+- El borrado confirmado desde Angeli marca cancelado el recordatorio enlazado;
+  no implementa aún reconciliación de borrados externos.
+- Regresión automática del coordinador y selección/confirmación visual; P04-name
+  crea tres llamadas en Calendar real, busca por nombre y cancela solo una.
+- Sin cambios en OAuth, permisos, Firestore ni las integraciones existentes.
+
 ## [0.21.10] - 2026-08-26
 
 - Se acepta la hora Gemini HH:MM:00 normalizándola a HH:MM, sin alterar su

@@ -1,10 +1,24 @@
-import{calendarQueryRange,cleanTemporalText,temporalData}from"./temporal.js?v=0.21.10";
+import{calendarQueryRange,cleanTemporalText,temporalData}from"./temporal.js?v=0.21.11";
 
 export const VALID_INTENTS=["note","task.create","task.complete","reminder.create","reminder.query","calendar.create","calendar.query","calendar.update","calendar.delete","contact.call","file.store","photo.store"];
 const SENSITIVE_INTENTS=new Set(["calendar.update","calendar.delete","contact.call"]);
 const MAX_TEXT_LENGTH=500,MIN_CONFIDENCE=0.75;
 const INTERPRETER_URL="https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app/interpret";
 const EMPTY={title:null,date:null,time:null,rangeStart:null,rangeEnd:null,location:null,contactName:null,phone:null,notes:null,target:null,changes:null,missingFields:[],question:null};
+
+// Una orden explícita prepara una búsqueda, nunca ejecuta el borrado.
+export function localCalendarCancellation(text = "") {
+  const prefix = /^\s*(?:cancela(?:r)?|borra(?:r)?|anula(?:r)?)\s+(?:la\s+|el\s+)?/i;
+  if (!prefix.test(text)) return null;
+  let title = targetTitle(text, prefix);
+  if (!title || !/\b(?:llamada|llamar|recordatorio|aviso|evento|cita|cena|comida|reuni[oó]n)\b/i.test(title)) return null;
+  // Calendar busca texto, no sinónimos: «llamada a» no coincide con «Llamar a».
+  title = title.replace(/^(?:recordatorio\s+(?:de|para)\s+)?(?:llamada|llamar)\s+(?:a|de|con)\s+/i, "");
+  const temporal = temporalData(text);
+  return { ...EMPTY, intent: "calendar.delete", confidence: .5,
+    target: { title, date: temporal.scheduledDate || null, time: temporal.scheduledTime || null },
+    requiresConfirmation: true };
+}
 
 // Respaldo de lectura: la IA sigue siendo la primera opción en producción.
 export function localReminderQuery(text = "") {
