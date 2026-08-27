@@ -1,5 +1,5 @@
-import { cleanTemporalText } from "./temporal.js?v=0.21.23";
-import { calendarDetails } from "./schedule.js?v=0.21.23";
+import { cleanTemporalText } from "./temporal.js?v=0.21.24";
+import { calendarDetails } from "./schedule.js?v=0.21.24";
 
 const CLIENT_ID = "172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
@@ -431,7 +431,10 @@ function calendarTargetQuery(value) {
   const withoutCommand = String(value || "")
     .replace(/^\s*(?:cancela(?:r)?|borra(?:r)?|anula(?:r)?|pasa|cambia|mueve|modifica)\s+(?:la\s+|el\s+)?/i, "");
   return cleanTemporalText(withoutCommand)
-    .replace(/^(?:la\s+|el\s+)?(?:(?:recordatorio|aviso)\s+(?:de|para)|(?:llamada|llamar)\s+(?:a|de|con))\s+/i, "")
+    // Calendar no conoce nuestros sinónimos. "cita con Miguel" debe poder
+    // encontrar "Quedada con Miguel": la categoría expresa el tipo de evento
+    // y el nombre es el criterio distintivo que Google debe buscar.
+    .replace(/^(?:la\s+|el\s+)?(?:recordatorio|aviso|evento|cita|quedada|llamada|llamar|cena|comida|reuni[oó]n)\s*(?:(?:a|de|del|para|con|en)\s+)?/i, "")
     .replace(/\b(?:de|del|el|la)\s+(?=con\b)/gi, "")
     .replace(/\s{2,}/g, " ")
     .trim();

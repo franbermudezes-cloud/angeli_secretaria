@@ -96,6 +96,7 @@ class TestHarnessTests(unittest.TestCase):
         service = FakeGoogleSessions()
         harness = IntegrationHarness(service, prefix="ANGELI-TEST-unit")
         harness._calendar_cancel()
+        harness._calendar_cancel_by_name()
         harness._calendar_query()
         harness._calendar_update()
         harness.cleanup()

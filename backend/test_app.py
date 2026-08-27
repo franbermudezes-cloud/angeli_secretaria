@@ -47,6 +47,11 @@ class InterpretEndpointTests(unittest.TestCase):
         self.assertIn("cámbiame la hora de llamar a Miguel", app.SYSTEM_INSTRUCTION)
         self.assertIn("prioridad absoluta sobre contact.call", app.SYSTEM_INSTRUCTION)
 
+    def test_prompt_extracts_a_stable_semantic_target_for_calendar_actions(self):
+        self.assertIn("«Anula cita con Miguel»", app.SYSTEM_INSTRUCTION)
+        self.assertIn("target.title «Miguel»", app.SYSTEM_INSTRUCTION)
+        self.assertIn("«cámbiame la hora de Miguel»", app.SYSTEM_INSTRUCTION)
+
     def test_rejects_text_over_500_characters_before_interpretation(self):
         status, data = app.wsgi_request({"text": "x" * 501, "now": "2026-08-20T21:20:00+02:00", "timeZone": "Europe/Madrid"})
         self.assertEqual(status, "400 Bad Request")

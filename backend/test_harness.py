@@ -140,21 +140,21 @@ class IntegrationHarness:
         raise RuntimeError("Calendar sigue devolviendo como activo el aviso borrado externamente")
 
     def _calendar_cancel_by_name(self) -> None:
-        """Busca sin fecha tres llamadas reales y cancela solo la seleccionada."""
+        """Busca por persona aunque la categoría dictada y el título sean sinónimos."""
         fixture = Path(__file__).resolve().parents[1] / "tests/cancel-search-fixture.mjs"
-        search = json.loads(subprocess.run(["node", str(fixture)], check=True,
+        search = json.loads(subprocess.run(["node", str(fixture), "", "Anula cita con Miguel"], check=True,
             capture_output=True, text=True, timeout=20).stdout)
-        if search["query"] != "Miguel Ibiza":
-            raise RuntimeError("La búsqueda no utiliza el nombre de la llamada")
+        if search["query"] != "Miguel":
+            raise RuntimeError("La búsqueda no utiliza la persona de la cita")
         now = datetime.now(timezone.utc)
-        events = [self._create_event(f"{self.prefix} Llamar a Miguel Ibiza {i}",
+        events = [self._create_event(f"{self.prefix} Quedada con Miguel {i}",
             now + timedelta(days=i+1), now + timedelta(days=i+1, hours=1)) for i in range(3)]
         # Solo el espacio de pruebas; no añade fechas suministradas por el usuario.
         url = self._calendar_base() + "?" + search["params"]
         found = self.service.api(CALENDAR, "GET", url)
         expected = {item["id"] for item in events}
         if not expected.issubset({item["id"] for item in found.get("items", [])}):
-            raise RuntimeError("No se encontraron las tres llamadas por nombre")
+            raise RuntimeError("'Anula cita con Miguel' no encontró las quedadas por persona")
         selected = events[1]["id"]
         self.service.api(CALENDAR, "DELETE", self._calendar_base() + "/" + selected)
         self.created_events.remove(selected)
@@ -163,8 +163,8 @@ class IntegrationHarness:
         if selected in remaining or not (expected - {selected}).issubset(remaining):
             raise RuntimeError("La cancelación no conservó las otras dos llamadas")
         later = (now + timedelta(days=120)).replace(hour=10, minute=0, second=0, microsecond=0)
-        distant = self._create_event(f"{self.prefix} Llamar a Miguel Ibiza lejano", later, later + timedelta(hours=1))
-        dated = json.loads(subprocess.run(["node", str(fixture), later.date().isoformat()],
+        distant = self._create_event(f"{self.prefix} Quedada con Miguel lejana", later, later + timedelta(hours=1))
+        dated = json.loads(subprocess.run(["node", str(fixture), later.date().isoformat(), "Anula cita con Miguel"],
             check=True, capture_output=True, text=True, timeout=20).stdout)
         found_later = self.service.api(CALENDAR, "GET", self._calendar_base() + "?" + dated["params"])
         if distant["id"] not in {item["id"] for item in found_later.get("items", [])}:
@@ -196,12 +196,19 @@ class IntegrationHarness:
             raise RuntimeError("Calendar no devolvió los eventos de prueba: " + ", ".join(missing))
 
     def _calendar_update(self) -> None:
-        """P11: localiza y cambia la hora de un evento en la agenda de pruebas."""
+        """P11: «cámbiame la hora de Miguel» localiza una quedada y la cambia."""
         start = (datetime.now(timezone.utc) + timedelta(days=1)).replace(hour=18, minute=0, second=0, microsecond=0)
-        title = f"{self.prefix} Reunión modificable"
+        title = f"{self.prefix} Quedada con Miguel"
         event = self._create_event(title, start, start + timedelta(hours=1))
+        fixture = Path(__file__).resolve().parents[1] / "tests/calendar-update-search-fixture.mjs"
+        search = json.loads(subprocess.run(
+            ["node", str(fixture), "Cámbiame la hora de Miguel"],
+            check=True, capture_output=True, text=True, timeout=20,
+        ).stdout)
+        if search["query"] != "Miguel":
+            raise RuntimeError("La modificación no utiliza el objetivo semántico Miguel")
         listed = self.service.api(CALENDAR, "GET", self._calendar_base() + "?" + urlencode({
-            "singleEvents": "true", "orderBy": "startTime", "q": title,
+            "singleEvents": "true", "orderBy": "startTime", "q": search["query"],
             "timeMin": (start - timedelta(hours=1)).isoformat(),
             "timeMax": (start + timedelta(days=1)).isoformat(),
         }))

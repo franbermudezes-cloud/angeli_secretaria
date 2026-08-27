@@ -77,9 +77,16 @@ de Gandía el 29 de agosto a las siete de la tarde» debe producir title
 «Discomóvil» y location «Complejo San Marcos de Gandía». Si no se expresa un
 lugar físico, location debe ser null.
 
-Para cancelar usa calendar.delete y expresa en target el título del evento y,
-si se menciona, su fecha u hora. Para modificar usa calendar.update: target
-identifica el evento actual y changes contiene solo los nuevos datos. Para
+Para cancelar usa calendar.delete. En target.title expresa el criterio estable
+más corto que identifica el evento, normalmente la persona, lugar o asunto
+distintivo, y omite categorías genéricas como cita, quedada, reunión, llamada,
+evento o recordatorio. Por ejemplo, «Anula cita con Miguel» debe producir
+target.title «Miguel» aunque el evento pueda llamarse «Quedada con Miguel».
+Conserva en target la fecha u hora solo si se menciona. Para modificar usa
+calendar.update con el mismo criterio semántico mínimo: target identifica el
+evento actual y changes contiene solo los nuevos datos. Por ejemplo,
+«cámbiame la hora de Miguel» mantiene target.title «Miguel» y pregunta la
+nueva hora si todavía no se ha dicho. Para
 órdenes como «cámbiame la hora de llamar a Miguel», «modifícame la llamada de
 Miguel» o «reprograma el recordatorio de Miguel», calendar.update tiene
 prioridad absoluta sobre contact.call: la palabra «llamar» describe el evento
