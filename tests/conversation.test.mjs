@@ -13,7 +13,7 @@ import { calendarDetails, linkedScheduleFor, normalizeFutureCall, normalizeRemin
 import { completionTarget, completePending, completePendingWithCalendar, findPendingMatches, findReminderMatches } from "../js/pending.js";
 import { mockProvider, interpret, localCalendarUpdate, localLinkedCalendarIntent, localReminderQuery, protectCalendarInterpretation, validateIntent } from "../js/ai.js";
 import { fixtureTitle, reminderFixture } from './reminder-event-fixture.mjs';
-import { applyCalendarUpdateToEntries, buildCalendarSearch, calendarEvent, scheduledReminderEvent, listAllCalendarPages, reconcileReminderEntries } from '../js/google.js';
+import { applyCalendarUpdateToEntries, buildCalendarSearch, calendarEvent, scheduledReminderEvent, listAllCalendarPages, reconcileReminderEntries, linkedReminderSearch, calendarEventsForIntent } from '../js/google.js';
 import { fromCloudEntry, toCloudEntry } from '../js/cloud-entry.js';
 
 test('reprogramar entiende frases naturales y separa objetivo de nueva fecha y hora',()=>{
@@ -752,6 +752,22 @@ test("P05 protege título, ubicación y aviso contextual frente a una respuesta 
   assert.equal(protectedIntent.title,"Boda");
   assert.equal(protectedIntent.location,"el complejo San Marcos de Gandía");
   assert.equal(protectedIntent.linkedReminder.title,"Comprobar el equipo de la boda en el complejo San Marcos de Gandía");
+});
+
+test("P05 cancelar el evento principal cancela también su aviso y no lo ofrece como otra boda", () => {
+  const bundle={id:"bundle",calendarEventId:"boda-1",calendarStatus:"synced",schedule:{calendarEventId:"aviso-1",relatedEventId:"boda-1",status:"scheduled",calendarUrl:"https://calendar/aviso"}};
+  const query={id:"query",proposal:{intent:"calendar.delete"}};
+  const next=applyCalendarUpdateToEntries([bundle,query],query,"boda-1","delete");
+  assert.equal(next[0].calendarStatus,"cancelled");
+  assert.equal(next[0].schedule.status,"cancelled");
+  assert.equal(next[0].schedule.calendarUrl,"");
+  const items=[
+    {id:"boda-1",summary:"Boda",status:"confirmed",start:{dateTime:"2026-09-14T18:00:00"}},
+    {id:"aviso-1",summary:"Comprobar el equipo de la boda",status:"confirmed",start:{dateTime:"2026-09-12T18:00:00"},extendedProperties:{private:{angeliRelatedEventId:"boda-1"}}}
+  ];
+  assert.deepEqual(calendarEventsForIntent(items,"calendar.delete").map(item=>item.id),["boda-1"]);
+  assert.deepEqual(calendarEventsForIntent(items,"calendar.query").map(item=>item.id),["boda-1","aviso-1"]);
+  assert.equal(linkedReminderSearch("boda-1").get("privateExtendedProperty"),"angeliRelatedEventId=boda-1");
 });
 
 test("P05 prioriza la estructura vinculada y respeta una hora matinal explícita", () => {

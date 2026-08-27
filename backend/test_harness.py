@@ -332,6 +332,19 @@ class IntegrationHarness:
             raise RuntimeError("P05 perdió la ubicación o el contexto del aviso en Calendar")
         if relation != event["id"]:
             raise RuntimeError("El aviso de P05 no quedó vinculado con su evento")
+        related_url = self._calendar_base() + "?" + urlencode({
+            "singleEvents": "true", "maxResults": "20",
+            "privateExtendedProperty": f"angeliRelatedEventId={event['id']}"
+        })
+        related = self.service.api(CALENDAR, "GET", related_url).get("items", [])
+        if [item.get("id") for item in related] != [reminder["id"]]:
+            raise RuntimeError("P05 no localizó exclusivamente el aviso asociado")
+        self.service.api(CALENDAR, "DELETE", self._calendar_base() + "/" + event["id"])
+        self.service.api(CALENDAR, "DELETE", self._calendar_base() + "/" + reminder["id"])
+        if self.service.api(CALENDAR, "GET", related_url).get("items"):
+            raise RuntimeError("P05 dejó activo el aviso después de cancelar la boda")
+        self.created_events.remove(event["id"])
+        self.created_events.remove(reminder["id"])
 
     def _drive_upload_and_cleanup(self) -> None:
         """P06/P07 base: adjunto real a Drive de pruebas y eliminación posterior."""

@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.21.28 · Cancelación conjunta de evento y aviso
+
+- Al cancelar un evento creado con aviso vinculado, Angeli elimina también ese aviso de Calendar.
+- Las búsquedas de modificación o cancelación no muestran el aviso vinculado como otro evento principal.
+- P05 real comprueba la relación, la cancelación de ambos recursos y la ausencia del aviso residual.
+
 ## V0.21.27 · Ubicación y contexto del aviso vinculado
 
 - Corrige el evento con aviso vinculado para separar siempre el recinto del título.

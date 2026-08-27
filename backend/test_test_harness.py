@@ -22,8 +22,12 @@ class FakeGoogleSessions:
             event_id = url.rsplit("/", 1)[-1]
             if event_id in self.events:
                 return {"id": event_id, **self.events[event_id]}
-            items = [{"id": event_id, "summary": event["summary"]} for event_id, event in self.events.items()]
             params = parse_qs(urlparse(url).query)
+            relation = params.get("privateExtendedProperty", [None])[0]
+            items = [{"id": event_id, **event} for event_id, event in self.events.items()]
+            if relation:
+                key, _, value = relation.partition("=")
+                items = [item for item in items if item.get("extendedProperties", {}).get("private", {}).get(key) == value]
             size = int(params.get("maxResults", [len(items) or 1])[0])
             offset = int(params.get("pageToken", ["0"])[0])
             page = {"items": items[offset:offset + size]}

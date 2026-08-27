@@ -1,5 +1,10 @@
 # Entorno automático de pruebas reales
 
+V0.21.28: P05 cancelación vinculada. El arnés crea el evento y su aviso,
+localiza el aviso mediante `angeliRelatedEventId`, cancela ambos y confirma que
+el aviso no permanece activo. La PWA oculta los avisos vinculados al elegir qué
+evento modificar o cancelar.
+
 V0.21.27: P05 compuesto. La frase real de boda en el Complejo San Marcos de
 Gandía separa el recinto del título y produce un aviso que conserva el contexto
 del evento y la ubicación. El modal permite añadir o cambiar la ubicación antes
