@@ -34,8 +34,10 @@ test('reprogramar entiende frases naturales y separa objetivo de nueva fecha y h
 
 test('reprogramar sin hora mantiene el modal y una respuesta corta completa la misma operación',()=>{
   const now=new Date(2026,7,26,12);
-  const firstIntent=localCalendarUpdate('Cambia la llamada de Miguel',now);
-  const first=resolveConversationTurn({text:'Cambia la llamada de Miguel',interpretation:firstIntent});
+  const firstIntent=localCalendarUpdate('Cámbiame la hora de llamar a Miguel',now);
+  const first=resolveConversationTurn({text:'Cámbiame la hora de llamar a Miguel',interpretation:firstIntent});
+  assert.equal(first.interpretation.intent,'calendar.update');
+  assert.equal(first.interpretation.target.title,'Miguel');
   assert.equal(first.interaction.status,INTERACTION_STATUS.AWAITING_INPUT);
   assert.equal(first.interaction.question,'¿Para qué día u hora quieres cambiarlo?');
   const active={id:'update-miguel',aiIntent:first.interpretation,interaction:first.interaction};
@@ -45,6 +47,17 @@ test('reprogramar sin hora mantiene el modal y una respuesta corta completa la m
   assert.equal(second.interpretation.target.title,'Miguel');
   assert.deepEqual(second.interpretation.changes,{time:'11:00'});
   assert.equal(second.interaction.status,INTERACTION_STATUS.PENDING_CONFIRMATION);
+});
+
+test('una orden de cambio tiene prioridad aunque la IA la confunda con llamar ahora',()=>{
+  const text='Cámbiame la hora de llamar a Miguel';
+  const mistaken={intent:'contact.call',confidence:.95,contactName:'Miguel',requiresConfirmation:true,source:'ai'};
+  const priority=localCalendarUpdate(text,new Date(2026,7,26,12));
+  const routed={...mistaken,...priority,source:mistaken.source};
+  assert.equal(routed.intent,'calendar.update');
+  assert.equal(routed.target.title,'Miguel');
+  assert.equal(routed.changes,null);
+  assert.equal(resolveConversationTurn({text,interpretation:routed}).interaction.status,INTERACTION_STATUS.AWAITING_INPUT);
 });
 
 test('reprogramar busca por la persona y actualiza Calendar y el recordatorio local elegido',()=>{

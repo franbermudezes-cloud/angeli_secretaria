@@ -1,4 +1,4 @@
-import{calendarQueryRange,cleanTemporalText,temporalData}from"./temporal.js?v=0.21.19";
+import{calendarQueryRange,cleanTemporalText,temporalData}from"./temporal.js?v=0.21.20";
 
 export const VALID_INTENTS=["note","task.create","task.complete","reminder.create","reminder.query","calendar.create","calendar.query","calendar.update","calendar.delete","contact.call","file.store","photo.store"];
 const SENSITIVE_INTENTS=new Set(["calendar.update","calendar.delete","contact.call"]);
@@ -25,7 +25,7 @@ export function localCalendarCancellation(text = "") {
 // breve como «a las once» y la IA remota no está disponible.
 export function localCalendarUpdate(text = "", now = new Date(), active = null) {
   const value = String(text || "").trim();
-  const verb = /\b(?:pasa|cambia|mueve|modifica|retrasa|adelanta|reprograma)(?:r)?\b/i;
+  const verb = /\b(?:pasa(?:me)?|c[aá]mbia(?:me)?|mueve(?:me)?|modifica(?:me)?|retrasa(?:me)?|adelanta(?:me)?|reprograma(?:me)?|pasar|cambiar|mover|modificar|retrasar|adelantar|reprogramar)\b/i;
   const continuing = active?.interaction?.status === "awaiting_input" && active.aiIntent?.intent === "calendar.update";
   if (!verb.test(value) && !continuing) return null;
   const temporal = temporalData(value, now);
@@ -41,7 +41,7 @@ export function localCalendarUpdate(text = "", now = new Date(), active = null) 
       ? before
       : value.slice(match.index + match[0].length);
     candidate = candidate
-      .replace(/^\s*(?:de\s+hora\s+)?(?:la\s+|el\s+)?/i, "")
+      .replace(/^\s*(?:(?:la\s+)?hora\s+de\s+|de\s+hora\s+)?(?:la\s+|el\s+)?/i, "")
       .replace(/\b(?:para|hasta|al?)\s+(?=(?:el\s+)?(?:hoy|mañana|pasado\s+mañana|domingo|lunes|martes|miércoles|jueves|viernes|sábado|\d))/i, " ")
       .replace(/\bahora\b/gi, " ");
     candidate = cleanTemporalText(candidate)

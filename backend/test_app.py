@@ -41,6 +41,10 @@ class InterpretEndpointTests(unittest.TestCase):
         self.assertEqual(status, "200 OK")
         self.assertEqual(data, VALID_RESPONSE)
 
+    def test_prompt_prioritizes_update_over_call_for_cambiame_la_hora(self):
+        self.assertIn("cámbiame la hora de llamar a Miguel", app.SYSTEM_INSTRUCTION)
+        self.assertIn("prioridad absoluta sobre contact.call", app.SYSTEM_INSTRUCTION)
+
     def test_rejects_text_over_500_characters_before_interpretation(self):
         status, data = app.wsgi_request({"text": "x" * 501, "now": "2026-08-20T21:20:00+02:00", "timeZone": "Europe/Madrid"})
         self.assertEqual(status, "400 Bad Request")

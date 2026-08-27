@@ -1,5 +1,11 @@
 # Entorno automático de pruebas reales
 
+V0.21.20: regresión automática de la frase real «Cámbiame la hora de llamar a
+Miguel». Comprueba que una respuesta errónea de IA como `contact.call` queda
+subordinada a `calendar.update`, conserva «Miguel» como objetivo y mantiene la
+conversación abierta para solicitar la nueva hora. También se verifica que la
+instrucción enviada a Gemini contiene esta prioridad explícita.
+
 V0.21.19: pruebas locales de reprogramación con variantes naturales, operación
 incompleta continuada por voz/texto, búsqueda normalizada por persona y
 actualización exclusiva del recordatorio vinculado al evento seleccionado. El
