@@ -308,10 +308,15 @@ class IntegrationHarness:
         if case["interpretation"]["linkedReminder"]["date"] != "2026-09-12":
             raise RuntimeError("P05 no calculó el aviso dos días antes")
         event_payload = case["event"]
+        # La fixture usa IDs estables para las pruebas locales, pero Calendar
+        # no permite reutilizar un ID después de borrar el evento. En la prueba
+        # real Google debe generar IDs nuevos para que el arnés sea repetible.
+        event_payload.pop("id", None)
         event_payload["summary"] = f"{self.prefix} {event_payload['summary']}"
         event = self.service.api(CALENDAR, "POST", self._calendar_base(), event_payload)
         self.created_events.append(event["id"])
         reminder_payload = case["reminder"]
+        reminder_payload.pop("id", None)
         reminder_payload["summary"] = f"{self.prefix} {reminder_payload['summary']}"
         reminder_payload["extendedProperties"] = {"private": {"angeliRelatedEventId": event["id"]}}
         reminder = self.service.api(CALENDAR, "POST", self._calendar_base(), reminder_payload)

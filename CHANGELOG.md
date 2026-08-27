@@ -12,7 +12,8 @@
   entrada sincronizada de Firestore. Las consultas de recordatorios incluyen
   también estos avisos vinculados.
 - `P05-linked` crea y lee los dos elementos en Calendar real aislado, comprueba
-  su relación y los elimina al terminar.
+  su relación y los elimina al terminar. Cada ejecución usa IDs nuevos para
+  que Calendar no rechace una repetición tras haber borrado la prueba anterior.
 
 ## V0.21.25 · Objetivo semántico al modificar
 
