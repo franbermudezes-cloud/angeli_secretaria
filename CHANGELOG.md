@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.21.29 · Avisos naturales con hora pendiente
+
+- Reconoce «avísame» y «tienes que avisarme» como variantes de un aviso vinculado.
+- Si el evento tiene día pero no hora, conserva toda la operación y pregunta solamente la hora.
+- La respuesta horaria completa el evento y el aviso sin perder título, ubicación, tarea ni antelación.
+- P05 real reproduce la orden de discomóvil en el Complejo San Marcos de Gandía.
+
 ## V0.21.28 · Cancelación conjunta de evento y aviso
 
 - Al cancelar un evento creado con aviso vinculado, Angeli elimina también ese aviso de Calendar.

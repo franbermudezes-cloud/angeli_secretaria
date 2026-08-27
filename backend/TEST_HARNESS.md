@@ -1,5 +1,10 @@
 # Entorno automático de pruebas reales
 
+V0.21.29: P05 conversacional admite «tienes que avisarme» y conserva evento,
+ubicación, desplazamiento y tarea aunque falte la hora. Pregunta únicamente la
+hora y la respuesta completa ambos elementos. El caso real usa la orden de
+discomóvil en San Marcos y prohíbe que caiga en Nota.
+
 V0.21.28: P05 cancelación vinculada. El arnés crea el evento y su aviso,
 localiza el aviso mediante `angeliRelatedEventId`, cancela ambos y confirma que
 el aviso no permanece activo. La PWA oculta los avisos vinculados al elegir qué

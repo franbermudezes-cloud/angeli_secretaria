@@ -79,7 +79,8 @@ de Gandía el 29 de agosto a las siete de la tarde» debe producir title
 lugar físico, location debe ser null.
 
 Si una sola frase contiene un evento principal y además «recuérdame N días
-antes ...», conserva calendar.create como intención principal y devuelve
+antes ...», «avísame N días antes...» o «tienes que avisarme N días antes...»,
+conserva calendar.create como intención principal y devuelve
 linkedReminder con title, date y time del aviso anterior. La fecha del aviso se
 calcula respecto a la fecha del evento y, si no se expresa otra hora para el
 aviso, hereda la hora del evento. Ejemplo oficial: «Tenemos una boda el 14 de
@@ -90,6 +91,10 @@ orden compuesta a una nota ni pierdas uno de los dos elementos. El título del
 aviso debe entenderse por sí solo fuera de Angeli e incluir el contexto del
 evento y su ubicación cuando existan, por ejemplo «Comprobar el equipo de la
 boda en Masía X».
+Si la frase compuesta contiene el día pero no la hora, no la conviertas en
+nota: conserva el evento, la ubicación y el aviso relativo, devuelve time null
+también dentro de linkedReminder, marca únicamente time en missingFields y
+pregunta a qué hora es el evento.
 
 Para cancelar usa calendar.delete. En target.title expresa el criterio estable
 más corto que identifica el evento, normalmente la persona, lugar o asunto
@@ -181,7 +186,7 @@ RESPONSE_SCHEMA: dict[str, Any] = {
                     "properties": {
                         "title": {"type": "string"},
                         "date": {"type": ["string", "null"]},
-                        "time": {"type": ["string", "null"]},
+                        "time": {"type": "string"},
                     },
                 },
             ]
@@ -195,7 +200,7 @@ RESPONSE_SCHEMA: dict[str, Any] = {
                     "properties": {
                         "title": {"type": "string"},
                         "date": {"type": "string"},
-                        "time": {"type": "string"},
+                        "time": {"type": ["string", "null"]},
                         "location": {"type": "string"},
                         "notes": {"type": "string"},
                     },
@@ -212,7 +217,7 @@ RESPONSE_SCHEMA: dict[str, Any] = {
                     "properties": {
                         "title": {"type": "string"},
                         "date": {"type": "string"},
-                        "time": {"type": "string"},
+                        "time": {"type": ["string", "null"]},
                         "notes": {"type": ["string", "null"]},
                     },
                 },
@@ -323,7 +328,7 @@ def validate_context(value: Any) -> dict[str, Any] | None:
     if not isinstance(interaction_id, str) or len(interaction_id) > 100 or intent not in VALID_INTENTS or status not in {"awaiting_input", "pending_confirmation", "executing"}:
         raise ValueError("Contexto conversacional no válido")
     collected = value.get("collectedData", {})
-    if not isinstance(collected, dict) or not set(collected).issubset({"title", "date", "time", "rangeStart", "rangeEnd", "location", "contactName", "phone", "notes", "target", "changes"}):
+    if not isinstance(collected, dict) or not set(collected).issubset({"title", "date", "time", "rangeStart", "rangeEnd", "location", "contactName", "phone", "notes", "target", "changes", "linkedReminder"}):
         raise ValueError("Contexto conversacional no válido")
     missing = value.get("missingFields", [])
     if not isinstance(missing, list) or len(missing) > 7 or any(item not in {"title", "date", "time", "location", "contactName", "phone", "target"} for item in missing):

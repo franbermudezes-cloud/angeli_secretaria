@@ -22,7 +22,7 @@ const ACTIVE_STATES = new Set([
   INTERACTION_STATUS.PENDING_CONFIRMATION,
   INTERACTION_STATUS.EXECUTING
 ]);
-const DATA_FIELDS = ["title", "date", "time", "rangeStart", "rangeEnd", "location", "contactName", "phone", "notes", "target", "changes"];
+const DATA_FIELDS = ["title", "date", "time", "rangeStart", "rangeEnd", "location", "contactName", "phone", "notes", "target", "changes", "linkedReminder"];
 
 export function findActiveInteraction(entries = []) {
   return entries
@@ -123,12 +123,15 @@ export function completeInteraction(entry, now = new Date().toISOString()) {
 function mergeInterpretation(prior, next, continuing) {
   if (!prior || !continuing) return { ...next };
   const result = { ...prior, source: next.source, fallbackReason: next.fallbackReason || null };
+  const linkedOperation = prior.intent === "calendar.create" && prior.linkedReminder;
   // Un fallback local no debe reinterpretar una respuesta corta como una orden
   // distinta. Puede completar únicamente los datos temporales que detecta.
-  if (next.source === "ai") result.intent = next.intent || prior.intent;
+  if (next.source === "ai" && !linkedOperation) result.intent = next.intent || prior.intent;
   for (const field of DATA_FIELDS) {
+    if (linkedOperation && ["title", "location", "linkedReminder"].includes(field)) continue;
     if (next[field] !== null && next[field] !== undefined && next[field] !== "") result[field] = next[field];
   }
+  if (linkedOperation && result.time && !result.linkedReminder.time) result.linkedReminder = { ...result.linkedReminder, time: result.time };
   if (next.source === "ai" && typeof next.requiresConfirmation === "boolean") result.requiresConfirmation = next.requiresConfirmation;
   if (Array.isArray(next.missingFields)) result.missingFields = next.missingFields;
   if (next.question) result.question = next.question;

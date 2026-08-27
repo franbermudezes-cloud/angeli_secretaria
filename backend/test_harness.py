@@ -305,8 +305,10 @@ class IntegrationHarness:
         fixture = Path(__file__).resolve().parents[1] / "tests" / "p05-linked-fixture.mjs"
         case = json.loads(subprocess.run(["node", str(fixture)], check=True,
             capture_output=True, text=True, timeout=20).stdout)
-        if case["interpretation"]["linkedReminder"]["date"] != "2026-09-12":
-            raise RuntimeError("P05 no calculó el aviso dos días antes")
+        if case["initial"]["intent"] != "calendar.create" or case["initial"]["missingFields"] != ["time"]:
+            raise RuntimeError("P05 convirtió la orden incompleta en nota o no preguntó la hora")
+        if case["interpretation"]["linkedReminder"]["date"] != "2026-09-04":
+            raise RuntimeError("P05 no calculó el aviso un día antes")
         if "San Marcos de Gandía" not in (case["interpretation"].get("location") or ""):
             raise RuntimeError("P05 no separó la ubicación del título")
         event_payload = case["event"]
@@ -326,7 +328,7 @@ class IntegrationHarness:
         saved_event = self.service.api(CALENDAR, "GET", self._calendar_base() + "/" + event["id"])
         saved_reminder = self.service.api(CALENDAR, "GET", self._calendar_base() + "/" + reminder["id"])
         relation = saved_reminder.get("extendedProperties", {}).get("private", {}).get("angeliRelatedEventId")
-        if "Boda" not in saved_event.get("summary", "") or "Comprobar el equipo" not in saved_reminder.get("summary", ""):
+        if "Disco móvil" not in saved_event.get("summary", "") or "Ir a montar el equipo" not in saved_reminder.get("summary", ""):
             raise RuntimeError("Calendar no conservó los dos elementos de P05")
         if "San Marcos de Gandía" not in saved_event.get("location", "") or "San Marcos de Gandía" not in saved_reminder.get("summary", ""):
             raise RuntimeError("P05 perdió la ubicación o el contexto del aviso en Calendar")
