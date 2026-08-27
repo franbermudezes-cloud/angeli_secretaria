@@ -1,5 +1,14 @@
 # Changelog
 
+## V0.21.23 · Descripciones sincronizadas
+
+- Firestore conserva `calendarDescription`; ya no desaparece entre la edición
+  del modal y la creación del evento en Google Calendar.
+- La misma prueba de ida y vuelta confirma que la descripción de los
+  recordatorios permanece dentro de su programación.
+- La serialización compartida pasa a un módulo puro con prueba automática para
+  impedir que una futura lista de campos vuelva a descartar estas descripciones.
+
 ## V0.21.22 · Ficha completa de Calendar
 
 - Eventos y recordatorios enseñan antes de guardar el título exacto, la fecha y

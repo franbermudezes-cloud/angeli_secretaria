@@ -26,6 +26,7 @@ import {
   setDoc,
   waitForPendingWrites
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+import { fromCloudEntry, sameEntry, toCloudEntry } from "./cloud-entry.js?v=0.21.23";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAFM5NjcxX9lC5MpfII4B3Kx7lV9SsUAsc",
@@ -41,13 +42,6 @@ const OWNER_EMAIL = "franbermudez.es@gmail.com";
 // La base creada en Firebase tiene nombre propio. Sin este ID el SDK usa
 // `(default)`, que es otra base distinta y no comparte las entradas de Angeli.
 const FIRESTORE_DATABASE_ID = "angelifirebase";
-
-const SYNCABLE_FIELDS = new Set([
-  "id", "date", "updatedAt", "text", "status", "type", "scheduledDate",
-  "scheduledTime", "phone", "location", "calendarTitle", "contactQuery",
-  "calendarStatus", "calendarEventId", "calendarUrl", "aiIntent", "proposal",
-  "schedule", "images", "files", "interaction"
-]);
 
 export function createCloudSync({ notify }) {
   let auth;
@@ -155,28 +149,4 @@ export function createCloudSync({ notify }) {
   }
 
   return { initialize, session, isSignedIn, getAuthToken, connect, disconnect, syncNotes };
-}
-
-function toCloudEntry(note) {
-  const result = {};
-  for (const [key, value] of Object.entries(note || {})) {
-    if (SYNCABLE_FIELDS.has(key) && value !== undefined) result[key] = removeUndefined(value);
-  }
-  result.updatedAt = new Date().toISOString();
-  return result;
-}
-
-function fromCloudEntry(value, id) {
-  return { ...removeUndefined(value || {}), id };
-}
-
-function removeUndefined(value) {
-  if (Array.isArray(value)) return value.map(removeUndefined);
-  if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined).map(([key, item]) => [key, removeUndefined(item)]));
-  return value;
-}
-
-function sameEntry(left, right) {
-  const clean = value => { const copy = removeUndefined(value || {}); delete copy.updatedAt; return copy; };
-  return JSON.stringify(clean(left)) === JSON.stringify(clean(right));
 }

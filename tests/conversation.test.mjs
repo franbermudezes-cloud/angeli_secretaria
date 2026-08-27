@@ -14,6 +14,7 @@ import { completionTarget, completePending, completePendingWithCalendar, findPen
 import { mockProvider, interpret, localCalendarUpdate, localReminderQuery } from "../js/ai.js";
 import { fixtureTitle, reminderFixture } from './reminder-event-fixture.mjs';
 import { applyCalendarUpdateToEntries, buildCalendarSearch, calendarEvent, scheduledReminderEvent, listAllCalendarPages, reconcileReminderEntries } from '../js/google.js';
+import { fromCloudEntry, toCloudEntry } from '../js/cloud-entry.js';
 
 test('reprogramar entiende frases naturales y separa objetivo de nueva fecha y hora',()=>{
   const now=new Date(2026,7,26,12);
@@ -396,6 +397,18 @@ test('tener una persona no transforma quedar con Miguel en una llamada', () => {
   assert.equal(note.schedule.action.kind,'reminder');
   assert.equal(calendarDetails(note).title,'Quedar con Miguel');
   assert.equal(scheduledReminderEvent(note).summary,'Quedar con Miguel');
+});
+
+test('Firestore conserva la descripción confirmada de eventos y recordatorios', () => {
+  const event={id:'event-description',type:'calendar',calendarTitle:'Cena con María',calendarDescription:'Mesa junto a la ventana'};
+  const eventCloud=toCloudEntry(event,'2026-08-27T12:00:00.000Z');
+  assert.equal(eventCloud.calendarDescription,'Mesa junto a la ventana');
+  assert.equal(fromCloudEntry(eventCloud,event.id).calendarDescription,'Mesa junto a la ventana');
+
+  const reminder={id:'reminder-description',type:'reminder',schedule:{status:'pending_confirmation',title:'Quedar con Miguel',description:'Llevar el presupuesto'}};
+  const reminderCloud=toCloudEntry(reminder,'2026-08-27T12:00:00.000Z');
+  assert.equal(reminderCloud.schedule.description,'Llevar el presupuesto');
+  assert.equal(fromCloudEntry(reminderCloud,reminder.id).schedule.description,'Llevar el presupuesto');
 });
 
 test('P05 respeta nombre explícito, título IA y recordatorios que no son llamadas', () => {
