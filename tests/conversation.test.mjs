@@ -778,3 +778,26 @@ test("P05 prioriza la estructura vinculada y respeta una hora matinal explícita
   assert.equal(morning.time,"06:00");
   assert.equal(morning.linkedReminder.time,"06:00");
 });
+
+test("P05 entiende tienes que avisarme y pregunta la hora sin convertir la orden en nota", () => {
+  const text="Disco móvil para el día 5 de septiembre en el Complejo San Marcos de Gandía. Tienes que avisarme un día antes para ir a montar el equipo.";
+  const initial=localLinkedCalendarIntent(text,new Date(2026,7,27,12));
+  assert.equal(initial.intent,"calendar.create");
+  assert.equal(initial.title,"Disco móvil");
+  assert.equal(initial.date,"2026-09-05");
+  assert.equal(initial.time,null);
+  assert.equal(initial.location,"el Complejo San Marcos de Gandía");
+  assert.deepEqual(initial.missingFields,["time"]);
+  assert.equal(initial.question,"¿A qué hora es el evento?");
+  assert.deepEqual(initial.linkedReminder,{title:"Ir a montar el equipo del disco móvil en el Complejo San Marcos de Gandía",date:"2026-09-04",time:null});
+  const first=resolveConversationTurn({text,interpretation:validateIntent(initial),now:"2026-08-27T12:00:00.000Z"});
+  assert.equal(first.interaction.status,"awaiting_input");
+  const active={id:"discomovil",text,aiIntent:first.interpretation,interaction:first.interaction};
+  const completed=resolveConversationTurn({active,text:"A las seis de la tarde",interpretation:{...initial,intent:"note",title:"A las seis de la tarde",time:"18:00",linkedReminder:null,missingFields:[],question:null,source:"ai"},now:"2026-08-27T12:01:00.000Z"});
+  assert.equal(completed.interpretation.intent,"calendar.create");
+  assert.equal(completed.interpretation.title,"Disco móvil");
+  assert.equal(completed.interpretation.time,"18:00");
+  assert.equal(completed.interpretation.linkedReminder.time,"18:00");
+  assert.equal(completed.interaction.status,"pending_confirmation");
+  assert.ok(linkedScheduleFor(completed.interpretation));
+});

@@ -65,6 +65,17 @@ class InterpretEndpointTests(unittest.TestCase):
         self.assertIsNone(other["linkedReminder"])
         self.assertIn("linkedReminder «Comprobar el equipo»", app.SYSTEM_INSTRUCTION)
 
+    def test_p05_accepts_linked_reminder_without_time_while_asking_for_it(self):
+        linked = {"title": "Ir a montar el equipo", "date": "2026-09-04", "time": None, "notes": None}
+        result = app.validate_interpretation(VALID_RESPONSE | {
+            "title": "Disco móvil", "date": "2026-09-05", "time": None,
+            "location": "Complejo San Marcos de Gandía", "linkedReminder": linked,
+            "missingFields": ["time"], "question": "¿A qué hora es el evento?",
+        })
+        self.assertEqual(result["intent"], "calendar.create")
+        self.assertEqual(result["linkedReminder"], linked)
+        self.assertEqual(result["missingFields"], ["time"])
+
     def test_rejects_text_over_500_characters_before_interpretation(self):
         status, data = app.wsgi_request({"text": "x" * 501, "now": "2026-08-20T21:20:00+02:00", "timeZone": "Europe/Madrid"})
         self.assertEqual(status, "400 Bad Request")

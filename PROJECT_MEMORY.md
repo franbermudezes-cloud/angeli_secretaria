@@ -317,3 +317,8 @@ Cloud Run deja de aceptar el ID token efímero de Google Identity Services y pas
 
 - `angeliRelatedEventId` es el vínculo de Calendar que permite localizar el aviso de un evento principal sin depender solo del estado local.
 - Cancelar el evento principal elimina también sus avisos vinculados; en selección de cancelar/modificar se ocultan estos avisos auxiliares.
+## V0.21.29 — Aviso vinculado incompleto
+
+- «Recuérdame», «avísame» y «tienes que avisarme» pertenecen al mismo flujo compuesto.
+- `linkedReminder.time` puede ser temporalmente nulo mientras la conversación espera la hora; al recibirla hereda la hora del evento.
+- Una respuesta corta dentro de esta operación no puede cambiar su intención a Nota ni sobrescribir título, ubicación o tarea del aviso.
