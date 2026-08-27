@@ -196,17 +196,17 @@ class IntegrationHarness:
             raise RuntimeError("Calendar no devolvió los eventos de prueba: " + ", ".join(missing))
 
     def _calendar_update(self) -> None:
-        """P11: «cámbiame la hora de Miguel» localiza una quedada y la cambia."""
+        """P11: una frase de cambio busca por la persona, no por «hora con»."""
         start = (datetime.now(timezone.utc) + timedelta(days=1)).replace(hour=18, minute=0, second=0, microsecond=0)
-        title = f"{self.prefix} Quedada con Miguel"
+        title = f"{self.prefix} Quedada con María"
         event = self._create_event(title, start, start + timedelta(hours=1))
         fixture = Path(__file__).resolve().parents[1] / "tests/calendar-update-search-fixture.mjs"
         search = json.loads(subprocess.run(
-            ["node", str(fixture), "Cámbiame la hora de Miguel"],
+            ["node", str(fixture), "Cámbiame la hora con María", "hora con María"],
             check=True, capture_output=True, text=True, timeout=20,
         ).stdout)
-        if search["query"] != "Miguel":
-            raise RuntimeError("La modificación no utiliza el objetivo semántico Miguel")
+        if search["query"] != "María":
+            raise RuntimeError("La modificación buscó el campo hora en vez de la persona María")
         listed = self.service.api(CALENDAR, "GET", self._calendar_base() + "?" + urlencode({
             "singleEvents": "true", "orderBy": "startTime", "q": search["query"],
             "timeMin": (start - timedelta(hours=1)).isoformat(),
