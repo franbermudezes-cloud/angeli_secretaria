@@ -308,3 +308,8 @@ Pendiente de validación manual en Android: cerrar/abrir, comprobar estados, cre
 Se adopta Firebase como infraestructura compartida de Angeli: Firebase Auth mantiene la sesión de la cuenta propietaria y Cloud Firestore pasa a ser la fuente de verdad de las entradas entre dispositivos. La PWA conserva `localStorage` como copia de respaldo y migra de forma idempotente las entradas locales al iniciar una sesión; no borra datos locales durante la migración. Los medios siguen como blobs locales en IndexedDB y sus referencias se conservan en las entradas, pero la sincronización física de fotos/archivos se reserva para un bloque posterior de Storage/Drive para no perder adjuntos existentes.
 
 Cloud Run deja de aceptar el ID token efímero de Google Identity Services y pasa a validar ID tokens de Firebase, restringidos al correo propietario mediante `ALLOWED_FIREBASE_EMAILS`. Contactos y Calendar mantienen sus grants persistentes independientes en Secret Manager y pueden pertenecer a cuentas Google distintas. Antes de publicar hay que desplegar las reglas `firestore.rules`, configurar la variable de Cloud Run y validar inicio de sesión, cierre/reapertura, sincronización móvil-escritorio y la migración de datos locales.
+## V0.21.27 — Ubicación y contexto en operaciones vinculadas
+
+- En `calendar.create` con `linkedReminder`, la separación local determinista manda sobre una salida remota que mezcle título y ubicación.
+- El aviso vinculado debe ser comprensible por sí solo: incluye el evento y su ubicación cuando existen.
+- El modal final siempre enseña el campo Ubicación y permite dictarlo o editarlo antes de crear.

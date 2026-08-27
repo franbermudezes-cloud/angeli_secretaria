@@ -264,8 +264,8 @@ test('evento y recordatorio comparten ficha editable sin añadir pasos al guarda
   assert.match(elements.get('modalBody').html,/Cena con María/);
   assert.match(elements.get('modalBody').html,/Aviso vinculado/);
   assert.match(elements.get('modalBody').html,/Comprobar el equipo/);
-  assert.deepEqual(elements.get('modalActions').children.map(button=>button.textContent),['Cancelar','Cambiar título','Cambiar aviso','Añadir descripción','📅 Crear los dos']);
-  assert.equal(elements.get('modalActions').children[4].dataset.a,'calendar-bundle');
+  assert.deepEqual(elements.get('modalActions').children.map(button=>button.textContent),['Cancelar','Cambiar título','Cambiar aviso','Cambiar ubicación','Añadir descripción','📅 Crear los dos']);
+  assert.equal(elements.get('modalActions').children[5].dataset.a,'calendar-bundle');
 });
 import { markCancelledReminder } from '../js/pending.js';
 
@@ -720,33 +720,44 @@ test("un aviso borrado fuera de Angeli deja de aparecer como pendiente", () => {
 });
 
 test("P05 conserva evento y recordatorio relativo como una operación vinculada", () => {
-  const text="Tenemos una boda el 14 de septiembre a las seis en la Masía X. Recuérdame dos días antes comprobar el equipo.";
+  const text="Tenemos una boda el 14 de septiembre a las 6 de la tarde en el Complejo San Marcos de Gandía. Recuérdame dos días antes comprobar el equipo.";
   const interpretation=localLinkedCalendarIntent(text,new Date(2026,7,27,12));
   assert.equal(interpretation.intent,"calendar.create");
   assert.equal(interpretation.title,"Boda");
   assert.equal(interpretation.date,"2026-09-14");
   assert.equal(interpretation.time,"18:00");
-  assert.equal(interpretation.location,"la Masía X");
-  assert.deepEqual(interpretation.linkedReminder,{title:"Comprobar el equipo",date:"2026-09-12",time:"18:00"});
+  assert.equal(interpretation.location,"el Complejo San Marcos de Gandía");
+  assert.deepEqual(interpretation.linkedReminder,{title:"Comprobar el equipo de la boda en el Complejo San Marcos de Gandía",date:"2026-09-12",time:"18:00"});
   const validated=validateIntent(interpretation);
   const schedule=linkedScheduleFor(validated);
   const note={id:"p05-linked",text,type:"calendar",scheduledDate:validated.date,scheduledTime:validated.time,location:validated.location,calendarTitle:validated.title,aiIntent:validated,proposal:{intent:"calendar.create"},calendarStatus:"pending",schedule};
   assert.equal(calendarEvent(note).summary,"Boda");
-  assert.equal(calendarEvent(note).location,"la Masía X");
-  assert.equal(scheduledReminderEvent(note).summary,"Comprobar el equipo");
+  assert.equal(calendarEvent(note).location,"el Complejo San Marcos de Gandía");
+  assert.equal(scheduledReminderEvent(note).summary,"Comprobar el equipo de la boda en el Complejo San Marcos de Gandía");
   assert.equal(scheduledReminderEvent(note).start.dateTime,"2026-09-12T18:00:00");
   assert.equal(updateCalendarDetails(note,"reminderTitle","Revisar todo el equipo").schedule.title,"Revisar todo el equipo");
   assert.equal(updateCalendarDetails(note,"title","Boda de Ana").calendarTitle,"Boda de Ana");
   assert.equal(updateCalendarDetails(note,"description","Llevar iluminación").calendarDescription,"Llevar iluminación");
-  assert.equal(updateCalendarDetails(note,"title","Boda de Ana").schedule.title,"Comprobar el equipo");
+  assert.equal(updateCalendarDetails(note,"title","Boda de Ana").schedule.title,"Comprobar el equipo de la boda en el Complejo San Marcos de Gandía");
+  assert.equal(updateCalendarDetails(note,"location","Masía X").location,"Masía X");
   assert.deepEqual(findReminderMatches([note],{}),[note]);
-  assert.equal(toCloudEntry(note).schedule.title,"Comprobar el equipo");
+  assert.equal(toCloudEntry(note).schedule.title,"Comprobar el equipo de la boda en el Complejo San Marcos de Gandía");
+});
+
+test("P05 protege título, ubicación y aviso contextual frente a una respuesta remota defectuosa", () => {
+  const text="Tenemos una boda el 14 de septiembre a las 6 de la tarde en el complejo San Marcos de Gandía, recuérdame dos días antes comprobar el equipo.";
+  const local=localLinkedCalendarIntent(text,new Date(2026,7,27,12));
+  const remote={...local,title:"Boda complejo San Marcos de Gandía",location:null,linkedReminder:{title:"Comprobar el equipo",date:"2026-09-12",time:"18:00"}};
+  const protectedIntent=protectCalendarInterpretation(remote,local);
+  assert.equal(protectedIntent.title,"Boda");
+  assert.equal(protectedIntent.location,"el complejo San Marcos de Gandía");
+  assert.equal(protectedIntent.linkedReminder.title,"Comprobar el equipo de la boda en el complejo San Marcos de Gandía");
 });
 
 test("P05 prioriza la estructura vinculada y respeta una hora matinal explícita", () => {
   const action=localLinkedCalendarIntent("Tenemos una boda el 14 de septiembre a las seis. Recuérdame dos días antes cambiar las pilas.",new Date(2026,7,27,12));
   assert.equal(action.intent,"calendar.create");
-  assert.equal(action.linkedReminder.title,"Cambiar las pilas");
+  assert.equal(action.linkedReminder.title,"Cambiar las pilas de la boda");
   const morning=localLinkedCalendarIntent("Tenemos una boda el 14 de septiembre a las seis de la mañana. Recuérdame dos días antes comprobar el equipo.",new Date(2026,7,27,12));
   assert.equal(morning.time,"06:00");
   assert.equal(morning.linkedReminder.time,"06:00");

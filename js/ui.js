@@ -1,5 +1,5 @@
-import { typeLabel } from "./classifier.js?v=0.21.26";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.26";
+import { typeLabel } from "./classifier.js?v=0.21.27";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.27";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -120,7 +120,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.26";
+    image.src = "assets/angeli-welcome.gif?v=0.21.27";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -226,7 +226,7 @@ export function createUI({ getMedia }) {
     return '<div class="calendar-confirmation">' +
       '<span class="calendar-field-label">Título que guardaré</span><strong>' + esc(details.title) + '</strong>' +
       '<span class="calendar-field-label">Fecha y hora</span><b>' + esc(details.when) + '</b>' +
-      (details.location ? '<span class="calendar-field-label">Ubicación</span><b>📍 ' + esc(details.location) + '</b>' : '') +
+      '<span class="calendar-field-label">Ubicación</span><b>' + (details.location ? '📍 ' + esc(details.location) : 'Sin ubicación') + '</b>' +
       '<span class="calendar-field-label">Descripción</span><b>' + (details.description ? esc(details.description) : 'Sin descripción') + '</b></div>';
   }
 
@@ -245,6 +245,7 @@ export function createUI({ getMedia }) {
         { label: "Cancelar", kind: "secondary", onClick: closeLayers },
         { label: "Cambiar título", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "title" } },
         { label: "Cambiar aviso", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "reminderTitle" } },
+        { label: calendarDetails(note).location ? "Cambiar ubicación" : "Añadir ubicación", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "location" } },
         { label: calendarDetails(note).description ? "Cambiar descripción" : "Añadir descripción", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "description" } },
         { label: note.calendarStatus === "error" ? "Reintentar" : "📅 Crear los dos", kind: "confirm", dataset: { a: "calendar-bundle", id: note.id } }
       ] });
@@ -346,13 +347,13 @@ export function createUI({ getMedia }) {
   }
 
   function showCalendarFieldEditor(note, field, { onSave, onMic, onCancel } = {}) {
-    const details = calendarDetails(note), isReminderTitle = field === "reminderTitle", isTitle = field === "title" || isReminderTitle;
+    const details = calendarDetails(note), isReminderTitle = field === "reminderTitle", isLocation = field === "location", isTitle = field === "title" || isReminderTitle;
     const draft = document.createElement("textarea");
     draft.id = "calendarFieldDraft";
     draft.className = "active-draft conversation-draft";
     draft.rows = isTitle ? 2 : 4;
-    draft.placeholder = isTitle ? "Di o escribe el título exacto…" : "Di o escribe la descripción…";
-    draft.value = isReminderTitle ? scheduleTitle(note) : isTitle ? details.title : details.description;
+    draft.placeholder = isTitle ? "Di o escribe el título exacto…" : isLocation ? "Di o escribe el recinto o dirección…" : "Di o escribe la descripción…";
+    draft.value = isReminderTitle ? scheduleTitle(note) : isTitle ? details.title : isLocation ? details.location : details.description;
     const controls = document.createElement("div");
     controls.className = "conversation-controls";
     const mic = document.createElement("button");
@@ -363,7 +364,7 @@ export function createUI({ getMedia }) {
     save.onclick = () => { const value = draft.value.trim(); if (isTitle && !value) return notify("El título no puede quedar vacío"); onSave?.(value); };
     controls.append(mic, save);
     const content = document.createElement("div"); content.className = "conversation-question"; content.append(draft, controls);
-    openModal({ title: isReminderTitle ? "Cambiar aviso" : isTitle ? "Cambiar título" : details.description ? "Cambiar descripción" : "Añadir descripción", lead: isReminderTitle ? "Esto será lo que veas en el aviso anterior." : isTitle ? "Esto será lo que veas en Calendar y en el aviso del móvil." : "Es opcional. Puedes dictarla o dejarla vacía.", body: content, actions: [{ label: "Volver", kind: "secondary", onClick: onCancel }] });
+    openModal({ title: isReminderTitle ? "Cambiar aviso" : isTitle ? "Cambiar título" : isLocation ? (details.location ? "Cambiar ubicación" : "Añadir ubicación") : details.description ? "Cambiar descripción" : "Añadir descripción", lead: isReminderTitle ? "Esto será lo que veas en el aviso anterior." : isTitle ? "Esto será lo que veas en Calendar y en el aviso del móvil." : isLocation ? "Este recinto o dirección se guardará en el campo Ubicación de Calendar." : "Es opcional. Puedes dictarla o dejarla vacía.", body: content, actions: [{ label: "Volver", kind: "secondary", onClick: onCancel }] });
     $("actionModal").classList.add("conversation-modal");
   }
 
