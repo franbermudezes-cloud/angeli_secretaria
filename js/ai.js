@@ -115,7 +115,8 @@ export function localLinkedCalendarIntent(text="",now=new Date()){
   if(parts.length!==2||!/\b(?:d[ií]as?|día)\s+antes\b/i.test(parts[1]))return null;
   const eventText=parts[0].trim(),eventTemporal=temporalData(eventText,now);
   if(!eventTemporal.scheduledDate||!eventTemporal.scheduledTime)return null;
-  if(/\b(?:boda|cena|fiesta|actuaci[oó]n)\b/i.test(eventText)&&Number(eventTemporal.scheduledTime.slice(0,2))<9){
+  const explicitMorning=/\b(?:de|por)\s+la\s+mañana\b|\ba\.?\s*m\.?\b/i.test(eventText);
+  if(!explicitMorning&&/\b(?:boda|cena|fiesta|actuaci[oó]n)\b/i.test(eventText)&&Number(eventTemporal.scheduledTime.slice(0,2))<9){
     eventTemporal.scheduledTime=`${String(Number(eventTemporal.scheduledTime.slice(0,2))+12).padStart(2,"0")}:${eventTemporal.scheduledTime.slice(3)}`;
   }
   const offsetMatch=parts[1].match(/\b(\d+|un|uno|una|dos|tres|cuatro|cinco|seis|siete)\s+d[ií]as?\s+antes\b/i);

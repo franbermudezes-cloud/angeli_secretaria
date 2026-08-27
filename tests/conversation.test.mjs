@@ -736,6 +736,18 @@ test("P05 conserva evento y recordatorio relativo como una operación vinculada"
   assert.equal(scheduledReminderEvent(note).summary,"Comprobar el equipo");
   assert.equal(scheduledReminderEvent(note).start.dateTime,"2026-09-12T18:00:00");
   assert.equal(updateCalendarDetails(note,"reminderTitle","Revisar todo el equipo").schedule.title,"Revisar todo el equipo");
+  assert.equal(updateCalendarDetails(note,"title","Boda de Ana").calendarTitle,"Boda de Ana");
+  assert.equal(updateCalendarDetails(note,"description","Llevar iluminación").calendarDescription,"Llevar iluminación");
+  assert.equal(updateCalendarDetails(note,"title","Boda de Ana").schedule.title,"Comprobar el equipo");
   assert.deepEqual(findReminderMatches([note],{}),[note]);
   assert.equal(toCloudEntry(note).schedule.title,"Comprobar el equipo");
+});
+
+test("P05 prioriza la estructura vinculada y respeta una hora matinal explícita", () => {
+  const action=localLinkedCalendarIntent("Tenemos una boda el 14 de septiembre a las seis. Recuérdame dos días antes cambiar las pilas.",new Date(2026,7,27,12));
+  assert.equal(action.intent,"calendar.create");
+  assert.equal(action.linkedReminder.title,"Cambiar las pilas");
+  const morning=localLinkedCalendarIntent("Tenemos una boda el 14 de septiembre a las seis de la mañana. Recuérdame dos días antes comprobar el equipo.",new Date(2026,7,27,12));
+  assert.equal(morning.time,"06:00");
+  assert.equal(morning.linkedReminder.time,"06:00");
 });

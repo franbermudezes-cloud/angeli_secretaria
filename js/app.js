@@ -59,10 +59,12 @@ async function add({interactionId=null}={}){
    mediaUploaded=true;
    ui.updateWorking("Interpretando tu instrucción","Angeli está preparando la acción adecuada…","");
    const fallbackType=active?.type||classify(text,images,files);
-   const localUpdate=localCalendarUpdate(text,now,active);
-   const rawInterpretation=await interpret(text,{provider:(value,context)=>google.interpretWithAI(value,remoteProvider,context),fallback:()=>localCalendarCancellation(text)||localUpdate||localLinkedCalendarIntent(text,now)||localInterpretation(text,fallbackType,active),context:contextFor(active)});
+   const localLinked=localLinkedCalendarIntent(text,now);
+   const cancellation=localLinked?null:localCalendarCancellation(text);
+   const localUpdate=localLinked?null:localCalendarUpdate(text,now,active);
+   const rawInterpretation=await interpret(text,{provider:(value,context)=>google.interpretWithAI(value,remoteProvider,context),fallback:()=>localLinked||cancellation||localUpdate||localInterpretation(text,fallbackType,active),context:contextFor(active)});
    if(rawInterpretation.source==="fallback")ui.updateWorking("Estoy revisando tu petición","Necesito confirmarla contigo antes de continuar.","");
-   const cancellation=localCalendarCancellation(text),deterministic=cancellation||localUpdate;
+   const deterministic=localLinked||cancellation||localUpdate;
    const routedInterpretation=preserveCancellation(active,protectCalendarInterpretation(rawInterpretation,deterministic));
    const normalizedInterpretation=normalizeReminderSchedule(normalizeFutureCall(normalizeUndatedCall(routedInterpretation,text,active,now),text),text,now);
    if(normalizedInterpretation.intent==="task.complete"){await resolvePendingCompletion(normalizedInterpretation);return}

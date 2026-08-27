@@ -248,9 +248,15 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
       } : item));
       notify("Evento y aviso añadidos a Calendar");
     } catch (_) {
-      if (event?.id) { try { await calendarRequest("DELETE", `/${encodeURIComponent(event.id)}`); } catch (_) {} }
-      saveNotes(getNotes().map(item => item.id === note.id ? { ...item, calendarStatus: "error", schedule: { ...item.schedule, status: "error", lastError: "Calendar no pudo crear la operación completa" } } : item));
-      notify("No se pudo crear el evento con su aviso");
+      let rollbackFailed = false;
+      if (event?.id) { try { await calendarRequest("DELETE", `/${encodeURIComponent(event.id)}`); } catch (_) { rollbackFailed = true; } }
+      saveNotes(getNotes().map(item => item.id === note.id ? {
+        ...item,
+        calendarStatus: rollbackFailed ? "partial" : "error",
+        ...(rollbackFailed ? { calendarEventId: event.id, calendarId: event.calendarId || "primary", calendarUrl: event.htmlLink || "" } : {}),
+        schedule: { ...item.schedule, status: "error", lastError: rollbackFailed ? "El evento se creó, pero fallaron el aviso y su retirada" : "Calendar no pudo crear la operación completa" }
+      } : item));
+      notify(rollbackFailed ? "El evento quedó creado; revisa Calendar antes de reintentar" : "No se pudo crear el evento con su aviso");
     } finally {
       calendarInFlight.delete(note.id);
     }
