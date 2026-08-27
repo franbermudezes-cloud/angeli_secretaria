@@ -1,5 +1,12 @@
 # Entorno automático de pruebas reales
 
+V0.21.25: regresión de modificación por persona. `P11` crea «Quedada con
+María», simula la salida problemática de Gemini `target.title = "hora con
+María"` y exige que «Cámbiame la hora con María» consulte Calendar usando solo
+`María`, encuentre el evento real y actualice su hora. La prueba local verifica
+además que tanto el intérprete de respaldo como la protección de la respuesta
+remota muestran `María` en el modal, nunca `hora con María`.
+
 V0.21.24: regresión semántica de cancelación. `P04-name` crea eventos reales
 «Quedada con Miguel» y exige que la orden «Anula cita con Miguel» los encuentre
 buscando por `Miguel`, permita cancelar uno solo y conserve el resto. La prueba

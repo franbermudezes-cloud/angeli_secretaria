@@ -1,5 +1,6 @@
-import { cleanTemporalText } from "./temporal.js?v=0.21.24";
-import { calendarDetails } from "./schedule.js?v=0.21.24";
+import { cleanTemporalText } from "./temporal.js?v=0.21.25";
+import { calendarDetails } from "./schedule.js?v=0.21.25";
+import { semanticCalendarTarget } from "./ai.js?v=0.21.25";
 
 const CLIENT_ID = "172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
@@ -428,8 +429,8 @@ export function buildCalendarSearch(interpretation = {}, intent = "calendar.quer
 }
 
 function calendarTargetQuery(value) {
-  const withoutCommand = String(value || "")
-    .replace(/^\s*(?:cancela(?:r)?|borra(?:r)?|anula(?:r)?|pasa|cambia|mueve|modifica)\s+(?:la\s+|el\s+)?/i, "");
+  const withoutCommand = semanticCalendarTarget(String(value || "")
+    .replace(/^\s*(?:cancela(?:r)?|borra(?:r)?|anula(?:r)?|pasa|cambia|mueve|modifica)\s+(?:la\s+|el\s+)?/i, ""));
   return cleanTemporalText(withoutCommand)
     // Calendar no conoce nuestros sinónimos. "cita con Miguel" debe poder
     // encontrar "Quedada con Miguel": la categoría expresa el tipo de evento

@@ -87,6 +87,10 @@ calendar.update con el mismo criterio semántico mínimo: target identifica el
 evento actual y changes contiene solo los nuevos datos. Por ejemplo,
 «cámbiame la hora de Miguel» mantiene target.title «Miguel» y pregunta la
 nueva hora si todavía no se ha dicho. Para
+«cámbiame la hora con María», la palabra «hora» describe el campo que cambia:
+target.title debe ser «María», nunca «hora con María». Aplica el mismo criterio
+si el campo solicitado es la fecha, el día, el lugar, la ubicación o el título.
+Para
 órdenes como «cámbiame la hora de llamar a Miguel», «modifícame la llamada de
 Miguel» o «reprograma el recordatorio de Miguel», calendar.update tiene
 prioridad absoluta sobre contact.call: la palabra «llamar» describe el evento

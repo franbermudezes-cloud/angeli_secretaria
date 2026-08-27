@@ -75,6 +75,16 @@ test('la protección local no sustituye el objetivo semántico entendido por la 
   }
 });
 
+test('modificar la hora con una persona elimina el campo del objetivo de búsqueda',()=>{
+  const text='Cámbiame la hora con María';
+  const local=localCalendarUpdate(text,new Date(2026,7,26,12));
+  assert.equal(local.target.title,'María');
+  const remote={intent:'calendar.update',confidence:.95,target:{title:'hora con María',date:null,time:null},changes:null,requiresConfirmation:true,source:'ai'};
+  const routed=protectCalendarInterpretation(remote,local);
+  assert.equal(routed.target.title,'María');
+  assert.equal(buildCalendarSearch(routed,'calendar.update').query,'María');
+});
+
 test('reprogramar busca por la persona y actualiza Calendar y el recordatorio local elegido',()=>{
   const search=buildCalendarSearch({target:{title:'Llamada de Miguel'}},'calendar.update');
   assert.equal(search.query,'Miguel');

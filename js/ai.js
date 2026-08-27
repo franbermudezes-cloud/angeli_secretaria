@@ -1,4 +1,4 @@
-import{calendarQueryRange,cleanTemporalText,temporalData}from"./temporal.js?v=0.21.24";
+import{calendarQueryRange,cleanTemporalText,temporalData}from"./temporal.js?v=0.21.25";
 
 export const VALID_INTENTS=["note","task.create","task.complete","reminder.create","reminder.query","calendar.create","calendar.query","calendar.update","calendar.delete","contact.call","file.store","photo.store"];
 const SENSITIVE_INTENTS=new Set(["calendar.update","calendar.delete","contact.call"]);
@@ -41,7 +41,7 @@ export function localCalendarUpdate(text = "", now = new Date(), active = null) 
       ? before
       : value.slice(match.index + match[0].length);
     candidate = candidate
-      .replace(/^\s*(?:(?:la\s+)?hora\s+de\s+|de\s+hora\s+)?(?:la\s+|el\s+)?/i, "")
+      .replace(/^\s*(?:(?:(?:la\s+|el\s+)?(?:hora|fecha|d[ií]a|ubicaci[oó]n|lugar|t[ií]tulo)|de\s+(?:hora|fecha|d[ií]a|ubicaci[oó]n|lugar|t[ií]tulo))\s+(?:de|del|para|con)\s+)?(?:la\s+|el\s+)?/i, "")
       .replace(/\b(?:para|hasta|al?)\s+(?=(?:el\s+)?(?:hoy|mañana|pasado\s+mañana|domingo|lunes|martes|miércoles|jueves|viernes|sábado|\d))/i, " ")
       .replace(/\bahora\b/gi, " ");
     candidate = cleanTemporalText(candidate)
@@ -75,7 +75,8 @@ export function protectCalendarInterpretation(remote, local) {
   if (!local) return remote;
   const sameIntent = remote?.intent === local.intent;
   if (!sameIntent) return { ...remote, ...local, source: remote?.source, fallbackReason: remote?.fallbackReason };
-  const remoteTarget = remote?.target?.title ? remote.target : null;
+  const remoteTitle = semanticCalendarTarget(remote?.target?.title);
+  const remoteTarget = remoteTitle ? { ...remote.target, title: remoteTitle } : null;
   const target = remoteTarget
     ? { ...remoteTarget,
         ...(local.target?.date ? { date: local.target.date } : {}),
@@ -90,6 +91,16 @@ export function protectCalendarInterpretation(remote, local) {
     missingFields: [],
     question: null
   };
+}
+
+// Separa el campo que se quiere cambiar del identificador del evento. Expresiones
+// como «hora con María» o «fecha de la reunión con Carlos» describen el cambio;
+// Calendar debe buscar a María o la reunión con Carlos, nunca la palabra «hora».
+export function semanticCalendarTarget(value = "") {
+  return String(value || "")
+    .replace(/^\s*(?:la\s+|el\s+)?(?:hora|fecha|d[ií]a|ubicaci[oó]n|lugar|t[ií]tulo)\s+(?:de|del|para|con)\s+/i, "")
+    .replace(/^\s*de\s+(?:hora|fecha|d[ií]a|ubicaci[oó]n|lugar|t[ií]tulo)\s+(?:de|del|para|con)\s+/i, "")
+    .trim();
 }
 
 export async function remoteProvider(text,idToken,context=null){if(!idToken)throw new Error("IA sin conexión");const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),8000);try{const response=await fetch(INTERPRETER_URL,{method:"POST",headers:{Authorization:`Bearer ${idToken}`,"Content-Type":"application/json"},body:JSON.stringify({text,now:new Date().toISOString(),timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone||"Europe/Madrid",context}),signal:controller.signal});if(!response.ok)throw new Error(`IA no disponible (${response.status})`);return await response.json()}finally{clearTimeout(timeout)}}

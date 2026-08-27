@@ -1,5 +1,17 @@
 # Changelog
 
+## V0.21.25 · Objetivo semántico al modificar
+
+- «Cámbiame la hora con María» busca por `María`, no por la expresión literal
+  `hora con María`, y puede localizar eventos como «Quedada con María».
+- La PWA separa de forma general el campo que se modifica —hora, fecha, día,
+  ubicación, lugar o título— del identificador estable del evento.
+- La misma normalización se aplica al objetivo de Gemini, al respaldo local y
+  en la frontera de búsqueda de Calendar para que un error de formulación no
+  vuelva a producir una consulta vacía.
+- P11 reproduce la frase real contra Calendar aislado, encuentra el evento, lo
+  modifica y lo elimina automáticamente al terminar.
+
 ## V0.21.24 · Cancelación por persona
 
 - «Anula cita con Miguel» encuentra también eventos titulados «Quedada con

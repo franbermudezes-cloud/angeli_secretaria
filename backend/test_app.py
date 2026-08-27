@@ -50,6 +50,7 @@ class InterpretEndpointTests(unittest.TestCase):
     def test_prompt_extracts_a_stable_semantic_target_for_calendar_actions(self):
         self.assertIn("«Anula cita con Miguel»", app.SYSTEM_INSTRUCTION)
         self.assertIn("target.title «Miguel»", app.SYSTEM_INSTRUCTION)
+        self.assertIn("nunca «hora con María»", app.SYSTEM_INSTRUCTION)
         self.assertIn("«cámbiame la hora de Miguel»", app.SYSTEM_INSTRUCTION)
 
     def test_rejects_text_over_500_characters_before_interpretation(self):
