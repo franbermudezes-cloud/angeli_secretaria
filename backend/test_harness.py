@@ -60,6 +60,7 @@ class IntegrationHarness:
             self._run("P10", self._calendar_query)
             self._run("P11", self._calendar_update)
             self._run("P05-summary", self._reminder_summary)
+            self._run("P05-description", self._calendar_descriptions)
             self._run("P05-relative", self._relative_reminders)
             self._run("P05-model-time", self._model_time_reminder)
             self._run("P06", self._drive_upload_and_cleanup)
@@ -240,6 +241,23 @@ class IntegrationHarness:
             raise RuntimeError("El summary leído de Calendar no conserva Miguel Ibiza")
         if saved.get("description", "") != payload.get("description", ""):
             raise RuntimeError("Calendar no conserva la descripción confirmada")
+
+    def _calendar_descriptions(self) -> None:
+        """Firestore PWA → payload PWA → Calendar real para evento y aviso."""
+        fixture = Path(__file__).resolve().parents[1] / "tests" / "calendar-description-fixture.mjs"
+        cases = json.loads(subprocess.run(["node", str(fixture)], check=True,
+            capture_output=True, text=True, timeout=20).stdout)
+        for case in cases:
+            payload = case["event"]
+            payload["summary"] = f"{self.prefix} {payload['summary']}"
+            created = self.service.api(CALENDAR, "POST", self._calendar_base(), payload)
+            event_id = created.get("id")
+            if not event_id:
+                raise RuntimeError(f"Calendar no devolvió el ID de {case['kind']}")
+            self.created_events.append(event_id)
+            saved = self.service.api(CALENDAR, "GET", self._calendar_base() + "/" + event_id)
+            if saved.get("description", "") != case["expected"]:
+                raise RuntimeError(f"Calendar perdió la descripción de {case['kind']}")
 
     def _relative_reminders(self) -> None:
         fixture = Path(__file__).resolve().parents[1] / "tests" / "relative-reminder-fixture.mjs"

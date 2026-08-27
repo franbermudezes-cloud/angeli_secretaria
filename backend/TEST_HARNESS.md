@@ -1,5 +1,12 @@
 # Entorno automático de pruebas reales
 
+V0.21.23: regresión de persistencia de descripciones. La serialización que usa
+Firestore es ahora una pieza pura probada en el arnés PWA: conserva tanto
+`calendarDescription` en eventos como `schedule.description` en recordatorios
+durante la ida y vuelta entre dispositivos. `P05-description` crea un evento y
+un recordatorio reales con esos payloads, vuelve a leerlos desde Calendar,
+compara las dos descripciones exactas y elimina ambos recursos al terminar.
+
 V0.21.22: ficha de confirmación única para eventos y recordatorios. Las pruebas
 PWA verifican que título, descripción y ubicación mostrados antes de confirmar
 son exactamente los enviados a Calendar, y que título y descripción se pueden

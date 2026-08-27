@@ -137,6 +137,15 @@ class TestHarnessTests(unittest.TestCase):
             harness.cleanup()
         self.assertEqual(service.events, {})
 
+    def test_event_and_reminder_descriptions_use_pwa_roundtrip_and_cleanup(self):
+        service = FakeGoogleSessions()
+        harness = IntegrationHarness(service, prefix="ANGELI-TEST-unit")
+        harness._calendar_descriptions()
+        self.assertEqual({event["description"] for event in service.events.values()},
+            {"Preparar el aniversario", "Llevar el presupuesto"})
+        harness.cleanup()
+        self.assertEqual(service.events, {})
+
 
 if __name__ == "__main__":
     unittest.main()

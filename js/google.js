@@ -1,5 +1,5 @@
-import { cleanTemporalText } from "./temporal.js?v=0.21.22";
-import { calendarDetails } from "./schedule.js?v=0.21.22";
+import { cleanTemporalText } from "./temporal.js?v=0.21.23";
+import { calendarDetails } from "./schedule.js?v=0.21.23";
 
 const CLIENT_ID = "172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
