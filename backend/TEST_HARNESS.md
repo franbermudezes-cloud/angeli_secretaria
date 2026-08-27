@@ -1,5 +1,14 @@
 # Entorno automático de pruebas reales
 
+V0.21.24: regresión semántica de cancelación. `P04-name` crea eventos reales
+«Quedada con Miguel» y exige que la orden «Anula cita con Miguel» los encuentre
+buscando por `Miguel`, permita cancelar uno solo y conserve el resto. La prueba
+local amplía los equivalentes cita, quedada, reunión, llamada, cena, comida,
+evento, aviso y recordatorio. La PWA conserva el objetivo semántico devuelto
+por la IA y limita la capa local a proteger la intención sensible. `P11` crea
+«Quedada con Miguel» y exige que «cámbiame la hora de Miguel» la encuentre y
+modifique usando solo `Miguel` como criterio.
+
 V0.21.23: regresión de persistencia de descripciones. La serialización que usa
 Firestore es ahora una pieza pura probada en el arnés PWA: conserva tanto
 `calendarDescription` en eventos como `schedule.description` en recordatorios

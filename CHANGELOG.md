@@ -1,5 +1,18 @@
 # Changelog
 
+## V0.21.24 · Cancelación por persona
+
+- «Anula cita con Miguel» encuentra también eventos titulados «Quedada con
+  Miguel»: la búsqueda usa la persona y no exige que Calendar conozca los
+  sinónimos de Angeli.
+- La normalización cubre cita, quedada, reunión, llamada, cena, comida, evento,
+  aviso y recordatorio sin perder la confirmación previa al borrado.
+- La IA vuelve a mandar sobre el objetivo semántico: las protecciones locales
+  conservan cancelar/modificar y su confirmación, pero ya no sustituyen
+  `Miguel` por la frase literal dictada.
+- `P04-name` reproduce el caso contra Calendar real y elimina todos sus eventos
+  aislados al terminar; `P11` hace lo mismo con «cámbiame la hora de Miguel».
+
 ## V0.21.23 · Descripciones sincronizadas
 
 - Firestore conserva `calendarDescription`; ya no desaparece entre la edición

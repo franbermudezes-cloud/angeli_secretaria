@@ -11,7 +11,7 @@ import {
 } from "../js/conversation.js";
 import { calendarDetails, normalizeFutureCall, normalizeReminderSchedule, scheduleFor, scheduleTitle, updateCalendarDetails } from "../js/schedule.js";
 import { completionTarget, completePending, completePendingWithCalendar, findPendingMatches, findReminderMatches } from "../js/pending.js";
-import { mockProvider, interpret, localCalendarUpdate, localReminderQuery } from "../js/ai.js";
+import { mockProvider, interpret, localCalendarUpdate, localReminderQuery, protectCalendarInterpretation } from "../js/ai.js";
 import { fixtureTitle, reminderFixture } from './reminder-event-fixture.mjs';
 import { applyCalendarUpdateToEntries, buildCalendarSearch, calendarEvent, scheduledReminderEvent, listAllCalendarPages, reconcileReminderEntries } from '../js/google.js';
 import { fromCloudEntry, toCloudEntry } from '../js/cloud-entry.js';
@@ -54,11 +54,25 @@ test('una orden de cambio tiene prioridad aunque la IA la confunda con llamar ah
   const text='Cámbiame la hora de llamar a Miguel';
   const mistaken={intent:'contact.call',confidence:.95,contactName:'Miguel',requiresConfirmation:true,source:'ai'};
   const priority=localCalendarUpdate(text,new Date(2026,7,26,12));
-  const routed={...mistaken,...priority,source:mistaken.source};
+  const routed=protectCalendarInterpretation(mistaken,priority);
   assert.equal(routed.intent,'calendar.update');
   assert.equal(routed.target.title,'Miguel');
   assert.equal(routed.changes,null);
   assert.equal(resolveConversationTurn({text,interpretation:routed}).interaction.status,INTERACTION_STATUS.AWAITING_INPUT);
+});
+
+test('la protección local no sustituye el objetivo semántico entendido por la IA',()=>{
+  const cases=[
+    ['Anula cita con Miguel','calendar.delete',localCalendarCancellation('Anula cita con Miguel'),null],
+    ['Cámbiame la hora de Miguel','calendar.update',localCalendarUpdate('Cámbiame la hora de Miguel',new Date(2026,7,26,12)),null],
+    ['Pasa lo de Miguel al viernes a las once','calendar.update',localCalendarUpdate('Pasa lo de Miguel al viernes a las once',new Date(2026,7,26,12)),{date:'2026-08-28',time:'11:00'}]
+  ];
+  for(const [text,intent,local,changes] of cases){
+    const remote={intent,confidence:.95,target:{title:'Miguel',date:null,time:null},changes,requiresConfirmation:true,source:'ai'};
+    const routed=protectCalendarInterpretation(remote,local);
+    assert.equal(routed.intent,intent,text);
+    assert.equal(routed.target.title,'Miguel',text);
+  }
 });
 
 test('reprogramar busca por la persona y actualiza Calendar y el recordatorio local elegido',()=>{
@@ -321,6 +335,19 @@ test('cancelar por nombre busca sin exigir día ni hora, incluso si la IA los pi
   assert.equal(localCalendarCancellation('Recuérdame llamar a Miguel'),null);
   const unknown = resolveConversationTurn({text:'Cancela',interpretation:{...parsed,target:null}});
   assert.deepEqual(unknown.interaction.missingFields,['target']);
+});
+
+test('anular cita con Miguel encuentra una quedada por la persona, no por la categoría literal', () => {
+  for (const phrase of [
+    'Anula cita con Miguel',
+    'Cancela quedada con Miguel',
+    'Borra reunión con Miguel',
+    'Anula cena con Miguel'
+  ]) {
+    const parsed = localCalendarCancellation(phrase);
+    assert.equal(parsed.intent, 'calendar.delete');
+    assert.equal(buildCalendarSearch(parsed, 'calendar.delete').query, 'Miguel');
+  }
 });
 
 test('no lo sé no convierte una cancelación activa en una consulta sin acciones', () => {

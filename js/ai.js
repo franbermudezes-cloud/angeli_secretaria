@@ -1,4 +1,4 @@
-import{calendarQueryRange,cleanTemporalText,temporalData}from"./temporal.js?v=0.21.23";
+import{calendarQueryRange,cleanTemporalText,temporalData}from"./temporal.js?v=0.21.24";
 
 export const VALID_INTENTS=["note","task.create","task.complete","reminder.create","reminder.query","calendar.create","calendar.query","calendar.update","calendar.delete","contact.call","file.store","photo.store"];
 const SENSITIVE_INTENTS=new Set(["calendar.update","calendar.delete","contact.call"]);
@@ -11,7 +11,7 @@ export function localCalendarCancellation(text = "") {
   const prefix = /^\s*(?:cancela(?:r)?|borra(?:r)?|anula(?:r)?)\s+(?:la\s+|el\s+)?/i;
   if (!prefix.test(text)) return null;
   let title = targetTitle(text, prefix);
-  if (!title || !/\b(?:llamada|llamar|recordatorio|aviso|evento|cita|cena|comida|reuni[oó]n)\b/i.test(title)) return null;
+  if (!title || !/\b(?:llamada|llamar|recordatorio|aviso|evento|cita|quedada|cena|comida|reuni[oó]n)\b/i.test(title)) return null;
   // Calendar busca texto, no sinónimos: «llamada a» no coincide con «Llamar a».
   title = title.replace(/^(?:recordatorio\s+(?:de|para)\s+)?(?:llamada|llamar)\s+(?:a|de|con)\s+/i, "");
   const temporal = temporalData(text);
@@ -66,6 +66,31 @@ export function localReminderQuery(text = "") {
 }
 
 export async function interpret(text,{provider=mockProvider,fallback,context=null}={}){try{const intent=validateIntent(await provider(text,context));if(intent.confidence<MIN_CONFIDENCE)throw new Error("Baja confianza");return{...intent,source:"ai",fallbackReason:null}}catch(error){const local=typeof fallback==="function"?fallback(text,context):fallback;return{...validateIntent(local),source:"fallback",fallbackReason:failureReason(error)}}}
+
+// La detección local protege la clase de una acción sensible, pero no debe
+// borrar la comprensión semántica de Gemini. Si la IA reconoció la misma
+// operación, conserva su objetivo (por ejemplo, solo "Miguel") y usa lo local
+// únicamente para fechas/cambios explícitos y confirmación obligatoria.
+export function protectCalendarInterpretation(remote, local) {
+  if (!local) return remote;
+  const sameIntent = remote?.intent === local.intent;
+  if (!sameIntent) return { ...remote, ...local, source: remote?.source, fallbackReason: remote?.fallbackReason };
+  const remoteTarget = remote?.target?.title ? remote.target : null;
+  const target = remoteTarget
+    ? { ...remoteTarget,
+        ...(local.target?.date ? { date: local.target.date } : {}),
+        ...(local.target?.time ? { time: local.target.time } : {}) }
+    : local.target;
+  return {
+    ...remote,
+    intent: local.intent,
+    target,
+    changes: local.changes || remote.changes || null,
+    requiresConfirmation: true,
+    missingFields: [],
+    question: null
+  };
+}
 
 export async function remoteProvider(text,idToken,context=null){if(!idToken)throw new Error("IA sin conexión");const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),8000);try{const response=await fetch(INTERPRETER_URL,{method:"POST",headers:{Authorization:`Bearer ${idToken}`,"Content-Type":"application/json"},body:JSON.stringify({text,now:new Date().toISOString(),timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone||"Europe/Madrid",context}),signal:controller.signal});if(!response.ok)throw new Error(`IA no disponible (${response.status})`);return await response.json()}finally{clearTimeout(timeout)}}
 
