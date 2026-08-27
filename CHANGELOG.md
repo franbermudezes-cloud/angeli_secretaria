@@ -1,5 +1,18 @@
 # Changelog
 
+## V0.21.22 · Ficha completa de Calendar
+
+- Eventos y recordatorios enseñan antes de guardar el título exacto, la fecha y
+  hora, la ubicación separada y la descripción que recibirá Calendar.
+- Si los datos dictados ya están completos, el camino normal sigue necesitando
+  únicamente confirmar «Añadir» o «Programar».
+- El mismo modal permite cambiar el título o añadir/cambiar una descripción por
+  voz o texto, sin abandonar la operación activa.
+- Los avisos programados guardan también ubicación y dejan de usar la frase
+  original como descripción oculta.
+- Se automatiza la igualdad entre la ficha confirmada y el payload real de
+  Calendar para eventos y recordatorios.
+
 ## V0.21.21 · Calendar reconciliado
 
 - Las consultas de recordatorios comprueban en Google Calendar si sus avisos

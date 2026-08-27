@@ -1,4 +1,4 @@
-const V="0.21.21",CACHE="angeli-secretaria-v"+V;
+const V="0.21.22",CACHE="angeli-secretaria-v"+V;
 const ASSETS=["./?v="+V,"./index.html?v="+V,"./styles.css?v="+V,"./styles-flow.css?v="+V,"./manifest.json?v="+V,"./js/app.js?v="+V,"./js/agenda.js?v="+V,"./js/ui.js?v="+V,"./js/storage.js?v="+V,"./js/classifier.js?v="+V,"./js/temporal.js?v="+V,"./js/google.js?v="+V,"./js/sheets.js?v="+V,"./js/ai.js?v="+V,"./js/intents.js?v="+V,"./js/conversation.js?v="+V,"./js/pending.js?v="+V,"./js/schedule.js?v="+V,"./js/firebase.js?v="+V,"./js/media.js?v="+V,"./icon-192.png?v="+V,"./icon-512.png?v="+V,"./assets/angeli-welcome.gif?v="+V];
 self.addEventListener("install",e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)))});
 self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));

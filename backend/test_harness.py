@@ -238,8 +238,8 @@ class IntegrationHarness:
         saved = self.service.api(CALENDAR, "GET", self._calendar_base() + "/" + event_id)
         if saved.get("summary") != payload["summary"]:
             raise RuntimeError("El summary leído de Calendar no conserva Miguel Ibiza")
-        if "Miguel Ibiza" not in saved.get("description", ""):
-            raise RuntimeError("Calendar no conserva el dictado original en description")
+        if saved.get("description", "") != payload.get("description", ""):
+            raise RuntimeError("Calendar no conserva la descripción confirmada")
 
     def _relative_reminders(self) -> None:
         fixture = Path(__file__).resolve().parents[1] / "tests" / "relative-reminder-fixture.mjs"

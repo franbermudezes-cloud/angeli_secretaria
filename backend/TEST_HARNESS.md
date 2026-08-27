@@ -1,5 +1,11 @@
 # Entorno automático de pruebas reales
 
+V0.21.22: ficha de confirmación única para eventos y recordatorios. Las pruebas
+PWA verifican que título, descripción y ubicación mostrados antes de confirmar
+son exactamente los enviados a Calendar, y que título y descripción se pueden
+editar sin alterar fecha, hora ni lugar. El dictado dentro del editor y la
+presentación final del modal se comprueban manualmente en un móvil real.
+
 V0.21.21: reconciliación de avisos borrados fuera de Angeli. `P03-external`
 crea y elimina un evento real en Calendar y verifica que la ausencia queda
 observable. Las pruebas del backend distinguen evento activo de 404/410 y las

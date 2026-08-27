@@ -1,4 +1,4 @@
-import{nextDateForTime,temporalData,explicitRelativeDate}from"./temporal.js?v=0.21.21";
+import{nextDateForTime,temporalData,explicitRelativeDate}from"./temporal.js?v=0.21.22";
 
 const CALL_INTENT=/\b(?:llama|llamar|telefonea|telefonear|contacta|contactar)\b/i;
 
@@ -43,7 +43,9 @@ export function normalizeReminderSchedule(interpretation,text,now=new Date()){
 
 export function scheduleFor(interpretation,text){
   if(interpretation?.intent!=="reminder.create"||!interpretation.date||!interpretation.time)return null;
-  const call=CALL_INTENT.test(text||"")||Boolean(interpretation.contactName)||Boolean(interpretation.phone);
+  // Que exista una persona no convierte por sí solo el recordatorio en llamada:
+  // «quedar con Miguel» debe conservar ese título y esa clase de acción.
+  const call=CALL_INTENT.test(text||"")||CALL_INTENT.test(interpretation.title||"")||Boolean(interpretation.phone);
   return{
     dueAt:`${interpretation.date}T${interpretation.time}:00`,
     timeZone:"Europe/Madrid",
@@ -58,6 +60,8 @@ export function scheduleFor(interpretation,text){
 }
 
 export function scheduleTitle(note){
+  const explicit=String(note.schedule?.title||"").trim();
+  if(explicit)return explicit;
   const action=note.schedule?.action||{};
   if(action.kind==="contact.call"){
     const name=usableName(action.contactName)||usableName(note.aiIntent?.contactName)||callName(note.aiIntent?.title)||callName(note.text);
@@ -66,6 +70,31 @@ export function scheduleTitle(note){
     return(note.text||note.aiIntent?.title||"Llamar a contacto").trim();
   }
   return(note.aiIntent?.title||note.text||"Recordatorio").trim();
+}
+
+// Ficha única de confirmación para eventos y avisos. Estos mismos campos son
+// los que se envían después a Calendar: la pantalla no muestra una aproximación.
+export function calendarDetails(note){
+  const reminder=Boolean(note.schedule);
+  return{
+    title:reminder?scheduleTitle(note):String(note.calendarTitle||note.aiIntent?.title||note.text||"Evento").trim(),
+    description:String(reminder?note.schedule?.description??note.aiIntent?.notes??"":note.calendarDescription??note.aiIntent?.notes??"").trim(),
+    location:String(note.location||note.aiIntent?.location||"").trim(),
+    when:reminder?scheduleWhen(note.schedule):eventWhen(note.scheduledDate||note.aiIntent?.date,note.scheduledTime||note.aiIntent?.time)
+  };
+}
+
+export function updateCalendarDetails(note,field,value){
+  const clean=String(value||"").trim();
+  if(!["title","description"].includes(field))return note;
+  if(note.schedule)return{...note,schedule:{...note.schedule,[field]:clean}};
+  return{...note,[field==="title"?"calendarTitle":"calendarDescription"]:clean};
+}
+
+function eventWhen(date,time){
+  if(!date||!time)return"Fecha u hora sin definir";
+  const value=new Date(`${date}T${time}:00`);
+  return Number.isNaN(value.getTime())?`${date} · ${time}`:value.toLocaleString("es-ES",{dateStyle:"full",timeStyle:"short"});
 }
 
 function usableName(value){

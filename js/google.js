@@ -1,5 +1,5 @@
-import { cleanTemporalText } from "./temporal.js?v=0.21.21";
-import { scheduleTitle } from "./schedule.js?v=0.21.21";
+import { cleanTemporalText } from "./temporal.js?v=0.21.22";
+import { calendarDetails } from "./schedule.js?v=0.21.22";
 
 const CLIENT_ID = "172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
@@ -358,13 +358,15 @@ export async function listAllCalendarPages(requestPage, initialParams, maxPages 
 // Constructor compartido por la PWA y la prueba real de Calendar.
 export function scheduledReminderEvent(note) {
   const schedule = note.schedule;
+  const details = calendarDetails(note);
   return {
     id: schedule.calendarEventId || `angelirem${note.id.replace(/-/g, "")}`,
-    summary: scheduleTitle(note),
-    description: note.text || note.aiIntent?.title || "",
+    summary: details.title,
+    description: details.description,
     start: { dateTime: schedule.dueAt, timeZone: "Europe/Madrid" },
     end: { dateTime: calendarEnd(schedule.dueAt.slice(0, 10), schedule.dueAt.slice(11, 16)), timeZone: "Europe/Madrid" },
-    reminders: { useDefault: false, overrides: [{ method: "popup", minutes: 0 }] }
+    reminders: { useDefault: false, overrides: [{ method: "popup", minutes: 0 }] },
+    ...(details.location ? { location: details.location } : {})
   };
 }
 
@@ -372,13 +374,15 @@ function contactTel(value) {
   return String(value || "").replace(/[^\d+]/g, "");
 }
 
-function calendarEvent(note) {
+export function calendarEvent(note) {
+  const details = calendarDetails(note);
   return {
     id: `angeli${note.id.replace(/-/g, "")}`,
-    summary: (note.calendarTitle || note.aiIntent?.title || cleanTemporalText(note.text)).trim(),
+    summary: details.title || cleanTemporalText(note.text).trim(),
     start: { dateTime: calendarDateTime(note.scheduledDate, note.scheduledTime), timeZone: "Europe/Madrid" },
     end: { dateTime: calendarEnd(note.scheduledDate, note.scheduledTime), timeZone: "Europe/Madrid" },
-    ...(note.location ? { location: note.location } : {})
+    ...(details.location ? { location: details.location } : {}),
+    ...(details.description ? { description: details.description } : {})
   };
 }
 

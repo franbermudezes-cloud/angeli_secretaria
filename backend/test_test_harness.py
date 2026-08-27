@@ -108,6 +108,7 @@ class TestHarnessTests(unittest.TestCase):
             harness._reminder_summary()
             event = next(iter(service.events.values()))
             self.assertEqual(event["summary"], "ANGELI-TEST-unit Llamar a Miguel Ibiza")
+            self.assertEqual(event["description"], "Confirmar presupuesto")
         finally:
             harness.cleanup()
         self.assertEqual(service.events, {})
