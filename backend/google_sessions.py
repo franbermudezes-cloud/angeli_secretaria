@@ -21,6 +21,12 @@ SCOPES = {
 }
 
 
+class GoogleResourceNotFound(RuntimeError):
+    def __init__(self, status_code: int):
+        super().__init__("El recurso de Google ya no existe")
+        self.status_code = status_code
+
+
 class GoogleSessions:
     def __init__(self, project: str, client_id: str, grant_prefix: str = "angeli-google"):
         """Sesiones OAuth persistentes de un perfil de Angeli.
@@ -126,6 +132,8 @@ class GoogleSessions:
             status = getattr(error, "code", None)
             if status in {401, 403}:
                 raise PermissionError("La autorización de Google ha caducado; conéctala de nuevo") from error
+            if status in {404, 410}:
+                raise GoogleResourceNotFound(status) from error
             raise RuntimeError("Google no pudo completar la operación") from error
 
     def upload_drive_file(self, data: bytes, name: str, mime_type: str, kind: str) -> dict:

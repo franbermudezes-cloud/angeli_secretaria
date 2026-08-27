@@ -1,6 +1,7 @@
 import os
 import unittest
 from io import BytesIO
+from unittest.mock import patch
 from urllib.error import HTTPError
 
 import app
@@ -335,10 +336,12 @@ class InterpretEndpointTests(unittest.TestCase):
         os.environ.pop("ALLOWED_FIREBASE_EMAILS", None)
 
     def test_calendar_get_distinguishes_existing_from_externally_deleted_event(self):
+        from google_sessions import GoogleResourceNotFound
+
         class FakeSessions:
             def api(self, integration, method, url, body=None):
                 if url.endswith("/deleted-event"):
-                    raise HTTPError(url, 404, "Not Found", {}, None)
+                    raise GoogleResourceNotFound(404)
                 return {"id": "active-event", "status": "confirmed", "summary": "Llamar a Miguel"}
 
         app.set_test_dependencies(
@@ -492,6 +495,17 @@ class InterpretEndpointTests(unittest.TestCase):
         self.assertEqual(service._drive_folder("file"), "files-folder-id")
         os.environ.pop("ANGELI_DRIVE_IMAGES_FOLDER_ID", None)
         os.environ.pop("ANGELI_DRIVE_FILES_FOLDER_ID", None)
+
+    def test_google_sessions_preserves_not_found_status(self):
+        from google_sessions import CALENDAR, GoogleResourceNotFound, GoogleSessions
+
+        service = GoogleSessions("angeli-secretaria", "client-id")
+        service._access_token = lambda integration: "token"
+        missing = HTTPError("https://calendar.test/event", 404, "Not Found", {}, None)
+        with patch("google_sessions.urlopen", side_effect=missing):
+            with self.assertRaises(GoogleResourceNotFound) as caught:
+                service.api(CALENDAR, "GET", "https://calendar.test/event")
+        self.assertEqual(caught.exception.status_code, 404)
 
     def test_test_profile_uses_different_secret_names_from_production(self):
         from google_sessions import GoogleSessions
