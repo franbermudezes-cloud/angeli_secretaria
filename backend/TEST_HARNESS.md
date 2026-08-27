@@ -1,5 +1,11 @@
 # Entorno automático de pruebas reales
 
+V0.21.21: reconciliación de avisos borrados fuera de Angeli. `P03-external`
+crea y elimina un evento real en Calendar y verifica que la ausencia queda
+observable. Las pruebas del backend distinguen evento activo de 404/410 y las
+pruebas PWA comprueban que solo el aviso ausente pasa a cancelado; un error
+técnico no modifica las entradas.
+
 V0.21.20: regresión automática de la frase real «Cámbiame la hora de llamar a
 Miguel». Comprueba que una respuesta errónea de IA como `contact.call` queda
 subordinada a `calendar.update`, conserva «Miguel» como objetivo y mantiene la

@@ -16,6 +16,7 @@ from datetime import date, datetime
 from io import BytesIO
 from typing import Any, Callable
 from urllib.parse import quote, urlencode
+from urllib.error import HTTPError
 from zoneinfo import ZoneInfo
 
 from google_sessions import CALENDAR, CONTACTS, DRIVE, GoogleSessions
@@ -392,6 +393,15 @@ def persistent_google_action(payload: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(event_id, str) or not event_id or len(event_id) > 300:
         raise ValueError("Evento no válido")
     url = base + "/" + quote(event_id, safe="")
+    if action == "get":
+        try:
+            event = service.api(CALENDAR, "GET", url)
+        except HTTPError as error:
+            if error.code in {404, 410}:
+                return {"calendarId": calendar_id, "eventId": event_id, "exists": False}
+            raise
+        return {"calendarId": calendar_id, "eventId": event_id,
+                "exists": event.get("status") != "cancelled", "event": event}
     if action == "delete":
         return {"calendarId": calendar_id, **service.api(CALENDAR, "DELETE", url)}
     if action == "patch" and isinstance(payload.get("event"), dict):

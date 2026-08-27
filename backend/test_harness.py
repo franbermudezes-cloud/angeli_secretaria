@@ -54,6 +54,7 @@ class IntegrationHarness:
         """
         try:
             self._run("P03-complete", self._complete_reminder)
+            self._run("P03-external", self._external_calendar_delete)
             self._run("P04", self._calendar_cancel)
             self._run("P04-name", self._calendar_cancel_by_name)
             self._run("P10", self._calendar_query)
@@ -119,6 +120,21 @@ class IntegrationHarness:
             if isinstance(item, dict) and item.get("status") != "cancelled"}
         if event["id"] in active_ids:
             raise RuntimeError("El recordatorio completado continúa activo en Calendar")
+
+    def _external_calendar_delete(self) -> None:
+        """Un borrado externo queda observable como ausencia, no como evento activo."""
+        now = datetime.now(timezone.utc)
+        event = self._create_event(f"{self.prefix} Aviso externo", now + timedelta(hours=2), now + timedelta(hours=3))
+        event_id = event["id"]
+        self.service.api(CALENDAR, "DELETE", self._calendar_base() + "/" + event_id)
+        self.created_events.remove(event_id)
+        try:
+            self.service.api(CALENDAR, "GET", self._calendar_base() + "/" + event_id)
+        except Exception as error:
+            if getattr(error, "code", None) in {404, 410}:
+                return
+            raise
+        raise RuntimeError("Calendar sigue devolviendo como activo el aviso borrado externamente")
 
     def _calendar_cancel_by_name(self) -> None:
         """Busca sin fecha tres llamadas reales y cancela solo la seleccionada."""

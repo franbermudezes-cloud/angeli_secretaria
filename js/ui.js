@@ -1,5 +1,5 @@
-import { typeLabel } from "./classifier.js?v=0.21.20";
-import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.20";
+import { typeLabel } from "./classifier.js?v=0.21.21";
+import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.21";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -120,7 +120,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.20";
+    image.src = "assets/angeli-welcome.gif?v=0.21.21";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";

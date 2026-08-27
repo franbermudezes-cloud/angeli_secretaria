@@ -13,7 +13,7 @@ import { normalizeFutureCall, normalizeReminderSchedule, scheduleFor, scheduleTi
 import { completionTarget, completePending, completePendingWithCalendar, findPendingMatches, findReminderMatches } from "../js/pending.js";
 import { mockProvider, interpret, localCalendarUpdate, localReminderQuery } from "../js/ai.js";
 import { fixtureTitle, reminderFixture } from './reminder-event-fixture.mjs';
-import { applyCalendarUpdateToEntries, buildCalendarSearch, scheduledReminderEvent, listAllCalendarPages } from '../js/google.js';
+import { applyCalendarUpdateToEntries, buildCalendarSearch, scheduledReminderEvent, listAllCalendarPages, reconcileReminderEntries } from '../js/google.js';
 
 test('reprogramar entiende frases naturales y separa objetivo de nueva fecha y hora',()=>{
   const now=new Date(2026,7,26,12);
@@ -577,4 +577,17 @@ test("consultar todos los recordatorios excluye cancelados y completados sin mut
   assert.deepEqual(findReminderMatches(entries, { target: { title: "Miguel Ibiza" } }).map(entry => entry.id), ["two"]);
   assert.deepEqual(findReminderMatches(entries, { target: { title: "Pepe" } }), []);
   assert.equal(JSON.stringify(entries), original);
+});
+
+test("un aviso borrado fuera de Angeli deja de aparecer como pendiente", () => {
+  const entries = [
+    { id: "deleted", type: "reminder", status: "pending", interaction: { status: "completed" }, schedule: { status: "scheduled", calendarEventId: "gone" } },
+    { id: "active", type: "reminder", status: "pending", interaction: { status: "completed" }, schedule: { status: "scheduled", calendarEventId: "alive" } },
+  ];
+  const reconciled = reconcileReminderEntries(entries, new Map([["gone", false], ["alive", true]]));
+  assert.equal(reconciled[0].status, "done");
+  assert.equal(reconciled[0].schedule.status, "cancelled");
+  assert.equal(reconciled[0].schedule.externalChange, true);
+  assert.equal(reconciled[1], entries[1]);
+  assert.deepEqual(findReminderMatches(reconciled, {}), [entries[1]]);
 });

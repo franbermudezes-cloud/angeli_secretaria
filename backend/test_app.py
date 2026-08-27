@@ -1,6 +1,7 @@
 import os
 import unittest
 from io import BytesIO
+from urllib.error import HTTPError
 
 import app
 
@@ -331,6 +332,28 @@ class InterpretEndpointTests(unittest.TestCase):
         self.assertIn("pageToken=next+page", service.calls[2][2])
         self.assertNotIn("ignored", service.calls[2][2])
         self.assertEqual(len(service.calls), 3)
+        os.environ.pop("ALLOWED_FIREBASE_EMAILS", None)
+
+    def test_calendar_get_distinguishes_existing_from_externally_deleted_event(self):
+        class FakeSessions:
+            def api(self, integration, method, url, body=None):
+                if url.endswith("/deleted-event"):
+                    raise HTTPError(url, 404, "Not Found", {}, None)
+                return {"id": "active-event", "status": "confirmed", "summary": "Llamar a Miguel"}
+
+        app.set_test_dependencies(
+            lambda text, now, timezone: VALID_RESPONSE.copy(),
+            lambda token: {"uid": "approved-sub", "email": "owner@example.com", "email_verified": True},
+            lambda: FakeSessions(),
+        )
+        os.environ.pop("ANGELI_AI_DEV_BYPASS_AUTH", None)
+        os.environ["ALLOWED_FIREBASE_EMAILS"] = "owner@example.com"
+        status, active = request_path("/google", {"integration": "calendar", "action": "get", "eventId": "active-event"}, "Bearer test")
+        self.assertEqual(status, "200 OK")
+        self.assertTrue(active["exists"])
+        status, deleted = request_path("/google", {"integration": "calendar", "action": "get", "eventId": "deleted-event"}, "Bearer test")
+        self.assertEqual(status, "200 OK")
+        self.assertFalse(deleted["exists"])
         os.environ.pop("ALLOWED_FIREBASE_EMAILS", None)
 
     def test_calendar_failure_is_not_reported_as_an_empty_result(self):
