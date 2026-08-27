@@ -1,5 +1,5 @@
-import { typeLabel } from "./classifier.js?v=0.21.21";
-import { scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.21";
+import { typeLabel } from "./classifier.js?v=0.21.22";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.22";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -110,7 +110,7 @@ export function createUI({ getMedia }) {
   }
 
   function updateDraft(value) {
-    ["activeDraft", "conversationDraft"].forEach(id => {
+    ["activeDraft", "conversationDraft", "calendarFieldDraft"].forEach(id => {
       const draft = $(id);
       if (draft && draft.value !== value) draft.value = value;
     });
@@ -120,7 +120,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.21";
+    image.src = "assets/angeli-welcome.gif?v=0.21.22";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -221,12 +221,20 @@ export function createUI({ getMedia }) {
     return '<div class="proposal-box"><strong>' + esc(typeLabel(note.type)) + "</strong>" + esc(description) + location + "</div>";
   }
 
+  function calendarCard(note) {
+    const details = calendarDetails(note);
+    return '<div class="calendar-confirmation">' +
+      '<span class="calendar-field-label">Título que guardaré</span><strong>' + esc(details.title) + '</strong>' +
+      '<span class="calendar-field-label">Fecha y hora</span><b>' + esc(details.when) + '</b>' +
+      (details.location ? '<span class="calendar-field-label">Ubicación</span><b>📍 ' + esc(details.location) + '</b>' : '') +
+      '<span class="calendar-field-label">Descripción</span><b>' + (details.description ? esc(details.description) : 'Sin descripción') + '</b></div>';
+  }
+
   function showEntryAction(note, google) {
     const intent = note.proposal?.intent || "note";
     const base = { title: "Entrada preparada", lead: "Angeli ha entendido esto. Confirma solo si quieres realizar la acción.", body: entryBody(note) };
     if (note.schedule) {
-      const title = scheduleTitle(note), when = scheduleWhen(note.schedule);
-      const detail = entryBody(note) + '<div class="schedule-box"><strong>⏰ ' + esc(title) + '</strong><span>' + esc(when) + '</span><small>Estado: ' + esc(scheduleState(note.schedule)) + '</small></div>';
+      const detail = entryBody(note) + calendarCard(note) + '<div class="schedule-box"><small>Estado: ' + esc(scheduleState(note.schedule)) + '</small></div>';
       if (note.schedule.status === "scheduled") {
         const link = note.schedule.calendarUrl ? '<p><a href="' + esc(note.schedule.calendarUrl) + '" target="_blank" rel="noopener">Abrir aviso en Calendar</a></p>' : "";
         showCompletion({ title: "✓ Aviso programado", lead: "Calendar te avisará a la hora indicada.", body: detail + link });
@@ -240,7 +248,7 @@ export function createUI({ getMedia }) {
         showCompletion({ title: "✓ Pendiente completado", lead: "Lo he marcado como hecho.", body: detail });
         return;
       }
-      openModal({ ...base, title: note.schedule.status === "error" ? "No se pudo programar" : "¿Programo este aviso?", lead: "Se creará un aviso en Google Calendar para que Android te avise a la hora indicada.", body: detail, actions: [{ label: "Ahora no", kind: "secondary", onClick: closeLayers }, { label: note.schedule.status === "error" ? "Reintentar" : "⏰ Programar", kind: "confirm", dataset: { a: "schedule", id: note.id } }] });
+      openModal({ ...base, title: note.schedule.status === "error" ? "No se pudo programar" : "¿Programo este aviso?", lead: "Comprueba el título. Si está bien, solo tienes que programarlo.", body: detail, actions: [{ label: "Cancelar", kind: "secondary", onClick: closeLayers }, { label: "Cambiar título", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "title" } }, { label: calendarDetails(note).description ? "Cambiar descripción" : "Añadir descripción", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "description" } }, { label: note.schedule.status === "error" ? "Reintentar" : "⏰ Programar", kind: "confirm", dataset: { a: "schedule", id: note.id } }] });
       return;
     }
     if (intent === "calendar.create") {
@@ -249,8 +257,10 @@ export function createUI({ getMedia }) {
         showCompletion({ title: "✓ Añadido al calendario", lead: "El evento ya está creado.", body: entryBody(note) + link });
         return;
       }
-      openModal({ ...base, title: "¿Lo añado al calendario?", actions: [
-        { label: "Seguir editando", kind: "secondary", onClick: () => { closeLayers(); $("text").value = note.text; $("text").focus(); } },
+      openModal({ ...base, title: "¿Lo añado al calendario?", lead: "Comprueba el título. La ubicación y la descripción se guardarán en sus campos.", body: entryBody(note) + calendarCard(note), actions: [
+        { label: "Cancelar", kind: "secondary", onClick: closeLayers },
+        { label: "Cambiar título", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "title" } },
+        { label: calendarDetails(note).description ? "Cambiar descripción" : "Añadir descripción", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "description" } },
         { label: "📅 Añadir", kind: "confirm", dataset: { a: "calendar", id: note.id } }
       ] });
       return;
@@ -316,6 +326,28 @@ export function createUI({ getMedia }) {
       return;
     }
     showCompletion({ title: "Guardado", lead: "La entrada se ha guardado en tu conversación." });
+  }
+
+  function showCalendarFieldEditor(note, field, { onSave, onMic, onCancel } = {}) {
+    const details = calendarDetails(note), isTitle = field === "title";
+    const draft = document.createElement("textarea");
+    draft.id = "calendarFieldDraft";
+    draft.className = "active-draft conversation-draft";
+    draft.rows = isTitle ? 2 : 4;
+    draft.placeholder = isTitle ? "Di o escribe el título exacto…" : "Di o escribe la descripción…";
+    draft.value = isTitle ? details.title : details.description;
+    const controls = document.createElement("div");
+    controls.className = "conversation-controls";
+    const mic = document.createElement("button");
+    mic.type = "button"; mic.className = "conversation-mic"; mic.textContent = "🎙️ Hablar";
+    mic.onclick = () => { draft.blur(); onMic?.("calendarFieldDraft"); };
+    const save = document.createElement("button");
+    save.type = "button"; save.className = "confirm conversation-send"; save.textContent = "Guardar cambio ➤";
+    save.onclick = () => { const value = draft.value.trim(); if (isTitle && !value) return notify("El título no puede quedar vacío"); onSave?.(value); };
+    controls.append(mic, save);
+    const content = document.createElement("div"); content.className = "conversation-question"; content.append(draft, controls);
+    openModal({ title: isTitle ? "Cambiar título" : details.description ? "Cambiar descripción" : "Añadir descripción", lead: isTitle ? "Esto será lo que veas en Calendar y en el aviso del móvil." : "Es opcional. Puedes dictarla o dejarla vacía.", body: content, actions: [{ label: "Volver", kind: "secondary", onClick: onCancel }] });
+    $("actionModal").classList.add("conversation-modal");
   }
 
   function showInteractionQuestion(note, { onSend, onMic, onCancel, value = "" } = {}) {
@@ -481,7 +513,7 @@ export function createUI({ getMedia }) {
     $("preview").innerHTML = files.map(file => '<img class="thumb" src="' + URL.createObjectURL(file) + '" alt="Imagen preparada">').join("");
   }
 
-  return { $, notify, setGoogleStatus, setSyncStatus, render, showImagePreview, showEntryAction, showCalendarEvent, showInteractionQuestion, showPendingChoices, showReminderResults, showReminderCancellation, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
+  return { $, notify, setGoogleStatus, setSyncStatus, render, showImagePreview, showEntryAction, showCalendarEvent, showInteractionQuestion, showCalendarFieldEditor, showPendingChoices, showReminderResults, showReminderCancellation, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
 }
 
 function esc(value) {

@@ -6,7 +6,8 @@ import { scheduledReminderEvent } from '../js/google.js';
 export function reminderFixture() {
   const text = 'Recuérdame llamar a Miguel Ibiza mañana a las diez de la mañana';
   const aiIntent = {intent:'reminder.create', title:'Llamar a contacto',
-    contactName:null, phone:null, date:'2026-08-27', time:'10:00'};
+    contactName:null, phone:null, date:'2026-08-27', time:'10:00',
+    notes:'Confirmar presupuesto'};
   return {id:crypto.randomUUID(), type:'reminder', text, aiIntent,
     schedule:scheduleFor(aiIntent,text)};
 }

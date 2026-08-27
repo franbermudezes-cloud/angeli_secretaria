@@ -9,11 +9,11 @@ import {
   findActiveInteraction,
   resolveConversationTurn,
 } from "../js/conversation.js";
-import { normalizeFutureCall, normalizeReminderSchedule, scheduleFor, scheduleTitle } from "../js/schedule.js";
+import { calendarDetails, normalizeFutureCall, normalizeReminderSchedule, scheduleFor, scheduleTitle, updateCalendarDetails } from "../js/schedule.js";
 import { completionTarget, completePending, completePendingWithCalendar, findPendingMatches, findReminderMatches } from "../js/pending.js";
 import { mockProvider, interpret, localCalendarUpdate, localReminderQuery } from "../js/ai.js";
 import { fixtureTitle, reminderFixture } from './reminder-event-fixture.mjs';
-import { applyCalendarUpdateToEntries, buildCalendarSearch, scheduledReminderEvent, listAllCalendarPages, reconcileReminderEntries } from '../js/google.js';
+import { applyCalendarUpdateToEntries, buildCalendarSearch, calendarEvent, scheduledReminderEvent, listAllCalendarPages, reconcileReminderEntries } from '../js/google.js';
 
 test('reprogramar entiende frases naturales y separa objetivo de nueva fecha y hora',()=>{
   const now=new Date(2026,7,26,12);
@@ -197,6 +197,43 @@ test('el modal conversacional conserva micrófono propio y cabe en el viewport v
   assert.match(css,/--angeli-viewport-top,0px/);
   assert.match(css,/\.modal-actions \.voice/);
 });
+
+test('evento y recordatorio comparten ficha editable sin añadir pasos al guardado normal', t => {
+  class Element {
+    constructor(tag='div'){this.tagName=tag;this.children=[];this.dataset={};this.value='';this.classList={add(){},remove(){},contains(){return false}}}
+    set innerHTML(value){this.children=[];this.html=value}
+    append(...children){this.children.push(...children)}
+    blur(){}
+  }
+  const elements=new Map(),old=globalThis.document;
+  globalThis.document={createElement:tag=>new Element(tag),getElementById:id=>{if(!elements.has(id))elements.set(id,new Element());return elements.get(id)}};
+  t.after(()=>{if(old===undefined)delete globalThis.document;else globalThis.document=old});
+  t.mock.method(globalThis,'setTimeout',()=>0);
+  const ui=createUI({getMedia:async()=>null});
+  const event={id:'calendar-card',type:'calendar',text:'Cena con María mañana a las nueve en San Marcos de Gandía',scheduledDate:'2026-08-28',scheduledTime:'21:00',calendarTitle:'Cena con María',location:'San Marcos de Gandía',proposal:{intent:'calendar.create'}};
+  ui.showEntryAction(event);
+  assert.match(elements.get('modalBody').html,/Título que guardaré/);
+  assert.match(elements.get('modalBody').html,/Cena con María/);
+  assert.match(elements.get('modalBody').html,/San Marcos de Gandía/);
+  assert.match(elements.get('modalBody').html,/Sin descripción/);
+  const actions=elements.get('modalActions').children;
+  assert.deepEqual(actions.map(button=>button.textContent),['Cancelar','Cambiar título','Añadir descripción','📅 Añadir']);
+  assert.equal(actions[3].dataset.a,'calendar');
+
+  let saved=null,micTarget=null;
+  ui.showCalendarFieldEditor(event,'description',{onSave:value=>saved=value,onMic:id=>micTarget=id,onCancel:()=>{}});
+  const editor=elements.get('modalBody').children[0],draft=editor.children[0],controls=editor.children[1];
+  draft.value='Preparar el aniversario';
+  controls.children[0].onclick();
+  controls.children[1].onclick();
+  assert.equal(micTarget,'calendarFieldDraft');
+  assert.equal(saved,'Preparar el aniversario');
+
+  const reminder={...reminderFixture(),aiIntent:{...reminderFixture().aiIntent,notes:null},proposal:{intent:'reminder.create'}};
+  ui.showEntryAction(reminder);
+  assert.match(elements.get('modalBody').html,/Llamar a Miguel Ibiza/);
+  assert.deepEqual(elements.get('modalActions').children.map(button=>button.textContent),['Cancelar','Cambiar título','Añadir descripción','⏰ Programar']);
+});
 import { markCancelledReminder } from '../js/pending.js';
 
 test('tras cancelar en Calendar solo deja de estar pendiente el recordatorio elegido',()=>{
@@ -321,12 +358,44 @@ test('P05 conserva Miguel Ibiza aunque la IA omita contactName', () => {
   const note = reminderFixture();
   const payload = scheduledReminderEvent(note);
   assert.equal(payload.summary, 'Llamar a Miguel Ibiza');
-  assert.equal(payload.description, note.text);
+  assert.equal(payload.description, 'Confirmar presupuesto');
   assert.equal(payload.start.dateTime, '2026-08-27T10:00:00');
   assert.equal(payload.end.dateTime, '2026-08-27T11:00:00');
   assert.equal(payload.start.timeZone, 'Europe/Madrid');
   assert.equal(note.schedule.action.contactName, 'Miguel Ibiza');
   assert.equal(scheduleTitle({...note, schedule:{...note.schedule, action:{kind:'contact.call'}}}), payload.summary);
+});
+
+test('la ficha confirmada es exactamente el payload de Calendar para evento y recordatorio', () => {
+  const event={id:'event-confirmation',type:'calendar',text:'Cena con María mañana a las nueve en San Marcos de Gandía',
+    scheduledDate:'2026-08-28',scheduledTime:'21:00',calendarTitle:'Cena con María',location:'San Marcos de Gandía',
+    calendarDescription:'Hablar del aniversario',aiIntent:{intent:'calendar.create',title:'Cena con María',notes:null}};
+  assert.deepEqual(calendarDetails(event),{
+    title:'Cena con María',description:'Hablar del aniversario',location:'San Marcos de Gandía',
+    when:new Date('2026-08-28T21:00:00').toLocaleString('es-ES',{dateStyle:'full',timeStyle:'short'})
+  });
+  assert.deepEqual(calendarEvent(event),{
+    id:'angelieventconfirmation',summary:'Cena con María',description:'Hablar del aniversario',location:'San Marcos de Gandía',
+    start:{dateTime:'2026-08-28T21:00:00',timeZone:'Europe/Madrid'},end:{dateTime:'2026-08-28T22:00:00',timeZone:'Europe/Madrid'}
+  });
+
+  const base=reminderFixture();
+  const reminder=updateCalendarDetails(updateCalendarDetails({...base,location:'Oficina de Miguel'},'title','Quedar con Miguel'),'description','Revisar el presupuesto');
+  const details=calendarDetails(reminder),payload=scheduledReminderEvent(reminder);
+  assert.equal(details.title,'Quedar con Miguel');
+  assert.equal(details.description,'Revisar el presupuesto');
+  assert.equal(payload.summary,details.title);
+  assert.equal(payload.description,details.description);
+  assert.equal(payload.location,details.location);
+});
+
+test('tener una persona no transforma quedar con Miguel en una llamada', () => {
+  const text='Tengo que quedar con Miguel mañana a las nueve';
+  const ai={intent:'reminder.create',title:'Quedar con Miguel',contactName:'Miguel',date:'2026-08-28',time:'09:00',notes:null};
+  const note={id:'meet-miguel',type:'reminder',text,aiIntent:ai,schedule:scheduleFor(ai,text)};
+  assert.equal(note.schedule.action.kind,'reminder');
+  assert.equal(calendarDetails(note).title,'Quedar con Miguel');
+  assert.equal(scheduledReminderEvent(note).summary,'Quedar con Miguel');
 });
 
 test('P05 respeta nombre explícito, título IA y recordatorios que no son llamadas', () => {
