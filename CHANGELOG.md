@@ -1,5 +1,19 @@
 # Changelog
 
+## V0.21.26 · Evento con aviso vinculado
+
+- P05 entiende en una sola frase un evento principal y «recuérdame N días
+  antes…», conservando título, fecha, hora y ubicación del evento junto al
+  título y momento del aviso anterior.
+- El modal enseña ambos elementos y los confirma con una sola acción. Calendar
+  crea los dos relacionados; si el aviso falla, Angeli retira el evento para
+  no dejar una operación a medias.
+- El vínculo queda registrado en las propiedades privadas del aviso y en la
+  entrada sincronizada de Firestore. Las consultas de recordatorios incluyen
+  también estos avisos vinculados.
+- `P05-linked` crea y lee los dos elementos en Calendar real aislado, comprueba
+  su relación y los elimina al terminar.
+
 ## V0.21.25 · Objetivo semántico al modificar
 
 - «Cámbiame la hora con María» busca por `María`, no por la expresión literal

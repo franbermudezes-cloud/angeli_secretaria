@@ -1,5 +1,5 @@
-import { typeLabel } from "./classifier.js?v=0.21.25";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.25";
+import { typeLabel } from "./classifier.js?v=0.21.26";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.26";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -120,7 +120,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.25";
+    image.src = "assets/angeli-welcome.gif?v=0.21.26";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -233,6 +233,23 @@ export function createUI({ getMedia }) {
   function showEntryAction(note, google) {
     const intent = note.proposal?.intent || "note";
     const base = { title: "Entrada preparada", lead: "Angeli ha entendido esto. Confirma solo si quieres realizar la acción.", body: entryBody(note) };
+    if (intent === "calendar.create" && note.schedule) {
+      const reminder = '<div class="calendar-confirmation"><span class="calendar-field-label">Aviso vinculado</span><strong>⏰ ' + esc(scheduleTitle(note)) + '</strong><span class="calendar-field-label">Fecha y hora del aviso</span><b>' + esc(scheduleWhen(note.schedule)) + '</b></div>';
+      const completed = note.calendarStatus === "synced" && note.schedule.status === "scheduled";
+      if (completed) {
+        const links = (note.calendarUrl ? '<a href="' + esc(note.calendarUrl) + '" target="_blank" rel="noopener">Abrir evento</a>' : '') + (note.schedule.calendarUrl ? ' · <a href="' + esc(note.schedule.calendarUrl) + '" target="_blank" rel="noopener">Abrir aviso</a>' : '');
+        showCompletion({ title: "✓ Evento y aviso creados", lead: "Los dos elementos relacionados ya están en Calendar.", body: entryBody(note) + calendarCard(note) + reminder + (links ? '<p>' + links + '</p>' : '') });
+        return;
+      }
+      openModal({ ...base, title: note.calendarStatus === "error" ? "No se pudo completar" : "¿Creo el evento y su aviso?", lead: "Comprueba los dos elementos. Se guardarán juntos o no se guardará ninguno.", body: entryBody(note) + calendarCard(note) + reminder, actions: [
+        { label: "Cancelar", kind: "secondary", onClick: closeLayers },
+        { label: "Cambiar título", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "title" } },
+        { label: "Cambiar aviso", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "reminderTitle" } },
+        { label: calendarDetails(note).description ? "Cambiar descripción" : "Añadir descripción", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "description" } },
+        { label: note.calendarStatus === "error" ? "Reintentar" : "📅 Crear los dos", kind: "confirm", dataset: { a: "calendar-bundle", id: note.id } }
+      ] });
+      return;
+    }
     if (note.schedule) {
       const detail = entryBody(note) + calendarCard(note) + '<div class="schedule-box"><small>Estado: ' + esc(scheduleState(note.schedule)) + '</small></div>';
       if (note.schedule.status === "scheduled") {
@@ -329,13 +346,13 @@ export function createUI({ getMedia }) {
   }
 
   function showCalendarFieldEditor(note, field, { onSave, onMic, onCancel } = {}) {
-    const details = calendarDetails(note), isTitle = field === "title";
+    const details = calendarDetails(note), isReminderTitle = field === "reminderTitle", isTitle = field === "title" || isReminderTitle;
     const draft = document.createElement("textarea");
     draft.id = "calendarFieldDraft";
     draft.className = "active-draft conversation-draft";
     draft.rows = isTitle ? 2 : 4;
     draft.placeholder = isTitle ? "Di o escribe el título exacto…" : "Di o escribe la descripción…";
-    draft.value = isTitle ? details.title : details.description;
+    draft.value = isReminderTitle ? scheduleTitle(note) : isTitle ? details.title : details.description;
     const controls = document.createElement("div");
     controls.className = "conversation-controls";
     const mic = document.createElement("button");
@@ -346,7 +363,7 @@ export function createUI({ getMedia }) {
     save.onclick = () => { const value = draft.value.trim(); if (isTitle && !value) return notify("El título no puede quedar vacío"); onSave?.(value); };
     controls.append(mic, save);
     const content = document.createElement("div"); content.className = "conversation-question"; content.append(draft, controls);
-    openModal({ title: isTitle ? "Cambiar título" : details.description ? "Cambiar descripción" : "Añadir descripción", lead: isTitle ? "Esto será lo que veas en Calendar y en el aviso del móvil." : "Es opcional. Puedes dictarla o dejarla vacía.", body: content, actions: [{ label: "Volver", kind: "secondary", onClick: onCancel }] });
+    openModal({ title: isReminderTitle ? "Cambiar aviso" : isTitle ? "Cambiar título" : details.description ? "Cambiar descripción" : "Añadir descripción", lead: isReminderTitle ? "Esto será lo que veas en el aviso anterior." : isTitle ? "Esto será lo que veas en Calendar y en el aviso del móvil." : "Es opcional. Puedes dictarla o dejarla vacía.", body: content, actions: [{ label: "Volver", kind: "secondary", onClick: onCancel }] });
     $("actionModal").classList.add("conversation-modal");
   }
 

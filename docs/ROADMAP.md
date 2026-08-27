@@ -14,6 +14,9 @@ La interfaz V0.16 está en pruebas y todavía no es una versión estable de refe
 
 Incluye recordatorios, llamadas futuras, tareas con fecha/hora, estado de programación, reintento, cancelación y trazabilidad. Especificación: [01-scheduled-actions.md](specs/01-scheduled-actions.md).
 
+**P05 resuelto en V0.21.26:** una sola orden puede crear un evento y un aviso
+anterior vinculados, con confirmación conjunta y escritura atómica en Calendar.
+
 ## Bloque 2 — Conocimiento de empresa
 
 **Objetivo:** permitir consultas útiles sobre la información real de la empresa —clientes, presupuestos, proyectos, marketing y procedimientos— sin copiar indiscriminadamente datos privados a la PWA.

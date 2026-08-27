@@ -48,7 +48,7 @@ class IntegrationHarness:
     def run(self) -> list[TestResult]:
         """Ejecuta las integraciones ya automatizables de P01–P16.
 
-        P01/P02 y P05/P12 requieren además el coordinador de conversación,
+        P01/P02 y P12 requieren además el coordinador de conversación,
         Firestore y/o una notificación en dispositivo. Se registran como
         pendientes manuales de esta primera fase; nunca se simulan como éxito.
         """
@@ -63,6 +63,7 @@ class IntegrationHarness:
             self._run("P05-description", self._calendar_descriptions)
             self._run("P05-relative", self._relative_reminders)
             self._run("P05-model-time", self._model_time_reminder)
+            self._run("P05-linked", self._linked_event_and_reminder)
             self._run("P06", self._drive_upload_and_cleanup)
         finally:
             self.cleanup()
@@ -299,6 +300,30 @@ class IntegrationHarness:
         if actual.strftime("%Y-%m-%dT%H:%M:%S") != "2026-08-27T10:00:00" or "Miguel Ibiza" not in saved.get("summary", ""):
             raise RuntimeError("Calendar no conservó la hora y el contacto de la muestra Gemini")
 
+    def _linked_event_and_reminder(self) -> None:
+        """P05: una frase crea un evento y un aviso anterior relacionados."""
+        fixture = Path(__file__).resolve().parents[1] / "tests" / "p05-linked-fixture.mjs"
+        case = json.loads(subprocess.run(["node", str(fixture)], check=True,
+            capture_output=True, text=True, timeout=20).stdout)
+        if case["interpretation"]["linkedReminder"]["date"] != "2026-09-12":
+            raise RuntimeError("P05 no calculó el aviso dos días antes")
+        event_payload = case["event"]
+        event_payload["summary"] = f"{self.prefix} {event_payload['summary']}"
+        event = self.service.api(CALENDAR, "POST", self._calendar_base(), event_payload)
+        self.created_events.append(event["id"])
+        reminder_payload = case["reminder"]
+        reminder_payload["summary"] = f"{self.prefix} {reminder_payload['summary']}"
+        reminder_payload["extendedProperties"] = {"private": {"angeliRelatedEventId": event["id"]}}
+        reminder = self.service.api(CALENDAR, "POST", self._calendar_base(), reminder_payload)
+        self.created_events.append(reminder["id"])
+        saved_event = self.service.api(CALENDAR, "GET", self._calendar_base() + "/" + event["id"])
+        saved_reminder = self.service.api(CALENDAR, "GET", self._calendar_base() + "/" + reminder["id"])
+        relation = saved_reminder.get("extendedProperties", {}).get("private", {}).get("angeliRelatedEventId")
+        if "Boda" not in saved_event.get("summary", "") or "Comprobar el equipo" not in saved_reminder.get("summary", ""):
+            raise RuntimeError("Calendar no conservó los dos elementos de P05")
+        if relation != event["id"]:
+            raise RuntimeError("El aviso de P05 no quedó vinculado con su evento")
+
     def _drive_upload_and_cleanup(self) -> None:
         """P06/P07 base: adjunto real a Drive de pruebas y eliminación posterior."""
         old_images = os.environ.get("ANGELI_DRIVE_IMAGES_FOLDER_ID")
@@ -342,7 +367,7 @@ class IntegrationHarness:
             "grantPrefix": TEST_GRANT_PREFIX,
             "results": [result.__dict__ for result in self.results],
             "automatedLocalCases": ["P01", "P02", "P03"],
-            "manualCases": ["P05", "P07", "P08", "P09", "P12", "P13", "P14", "P15", "P16"],
+            "manualCases": ["P07", "P08", "P09", "P12", "P13", "P14", "P15", "P16"],
         }
         (REPORT_DIRECTORY / f"{self.prefix}.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
 
