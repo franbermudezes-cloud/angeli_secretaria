@@ -1,6 +1,6 @@
-import { cleanTemporalText } from "./temporal.js?v=0.21.27";
-import { calendarDetails } from "./schedule.js?v=0.21.27";
-import { semanticCalendarTarget } from "./ai.js?v=0.21.27";
+import { cleanTemporalText } from "./temporal.js?v=0.21.28";
+import { calendarDetails } from "./schedule.js?v=0.21.28";
+import { semanticCalendarTarget } from "./ai.js?v=0.21.28";
 
 const CLIENT_ID = "172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
@@ -288,7 +288,7 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
       const search = buildCalendarSearch(interpretation, note.proposal?.intent);
       const data = await listAllCalendarPages(params => calendarRequest("GET", `?${params}`), search.params);
       calendarResults.set(note.id, {
-        events: (data.items || []).filter(item => item.status !== "cancelled").map(calendarCandidate),
+        events: calendarEventsForIntent(data.items || [], note.proposal?.intent),
         calendarId: data.calendarId || "primary",
         range: search.range,
         query: search.query
@@ -300,14 +300,23 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
   }
 
   async function deleteCalendarEvent(note, eventId) {
-    if (!confirm("¿Cancelar definitivamente este evento?")) return;
+    const localBundle = getNotes().some(item => item.calendarEventId === eventId && item.schedule?.relatedEventId === eventId && item.schedule?.calendarEventId);
+    if (!confirm(localBundle ? "¿Cancelar definitivamente este evento y su aviso asociado?" : "¿Cancelar definitivamente este evento?")) return;
     try {
+      const linked = await linkedReminderEvents(eventId);
       await calendarRequest("DELETE", `/${encodeURIComponent(eventId)}`);
+      for (const reminder of linked) await calendarRequest("DELETE", `/${encodeURIComponent(reminder.id)}`);
       completeCalendarAction(note, eventId, "delete");
-      notify("Evento cancelado");
+      notify(linked.length ? "Evento y aviso cancelados" : "Evento cancelado");
     } catch (_) {
-      notify("No se pudo cancelar");
+      notify("No se pudo completar la cancelación");
     }
+  }
+
+  async function linkedReminderEvents(eventId) {
+    const params = linkedReminderSearch(eventId);
+    const data = await listAllCalendarPages(page => calendarRequest("GET", `?${page}`), params);
+    return (data.items || []).filter(item => item.status !== "cancelled");
   }
 
   async function updateCalendarEvent(note, eventId) {
@@ -480,9 +489,10 @@ export function applyCalendarUpdateToEntries(entries, note, eventId, action, sav
     const directEvent = item.calendarEventId === eventId;
     const reminderEvent = item.schedule?.calendarEventId === eventId;
     if (!directEvent && !reminderEvent) return item;
-    if (action === "delete") return reminderEvent
-      ? { ...item, schedule: { ...item.schedule, status: "cancelled" } }
-      : { ...item, calendarStatus: "cancelled", calendarUrl: "" };
+    if (action === "delete") {
+      if (reminderEvent) return { ...item, schedule: { ...item.schedule, status: "cancelled" } };
+      if (directEvent) return { ...item, calendarStatus: "cancelled", calendarUrl: "", ...(item.schedule?.relatedEventId === eventId ? { schedule: { ...item.schedule, status: "cancelled", calendarUrl: "" } } : {}) };
+    }
     const date = changes.date || item.scheduledDate || item.schedule?.dueAt?.slice(0, 10);
     const time = changes.time || item.scheduledTime || item.schedule?.dueAt?.slice(11, 16);
     return {
@@ -506,6 +516,21 @@ function calendarCandidate(event) {
     when: new Date(start).toLocaleString("es-ES", { dateStyle: "medium", timeStyle: "short" }),
     allDay: !event.start?.dateTime
   };
+}
+
+export function linkedReminderSearch(eventId) {
+  return new URLSearchParams({
+    singleEvents: "true",
+    maxResults: "20",
+    privateExtendedProperty: `angeliRelatedEventId=${eventId}`
+  });
+}
+
+export function calendarEventsForIntent(items = [], intent = "calendar.query") {
+  return items
+    .filter(item => item.status !== "cancelled")
+    .filter(item => !["calendar.delete", "calendar.update"].includes(intent) || !item.extendedProperties?.private?.angeliRelatedEventId)
+    .map(calendarCandidate);
 }
 
 function calendarPatch(event, changes) {

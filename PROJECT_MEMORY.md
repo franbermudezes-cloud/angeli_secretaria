@@ -313,3 +313,7 @@ Cloud Run deja de aceptar el ID token efímero de Google Identity Services y pas
 - En `calendar.create` con `linkedReminder`, la separación local determinista manda sobre una salida remota que mezcle título y ubicación.
 - El aviso vinculado debe ser comprensible por sí solo: incluye el evento y su ubicación cuando existen.
 - El modal final siempre enseña el campo Ubicación y permite dictarlo o editarlo antes de crear.
+## V0.21.28 — Cancelación de operaciones vinculadas
+
+- `angeliRelatedEventId` es el vínculo de Calendar que permite localizar el aviso de un evento principal sin depender solo del estado local.
+- Cancelar el evento principal elimina también sus avisos vinculados; en selección de cancelar/modificar se ocultan estos avisos auxiliares.
