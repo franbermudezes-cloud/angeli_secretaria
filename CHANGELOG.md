@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.21.20] - 2026-08-27
+
+- «Cámbiame la hora de llamar a Miguel» tiene prioridad como modificación de
+  un recordatorio existente y nunca abre el flujo de llamada inmediata.
+- Se amplían las variantes flexionadas con pronombre: cámbiame, modifícame,
+  pásame, muéveme, retrásame, adelántame y reprográmame.
+- La instrucción del intérprete Gemini explicita que «llamar» puede describir
+  el evento objetivo y no debe ocultar la orden principal de cambio.
+- Protección local adicional: una clasificación errónea de la IA como
+  `contact.call` se corrige antes de presentar cualquier acción.
+
 ## [0.21.19] - 2026-08-26
 
 - Las órdenes para pasar, cambiar, mover, retrasar, adelantar o reprogramar

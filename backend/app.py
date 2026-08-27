@@ -80,6 +80,13 @@ lugar físico, location debe ser null.
 Para cancelar usa calendar.delete y expresa en target el título del evento y,
 si se menciona, su fecha u hora. Para modificar usa calendar.update: target
 identifica el evento actual y changes contiene solo los nuevos datos. Para
+órdenes como «cámbiame la hora de llamar a Miguel», «modifícame la llamada de
+Miguel» o «reprograma el recordatorio de Miguel», calendar.update tiene
+prioridad absoluta sobre contact.call: la palabra «llamar» describe el evento
+existente y nunca significa llamar ahora. Si todavía no se indica la nueva
+fecha u hora, devuelve calendar.update, conserva a Miguel en target.title,
+deja changes en null y pregunta brevemente cuándo debe reprogramarse.
+Para
 preguntas sobre la agenda usa calendar.query. En una consulta de intervalo,
 como «qué tengo la semana que viene», usa rangeStart y rangeEnd en formato
 YYYY-MM-DD, con el inicio inclusivo y el fin exclusivo. En calendar.query,
