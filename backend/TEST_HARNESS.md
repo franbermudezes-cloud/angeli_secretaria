@@ -1,5 +1,11 @@
 # Entorno automático de pruebas reales
 
+V0.21.26: P05 compuesto. La frase oficial de boda en Masía X produce un evento
+el 14 de septiembre a las 18:00 y el aviso «Comprobar el equipo» dos días
+antes. La prueba PWA valida interpretación, payloads, persistencia y consulta
+del recordatorio. `P05-linked` crea ambos recursos en Calendar aislado, exige
+que el aviso conserve el ID del evento relacionado y los elimina al terminar.
+
 V0.21.25: regresión de modificación por persona. `P11` crea «Quedada con
 María», simula la salida problemática de Gemini `target.title = "hora con
 María"` y exige que «Cámbiame la hora con María» consulte Calendar usando solo

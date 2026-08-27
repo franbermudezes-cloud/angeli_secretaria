@@ -1,6 +1,6 @@
-import { cleanTemporalText } from "./temporal.js?v=0.21.25";
-import { calendarDetails } from "./schedule.js?v=0.21.25";
-import { semanticCalendarTarget } from "./ai.js?v=0.21.25";
+import { cleanTemporalText } from "./temporal.js?v=0.21.26";
+import { calendarDetails } from "./schedule.js?v=0.21.26";
+import { semanticCalendarTarget } from "./ai.js?v=0.21.26";
 
 const CLIENT_ID = "172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
@@ -182,8 +182,8 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
   }
 
   async function reconcileScheduledReminders(entries) {
-    const linked = entries.filter(item => item?.type === "reminder"
-      && item.schedule?.status === "scheduled" && item.schedule?.calendarEventId);
+    const linked = entries.filter(item => item?.schedule?.status === "scheduled"
+      && item.schedule?.calendarEventId);
     if (!linked.length) return entries;
     const statuses = new Map();
     await Promise.all(linked.map(async item => {
@@ -228,6 +228,35 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
     } catch (_) {
       saveNotes(getNotes().map(item => item.id === note.id ? { ...item, schedule: { ...item.schedule, status: "error", lastError: "Calendar no pudo programar el aviso" } } : item));
       notify("No se pudo programar el aviso");
+    } finally {
+      calendarInFlight.delete(note.id);
+    }
+  }
+
+  async function createLinkedCalendarBundle(note) {
+    if (!note.schedule?.dueAt || calendarInFlight.has(note.id)) return;
+    calendarInFlight.add(note.id);
+    let event = null;
+    try {
+      event = await calendarRequest("POST", "", calendarEvent(note));
+      const schedule = { ...note.schedule, relatedEventId: event.id };
+      const reminder = await calendarRequest("POST", "", scheduledReminderEvent({ ...note, schedule }));
+      saveNotes(getNotes().map(item => item.id === note.id ? {
+        ...item,
+        calendarStatus: "synced", calendarEventId: event.id, calendarId: event.calendarId || "primary", calendarUrl: event.htmlLink || "",
+        schedule: { ...item.schedule, status: "scheduled", relatedEventId: event.id, calendarEventId: reminder.id, calendarId: reminder.calendarId || "primary", calendarUrl: reminder.htmlLink || "", lastError: null }
+      } : item));
+      notify("Evento y aviso añadidos a Calendar");
+    } catch (_) {
+      let rollbackFailed = false;
+      if (event?.id) { try { await calendarRequest("DELETE", `/${encodeURIComponent(event.id)}`); } catch (_) { rollbackFailed = true; } }
+      saveNotes(getNotes().map(item => item.id === note.id ? {
+        ...item,
+        calendarStatus: rollbackFailed ? "partial" : "error",
+        ...(rollbackFailed ? { calendarEventId: event.id, calendarId: event.calendarId || "primary", calendarUrl: event.htmlLink || "" } : {}),
+        schedule: { ...item.schedule, status: "error", lastError: rollbackFailed ? "El evento se creó, pero fallaron el aviso y su retirada" : "Calendar no pudo crear la operación completa" }
+      } : item));
+      notify(rollbackFailed ? "El evento quedó creado; revisa Calendar antes de reintentar" : "No se pudo crear el evento con su aviso");
     } finally {
       calendarInFlight.delete(note.id);
     }
@@ -313,6 +342,7 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
     interpretWithAI,
     searchContact,
     createCalendarEvent,
+    createLinkedCalendarBundle,
     createScheduledReminder,
     cancelScheduledReminder,
     completeScheduledReminder,
@@ -359,7 +389,9 @@ export async function listAllCalendarPages(requestPage, initialParams, maxPages 
 // Constructor compartido por la PWA y la prueba real de Calendar.
 export function scheduledReminderEvent(note) {
   const schedule = note.schedule;
-  const details = calendarDetails(note);
+  const details = note.proposal?.intent === "calendar.create"
+    ? { title: schedule.title || "Recordatorio", description: schedule.description || "", location: "" }
+    : calendarDetails(note);
   return {
     id: schedule.calendarEventId || `angelirem${note.id.replace(/-/g, "")}`,
     summary: details.title,
@@ -367,7 +399,8 @@ export function scheduledReminderEvent(note) {
     start: { dateTime: schedule.dueAt, timeZone: "Europe/Madrid" },
     end: { dateTime: calendarEnd(schedule.dueAt.slice(0, 10), schedule.dueAt.slice(11, 16)), timeZone: "Europe/Madrid" },
     reminders: { useDefault: false, overrides: [{ method: "popup", minutes: 0 }] },
-    ...(details.location ? { location: details.location } : {})
+    ...(details.location ? { location: details.location } : {}),
+    ...(schedule.relatedEventId ? { extendedProperties: { private: { angeliRelatedEventId: schedule.relatedEventId } } } : {})
   };
 }
 

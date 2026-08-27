@@ -1,4 +1,4 @@
-import{nextDateForTime,temporalData,explicitRelativeDate}from"./temporal.js?v=0.21.25";
+import{nextDateForTime,temporalData,explicitRelativeDate}from"./temporal.js?v=0.21.26";
 
 const CALL_INTENT=/\b(?:llama|llamar|telefonea|telefonear|contacta|contactar)\b/i;
 
@@ -59,6 +59,12 @@ export function scheduleFor(interpretation,text){
   };
 }
 
+export function linkedScheduleFor(interpretation){
+  const reminder=interpretation?.linkedReminder;
+  if(interpretation?.intent!=="calendar.create"||!reminder?.date||!reminder?.time)return null;
+  return{dueAt:`${reminder.date}T${reminder.time}:00`,timeZone:"Europe/Madrid",title:reminder.title,description:reminder.notes||"",action:{kind:"reminder",contactName:null,phone:null},status:"pending_confirmation",delivery:{calendar:"pending",android:"pending"},calendarEventId:null,calendarUrl:null,relatedEventId:null,externalJobId:null,lastError:null};
+}
+
 export function scheduleTitle(note){
   const explicit=String(note.schedule?.title||"").trim();
   if(explicit)return explicit;
@@ -75,7 +81,7 @@ export function scheduleTitle(note){
 // Ficha única de confirmación para eventos y avisos. Estos mismos campos son
 // los que se envían después a Calendar: la pantalla no muestra una aproximación.
 export function calendarDetails(note){
-  const reminder=Boolean(note.schedule);
+  const reminder=Boolean(note.schedule)&&note.proposal?.intent!=="calendar.create";
   return{
     title:reminder?scheduleTitle(note):String(note.calendarTitle||note.aiIntent?.title||note.text||"Evento").trim(),
     description:String(reminder?note.schedule?.description??note.aiIntent?.notes??"":note.calendarDescription??note.aiIntent?.notes??"").trim(),
@@ -86,7 +92,9 @@ export function calendarDetails(note){
 
 export function updateCalendarDetails(note,field,value){
   const clean=String(value||"").trim();
+  if(field==="reminderTitle"&&note.schedule)return{...note,schedule:{...note.schedule,title:clean}};
   if(!["title","description"].includes(field))return note;
+  if(note.schedule&&note.proposal?.intent==="calendar.create")return{...note,[field==="title"?"calendarTitle":"calendarDescription"]:clean};
   if(note.schedule)return{...note,schedule:{...note.schedule,[field]:clean}};
   return{...note,[field==="title"?"calendarTitle":"calendarDescription"]:clean};
 }

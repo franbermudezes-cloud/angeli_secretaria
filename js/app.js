@@ -1,17 +1,17 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.25";
-import{classify,actionData}from"./classifier.js?v=0.21.25";
-import{sendEntry}from"./sheets.js?v=0.21.25";
-import{createUI}from"./ui.js?v=0.21.25";
-import{createGoogleIntegration}from"./google.js?v=0.21.25";
-import{interpret,remoteProvider,localReminderQuery,localCalendarCancellation,localCalendarUpdate,protectCalendarInterpretation}from"./ai.js?v=0.21.25";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.25";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.25";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,updateCalendarDetails}from"./schedule.js?v=0.21.25";
-import{createCloudSync}from"./firebase.js?v=0.21.25";
-import{createMediaService}from"./media.js?v=0.21.25";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.25";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.25";
-import{createAgendaActions}from"./agenda.js?v=0.21.25";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.26";
+import{classify,actionData}from"./classifier.js?v=0.21.26";
+import{sendEntry}from"./sheets.js?v=0.21.26";
+import{createUI}from"./ui.js?v=0.21.26";
+import{createGoogleIntegration}from"./google.js?v=0.21.26";
+import{interpret,remoteProvider,localReminderQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,protectCalendarInterpretation}from"./ai.js?v=0.21.26";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.26";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.26";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails}from"./schedule.js?v=0.21.26";
+import{createCloudSync}from"./firebase.js?v=0.21.26";
+import{createMediaService}from"./media.js?v=0.21.26";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.26";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.26";
+import{createAgendaActions}from"./agenda.js?v=0.21.26";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],selectedFilter="all",selectedType="all",shortcutCapture=false,saving=false;
@@ -59,10 +59,12 @@ async function add({interactionId=null}={}){
    mediaUploaded=true;
    ui.updateWorking("Interpretando tu instrucción","Angeli está preparando la acción adecuada…","");
    const fallbackType=active?.type||classify(text,images,files);
-   const localUpdate=localCalendarUpdate(text,now,active);
-   const rawInterpretation=await interpret(text,{provider:(value,context)=>google.interpretWithAI(value,remoteProvider,context),fallback:()=>localCalendarCancellation(text)||localUpdate||localInterpretation(text,fallbackType,active),context:contextFor(active)});
+   const localLinked=localLinkedCalendarIntent(text,now);
+   const cancellation=localLinked?null:localCalendarCancellation(text);
+   const localUpdate=localLinked?null:localCalendarUpdate(text,now,active);
+   const rawInterpretation=await interpret(text,{provider:(value,context)=>google.interpretWithAI(value,remoteProvider,context),fallback:()=>localLinked||cancellation||localUpdate||localInterpretation(text,fallbackType,active),context:contextFor(active)});
    if(rawInterpretation.source==="fallback")ui.updateWorking("Estoy revisando tu petición","Necesito confirmarla contigo antes de continuar.","");
-   const cancellation=localCalendarCancellation(text),deterministic=cancellation||localUpdate;
+   const deterministic=localLinked||cancellation||localUpdate;
    const routedInterpretation=preserveCancellation(active,protectCalendarInterpretation(rawInterpretation,deterministic));
    const normalizedInterpretation=normalizeReminderSchedule(normalizeFutureCall(normalizeUndatedCall(routedInterpretation,text,active,now),text),text,now);
    if(normalizedInterpretation.intent==="task.complete"){await resolvePendingCompletion(normalizedInterpretation);return}
@@ -70,7 +72,7 @@ async function add({interactionId=null}={}){
    const turn=resolveConversationTurn({active,text,interpretation:normalizedInterpretation,now:now.toISOString()});
    const interpretation=turn.interpretation,proposal=planIntent(interpretation,fallbackType),type=entryTypeForIntent(proposal,fallbackType);
    const data={...(interpretation.date?{scheduledDate:interpretation.date}:{}),...(interpretation.time?{scheduledTime:interpretation.time}:{}),...(interpretation.phone?{phone:interpretation.phone}:{}),...(interpretation.location?{location:interpretation.location}:{}),...(type==="calendar"&&interpretation.title?{calendarTitle:interpretation.title}:{}),...(type==="contact"&&interpretation.contactName?{contactQuery:interpretation.contactName}:{})};
-   const schedule=scheduleFor(interpretation,active?.text||text);
+   const schedule=scheduleFor(interpretation,active?.text||text)||linkedScheduleFor(interpretation);
    const entry={...(active||{}),id,date:active?.date||now.toISOString(),updatedAt:now.toISOString(),text:active?.text||text,status:active?.status||"pending",type,...data,aiIntent:interpretation,proposal,interaction:turn.interaction,...(proposal.intent==="calendar.create"?{calendarStatus:active?.calendarStatus||"pending"}:{}),...(schedule?{schedule}:{}),images:[...(active?.images||[]),...images],files:[...(active?.files||[]),...files]};
    ui.updateWorking("Guardando","Angeli está registrando tu instrucción…","");
    const nextNotes=active?notes.map(item=>item.id===active.id?entry:item):[entry,...notes];
@@ -176,6 +178,13 @@ async function handleEntryAction(event){
   if(current.schedule?.status==="scheduled")completeCurrentAction(note.id);
   ui.showEntryAction(notes.find(item=>item.id===note.id)||current,google);return;
  }
+ if(action==="calendar-bundle"){
+  ui.showWorking("Añadiendo evento y aviso","Angeli está creando los dos elementos relacionados en Calendar…","");
+  await google.createLinkedCalendarBundle(note);
+  const current=notes.find(item=>item.id===note.id)||note;
+  if(current.calendarStatus==="synced"&&current.schedule?.status==="scheduled")completeCurrentAction(note.id);
+  ui.showEntryAction(notes.find(item=>item.id===note.id)||current,google);return;
+ }
  if(action==="cancel-schedule"){
   await google.cancelScheduledReminder(note);
   const current=notes.find(item=>item.id===note.id)||note;
@@ -225,7 +234,7 @@ async function handleEntryAction(event){
  }
 }
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.25",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.26",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}

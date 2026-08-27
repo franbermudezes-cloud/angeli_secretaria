@@ -21,6 +21,7 @@ VALID_RESPONSE = {
     "notes": None,
     "target": None,
     "changes": None,
+    "linkedReminder": None,
     "requiresConfirmation": True,
     "missingFields": [],
     "question": None,
@@ -52,6 +53,17 @@ class InterpretEndpointTests(unittest.TestCase):
         self.assertIn("target.title «Miguel»", app.SYSTEM_INSTRUCTION)
         self.assertIn("nunca «hora con María»", app.SYSTEM_INSTRUCTION)
         self.assertIn("«cámbiame la hora de Miguel»", app.SYSTEM_INSTRUCTION)
+
+    def test_p05_accepts_a_linked_reminder_only_for_calendar_creation(self):
+        linked = {"title": "Comprobar el equipo", "date": "2026-09-12", "time": "18:00", "notes": None}
+        result = app.validate_interpretation(VALID_RESPONSE | {
+            "title": "Boda", "date": "2026-09-14", "time": "18:00",
+            "location": "Masía X", "linkedReminder": linked,
+        })
+        self.assertEqual(result["linkedReminder"], linked)
+        other = app.validate_interpretation(VALID_RESPONSE | {"intent": "note", "linkedReminder": linked})
+        self.assertIsNone(other["linkedReminder"])
+        self.assertIn("linkedReminder «Comprobar el equipo»", app.SYSTEM_INSTRUCTION)
 
     def test_rejects_text_over_500_characters_before_interpretation(self):
         status, data = app.wsgi_request({"text": "x" * 501, "now": "2026-08-20T21:20:00+02:00", "timeZone": "Europe/Madrid"})

@@ -1,4 +1,4 @@
-import { completeInteraction, cancelInteraction } from "./conversation.js?v=0.21.25";
+import { completeInteraction, cancelInteraction } from "./conversation.js?v=0.21.26";
 
 // Solo tras confirmar el éxito del borrado que acaba de ejecutar Angeli.
 export function markCancelledReminder(entries, eventId) {
@@ -32,7 +32,7 @@ export function findReminderMatches(entries = [], interpretation = {}) {
 
   return entries
     // Cerrar la conversación al programar no significa realizar el recordatorio.
-    .filter(entry => entry?.type === "reminder" && entry.status !== "done"
+    .filter(entry => (entry?.type === "reminder" || Boolean(entry?.schedule)) && entry.status !== "done"
       && entry.interaction?.status !== "cancelled"
       && !["cancelled", "completed"].includes(entry.schedule?.status))
     .map(entry => ({ entry, score: tokens.length ? matchScore(entry, tokens) : 1 }))

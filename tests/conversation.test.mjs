@@ -9,9 +9,9 @@ import {
   findActiveInteraction,
   resolveConversationTurn,
 } from "../js/conversation.js";
-import { calendarDetails, normalizeFutureCall, normalizeReminderSchedule, scheduleFor, scheduleTitle, updateCalendarDetails } from "../js/schedule.js";
+import { calendarDetails, linkedScheduleFor, normalizeFutureCall, normalizeReminderSchedule, scheduleFor, scheduleTitle, updateCalendarDetails } from "../js/schedule.js";
 import { completionTarget, completePending, completePendingWithCalendar, findPendingMatches, findReminderMatches } from "../js/pending.js";
-import { mockProvider, interpret, localCalendarUpdate, localReminderQuery, protectCalendarInterpretation } from "../js/ai.js";
+import { mockProvider, interpret, localCalendarUpdate, localLinkedCalendarIntent, localReminderQuery, protectCalendarInterpretation, validateIntent } from "../js/ai.js";
 import { fixtureTitle, reminderFixture } from './reminder-event-fixture.mjs';
 import { applyCalendarUpdateToEntries, buildCalendarSearch, calendarEvent, scheduledReminderEvent, listAllCalendarPages, reconcileReminderEntries } from '../js/google.js';
 import { fromCloudEntry, toCloudEntry } from '../js/cloud-entry.js';
@@ -258,6 +258,14 @@ test('evento y recordatorio comparten ficha editable sin añadir pasos al guarda
   ui.showEntryAction(reminder);
   assert.match(elements.get('modalBody').html,/Llamar a Miguel Ibiza/);
   assert.deepEqual(elements.get('modalActions').children.map(button=>button.textContent),['Cancelar','Cambiar título','Añadir descripción','⏰ Programar']);
+
+  const linked={...event,schedule:{dueAt:'2026-08-26T21:00:00',title:'Comprobar el equipo',status:'pending_confirmation'},calendarStatus:'pending'};
+  ui.showEntryAction(linked);
+  assert.match(elements.get('modalBody').html,/Cena con María/);
+  assert.match(elements.get('modalBody').html,/Aviso vinculado/);
+  assert.match(elements.get('modalBody').html,/Comprobar el equipo/);
+  assert.deepEqual(elements.get('modalActions').children.map(button=>button.textContent),['Cancelar','Cambiar título','Cambiar aviso','Añadir descripción','📅 Crear los dos']);
+  assert.equal(elements.get('modalActions').children[4].dataset.a,'calendar-bundle');
 });
 import { markCancelledReminder } from '../js/pending.js';
 
@@ -709,4 +717,37 @@ test("un aviso borrado fuera de Angeli deja de aparecer como pendiente", () => {
   assert.equal(reconciled[0].schedule.externalChange, true);
   assert.equal(reconciled[1], entries[1]);
   assert.deepEqual(findReminderMatches(reconciled, {}), [entries[1]]);
+});
+
+test("P05 conserva evento y recordatorio relativo como una operación vinculada", () => {
+  const text="Tenemos una boda el 14 de septiembre a las seis en la Masía X. Recuérdame dos días antes comprobar el equipo.";
+  const interpretation=localLinkedCalendarIntent(text,new Date(2026,7,27,12));
+  assert.equal(interpretation.intent,"calendar.create");
+  assert.equal(interpretation.title,"Boda");
+  assert.equal(interpretation.date,"2026-09-14");
+  assert.equal(interpretation.time,"18:00");
+  assert.equal(interpretation.location,"la Masía X");
+  assert.deepEqual(interpretation.linkedReminder,{title:"Comprobar el equipo",date:"2026-09-12",time:"18:00"});
+  const validated=validateIntent(interpretation);
+  const schedule=linkedScheduleFor(validated);
+  const note={id:"p05-linked",text,type:"calendar",scheduledDate:validated.date,scheduledTime:validated.time,location:validated.location,calendarTitle:validated.title,aiIntent:validated,proposal:{intent:"calendar.create"},calendarStatus:"pending",schedule};
+  assert.equal(calendarEvent(note).summary,"Boda");
+  assert.equal(calendarEvent(note).location,"la Masía X");
+  assert.equal(scheduledReminderEvent(note).summary,"Comprobar el equipo");
+  assert.equal(scheduledReminderEvent(note).start.dateTime,"2026-09-12T18:00:00");
+  assert.equal(updateCalendarDetails(note,"reminderTitle","Revisar todo el equipo").schedule.title,"Revisar todo el equipo");
+  assert.equal(updateCalendarDetails(note,"title","Boda de Ana").calendarTitle,"Boda de Ana");
+  assert.equal(updateCalendarDetails(note,"description","Llevar iluminación").calendarDescription,"Llevar iluminación");
+  assert.equal(updateCalendarDetails(note,"title","Boda de Ana").schedule.title,"Comprobar el equipo");
+  assert.deepEqual(findReminderMatches([note],{}),[note]);
+  assert.equal(toCloudEntry(note).schedule.title,"Comprobar el equipo");
+});
+
+test("P05 prioriza la estructura vinculada y respeta una hora matinal explícita", () => {
+  const action=localLinkedCalendarIntent("Tenemos una boda el 14 de septiembre a las seis. Recuérdame dos días antes cambiar las pilas.",new Date(2026,7,27,12));
+  assert.equal(action.intent,"calendar.create");
+  assert.equal(action.linkedReminder.title,"Cambiar las pilas");
+  const morning=localLinkedCalendarIntent("Tenemos una boda el 14 de septiembre a las seis de la mañana. Recuérdame dos días antes comprobar el equipo.",new Date(2026,7,27,12));
+  assert.equal(morning.time,"06:00");
+  assert.equal(morning.linkedReminder.time,"06:00");
 });

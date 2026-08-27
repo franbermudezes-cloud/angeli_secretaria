@@ -54,6 +54,7 @@ ALLOWED_FIELDS = {
     "notes",
     "target",
     "changes",
+    "linkedReminder",
     "requiresConfirmation",
     "missingFields",
     "question",
@@ -76,6 +77,16 @@ Elimina del título fórmulas administrativas como «está contratado» o
 de Gandía el 29 de agosto a las siete de la tarde» debe producir title
 «Discomóvil» y location «Complejo San Marcos de Gandía». Si no se expresa un
 lugar físico, location debe ser null.
+
+Si una sola frase contiene un evento principal y además «recuérdame N días
+antes ...», conserva calendar.create como intención principal y devuelve
+linkedReminder con title, date y time del aviso anterior. La fecha del aviso se
+calcula respecto a la fecha del evento y, si no se expresa otra hora para el
+aviso, hereda la hora del evento. Ejemplo oficial: «Tenemos una boda el 14 de
+septiembre a las seis en la Masía X. Recuérdame dos días antes comprobar el
+equipo» produce el evento «Boda» en Masía X el día 14 a las 18:00 y un
+linkedReminder «Comprobar el equipo» el día 12 a las 18:00. No reduzcas esta
+orden compuesta a una nota ni pierdas uno de los dos elementos.
 
 Para cancelar usa calendar.delete. En target.title expresa el criterio estable
 más corto que identifica el evento, normalmente la persona, lugar o asunto
@@ -184,6 +195,22 @@ RESPONSE_SCHEMA: dict[str, Any] = {
                         "time": {"type": "string"},
                         "location": {"type": "string"},
                         "notes": {"type": "string"},
+                    },
+                },
+            ]
+        },
+        "linkedReminder": {
+            "anyOf": [
+                {"type": "null"},
+                {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "required": ["title", "date", "time", "notes"],
+                    "properties": {
+                        "title": {"type": "string"},
+                        "date": {"type": "string"},
+                        "time": {"type": "string"},
+                        "notes": {"type": ["string", "null"]},
                     },
                 },
             ]
@@ -469,6 +496,8 @@ def validate_interpretation(raw: Any) -> dict[str, Any]:
         result["target"] = None
     if result["intent"] != "calendar.update":
         result["changes"] = None
+    if result["intent"] != "calendar.create":
+        result["linkedReminder"] = None
     if result["intent"] != "calendar.query":
         result["rangeStart"] = None
         result["rangeEnd"] = None
@@ -491,6 +520,7 @@ def validate_interpretation(raw: Any) -> dict[str, Any]:
         raise ValueError("Intervalo no válido")
     validate_target(result["target"])
     validate_changes(result["changes"])
+    validate_linked_reminder(result["linkedReminder"])
     missing = result["missingFields"]
     allowed_missing = {"title", "date", "time", "location", "contactName", "phone", "target"}
     if missing is None:
@@ -554,6 +584,21 @@ def validate_changes(value: Any) -> None:
             validate_temporal(key, item)
         elif not isinstance(item, str) or len(item) > MAX_TEXT_LENGTH:
             raise ValueError("Cambio de texto no válido")
+
+
+def validate_linked_reminder(value: Any) -> None:
+    if value is None:
+        return
+    allowed = {"title", "date", "time", "notes"}
+    if not isinstance(value, dict) or set(value) != allowed:
+        raise ValueError("Aviso vinculado no válido")
+    if not isinstance(value["title"], str) or not value["title"].strip() or len(value["title"]) > MAX_TEXT_LENGTH:
+        raise ValueError("Título del aviso vinculado no válido")
+    value["title"] = value["title"].strip()
+    if value["notes"] is not None and (not isinstance(value["notes"], str) or len(value["notes"]) > MAX_TEXT_LENGTH):
+        raise ValueError("Descripción del aviso vinculado no válida")
+    validate_temporal("date", value["date"])
+    validate_temporal("time", value["time"])
 
 
 def vertex_interpret(text: str, now: str, timezone: str, context: dict[str, Any] | None = None) -> dict[str, Any]:
