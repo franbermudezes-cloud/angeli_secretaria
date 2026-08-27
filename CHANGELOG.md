@@ -1,5 +1,15 @@
 # Changelog
 
+## V0.21.21 · Calendar reconciliado
+
+- Las consultas de recordatorios comprueban en Google Calendar si sus avisos
+  vinculados siguen existiendo antes de mostrarlos como pendientes.
+- Un evento borrado directamente desde Calendar deja de aparecer activo en
+  Angeli y el cambio se replica entre dispositivos mediante Firestore.
+- Los fallos técnicos no se confunden con borrados: se conserva el aviso y se
+  informa de que Calendar no pudo comprobarse.
+- Se añaden pruebas PWA, backend y `P03-external` contra Calendar aislado.
+
 ## [0.21.20] - 2026-08-27
 
 - «Cámbiame la hora de llamar a Miguel» tiene prioridad como modificación de

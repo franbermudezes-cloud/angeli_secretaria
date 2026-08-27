@@ -1,5 +1,5 @@
-import { cleanTemporalText } from "./temporal.js?v=0.21.20";
-import { scheduleTitle } from "./schedule.js?v=0.21.20";
+import { cleanTemporalText } from "./temporal.js?v=0.21.21";
+import { scheduleTitle } from "./schedule.js?v=0.21.21";
 
 const CLIENT_ID = "172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
@@ -175,6 +175,23 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
     return callApi(payload);
   }
 
+  async function calendarEventStatus(eventId) {
+    if (!links.calendar && !(await connectCalendar())) throw new Error("Calendario no conectado");
+    return callApi({ integration: "calendar", action: "get", eventId });
+  }
+
+  async function reconcileScheduledReminders(entries) {
+    const linked = entries.filter(item => item?.type === "reminder"
+      && item.schedule?.status === "scheduled" && item.schedule?.calendarEventId);
+    if (!linked.length) return entries;
+    const statuses = new Map();
+    await Promise.all(linked.map(async item => {
+      const result = await calendarEventStatus(item.schedule.calendarEventId);
+      statuses.set(item.schedule.calendarEventId, Boolean(result.exists));
+    }));
+    return reconcileReminderEntries(entries, statuses);
+  }
+
   async function createCalendarEvent(note) {
     if (note.calendarStatus === "synced" || !note.scheduledDate || !note.scheduledTime || calendarInFlight.has(note.id)) return;
     calendarInFlight.add(note.id);
@@ -298,6 +315,7 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
     createScheduledReminder,
     cancelScheduledReminder,
     completeScheduledReminder,
+    reconcileScheduledReminders,
     searchCalendar,
     deleteCalendarEvent,
     updateCalendarEvent,
@@ -306,6 +324,19 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
     clearContactResult: id => contactResults.delete(id),
     contactTel
   };
+}
+
+export function reconcileReminderEntries(entries, statuses) {
+  return entries.map(entry => {
+    const eventId = entry.schedule?.calendarEventId;
+    if (!eventId || statuses.get(eventId) !== false) return entry;
+    return {
+      ...entry,
+      status: "done",
+      interaction: { ...(entry.interaction || {}), status: "cancelled", updatedAt: new Date().toISOString() },
+      schedule: { ...entry.schedule, status: "cancelled", externalChange: true }
+    };
+  });
 }
 
 // Google puede devolver menos eventos que maxResults y continuar mediante
