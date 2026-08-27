@@ -129,11 +129,13 @@ class IntegrationHarness:
         self.service.api(CALENDAR, "DELETE", self._calendar_base() + "/" + event_id)
         self.created_events.remove(event_id)
         try:
-            self.service.api(CALENDAR, "GET", self._calendar_base() + "/" + event_id)
+            deleted = self.service.api(CALENDAR, "GET", self._calendar_base() + "/" + event_id)
         except Exception as error:
             if getattr(error, "code", None) in {404, 410}:
                 return
             raise
+        if deleted.get("status") == "cancelled":
+            return
         raise RuntimeError("Calendar sigue devolviendo como activo el aviso borrado externamente")
 
     def _calendar_cancel_by_name(self) -> None:
