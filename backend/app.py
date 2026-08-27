@@ -86,7 +86,10 @@ aviso, hereda la hora del evento. Ejemplo oficial: «Tenemos una boda el 14 de
 septiembre a las seis en la Masía X. Recuérdame dos días antes comprobar el
 equipo» produce el evento «Boda» en Masía X el día 14 a las 18:00 y un
 linkedReminder «Comprobar el equipo» el día 12 a las 18:00. No reduzcas esta
-orden compuesta a una nota ni pierdas uno de los dos elementos.
+orden compuesta a una nota ni pierdas uno de los dos elementos. El título del
+aviso debe entenderse por sí solo fuera de Angeli e incluir el contexto del
+evento y su ubicación cuando existan, por ejemplo «Comprobar el equipo de la
+boda en Masía X».
 
 Para cancelar usa calendar.delete. En target.title expresa el criterio estable
 más corto que identifica el evento, normalmente la persona, lugar o asunto

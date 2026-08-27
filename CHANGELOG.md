@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.21.27 · Ubicación y contexto del aviso vinculado
+
+- Corrige el evento con aviso vinculado para separar siempre el recinto del título.
+- El aviso anterior incluye el evento y la ubicación para ser comprensible fuera de Angeli.
+- La confirmación muestra la ubicación aunque falte y permite añadirla o cambiarla por voz o texto.
+- Amplía P05 con la frase real del Complejo San Marcos de Gandía y validación en Calendar.
+
 ## V0.21.26 · Evento con aviso vinculado
 
 - P05 entiende en una sola frase un evento principal y «recuérdame N días

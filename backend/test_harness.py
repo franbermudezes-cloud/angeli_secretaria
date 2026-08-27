@@ -307,6 +307,8 @@ class IntegrationHarness:
             capture_output=True, text=True, timeout=20).stdout)
         if case["interpretation"]["linkedReminder"]["date"] != "2026-09-12":
             raise RuntimeError("P05 no calculó el aviso dos días antes")
+        if "San Marcos de Gandía" not in (case["interpretation"].get("location") or ""):
+            raise RuntimeError("P05 no separó la ubicación del título")
         event_payload = case["event"]
         # La fixture usa IDs estables para las pruebas locales, pero Calendar
         # no permite reutilizar un ID después de borrar el evento. En la prueba
@@ -326,6 +328,8 @@ class IntegrationHarness:
         relation = saved_reminder.get("extendedProperties", {}).get("private", {}).get("angeliRelatedEventId")
         if "Boda" not in saved_event.get("summary", "") or "Comprobar el equipo" not in saved_reminder.get("summary", ""):
             raise RuntimeError("Calendar no conservó los dos elementos de P05")
+        if "San Marcos de Gandía" not in saved_event.get("location", "") or "San Marcos de Gandía" not in saved_reminder.get("summary", ""):
+            raise RuntimeError("P05 perdió la ubicación o el contexto del aviso en Calendar")
         if relation != event["id"]:
             raise RuntimeError("El aviso de P05 no quedó vinculado con su evento")
 

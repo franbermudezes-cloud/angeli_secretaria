@@ -1,4 +1,4 @@
-import{calendarQueryRange,cleanTemporalText,temporalData}from"./temporal.js?v=0.21.26";
+import{calendarQueryRange,cleanTemporalText,temporalData}from"./temporal.js?v=0.21.27";
 
 export const VALID_INTENTS=["note","task.create","task.complete","reminder.create","reminder.query","calendar.create","calendar.query","calendar.update","calendar.delete","contact.call","file.store","photo.store"];
 const SENSITIVE_INTENTS=new Set(["calendar.update","calendar.delete","contact.call"]);
@@ -75,6 +75,15 @@ export function protectCalendarInterpretation(remote, local) {
   if (!local) return remote;
   const sameIntent = remote?.intent === local.intent;
   if (!sameIntent) return { ...remote, ...local, source: remote?.source, fallbackReason: remote?.fallbackReason };
+  // Una orden compuesta ya ha sido separada de forma determinista en evento,
+  // recinto y aviso relativo. Gemini puede enriquecer su descripción, pero no
+  // debe volver a meter el recinto en el título ni borrar la ubicación.
+  if(local.intent==="calendar.create"&&local.linkedReminder)return{
+    ...remote,
+    title:local.title,date:local.date,time:local.time,location:local.location,
+    linkedReminder:local.linkedReminder,requiresConfirmation:true,
+    missingFields:[],question:null
+  };
   const remoteTitle = semanticCalendarTarget(remote?.target?.title);
   const remoteTarget = remoteTitle ? { ...remote.target, title: remoteTitle } : null;
   const target = remoteTarget
@@ -127,8 +136,12 @@ export function localLinkedCalendarIntent(text="",now=new Date()){
   const date=new Date(`${eventTemporal.scheduledDate}T12:00:00`);date.setDate(date.getDate()-offset);
   const reminderTitle=parts[1].replace(offsetMatch[0],"").replace(/^[\s,.:;-]+|[\s,.:;-]+$/g,"").trim();
   if(!reminderTitle)return null;
-  const eventTitle=calendarTitle(eventText);
-  return{...EMPTY,intent:"calendar.create",confidence:.9,title:eventTitle.charAt(0).toUpperCase()+eventTitle.slice(1),date:eventTemporal.scheduledDate,time:eventTemporal.scheduledTime,location:location(eventText),linkedReminder:{title:reminderTitle.charAt(0).toUpperCase()+reminderTitle.slice(1),date:dateKey(date),time:eventTemporal.scheduledTime},requiresConfirmation:true};
+  const eventTitle=calendarTitle(eventText),eventLocation=location(eventText);
+  const cleanEventTitle=eventTitle.charAt(0).toUpperCase()+eventTitle.slice(1);
+  const eventName=cleanEventTitle.toLowerCase();
+  const eventContext=/^(?:boda|cena|reuni[oó]n|comida|cita|fiesta|actuaci[oó]n)\b/i.test(eventName)?`de la ${eventName}`:`del ${eventName}`;
+  const context=[eventContext,eventLocation?`en ${eventLocation}`:null].filter(Boolean).join(" ");
+  return{...EMPTY,intent:"calendar.create",confidence:.9,title:cleanEventTitle,date:eventTemporal.scheduledDate,time:eventTemporal.scheduledTime,location:eventLocation,linkedReminder:{title:`${reminderTitle.charAt(0).toUpperCase()+reminderTitle.slice(1)} ${context}`,date:dateKey(date),time:eventTemporal.scheduledTime},requiresConfirmation:true};
 }
 
 export function validateIntent(raw){if(!raw||typeof raw!=="object"||Array.isArray(raw))throw new Error("Respuesta IA no válida");const allowed=new Set(["intent","confidence","title","date","time","rangeStart","rangeEnd","location","contactName","phone","notes","target","changes","linkedReminder","requiresConfirmation","missingFields","question"]);if(Object.keys(raw).some(key=>!allowed.has(key)))throw new Error("Campo IA no permitido");if(!VALID_INTENTS.includes(raw.intent))throw new Error("Intent IA no permitido");if(typeof raw.confidence!=="number"||raw.confidence<0||raw.confidence>1)throw new Error("Confianza IA no válida");const normalized={...EMPTY,intent:raw.intent,confidence:raw.confidence,requiresConfirmation:Boolean(raw.requiresConfirmation)};for(const key of["title","location","contactName","phone","notes","question"]){if(raw[key]!==undefined&&raw[key]!==null){if(typeof raw[key]!=="string"||raw[key].length>MAX_TEXT_LENGTH)throw new Error("Texto IA no válido");normalized[key]=raw[key].trim()||null}}for(const key of["date","time","rangeStart","rangeEnd"]){if(raw[key]!==undefined&&raw[key]!==null){if(!isValidTemporal(key,raw[key]))throw new Error("Fecha u hora IA no válida");normalized[key]=raw[key]}}if(normalized.rangeStart&&normalized.rangeEnd&&normalized.rangeStart>=normalized.rangeEnd)throw new Error("Intervalo IA no válido");normalized.target=normalizeTarget(raw.target);normalized.changes=normalizeChanges(raw.changes);normalized.linkedReminder=normalizeLinkedReminder(raw.linkedReminder);normalized.missingFields=normalizeMissingFields(raw.missingFields);if(normalized.missingFields.length&&!normalized.question)normalized.question=null;if(SENSITIVE_INTENTS.has(normalized.intent))normalized.requiresConfirmation=true;return normalized}

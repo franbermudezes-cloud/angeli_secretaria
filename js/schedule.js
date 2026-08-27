@@ -1,4 +1,4 @@
-import{nextDateForTime,temporalData,explicitRelativeDate}from"./temporal.js?v=0.21.26";
+import{nextDateForTime,temporalData,explicitRelativeDate}from"./temporal.js?v=0.21.27";
 
 const CALL_INTENT=/\b(?:llama|llamar|telefonea|telefonear|contacta|contactar)\b/i;
 
@@ -93,6 +93,7 @@ export function calendarDetails(note){
 export function updateCalendarDetails(note,field,value){
   const clean=String(value||"").trim();
   if(field==="reminderTitle"&&note.schedule)return{...note,schedule:{...note.schedule,title:clean}};
+  if(field==="location")return{...note,location:clean,aiIntent:{...note.aiIntent,location:clean||null}};
   if(!["title","description"].includes(field))return note;
   if(note.schedule&&note.proposal?.intent==="calendar.create")return{...note,[field==="title"?"calendarTitle":"calendarDescription"]:clean};
   if(note.schedule)return{...note,schedule:{...note.schedule,[field]:clean}};

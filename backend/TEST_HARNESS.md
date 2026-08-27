@@ -1,5 +1,10 @@
 # Entorno automático de pruebas reales
 
+V0.21.27: P05 compuesto. La frase real de boda en el Complejo San Marcos de
+Gandía separa el recinto del título y produce un aviso que conserva el contexto
+del evento y la ubicación. El modal permite añadir o cambiar la ubicación antes
+de crear ambos elementos. La prueba real exige esos campos en Calendar.
+
 V0.21.26: P05 compuesto. La frase oficial de boda en Masía X produce un evento
 el 14 de septiembre a las 18:00 y el aviso «Comprobar el equipo» dos días
 antes. La prueba PWA valida interpretación, payloads, persistencia y consulta
