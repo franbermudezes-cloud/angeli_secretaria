@@ -1,5 +1,10 @@
 # Entorno automático de pruebas reales
 
+V0.21.30: `P03-external-update` crea un aviso real, modifica directamente en
+Calendar su título, descripción, fecha y hora, y pasa la respuesta real por el
+mismo reconciliador que usa la PWA. Angeli actualiza Firestore solo cuando los
+datos efectivos difieren; el recurso aislado se elimina al terminar.
+
 V0.21.29: P05 conversacional admite «tienes que avisarme» y conserva evento,
 ubicación, desplazamiento y tarea aunque falte la hora. Pregunta únicamente la
 hora y la respuesta completa ambos elementos. El caso real usa la orden de

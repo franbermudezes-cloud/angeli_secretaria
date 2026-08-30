@@ -1,6 +1,6 @@
-import { cleanTemporalText } from "./temporal.js?v=0.21.29";
-import { calendarDetails } from "./schedule.js?v=0.21.29";
-import { semanticCalendarTarget } from "./ai.js?v=0.21.29";
+import { cleanTemporalText } from "./temporal.js?v=0.21.30";
+import { calendarDetails } from "./schedule.js?v=0.21.30";
+import { semanticCalendarTarget } from "./ai.js?v=0.21.30";
 
 const CLIENT_ID = "172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
@@ -188,7 +188,7 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
     const statuses = new Map();
     await Promise.all(linked.map(async item => {
       const result = await calendarEventStatus(item.schedule.calendarEventId);
-      statuses.set(item.schedule.calendarEventId, Boolean(result.exists));
+      statuses.set(item.schedule.calendarEventId, result);
     }));
     return reconcileReminderEntries(entries, statuses);
   }
@@ -369,14 +369,54 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
 export function reconcileReminderEntries(entries, statuses) {
   return entries.map(entry => {
     const eventId = entry.schedule?.calendarEventId;
-    if (!eventId || statuses.get(eventId) !== false) return entry;
-    return {
+    if (!eventId || !statuses.has(eventId)) return entry;
+    const status = statuses.get(eventId);
+    const exists = typeof status === "boolean" ? status : status?.exists;
+    if (exists === false) return {
       ...entry,
       status: "done",
       interaction: { ...(entry.interaction || {}), status: "cancelled", updatedAt: new Date().toISOString() },
       schedule: { ...entry.schedule, status: "cancelled", externalChange: true }
     };
+    const event = status?.event;
+    const dueAt = calendarEventDueAt(event);
+    if (!event || !dueAt) return entry;
+    const title = String(event.summary || entry.schedule.title || "Recordatorio").trim();
+    const description = String(event.description || "").trim();
+    const date = dueAt.slice(0, 10);
+    const time = dueAt.slice(11, 16);
+    const calendarUrl = String(event.htmlLink || entry.schedule.calendarUrl || "");
+    if (entry.schedule.dueAt === dueAt && entry.schedule.title === title
+      && String(entry.schedule.description || "") === description
+      && String(entry.schedule.calendarUrl || "") === calendarUrl) return entry;
+    return {
+      ...entry,
+      scheduledDate: date,
+      scheduledTime: time,
+      aiIntent: { ...(entry.aiIntent || {}), title, date, time, notes: description || null },
+      schedule: {
+        ...entry.schedule,
+        status: "scheduled",
+        dueAt,
+        title,
+        description,
+        calendarUrl,
+        externalChange: true,
+        externalUpdatedAt: event.updated || new Date().toISOString()
+      }
+    };
   });
+}
+
+function calendarEventDueAt(event) {
+  const value = event?.start?.dateTime;
+  const date = value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) return null;
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Madrid", year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23"
+  }).formatToParts(date).filter(part => part.type !== "literal").map(part => [part.type, part.value]));
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}`;
 }
 
 // Google puede devolver menos eventos que maxResults y continuar mediante
