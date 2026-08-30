@@ -27,6 +27,7 @@ REQUEST_TIMEOUT_SECONDS = 8
 RATE_LIMIT_PER_MINUTE = 30
 VALID_INTENTS = {
     "note",
+    "note.query",
     "task.create",
     "task.complete",
     "reminder.create",
@@ -52,6 +53,8 @@ ALLOWED_FIELDS = {
     "contactName",
     "phone",
     "notes",
+    "noteQuery",
+    "noteClassification",
     "target",
     "changes",
     "linkedReminder",
@@ -153,6 +156,22 @@ solo el criterio solicitado, por ejemplo «Miguel». Si pide todos los
 recordatorios, target y contactName deben ser null. title debe ser null;
 la pregunta completa nunca es un filtro. Esta consulta no crea una
 entrada nueva ni consulta Google Calendar.
+Para crear una nota usa note. title debe ser un asunto breve y útil; notes puede
+conservar el contexto o detalle si existe. Clasifica la nota sin bloquear su
+creación: noteClassification.scope es general, personal o company;
+relationType es none, person, client, project o event; relationName identifica
+esa relación cuando se expresa; purpose resume por qué se guarda, y tags
+contiene como máximo cinco etiquetas breves. No inventes relaciones: si no se
+expresan, usa scope general, relationType none, relationName null, purpose null
+y tags []. Ejemplo: «Apunta para el proyecto Karaoke que debemos revisar el
+precio de las licencias» es una nota con title «Precio de las licencias»,
+scope company, relationType project, relationName «Karaoke» y purpose
+«Revisar el precio».
+Para consultar notas guardadas usa note.query. En noteQuery devuelve solamente
+el asunto, persona, cliente, proyecto o etiqueta solicitados; si se piden todas
+las notas, noteQuery debe ser null. Usa noteClassification solo para filtros
+explícitos como «notas personales» o «notas de empresa». title debe ser null y
+la consulta nunca crea una nota nueva.
 Si faltan datos imprescindibles para calendar.create o reminder.create, indica
 en missingFields los nombres de los campos que faltan (date, time, title,
 location, contactName, phone o target) y formula una única pregunta breve en
@@ -176,6 +195,24 @@ RESPONSE_SCHEMA: dict[str, Any] = {
         "contactName": {"type": ["string", "null"]},
         "phone": {"type": ["string", "null"]},
         "notes": {"type": ["string", "null"]},
+        "noteQuery": {"type": ["string", "null"]},
+        "noteClassification": {
+            "anyOf": [
+                {"type": "null"},
+                {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "required": ["scope", "relationType", "relationName", "purpose", "tags"],
+                    "properties": {
+                        "scope": {"type": "string", "enum": ["general", "personal", "company"]},
+                        "relationType": {"type": "string", "enum": ["none", "person", "client", "project", "event"]},
+                        "relationName": {"type": ["string", "null"]},
+                        "purpose": {"type": ["string", "null"]},
+                        "tags": {"type": "array", "items": {"type": "string"}, "maxItems": 5},
+                    },
+                },
+            ]
+        },
         "target": {
             "anyOf": [
                 {"type": "null"},
@@ -513,7 +550,13 @@ def validate_interpretation(raw: Any) -> dict[str, Any]:
         # Una pregunta de agenda se resuelve por intervalo, no con sus
         # propias palabras como filtro de título de Calendar.
         result["title"] = None
-    for key in ("title", "location", "contactName", "phone", "notes", "question"):
+    if result["intent"] != "note.query":
+        result["noteQuery"] = None
+    else:
+        result["title"] = None
+    if result["intent"] not in {"note", "note.query"}:
+        result["noteClassification"] = None
+    for key in ("title", "location", "contactName", "phone", "notes", "noteQuery", "question"):
         value = result[key]
         if value is not None and (not isinstance(value, str) or len(value) > MAX_TEXT_LENGTH):
             raise ValueError("Texto de salida no válido")
@@ -529,6 +572,7 @@ def validate_interpretation(raw: Any) -> dict[str, Any]:
     validate_target(result["target"])
     validate_changes(result["changes"])
     validate_linked_reminder(result["linkedReminder"])
+    validate_note_classification(result["noteClassification"])
     missing = result["missingFields"]
     allowed_missing = {"title", "date", "time", "location", "contactName", "phone", "target"}
     if missing is None:
@@ -548,6 +592,27 @@ def validate_interpretation(raw: Any) -> dict[str, Any]:
     if result["intent"] in SENSITIVE_INTENTS:
         result["requiresConfirmation"] = True
     return result
+
+
+def validate_note_classification(value: Any) -> None:
+    if value is None:
+        return
+    required = {"scope", "relationType", "relationName", "purpose", "tags"}
+    if not isinstance(value, dict) or set(value) != required:
+        raise ValueError("Clasificación de nota no válida")
+    if value["scope"] not in {"general", "personal", "company"} or value["relationType"] not in {"none", "person", "client", "project", "event"}:
+        raise ValueError("Clasificación de nota no válida")
+    for key in ("relationName", "purpose"):
+        item = value[key]
+        if item is not None and (not isinstance(item, str) or len(item) > MAX_TEXT_LENGTH):
+            raise ValueError("Clasificación de nota no válida")
+        value[key] = item.strip() if isinstance(item, str) and item.strip() else None
+    tags = value["tags"]
+    if not isinstance(tags, list) or len(tags) > 5 or any(not isinstance(tag, str) or not tag.strip() or len(tag) > 60 for tag in tags):
+        raise ValueError("Etiquetas de nota no válidas")
+    value["tags"] = list(dict.fromkeys(tag.strip() for tag in tags))
+    if value["relationType"] == "none":
+        value["relationName"] = None
 
 
 def validate_temporal(kind: str, value: Any) -> None:

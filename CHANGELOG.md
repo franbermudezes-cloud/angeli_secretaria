@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.21.31 · Notas clasificadas y consultables
+
+- Las notas conservan un título útil, ámbito, relación opcional, motivo y hasta cinco etiquetas sin exigir datos para poder guardarlas.
+- Angeli consulta las notas por asunto, texto, persona, cliente, proyecto, evento o etiqueta, sin crear una nota nueva con la propia pregunta.
+- Firestore sincroniza la clasificación entre dispositivos y Google Sheets sigue recibiendo cada nota mediante el contrato ya existente, sin cambiar esa integración.
+- El modal y las tarjetas muestran la clasificación; las pruebas automáticas cubren creación, serialización, filtros y consultas naturales.
+
 ## V0.21.30 · Cambios externos de avisos
 
 - Al consultar recordatorios, Calendar vuelve a ser la referencia efectiva de título, descripción, fecha y hora.

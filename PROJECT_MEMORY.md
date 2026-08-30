@@ -1,5 +1,11 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-08-30 — V0.21.31 · Modelo base de notas
+
+Firestore continúa siendo la fuente operativa y Google Sheets el registro externo obligatorio. Una nota se clasifica sin bloquear su creación mediante título, ámbito (`general`, `personal` o `company`), relación opcional (`person`, `client`, `project` o `event`), motivo y hasta cinco etiquetas. La ausencia de clasificación explícita produce una nota general, nunca un interrogatorio. `note.query` consulta las entradas sincronizadas por cualquiera de esos campos y no guarda la pregunta como otra nota.
+
+Google Keep no se integra: su API oficial no ofrece una sincronización completa y soportada para la cuenta personal actual. Una posible copia en Drive se evaluará en un PR independiente después de cerrar creación, consulta, edición y eliminación dentro de Angeli.
+
 ## 2026-08-30 — V0.21.30 · Calendar reconcilia modificaciones externas
 
 La consulta de recordatorios ya no usa `events.get` únicamente para detectar
