@@ -55,6 +55,7 @@ class IntegrationHarness:
         try:
             self._run("P03-complete", self._complete_reminder)
             self._run("P03-external", self._external_calendar_delete)
+            self._run("P03-external-update", self._external_calendar_update)
             self._run("P04", self._calendar_cancel)
             self._run("P04-name", self._calendar_cancel_by_name)
             self._run("P10", self._calendar_query)
@@ -139,6 +140,32 @@ class IntegrationHarness:
         if deleted.get("status") == "cancelled":
             return
         raise RuntimeError("Calendar sigue devolviendo como activo el aviso borrado externamente")
+
+    def _external_calendar_update(self) -> None:
+        """Un cambio externo de título, descripción y horario vuelve a Angeli."""
+        madrid = ZoneInfo("Europe/Madrid")
+        start = datetime.now(madrid) + timedelta(days=3)
+        start = start.replace(hour=10, minute=0, second=0, microsecond=0)
+        event = self._create_event(f"{self.prefix} Aviso original", start, start + timedelta(hours=1))
+        changed_start = (start + timedelta(days=1)).replace(hour=18, minute=30)
+        changed_title = f"{self.prefix} Montar equipo de la boda"
+        changed_description = "Llevar cableado nuevo"
+        changed = self.service.api(CALENDAR, "PATCH", self._calendar_base() + "/" + event["id"], {
+            "summary": changed_title,
+            "description": changed_description,
+            "start": {"dateTime": changed_start.isoformat(), "timeZone": "Europe/Madrid"},
+            "end": {"dateTime": (changed_start + timedelta(hours=1)).isoformat(), "timeZone": "Europe/Madrid"},
+        })
+        fixture = Path(__file__).resolve().parents[1] / "tests/external-calendar-sync-fixture.mjs"
+        reconciled = json.loads(subprocess.run(["node", str(fixture), json.dumps(changed)], check=True,
+            capture_output=True, text=True, timeout=20).stdout)
+        expected_due = changed_start.strftime("%Y-%m-%dT%H:%M:00")
+        if reconciled.get("schedule", {}).get("title") != changed_title:
+            raise RuntimeError("Angeli no recuperó el título modificado fuera de la aplicación")
+        if reconciled.get("schedule", {}).get("description") != changed_description:
+            raise RuntimeError("Angeli no recuperó la descripción modificada fuera de la aplicación")
+        if reconciled.get("schedule", {}).get("dueAt") != expected_due:
+            raise RuntimeError("Angeli no recuperó la fecha y hora modificadas fuera de la aplicación")
 
     def _calendar_cancel_by_name(self) -> None:
         """Busca por persona aunque la categoría dictada y el título sean sinónimos."""

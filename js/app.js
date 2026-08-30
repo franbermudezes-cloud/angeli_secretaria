@@ -1,17 +1,17 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.29";
-import{classify,actionData}from"./classifier.js?v=0.21.29";
-import{sendEntry}from"./sheets.js?v=0.21.29";
-import{createUI}from"./ui.js?v=0.21.29";
-import{createGoogleIntegration}from"./google.js?v=0.21.29";
-import{interpret,remoteProvider,localReminderQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,protectCalendarInterpretation}from"./ai.js?v=0.21.29";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.29";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.29";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails}from"./schedule.js?v=0.21.29";
-import{createCloudSync}from"./firebase.js?v=0.21.29";
-import{createMediaService}from"./media.js?v=0.21.29";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.29";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.29";
-import{createAgendaActions}from"./agenda.js?v=0.21.29";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.30";
+import{classify,actionData}from"./classifier.js?v=0.21.30";
+import{sendEntry}from"./sheets.js?v=0.21.30";
+import{createUI}from"./ui.js?v=0.21.30";
+import{createGoogleIntegration}from"./google.js?v=0.21.30";
+import{interpret,remoteProvider,localReminderQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,protectCalendarInterpretation}from"./ai.js?v=0.21.30";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.30";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.30";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails}from"./schedule.js?v=0.21.30";
+import{createCloudSync}from"./firebase.js?v=0.21.30";
+import{createMediaService}from"./media.js?v=0.21.30";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.30";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.30";
+import{createAgendaActions}from"./agenda.js?v=0.21.30";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],selectedFilter="all",selectedType="all",shortcutCapture=false,saving=false;
@@ -234,7 +234,7 @@ async function handleEntryAction(event){
  }
 }
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.29",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.30",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}

@@ -719,6 +719,28 @@ test("un aviso borrado fuera de Angeli deja de aparecer como pendiente", () => {
   assert.deepEqual(findReminderMatches(reconciled, {}), [entries[1]]);
 });
 
+test("un aviso modificado fuera de Angeli actualiza título, descripción, fecha y hora", () => {
+  const entry = {
+    id: "external-update", type: "reminder", status: "pending",
+    scheduledDate: "2026-09-04", scheduledTime: "10:00",
+    aiIntent: { intent: "reminder.create", title: "Revisar equipo", date: "2026-09-04", time: "10:00" },
+    schedule: { status: "scheduled", calendarEventId: "calendar-update", dueAt: "2026-09-04T10:00:00", title: "Revisar equipo", description: "", calendarUrl: "" }
+  };
+  const event = {
+    id: "calendar-update", summary: "Montar equipo de la boda", description: "Llevar cableado nuevo",
+    start: { dateTime: "2026-09-05T18:30:00+02:00" }, htmlLink: "https://calendar/evento", updated: "2026-08-30T09:15:00.000Z"
+  };
+  const [updated] = reconcileReminderEntries([entry], new Map([[event.id, { exists: true, event }]]));
+  assert.equal(updated.schedule.title, "Montar equipo de la boda");
+  assert.equal(updated.schedule.description, "Llevar cableado nuevo");
+  assert.equal(updated.schedule.dueAt, "2026-09-05T18:30:00");
+  assert.equal(updated.scheduledDate, "2026-09-05");
+  assert.equal(updated.scheduledTime, "18:30");
+  assert.equal(updated.aiIntent.title, "Montar equipo de la boda");
+  assert.equal(updated.schedule.calendarUrl, "https://calendar/evento");
+  assert.equal(updated.schedule.externalChange, true);
+});
+
 test("P05 conserva evento y recordatorio relativo como una operación vinculada", () => {
   const text="Tenemos una boda el 14 de septiembre a las 6 de la tarde en el Complejo San Marcos de Gandía. Recuérdame dos días antes comprobar el equipo.";
   const interpretation=localLinkedCalendarIntent(text,new Date(2026,7,27,12));

@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.21.30 · Cambios externos de avisos
+
+- Al consultar recordatorios, Calendar vuelve a ser la referencia efectiva de título, descripción, fecha y hora.
+- Los cambios realizados directamente en Google Calendar se guardan en Firestore y se reflejan en móvil y escritorio.
+- `P03-external-update` modifica un aviso real fuera de Angeli y comprueba la reconciliación completa antes de limpiar la prueba.
+
 ## V0.21.29 · Avisos naturales con hora pendiente
 
 - Reconoce «avísame» y «tienes que avisarme» como variantes de un aviso vinculado.

@@ -1,5 +1,14 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-08-30 — V0.21.30 · Calendar reconcilia modificaciones externas
+
+La consulta de recordatorios ya no usa `events.get` únicamente para detectar
+borrados. Si el aviso continúa existiendo, su título, descripción, fecha, hora
+y URL efectiva vuelven de Calendar, se aplican a la entrada y se sincronizan
+por Firestore. El texto dictado original se conserva como historial. La puerta
+real `P03-external-update` modifica un aviso aislado y recorre el reconciliador
+de la PWA antes de eliminarlo.
+
 ## 2026-08-24 — Entorno de pruebas aislado: validación real inicial completada
 
 El arnés de integración real dispone ahora de un perfil OAuth estrictamente

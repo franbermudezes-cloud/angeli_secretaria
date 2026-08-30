@@ -34,13 +34,13 @@ recordatorios de Miguel. Las modificaciones externas tampoco se reconcilian.
 Firestore guarda esas entradas compartidas; borrar caché local no lo resuelve.
 La sincronización móvil/ordenador no implica sincronización inversa de Calendar.
 
-**Resuelto para borrados en V0.21.21.** Al consultar recordatorios, Angeli
+**Resuelto para borrados en V0.21.21 y modificaciones en V0.21.30.** Al consultar recordatorios, Angeli
 comprueba en Calendar cada aviso vinculado por `calendarEventId`. Si Google
 confirma que ya no existe o está cancelado, la entrada deja de figurar como
 pendiente y ese estado se sincroniza por Firestore. Un fallo de red,
 autorización o API conserva el recordatorio y se informa como comprobación no
-disponible; nunca se interpreta como borrado. La reconciliación de cambios
-externos de fecha, hora o título permanece como mejora posterior independiente.
+disponible; nunca se interpreta como borrado. Si continúa activo, los cambios
+externos de título, descripción, fecha u hora actualizan la entrada compartida.
 
 **Objetivo:** completar la gestión bidireccional de Calendar y convertir Contactos en acciones completas.
 
