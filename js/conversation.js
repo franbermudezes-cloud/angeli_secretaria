@@ -22,7 +22,7 @@ const ACTIVE_STATES = new Set([
   INTERACTION_STATUS.PENDING_CONFIRMATION,
   INTERACTION_STATUS.EXECUTING
 ]);
-const DATA_FIELDS = ["title", "date", "time", "rangeStart", "rangeEnd", "location", "contactName", "phone", "notes", "target", "changes", "linkedReminder"];
+const DATA_FIELDS = ["title", "date", "time", "rangeStart", "rangeEnd", "location", "contactName", "phone", "notes", "noteQuery", "noteClassification", "target", "changes", "linkedReminder"];
 
 export function findActiveInteraction(entries = []) {
   return entries

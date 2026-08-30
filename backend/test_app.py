@@ -19,6 +19,8 @@ VALID_RESPONSE = {
     "contactName": None,
     "phone": None,
     "notes": None,
+    "noteQuery": None,
+    "noteClassification": None,
     "target": None,
     "changes": None,
     "linkedReminder": None,
@@ -566,6 +568,27 @@ class InterpretEndpointTests(unittest.TestCase):
                     os.environ.pop(key, None)
                 else:
                     os.environ[key] = value
+
+    def test_note_classification_and_query_are_validated(self):
+        note = VALID_RESPONSE | {
+            "intent": "note",
+            "title": "Precio de las licencias",
+            "date": None,
+            "time": None,
+            "noteClassification": {
+                "scope": "company",
+                "relationType": "project",
+                "relationName": "Karaoke",
+                "purpose": "Revisar el precio",
+                "tags": ["licencias", "presupuesto"],
+            },
+            "requiresConfirmation": False,
+        }
+        self.assertEqual(app.validate_interpretation(note)["noteClassification"]["relationName"], "Karaoke")
+        query = VALID_RESPONSE | {"intent": "note.query", "title": "No debe conservarse", "date": None, "time": None, "noteQuery": "Karaoke", "requiresConfirmation": False}
+        validated = app.validate_interpretation(query)
+        self.assertEqual(validated["noteQuery"], "Karaoke")
+        self.assertIsNone(validated["title"])
 
 
 def request_path(path, payload, authorization="", origin=""):

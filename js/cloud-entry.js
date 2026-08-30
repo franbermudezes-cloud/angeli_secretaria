@@ -2,7 +2,7 @@ const SYNCABLE_FIELDS = new Set([
   "id", "date", "updatedAt", "text", "status", "type", "scheduledDate",
   "scheduledTime", "phone", "location", "calendarTitle", "calendarDescription",
   "contactQuery", "calendarStatus", "calendarEventId", "calendarUrl", "aiIntent",
-  "proposal", "schedule", "images", "files", "interaction"
+  "proposal", "schedule", "images", "files", "interaction", "noteClassification"
 ]);
 
 export function toCloudEntry(note, updatedAt = new Date().toISOString()) {

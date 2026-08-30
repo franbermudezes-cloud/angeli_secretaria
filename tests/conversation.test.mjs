@@ -11,10 +11,50 @@ import {
 } from "../js/conversation.js";
 import { calendarDetails, linkedScheduleFor, normalizeFutureCall, normalizeReminderSchedule, scheduleFor, scheduleTitle, updateCalendarDetails } from "../js/schedule.js";
 import { completionTarget, completePending, completePendingWithCalendar, findPendingMatches, findReminderMatches } from "../js/pending.js";
-import { mockProvider, interpret, localCalendarUpdate, localLinkedCalendarIntent, localReminderQuery, protectCalendarInterpretation, validateIntent } from "../js/ai.js";
+import { mockProvider, interpret, localCalendarUpdate, localLinkedCalendarIntent, localReminderQuery, localNoteQuery, protectCalendarInterpretation, validateIntent } from "../js/ai.js";
 import { fixtureTitle, reminderFixture } from './reminder-event-fixture.mjs';
 import { applyCalendarUpdateToEntries, buildCalendarSearch, calendarEvent, scheduledReminderEvent, listAllCalendarPages, reconcileReminderEntries, linkedReminderSearch, calendarEventsForIntent } from '../js/google.js';
 import { fromCloudEntry, toCloudEntry } from '../js/cloud-entry.js';
+import { findNoteMatches, normalizeNoteClassification } from '../js/notes.js';
+
+test('notas: clasifica sin bloquear y conserva los metadatos en Firestore',()=>{
+  const classification=normalizeNoteClassification({scope:'company',relationType:'project',relationName:'Karaoke',purpose:'Revisar el precio de las licencias',tags:['licencias','presupuesto','licencias']});
+  const entry={id:'note-karaoke',type:'note',text:'Apunta para el proyecto Karaoke que debemos revisar el precio de las licencias',noteClassification:classification,aiIntent:{intent:'note',title:'Precio de las licencias',noteClassification:classification}};
+  assert.deepEqual(classification,{scope:'company',relationType:'project',relationName:'Karaoke',purpose:'Revisar el precio de las licencias',tags:['licencias','presupuesto']});
+  assert.deepEqual(fromCloudEntry(toCloudEntry(entry),entry.id).noteClassification,classification);
+});
+
+test('notas: una consulta natural no crea una nota y encuentra por relación, texto y etiqueta',()=>{
+  const query=localNoteQuery('Qué notas tengo del proyecto Karaoke');
+  assert.equal(query.intent,'note.query');
+  assert.equal(query.noteQuery,'proyecto Karaoke');
+  const entries=[
+    {id:'one',type:'note',status:'pending',date:'2026-08-30',text:'Revisar licencias',aiIntent:{title:'Precio de las licencias'},noteClassification:{scope:'company',relationType:'project',relationName:'Proyecto Karaoke',purpose:null,tags:['presupuesto']}},
+    {id:'two',type:'note',status:'pending',date:'2026-08-29',text:'Comprar pintura',aiIntent:{title:'Pintura del salón'},noteClassification:{scope:'personal',relationType:'none',relationName:null,purpose:null,tags:['casa']}},
+  ];
+  assert.deepEqual(findNoteMatches(entries,query).map(entry=>entry.id),['one']);
+  assert.deepEqual(findNoteMatches(entries,{noteQuery:'presupuesto'}).map(entry=>entry.id),['one']);
+});
+
+test('notas: consultar todas o solo las personales aplica el filtro expresado',()=>{
+  const entries=[
+    {id:'company',type:'note',status:'pending',noteClassification:{scope:'company',relationType:'none',tags:[]}},
+    {id:'personal',type:'note',status:'pending',noteClassification:{scope:'personal',relationType:'none',tags:[]}},
+  ];
+  assert.equal(findNoteMatches(entries,localNoteQuery('Muéstrame mis notas')).length,2);
+  assert.deepEqual(findNoteMatches(entries,localNoteQuery('Muéstrame mis notas personales')).map(entry=>entry.id),['personal']);
+});
+
+test('notas: la PWA muestra clasificación al guardar y un listado desplazable al consultar',()=>{
+  const ui=readFileSync(new URL('../js/ui.js',import.meta.url),'utf8');
+  const css=readFileSync(new URL('../styles-flow.css',import.meta.url),'utf8');
+  const baseCss=readFileSync(new URL('../styles.css',import.meta.url),'utf8');
+  assert.match(ui,/✓ Nota guardada/);
+  assert.match(ui,/showNoteResults\(matches, query/);
+  assert.match(ui,/Relacionada con/);
+  assert.match(css,/\.note-result/);
+  assert.match(baseCss,/\.action-modal:not\(\.conversation-modal\) #modalBody\{[^}]*overflow-y:auto/);
+});
 
 test('reprogramar entiende frases naturales y separa objetivo de nueva fecha y hora',()=>{
   const now=new Date(2026,7,26,12);

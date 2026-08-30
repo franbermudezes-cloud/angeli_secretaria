@@ -1,5 +1,6 @@
-import { typeLabel } from "./classifier.js?v=0.21.30";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.30";
+import { typeLabel } from "./classifier.js?v=0.21.31";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.31";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.31";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -120,7 +121,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.30";
+    image.src = "assets/angeli-welcome.gif?v=0.21.31";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -215,6 +216,30 @@ export function createUI({ getMedia }) {
     });
   }
 
+  function showNoteResults(matches, query = "") {
+    if (!matches.length) {
+      showCompletion({ title: "No encuentro esas notas", lead: query ? `No hay notas relacionadas con ${query}.` : "Todavía no tienes notas guardadas." });
+      return;
+    }
+    const body = document.createElement("div");
+    body.className = "contact-options note-results";
+    matches.forEach(entry => {
+      const item = document.createElement("div");
+      item.className = "contact-choice note-result";
+      const content = document.createElement("div");
+      const title = document.createElement("strong");
+      title.textContent = noteTitle(entry);
+      const detail = document.createElement("span");
+      detail.textContent = noteClassificationLabel(entry.noteClassification);
+      const text = document.createElement("p");
+      text.textContent = entry.text || "";
+      content.append(title, detail, text);
+      item.append(content);
+      body.append(item);
+    });
+    openModal({ title: matches.length === 1 ? "He encontrado esta nota" : "He encontrado estas notas", lead: query ? `Relacionadas con ${query}.` : "Estas son tus notas pendientes.", body, actions: [{ label: "Cerrar", kind: "confirm", onClick: closeLayers }] });
+  }
+
   function entryBody(note) {
     const description = note.proposal?.description || "Entrada guardada";
     const location = note.location ? "<br>📍 " + esc(note.location) : "";
@@ -233,6 +258,15 @@ export function createUI({ getMedia }) {
   function showEntryAction(note, google) {
     const intent = note.proposal?.intent || "note";
     const base = { title: "Entrada preparada", lead: "Angeli ha entendido esto. Confirma solo si quieres realizar la acción.", body: entryBody(note) };
+    if (intent === "note") {
+      const classification = note.noteClassification || note.aiIntent?.noteClassification || {};
+      const relation = classification.relationName ? '<span class="calendar-field-label">Relacionada con</span><b>' + esc(classification.relationName) + '</b>' : '';
+      const purpose = classification.purpose ? '<span class="calendar-field-label">Motivo</span><b>' + esc(classification.purpose) + '</b>' : '';
+      const tags = classification.tags?.length ? '<span class="calendar-field-label">Etiquetas</span><b>' + esc(classification.tags.join(" · ")) + '</b>' : '';
+      const card = '<div class="calendar-confirmation note-confirmation"><span class="calendar-field-label">Título</span><strong>' + esc(noteTitle(note)) + '</strong><span class="calendar-field-label">Clasificación</span><b>' + esc(noteClassificationLabel(classification)) + '</b>' + relation + purpose + tags + '</div>';
+      showCompletion({ title: "✓ Nota guardada", lead: "Ya está sincronizada y clasificada.", body: card });
+      return;
+    }
     if (intent === "calendar.create" && note.schedule) {
       const reminder = '<div class="calendar-confirmation"><span class="calendar-field-label">Aviso vinculado</span><strong>⏰ ' + esc(scheduleTitle(note)) + '</strong><span class="calendar-field-label">Fecha y hora del aviso</span><b>' + esc(scheduleWhen(note.schedule)) + '</b></div>';
       const completed = note.calendarStatus === "synced" && note.schedule.status === "scheduled";
@@ -497,7 +531,8 @@ export function createUI({ getMedia }) {
     const shown = notes.filter(note => {
       const matchesStatus = selectedFilter === "all" || note.status === selectedFilter;
       const matchesType = selectedType === "all" || note.type === selectedType;
-      const matchesQuery = !query || (note.text + " " + (note.files || []).map(file => file.name || file).join(" ")).toLowerCase().includes(query);
+      const classification = note.noteClassification || {};
+      const matchesQuery = !query || [note.text, note.aiIntent?.title, classification.scope, classification.relationName, classification.purpose, ...(classification.tags || []), ...(note.files || []).map(file => file.name || file)].filter(Boolean).join(" ").toLowerCase().includes(query);
       return matchesStatus && matchesType && matchesQuery;
     });
     const cards = shown.map(note => renderCard(note, google)).join("");
@@ -511,7 +546,8 @@ export function createUI({ getMedia }) {
     const images = (note.images || []).map(image => '<img class="thumb" data-image-id="' + esc(typeof image === "string" ? image : image.driveFileId || image.id) + '" alt="Imagen adjunta">').join("");
     const files = (note.files || []).map(file => '<button class="small-btn" data-a="open-file" data-id="' + id + '" data-media-id="' + esc(file.id) + '">📎 ' + esc(file.name) + "</button>").join(" ");
     const attachments = (images ? '<div class="media">' + images + "</div>" : "") + (files ? '<div class="file-line">' + files + "</div>" : "");
-    const extra = note.schedule ? scheduleActions(note) : note.type === "calendar" ? calendarActions(note, google) : note.type === "contact" ? contactActions(note, google) : "";
+    const noteMeta = note.type === "note" ? '<div class="note-card-meta"><strong>' + esc(noteTitle(note)) + '</strong><span>' + esc(noteClassificationLabel(note.noteClassification)) + '</span></div>' : '';
+    const extra = note.schedule ? scheduleActions(note) : note.type === "calendar" ? calendarActions(note, google) : note.type === "contact" ? contactActions(note, google) : noteMeta;
     const status = note.status === "done" ? "Reabrir" : "✓ Hecho";
     return '<article data-entry-id="' + id + '"><div class="message me"><div class="bubble">' + esc(note.text || "Entrada con adjunto") + '</div></div><div class="message angeli"><div class="avatar">A</div><div class="bubble"><span class="badge">' + esc(typeLabel(note.type)) + "</span><br>" + esc(note.proposal?.description || "Guardado en Angeli") + location + "</div></div>" + attachments + extra + '<div class="inline-actions"><button class="small-btn" data-a="toggle" data-id="' + id + '">' + status + '</button><button class="small-btn danger" data-a="delete" data-id="' + id + '">Borrar</button></div></article>';
   }
@@ -531,7 +567,7 @@ export function createUI({ getMedia }) {
     $("preview").innerHTML = files.map(file => '<img class="thumb" src="' + URL.createObjectURL(file) + '" alt="Imagen preparada">').join("");
   }
 
-  return { $, notify, setGoogleStatus, setSyncStatus, render, showImagePreview, showEntryAction, showCalendarEvent, showInteractionQuestion, showCalendarFieldEditor, showPendingChoices, showReminderResults, showReminderCancellation, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
+  return { $, notify, setGoogleStatus, setSyncStatus, render, showImagePreview, showEntryAction, showCalendarEvent, showInteractionQuestion, showCalendarFieldEditor, showPendingChoices, showReminderResults, showReminderCancellation, showNoteResults, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
 }
 
 function esc(value) {

@@ -1,5 +1,7 @@
 # Entorno automático de pruebas reales
 
+V0.21.31: la puerta PWA cubre el primer bloque de Notas. Verifica clasificación no bloqueante, persistencia íntegra de los metadatos en la serialización de Firestore y consultas que filtran por relación, texto, etiqueta o ámbito sin crear otra entrada. La recepción real en Google Sheets y la interpretación periódica de Gemini permanecen como comprobaciones externas, no se simulan como éxitos.
+
 V0.21.30: `P03-external-update` crea un aviso real, modifica directamente en
 Calendar su título, descripción, fecha y hora, y pasa la respuesta real por el
 mismo reconciliador que usa la PWA. Angeli actualiza Firestore solo cuando los
