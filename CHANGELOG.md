@@ -1,5 +1,13 @@
 # Changelog
 
+## V0.21.35 · Ciclo completo de notas
+
+- Las consultas muestran acciones para editar, completar o reabrir y borrar cada nota.
+- «Notas pendientes», «notas hechas» y «todas las notas» consultan el estado solicitado sin crear otra entrada.
+- Editar vuelve al mismo listado; completar o reabrir actualiza Firestore y refresca los resultados.
+- Borrar exige confirmación, elimina la nota compartida y retira sus adjuntos de Drive cuando existen.
+- Una prueba recorre creación, edición, finalización, consulta de hechas, reapertura y borrado.
+
 ## V0.21.34 · Categorías inteligentes
 
 - La IA recibe las categorías y tipos de relación configurados por la cuenta antes de interpretar una nota.

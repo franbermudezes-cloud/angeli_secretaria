@@ -1,4 +1,4 @@
-import{calendarQueryRange,cleanTemporalText,temporalData}from"./temporal.js?v=0.21.34";
+import{calendarQueryRange,cleanTemporalText,temporalData}from"./temporal.js?v=0.21.35";
 
 export const VALID_INTENTS=["note","note.query","task.create","task.complete","reminder.create","reminder.query","calendar.create","calendar.query","calendar.update","calendar.delete","contact.call","file.store","photo.store"];
 const SENSITIVE_INTENTS=new Set(["calendar.update","calendar.delete","contact.call"]);
@@ -70,7 +70,8 @@ export function localNoteQuery(text = "") {
   if(!/\b(?:que|cuales|dime|muestrame|busca|consulta|ensename)\b.*\bnotas?\b/i.test(normalized))return null;
   const match=value.match(/\bnotas?\b(?:\s+(?:que\s+)?(?:tengo|hay))?\s+(?:del?|sobre|relacionadas?\s+con)\s+(.+?)(?:[.!?,;]|$)/i);
   const scope=/\bpersonales?\b/i.test(value)?"personal":/\b(?:empresa|trabajo|profesionales?)\b/i.test(value)?"company":"general";
-  return{...EMPTY,intent:"note.query",confidence:.5,noteQuery:match?match[1].trim():null,
+  const noteStatus=/\b(?:hechas?|completadas?|terminadas?|archivadas?)\b/i.test(value)?"done":/\btodas?\b/i.test(value)?"all":"pending";
+  return{...EMPTY,intent:"note.query",confidence:.5,noteQuery:match?match[1].trim():null,noteStatus,
     noteClassification:{scope,relationType:"none",relationName:null,purpose:null,tags:[]},requiresConfirmation:false};
 }
 
