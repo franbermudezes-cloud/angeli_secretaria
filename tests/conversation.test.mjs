@@ -15,7 +15,7 @@ import { mockProvider, interpret, localCalendarUpdate, localLinkedCalendarIntent
 import { fixtureTitle, reminderFixture } from './reminder-event-fixture.mjs';
 import { applyCalendarUpdateToEntries, buildCalendarSearch, calendarEvent, scheduledReminderEvent, listAllCalendarPages, reconcileReminderEntries, linkedReminderSearch, calendarEventsForIntent } from '../js/google.js';
 import { fromCloudEntry, toCloudEntry } from '../js/cloud-entry.js';
-import { findNoteMatches, normalizeNoteClassification } from '../js/notes.js';
+import { findNoteMatches, normalizeNoteClassification, updateNoteDraft } from '../js/notes.js';
 
 test('notas: clasifica sin bloquear y conserva los metadatos en Firestore',()=>{
   const classification=normalizeNoteClassification({scope:'company',relationType:'project',relationName:'Karaoke',purpose:'Revisar el precio de las licencias',tags:['licencias','presupuesto','licencias']});
@@ -54,6 +54,19 @@ test('notas: la PWA muestra clasificación al guardar y un listado desplazable a
   assert.match(ui,/Relacionada con/);
   assert.match(css,/\.note-result/);
   assert.match(baseCss,/\.action-modal:not\(\.conversation-modal\) #modalBody\{[^}]*overflow-y:auto/);
+});
+
+test('notas: el borrador permite corregir toda la ficha antes de guardarla',()=>{
+  const original={id:'draft-note',type:'note',text:'Comprar pintura',aiIntent:{intent:'note',title:'Pintura'},noteClassification:{scope:'general',relationType:'none',tags:[]}};
+  const updated=updateNoteDraft(original,{title:'Pintura del salón',text:'Comprar pintura azul',scope:'personal',relationType:'project',relationName:'Reforma de casa',purpose:'Preparar el salón',tags:'casa, compra, casa'});
+  assert.equal(updated.aiIntent.title,'Pintura del salón');
+  assert.equal(updated.text,'Comprar pintura azul');
+  assert.deepEqual(updated.noteClassification,{scope:'personal',relationType:'project',relationName:'Reforma de casa',purpose:'Preparar el salón',tags:['casa','compra']});
+  const app=readFileSync(new URL('../js/app.js',import.meta.url),'utf8');
+  const ui=readFileSync(new URL('../js/ui.js',import.meta.url),'utf8');
+  assert.match(app,/proposal\.intent==="note"[\s\S]*reviewNoteDraft\(entry\)[\s\S]*return/);
+  assert.match(ui,/Nada se guardará hasta que confirmes/);
+  assert.match(ui,/Guardar nota/);
 });
 
 test('reprogramar entiende frases naturales y separa objetivo de nueva fecha y hora',()=>{
