@@ -590,6 +590,22 @@ class InterpretEndpointTests(unittest.TestCase):
         self.assertEqual(validated["noteQuery"], "Karaoke")
         self.assertIsNone(validated["title"])
 
+    def test_custom_note_settings_are_accepted_by_context_and_classification(self):
+        context = app.validate_context({
+            "noteSettings": {
+                "categories": [{"id": "general", "label": "General"}, {"id": "bodas", "label": "Bodas"}],
+                "relationTypes": [{"id": "event", "label": "Evento"}],
+            }
+        })
+        self.assertEqual(context["noteSettings"]["categories"][1], {"id": "bodas", "label": "Bodas"})
+        note = VALID_RESPONSE | {
+            "intent": "note",
+            "title": "Comprar una máquina",
+            "noteClassification": {"scope": "bodas", "relationType": "none", "relationName": None, "purpose": None, "tags": []},
+            "requiresConfirmation": False,
+        }
+        self.assertEqual(app.validate_interpretation(note)["noteClassification"]["scope"], "bodas")
+
 
 def request_path(path, payload, authorization="", origin=""):
     body = __import__("json").dumps(payload).encode("utf-8")

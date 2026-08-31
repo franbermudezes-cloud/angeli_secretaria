@@ -1,6 +1,6 @@
 # Entorno automático de pruebas reales
 
-V0.21.33: la puerta PWA cubre la configuración flexible de Notas. Comprueba
+V0.21.34: la puerta PWA cubre la configuración flexible de Notas. Comprueba
 altas, renombrados, bajas, identificadores estables y la regla de Firestore que
 limita `users/{uid}/settings/*` al propietario. La sincronización visual entre
 móvil y escritorio se valida manualmente tras desplegar las reglas.
@@ -251,6 +251,10 @@ elegir si encuentra varios), y su prueba de regresión consulta después solo
 los recordatorios que continúan pendientes aunque su conversación esté cerrada.
 La consulta general, el filtro por persona y el respaldo de consulta se prueban
 localmente con proveedor simulado, no se presentan como pruebas de Gemini real.
+La regresión de categorías personalizadas reproduce literalmente «Anota en
+Bodas que tenemos que comprar una máquina»: comprueba que `Bodas` viaja en el
+contexto de la IA, queda como categoría y no se duplica como relación. Una
+segunda prueba protege el sentido distinto de «Relaciona esta nota con Bodas».
 `tests/reminder-query.html` permite comprobar la tarjeta de resultados sin
 autenticación ni escrituras externas; usa exclusivamente dos entradas ficticias.
 Un recordatorio completo evita preguntas
