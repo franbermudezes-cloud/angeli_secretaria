@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.21.34 · Categorías inteligentes
+
+- La IA recibe las categorías y tipos de relación configurados por la cuenta antes de interpretar una nota.
+- «Anota en Bodas…» asigna la categoría personalizada `Bodas` y no la duplica como relación.
+- «Relaciona esta nota con…» conserva su significado de relación; ambas expresiones tienen pruebas de regresión independientes.
+- El contrato del intérprete admite identificadores personalizados validados sin volver a limitarse a las opciones originales.
+
 ## V0.21.33 · Ajustes de notas
 
 - Ajustes incorpora una sección propia para administrar categorías y tipos de relación.

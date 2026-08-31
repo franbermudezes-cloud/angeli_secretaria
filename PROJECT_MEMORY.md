@@ -349,3 +349,9 @@ Cloud Run deja de aceptar el ID token efímero de Google Identity Services y pas
 - Las categorías y tipos de relación son ajustes de cuenta, no preferencias locales del dispositivo.
 - Se guardan en `users/{uid}/settings/notes` dentro de `angelifirebase` y se sincronizan junto a la sesión propietaria.
 - Borrar una opción usada exige confirmación y migra explícitamente las notas afectadas; siempre debe quedar al menos una categoría.
+
+## V0.21.34 — La interpretación conoce la taxonomía de notas
+
+- Las categorías y relaciones configuradas se incluyen como contexto acotado en cada interpretación, tanto con una conversación activa como sin ella.
+- Una orden explícita «anota/apunta/guarda en X» prima como categoría X; no debe reutilizar ese mismo valor como relación salvo que la persona lo pida expresamente.
+- Los identificadores personalizados siguen el formato seguro de slug y el backend limita a 30 opciones por grupo.

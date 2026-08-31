@@ -16,7 +16,7 @@ import { fixtureTitle, reminderFixture } from './reminder-event-fixture.mjs';
 import { applyCalendarUpdateToEntries, buildCalendarSearch, calendarEvent, scheduledReminderEvent, listAllCalendarPages, reconcileReminderEntries, linkedReminderSearch, calendarEventsForIntent } from '../js/google.js';
 import { fromCloudEntry, toCloudEntry } from '../js/cloud-entry.js';
 import { findNoteMatches, normalizeNoteClassification, updateNoteDraft } from '../js/notes.js';
-import { addNoteSetting, normalizeNoteSettings, removeNoteSetting, renameNoteSetting, settingLabel } from '../js/note-settings.js';
+import { addNoteSetting, applyExplicitNoteCategory, normalizeNoteSettings, noteInterpretationContext, removeNoteSetting, renameNoteSetting, settingLabel } from '../js/note-settings.js';
 
 test('notas: clasifica sin bloquear y conserva los metadatos en Firestore',()=>{
   const classification=normalizeNoteClassification({scope:'company',relationType:'project',relationName:'Karaoke',purpose:'Revisar el precio de las licencias',tags:['licencias','presupuesto','licencias']});
@@ -89,6 +89,25 @@ test('ajustes de notas: categorías y relaciones son flexibles y sincronizables'
   assert.match(rules,/request\.auth\.uid == userId/);
   assert.equal(firebase.firestore[0].database,'angelifirebase');
   assert.equal(firebase.firestore[0].rules,'firestore.rules');
+});
+
+test('notas: «anota en Bodas» usa la categoría personalizada y no la duplica como relación',()=>{
+  const settings=addNoteSetting(normalizeNoteSettings(),'categories','Bodas');
+  const bodas=settings.categories.find(option=>option.label==='Bodas');
+  const mistaken={intent:'note',title:'Comprar una máquina',noteClassification:{scope:'general',relationType:'event',relationName:'Bodas',purpose:null,tags:[]}};
+  const fixed=applyExplicitNoteCategory(mistaken,'Anota en Bodas que tenemos que comprar una máquina',settings);
+  assert.equal(fixed.noteClassification.scope,bodas.id);
+  assert.equal(fixed.noteClassification.categoryLabel,'Bodas');
+  assert.equal(fixed.noteClassification.relationType,'none');
+  assert.equal(fixed.noteClassification.relationName,null);
+  const context=noteInterpretationContext(null,settings);
+  assert.deepEqual(context.noteSettings.categories.find(option=>option.id===bodas.id),bodas);
+});
+
+test('notas: una relación explícita con Bodas no se convierte en categoría',()=>{
+  const settings=addNoteSetting(normalizeNoteSettings(),'categories','Bodas');
+  const interpretation={intent:'note',title:'Llamar al fotógrafo',noteClassification:{scope:'general',relationType:'event',relationName:'Bodas',purpose:null,tags:[]}};
+  assert.deepEqual(applyExplicitNoteCategory(interpretation,'Relaciona esta nota con Bodas: llamar al fotógrafo',settings),interpretation);
 });
 
 test('reprogramar entiende frases naturales y separa objetivo de nueva fecha y hora',()=>{

@@ -1,19 +1,19 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.33";
-import{classify,actionData}from"./classifier.js?v=0.21.33";
-import{sendEntry}from"./sheets.js?v=0.21.33";
-import{createUI}from"./ui.js?v=0.21.33";
-import{createGoogleIntegration}from"./google.js?v=0.21.33";
-import{interpret,remoteProvider,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,protectCalendarInterpretation}from"./ai.js?v=0.21.33";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.33";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.33";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails}from"./schedule.js?v=0.21.33";
-import{createCloudSync}from"./firebase.js?v=0.21.33";
-import{createMediaService}from"./media.js?v=0.21.33";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.33";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.33";
-import{createAgendaActions}from"./agenda.js?v=0.21.33";
-import{findNoteMatches,noteClassificationFromIntent,updateNoteDraft}from"./notes.js?v=0.21.33";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,normalizeNoteSettings,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.33";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.34";
+import{classify,actionData}from"./classifier.js?v=0.21.34";
+import{sendEntry}from"./sheets.js?v=0.21.34";
+import{createUI}from"./ui.js?v=0.21.34";
+import{createGoogleIntegration}from"./google.js?v=0.21.34";
+import{interpret,remoteProvider,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,protectCalendarInterpretation}from"./ai.js?v=0.21.34";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.34";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.34";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails}from"./schedule.js?v=0.21.34";
+import{createCloudSync}from"./firebase.js?v=0.21.34";
+import{createMediaService}from"./media.js?v=0.21.34";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.34";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.34";
+import{createAgendaActions}from"./agenda.js?v=0.21.34";
+import{findNoteMatches,noteClassificationFromIntent,updateNoteDraft}from"./notes.js?v=0.21.34";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.34";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],selectedFilter="all",selectedType="all",shortcutCapture=false,saving=false,noteDraftSaving=false;
@@ -116,7 +116,7 @@ async function add({interactionId=null}={}){
    const noteQuery=localLinked?null:localNoteQuery(text);
    const cancellation=localLinked||noteQuery?null:localCalendarCancellation(text);
    const localUpdate=localLinked||noteQuery?null:localCalendarUpdate(text,now,active);
-   const rawInterpretation=await interpret(text,{provider:(value,context)=>google.interpretWithAI(value,remoteProvider,context),fallback:()=>localLinked||noteQuery||cancellation||localUpdate||localInterpretation(text,fallbackType,active),context:contextFor(active)});
+   const rawInterpretation=applyExplicitNoteCategory(await interpret(text,{provider:(value,context)=>google.interpretWithAI(value,remoteProvider,context),fallback:()=>localLinked||noteQuery||cancellation||localUpdate||localInterpretation(text,fallbackType,active),context:noteInterpretationContext(contextFor(active),noteSettings)}),text,noteSettings);
    if(rawInterpretation.source==="fallback")ui.updateWorking("Estoy revisando tu petición","Necesito confirmarla contigo antes de continuar.","");
    const deterministic=localLinked||cancellation||localUpdate;
    const routedInterpretation=noteQuery?{...noteQuery,source:rawInterpretation.source,fallbackReason:rawInterpretation.fallbackReason}:preserveCancellation(active,protectCalendarInterpretation(rawInterpretation,deterministic));
@@ -296,7 +296,7 @@ async function handleEntryAction(event){
  }
 }
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.33",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.34",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}

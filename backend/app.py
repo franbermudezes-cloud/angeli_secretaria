@@ -158,8 +158,12 @@ la pregunta completa nunca es un filtro. Esta consulta no crea una
 entrada nueva ni consulta Google Calendar.
 Para crear una nota usa note. title debe ser un asunto breve y útil; notes puede
 conservar el contexto o detalle si existe. Clasifica la nota sin bloquear su
-creación: noteClassification.scope es general, personal o company;
-relationType es none, person, client, project o event; relationName identifica
+creación. Si CONTEXTO ACTIVO incluye noteSettings, usa exactamente el id de una
+de sus categories en noteClassification.scope y el id de uno de sus
+relationTypes en relationType. «Anota/apunta/guarda en X» asigna la categoría X,
+no una relación; «relaciona/vincula/asocia con X» sí expresa una relación. Sin
+ajustes personalizados, scope es general, personal o company y relationType es
+none, person, client, project o event. relationName identifica
 esa relación cuando se expresa; purpose resume por qué se guarda, y tags
 contiene como máximo cinco etiquetas breves. No inventes relaciones: si no se
 expresan, usa scope general, relationType none, relationName null, purpose null
@@ -204,8 +208,8 @@ RESPONSE_SCHEMA: dict[str, Any] = {
                     "additionalProperties": False,
                     "required": ["scope", "relationType", "relationName", "purpose", "tags"],
                     "properties": {
-                        "scope": {"type": "string", "enum": ["general", "personal", "company"]},
-                        "relationType": {"type": "string", "enum": ["none", "person", "client", "project", "event"]},
+                        "scope": {"type": "string"},
+                        "relationType": {"type": "string"},
                         "relationName": {"type": ["string", "null"]},
                         "purpose": {"type": ["string", "null"]},
                         "tags": {"type": "array", "items": {"type": "string"}, "maxItems": 5},
@@ -357,8 +361,13 @@ def validate_context(value: Any) -> dict[str, Any] | None:
     """Acepta solo el resumen de una interacción, nunca estado arbitrario de UI."""
     if value is None:
         return None
-    if not isinstance(value, dict) or not set(value).issubset({"interactionId", "intent", "status", "collectedData", "missingFields", "question", "turns"}):
+    if not isinstance(value, dict) or not set(value).issubset({"interactionId", "intent", "status", "collectedData", "missingFields", "question", "turns", "noteSettings"}):
         raise ValueError("Contexto conversacional no válido")
+    note_settings = validate_note_settings(value.get("noteSettings")) if "noteSettings" in value else None
+    if "interactionId" not in value:
+        if set(value) != {"noteSettings"}:
+            raise ValueError("Contexto conversacional no válido")
+        return {"noteSettings": note_settings}
     interaction_id = value.get("interactionId")
     intent = value.get("intent")
     status = value.get("status")
@@ -378,7 +387,27 @@ def validate_context(value: Any) -> dict[str, Any] | None:
         if not isinstance(turn, dict) or set(turn) != {"role", "text"} or turn["role"] not in {"user", "assistant"} or not isinstance(turn["text"], str) or len(turn["text"]) > MAX_TEXT_LENGTH:
             raise ValueError("Contexto conversacional no válido")
         safe_turns.append({"role": turn["role"], "text": turn["text"]})
-    return {"interactionId": interaction_id, "intent": intent, "status": status, "collectedData": collected, "missingFields": missing, "question": value.get("question") if isinstance(value.get("question"), str) else None, "turns": safe_turns}
+    result = {"interactionId": interaction_id, "intent": intent, "status": status, "collectedData": collected, "missingFields": missing, "question": value.get("question") if isinstance(value.get("question"), str) else None, "turns": safe_turns}
+    if note_settings is not None:
+        result["noteSettings"] = note_settings
+    return result
+
+
+def validate_note_settings(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict) or set(value) != {"categories", "relationTypes"}:
+        raise ValueError("Ajustes de notas no válidos")
+    result = {}
+    for key in ("categories", "relationTypes"):
+        options = value[key]
+        if not isinstance(options, list) or len(options) > 30:
+            raise ValueError("Ajustes de notas no válidos")
+        clean_options = []
+        for option in options:
+            if not isinstance(option, dict) or set(option) != {"id", "label"} or not isinstance(option["id"], str) or not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,63}", option["id"]) or not isinstance(option["label"], str) or not option["label"].strip() or len(option["label"]) > 80:
+                raise ValueError("Ajustes de notas no válidos")
+            clean_options.append({"id": option["id"], "label": option["label"].strip()})
+        result[key] = clean_options
+    return result
 
 
 def parse_json_body(environ: dict[str, Any], allowed: set[str]) -> dict[str, Any]:
@@ -600,7 +629,7 @@ def validate_note_classification(value: Any) -> None:
     required = {"scope", "relationType", "relationName", "purpose", "tags"}
     if not isinstance(value, dict) or set(value) != required:
         raise ValueError("Clasificación de nota no válida")
-    if value["scope"] not in {"general", "personal", "company"} or value["relationType"] not in {"none", "person", "client", "project", "event"}:
+    if not isinstance(value["scope"], str) or not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,63}", value["scope"]) or not isinstance(value["relationType"], str) or not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,63}", value["relationType"]):
         raise ValueError("Clasificación de nota no válida")
     for key in ("relationName", "purpose"):
         item = value[key]
