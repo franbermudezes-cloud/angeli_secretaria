@@ -1,5 +1,10 @@
 # Entorno automático de pruebas reales
 
+V0.21.37: la puerta PWA comprueba que los tres modales de creación de Calendar
+(evento, recordatorio y evento con aviso) muestran «Cambiar fecha y hora». Las
+pruebas verifican que la corrección actualiza el payload real y que un aviso
+vinculado mantiene la misma antelación al desplazar el evento principal.
+
 V0.21.36: la puerta PWA comprueba los seis accesos directos incluidos y la
 migración de sus versiones ya guardadas en el dispositivo. Verifica que cada
 acceso conserve su intención aunque la interpretación inicial sea una nota y

@@ -1,5 +1,9 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-08-31 — V0.21.37 · Fecha y hora editables
+
+Toda ficha de creación que termine en Calendar debe permitir corregir fecha y hora antes de ejecutar: evento, recordatorio y evento con aviso vinculado. La corrección modifica el dato real que se enviará a Calendar. Si existe un aviso vinculado, se desplaza junto al evento conservando su antelación original.
+
 ## 2026-08-31 — V0.21.36 · Accesos directos operativos
 
 Un acceso directo expresa una intención, no solo un texto sugerido. Los seis accesos base y sus copias heredadas conservan esa intención aunque Gemini o el clasificador local interpreten otra cosa. Las consultas de agenda y la búsqueda de contactos se ejecutan al enviar la voz, sin pedir después otro clic para «Consultar» o «Llamar ahora». Los accesos personalizados reconocibles reciben la misma semántica; los desconocidos continúan como órdenes naturales sin forzar una acción.
