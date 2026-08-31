@@ -123,6 +123,12 @@ test('notas: ciclo completo permite editar, completar, consultar hechas, reabrir
   assert.deepEqual(removeNoteEntry([reopened],reopened.id),[]);
 });
 
+test('notas: el validador conserva estados permitidos y rechaza estados desconocidos',()=>{
+  const query=localNoteQuery('Muéstrame mis notas hechas');
+  assert.equal(validateIntent(query).noteStatus,'done');
+  assert.throws(()=>validateIntent({...query,noteStatus:'deleted'}),/Estado de nota IA no válido/);
+});
+
 test('notas: los resultados consultados ofrecen edición, estado y borrado confirmado',()=>{
   const ui=readFileSync(new URL('../js/ui.js',import.meta.url),'utf8');
   const app=readFileSync(new URL('../js/app.js',import.meta.url),'utf8');
