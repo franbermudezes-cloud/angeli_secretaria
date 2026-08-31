@@ -343,3 +343,9 @@ Cloud Run deja de aceptar el ID token efímero de Google Identity Services y pas
 - La interpretación de una nota genera primero un borrador local; Firestore y Google Sheets solo reciben la nota después de `Guardar nota`.
 - La ficha editable comprende título, contenido, ámbito, relación, motivo y etiquetas.
 - Cancelar un borrador no crea entradas y retira los adjuntos que ya se hubieran subido a Drive.
+
+## V0.21.33 — Taxonomía de notas configurable
+
+- Las categorías y tipos de relación son ajustes de cuenta, no preferencias locales del dispositivo.
+- Se guardan en `users/{uid}/settings/notes` dentro de `angelifirebase` y se sincronizan junto a la sesión propietaria.
+- Borrar una opción usada exige confirmación y migra explícitamente las notas afectadas; siempre debe quedar al menos una categoría.

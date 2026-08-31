@@ -1,12 +1,12 @@
-const SCOPES = new Set(["general", "personal", "company"]);
-const RELATION_TYPES = new Set(["none", "person", "client", "project", "event"]);
+const SAFE_ID = /^[a-z0-9][a-z0-9-]{0,63}$/;
 
 export function normalizeNoteClassification(value = {}) {
-  const scope = SCOPES.has(value?.scope) ? value.scope : "general";
-  const relationType = RELATION_TYPES.has(value?.relationType) ? value.relationType : "none";
+  const scope = safeId(value?.scope, "general");
+  const relationType = safeId(value?.relationType, "none");
   const relationName = relationType === "none" ? null : clean(value?.relationName);
   const tags = [...new Set((Array.isArray(value?.tags) ? value.tags : []).map(clean).filter(Boolean))].slice(0, 5);
-  return { scope, relationType: relationName ? relationType : "none", relationName, purpose: clean(value?.purpose), tags };
+  const categoryLabel = clean(value?.categoryLabel), relationTypeLabel = clean(value?.relationTypeLabel);
+  return { scope, ...(categoryLabel ? { categoryLabel } : {}), relationType: relationName ? relationType : "none", ...(relationTypeLabel ? { relationTypeLabel } : {}), relationName, purpose: clean(value?.purpose), tags };
 }
 
 export function noteClassificationFromIntent(interpretation = {}) {
@@ -18,7 +18,9 @@ export function updateNoteDraft(entry = {}, values = {}) {
   const text = clean(values.text) || clean(entry.text);
   const noteClassification = normalizeNoteClassification({
     scope: values.scope,
+    categoryLabel: values.categoryLabel,
     relationType: values.relationType,
+    relationTypeLabel: values.relationTypeLabel,
     relationName: values.relationName,
     purpose: values.purpose,
     tags: Array.isArray(values.tags) ? values.tags : String(values.tags || "").split(",")
@@ -49,7 +51,7 @@ export function noteTitle(entry = {}) {
 
 export function noteClassificationLabel(value = {}) {
   const data = normalizeNoteClassification(value);
-  const scope = { general: "General", personal: "Personal", company: "Empresa" }[data.scope];
+  const scope = data.categoryLabel || { general: "General", personal: "Personal", company: "Empresa" }[data.scope] || data.scope;
   const relation = data.relationName ? ` · ${data.relationName}` : "";
   return `${scope}${relation}`;
 }
@@ -61,11 +63,12 @@ function noteScore(entry, query, requested) {
   if (!query) return 1;
   const title = normalized(noteTitle(entry));
   const text = normalized(entry.text);
+  const category = normalized(data.categoryLabel || data.scope);
   const relation = normalized(data.relationName);
   const purpose = normalized(data.purpose);
   const tags = data.tags.map(normalized);
-  if (title === query || relation === query) return 8;
-  if (title.includes(query) || relation.includes(query)) return 6;
+  if (title === query || relation === query || category === query) return 8;
+  if (title.includes(query) || relation.includes(query) || category.includes(query)) return 6;
   if (tags.some(tag => tag === query)) return 5;
   if (text.includes(query) || purpose.includes(query) || tags.some(tag => tag.includes(query))) return 3;
   return 0;
@@ -78,6 +81,8 @@ function isUnfiltered(value) {
 function normalized(value) {
   return clean(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
+
+function safeId(value, fallback) { const id = clean(value); return SAFE_ID.test(id) ? id : fallback; }
 
 function clean(value) {
   return typeof value === "string" ? value.trim() : "";

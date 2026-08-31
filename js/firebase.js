@@ -26,7 +26,7 @@ import {
   setDoc,
   waitForPendingWrites
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
-import { fromCloudEntry, sameEntry, toCloudEntry } from "./cloud-entry.js?v=0.21.32";
+import { fromCloudEntry, sameEntry, toCloudEntry } from "./cloud-entry.js?v=0.21.33";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAFM5NjcxX9lC5MpfII4B3Kx7lV9SsUAsc",
@@ -48,6 +48,7 @@ export function createCloudSync({ notify }) {
   let db;
   let user = null;
   let unsubscribe = null;
+  let unsubscribeSettings = null;
   let callbacks = {};
 
   async function initialize(handlers) {
@@ -72,6 +73,7 @@ export function createCloudSync({ notify }) {
       callbacks.onAuthChange?.(session());
       if (!user) { callbacks.onSyncStatus?.({ state: "signed-out" }); return; }
       subscribe();
+      subscribeSettings();
     });
   }
 
@@ -138,9 +140,23 @@ export function createCloudSync({ notify }) {
     return true;
   }
 
+  async function saveNoteSettings(settings) {
+    if (!user || !db) throw new Error("Inicia sesión en Angeli para guardar ajustes");
+    await setDoc(noteSettingsDocument(), settings);
+    await waitForPendingWrites(db);
+    return true;
+  }
+
+  function subscribeSettings() {
+    unsubscribeSettings?.();
+    unsubscribeSettings = onSnapshot(noteSettingsDocument(), snapshot => callbacks.onNoteSettings?.(snapshot.exists() ? snapshot.data() : null), error => callbacks.onNoteSettingsError?.(error));
+  }
+
   function stopListening() {
     if (unsubscribe) unsubscribe();
     unsubscribe = null;
+    if (unsubscribeSettings) unsubscribeSettings();
+    unsubscribeSettings = null;
   }
 
   function entriesCollection() {
@@ -148,5 +164,10 @@ export function createCloudSync({ notify }) {
     return collection(db, "users", user.uid, "entries");
   }
 
-  return { initialize, session, isSignedIn, getAuthToken, connect, disconnect, syncNotes };
+  function noteSettingsDocument() {
+    if (!user || !db) throw new Error("Sesión de Angeli no disponible");
+    return doc(db, "users", user.uid, "settings", "notes");
+  }
+
+  return { initialize, session, isSignedIn, getAuthToken, connect, disconnect, syncNotes, saveNoteSettings };
 }

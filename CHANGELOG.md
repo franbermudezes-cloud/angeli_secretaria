@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.21.33 · Ajustes de notas
+
+- Ajustes incorpora una sección propia para administrar categorías y tipos de relación.
+- Las opciones pueden crearse, renombrarse y eliminarse; si están usadas, Angeli avisa y reasigna las notas afectadas de forma explícita.
+- La ficha de una nota usa inmediatamente la configuración personalizada.
+- La configuración pertenece a la cuenta y se sincroniza mediante `users/{uid}/settings/notes` en la base `angelifirebase`.
+
 ## V0.21.32 · Confirmación real de notas
 
 - Una nota nueva permanece como borrador y no llega a Firestore ni a Google Sheets hasta pulsar `Guardar nota`.
