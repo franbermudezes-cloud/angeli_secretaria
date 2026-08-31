@@ -1,4 +1,4 @@
-import{nextDateForTime,temporalData,explicitRelativeDate}from"./temporal.js?v=0.21.36";
+import{nextDateForTime,temporalData,explicitRelativeDate}from"./temporal.js?v=0.21.37";
 
 const CALL_INTENT=/\b(?:llama|llamar|telefonea|telefonear|contacta|contactar)\b/i;
 
@@ -98,6 +98,33 @@ export function updateCalendarDetails(note,field,value){
   if(note.schedule&&note.proposal?.intent==="calendar.create")return{...note,[field==="title"?"calendarTitle":"calendarDescription"]:clean};
   if(note.schedule)return{...note,schedule:{...note.schedule,[field]:clean}};
   return{...note,[field==="title"?"calendarTitle":"calendarDescription"]:clean};
+}
+
+export function updateCalendarDateTime(note,date,time){
+  const nextDate=String(date||"").trim(),nextTime=String(time||"").trim();
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(nextDate)||!/^\d{2}:\d{2}$/.test(nextTime))return note;
+  const nextValue=new Date(`${nextDate}T${nextTime}:00`);
+  if(Number.isNaN(nextValue.getTime()))return note;
+  const reminder=Boolean(note.schedule)&&note.proposal?.intent!=="calendar.create";
+  if(reminder)return{...note,scheduledDate:nextDate,scheduledTime:nextTime,aiIntent:{...note.aiIntent,date:nextDate,time:nextTime},schedule:{...note.schedule,dueAt:`${nextDate}T${nextTime}:00`}};
+  let schedule=note.schedule;
+  if(schedule?.dueAt){
+    const oldEvent=wallClockMs(`${note.scheduledDate||note.aiIntent?.date}T${note.scheduledTime||note.aiIntent?.time}:00`),oldReminder=wallClockMs(schedule.dueAt),nextEvent=wallClockMs(`${nextDate}T${nextTime}:00`);
+    if([oldEvent,oldReminder,nextEvent].every(Number.isFinite)){
+      schedule={...schedule,dueAt:wallClockDateTime(new Date(nextEvent-(oldEvent-oldReminder)))};
+    }
+  }
+  const linkedReminder=schedule?.dueAt&&note.aiIntent?.linkedReminder?{...note.aiIntent.linkedReminder,date:schedule.dueAt.slice(0,10),time:schedule.dueAt.slice(11,16)}:note.aiIntent?.linkedReminder;
+  return{...note,scheduledDate:nextDate,scheduledTime:nextTime,aiIntent:{...note.aiIntent,date:nextDate,time:nextTime,...(linkedReminder?{linkedReminder}:{})},...(schedule?{schedule}:{})};
+}
+
+function wallClockMs(value){
+  const match=String(value||"").match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  return match?Date.UTC(...match.slice(1).map(Number).map((part,index)=>index===1?part-1:part)):NaN;
+}
+
+function wallClockDateTime(value){
+  return`${value.getUTCFullYear()}-${String(value.getUTCMonth()+1).padStart(2,"0")}-${String(value.getUTCDate()).padStart(2,"0")}T${String(value.getUTCHours()).padStart(2,"0")}:${String(value.getUTCMinutes()).padStart(2,"0")}:00`;
 }
 
 function eventWhen(date,time){

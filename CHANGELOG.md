@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.21.37 · Fecha y hora editables
+
+- Los modales de evento, recordatorio y evento con aviso permiten corregir fecha y hora antes de guardar en Calendar.
+- Un recordatorio actualiza la fecha real de su aviso, no solo el texto mostrado.
+- Al mover un evento con aviso vinculado se conserva automáticamente la antelación existente del aviso.
+
 ## V0.21.36 · Accesos directos operativos
 
 - Los seis accesos incluidos conservan la intención elegida aunque la IA devuelva otra clasificación.

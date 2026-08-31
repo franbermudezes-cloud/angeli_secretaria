@@ -1,7 +1,7 @@
-import { typeLabel } from "./classifier.js?v=0.21.36";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.36";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.36";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.36";
+import { typeLabel } from "./classifier.js?v=0.21.37";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.37";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.37";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.37";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -123,7 +123,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.36";
+    image.src = "assets/angeli-welcome.gif?v=0.21.37";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -377,6 +377,7 @@ export function createUI({ getMedia }) {
       openModal({ ...base, title: note.calendarStatus === "error" ? "No se pudo completar" : "¿Creo el evento y su aviso?", lead: "Comprueba los dos elementos. Se guardarán juntos o no se guardará ninguno.", body: entryBody(note) + calendarCard(note) + reminder, actions: [
         { label: "Cancelar", kind: "secondary", onClick: closeLayers },
         { label: "Cambiar título", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "title" } },
+        { label: "Cambiar fecha y hora", kind: "secondary", dataset: { a: "edit-calendar-datetime", id: note.id } },
         { label: "Cambiar aviso", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "reminderTitle" } },
         { label: calendarDetails(note).location ? "Cambiar ubicación" : "Añadir ubicación", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "location" } },
         { label: calendarDetails(note).description ? "Cambiar descripción" : "Añadir descripción", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "description" } },
@@ -399,7 +400,7 @@ export function createUI({ getMedia }) {
         showCompletion({ title: "✓ Pendiente completado", lead: "Lo he marcado como hecho.", body: detail });
         return;
       }
-      openModal({ ...base, title: note.schedule.status === "error" ? "No se pudo programar" : "¿Programo este aviso?", lead: "Comprueba el título. Si está bien, solo tienes que programarlo.", body: detail, actions: [{ label: "Cancelar", kind: "secondary", onClick: closeLayers }, { label: "Cambiar título", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "title" } }, { label: calendarDetails(note).description ? "Cambiar descripción" : "Añadir descripción", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "description" } }, { label: note.schedule.status === "error" ? "Reintentar" : "⏰ Programar", kind: "confirm", dataset: { a: "schedule", id: note.id } }] });
+      openModal({ ...base, title: note.schedule.status === "error" ? "No se pudo programar" : "¿Programo este aviso?", lead: "Comprueba el título. Si está bien, solo tienes que programarlo.", body: detail, actions: [{ label: "Cancelar", kind: "secondary", onClick: closeLayers }, { label: "Cambiar título", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "title" } }, { label: "Cambiar fecha y hora", kind: "secondary", dataset: { a: "edit-calendar-datetime", id: note.id } }, { label: calendarDetails(note).description ? "Cambiar descripción" : "Añadir descripción", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "description" } }, { label: note.schedule.status === "error" ? "Reintentar" : "⏰ Programar", kind: "confirm", dataset: { a: "schedule", id: note.id } }] });
       return;
     }
     if (intent === "calendar.create") {
@@ -411,6 +412,7 @@ export function createUI({ getMedia }) {
       openModal({ ...base, title: "¿Lo añado al calendario?", lead: "Comprueba el título. La ubicación y la descripción se guardarán en sus campos.", body: entryBody(note) + calendarCard(note), actions: [
         { label: "Cancelar", kind: "secondary", onClick: closeLayers },
         { label: "Cambiar título", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "title" } },
+        { label: "Cambiar fecha y hora", kind: "secondary", dataset: { a: "edit-calendar-datetime", id: note.id } },
         { label: calendarDetails(note).description ? "Cambiar descripción" : "Añadir descripción", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "description" } },
         { label: "📅 Añadir", kind: "confirm", dataset: { a: "calendar", id: note.id } }
       ] });
@@ -498,6 +500,21 @@ export function createUI({ getMedia }) {
     controls.append(mic, save);
     const content = document.createElement("div"); content.className = "conversation-question"; content.append(draft, controls);
     openModal({ title: isReminderTitle ? "Cambiar aviso" : isTitle ? "Cambiar título" : isLocation ? (details.location ? "Cambiar ubicación" : "Añadir ubicación") : details.description ? "Cambiar descripción" : "Añadir descripción", lead: isReminderTitle ? "Esto será lo que veas en el aviso anterior." : isTitle ? "Esto será lo que veas en Calendar y en el aviso del móvil." : isLocation ? "Este recinto o dirección se guardará en el campo Ubicación de Calendar." : "Es opcional. Puedes dictarla o dejarla vacía.", body: content, actions: [{ label: "Volver", kind: "secondary", onClick: onCancel }] });
+    $("actionModal").classList.add("conversation-modal");
+  }
+
+  function showCalendarDateTimeEditor(note,{onSave,onCancel}={}){
+    const reminder=Boolean(note.schedule)&&note.proposal?.intent!=="calendar.create",due=reminder?note.schedule?.dueAt||"":"";
+    const currentDate=reminder?due.slice(0,10):note.scheduledDate||note.aiIntent?.date||"",currentTime=reminder?due.slice(11,16):note.scheduledTime||note.aiIntent?.time||"";
+    const content=document.createElement("div");content.className="conversation-question calendar-datetime-editor";
+    const dateLabel=document.createElement("label");dateLabel.textContent="Fecha";
+    const date=document.createElement("input");date.id="calendarDateDraft";date.type="date";date.value=currentDate;dateLabel.append(date);
+    const timeLabel=document.createElement("label");timeLabel.textContent="Hora";
+    const time=document.createElement("input");time.id="calendarTimeDraft";time.type="time";time.value=currentTime;timeLabel.append(time);
+    const save=document.createElement("button");save.type="button";save.className="confirm conversation-send";save.textContent="Guardar fecha y hora ➤";
+    save.onclick=()=>{if(!date.value||!time.value)return notify("Indica la fecha y la hora");onSave?.({date:date.value,time:time.value})};
+    content.append(dateLabel,timeLabel,save);
+    openModal({title:"Cambiar fecha y hora",lead:"Corrige cuándo debe aparecer en Calendar.",body:content,actions:[{label:"Volver",kind:"secondary",onClick:onCancel}]});
     $("actionModal").classList.add("conversation-modal");
   }
 
@@ -667,7 +684,7 @@ export function createUI({ getMedia }) {
     $("preview").innerHTML = files.map(file => '<img class="thumb" src="' + URL.createObjectURL(file) + '" alt="Imagen preparada">').join("");
   }
 
-  return { $, notify, setGoogleStatus, setSyncStatus, render, showImagePreview, showEntryAction, showCalendarEvent, showInteractionQuestion, showCalendarFieldEditor, showPendingChoices, showReminderResults, showReminderCancellation, showNoteResults, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
+  return { $, notify, setGoogleStatus, setSyncStatus, render, showImagePreview, showEntryAction, showCalendarEvent, showInteractionQuestion, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderCancellation, showNoteResults, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
 }
 
 function esc(value) {

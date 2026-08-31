@@ -9,7 +9,7 @@ import {
   findActiveInteraction,
   resolveConversationTurn,
 } from "../js/conversation.js";
-import { calendarDetails, linkedScheduleFor, normalizeFutureCall, normalizeReminderSchedule, scheduleFor, scheduleTitle, updateCalendarDetails } from "../js/schedule.js";
+import { calendarDetails, linkedScheduleFor, normalizeFutureCall, normalizeReminderSchedule, scheduleFor, scheduleTitle, updateCalendarDetails, updateCalendarDateTime } from "../js/schedule.js";
 import { completionTarget, completePending, completePendingWithCalendar, findPendingMatches, findReminderMatches } from "../js/pending.js";
 import { mockProvider, interpret, localCalendarUpdate, localLinkedCalendarIntent, localReminderQuery, localNoteQuery, protectCalendarInterpretation, validateIntent } from "../js/ai.js";
 import { fixtureTitle, reminderFixture } from './reminder-event-fixture.mjs';
@@ -365,8 +365,8 @@ test('evento y recordatorio comparten ficha editable sin añadir pasos al guarda
   assert.match(elements.get('modalBody').html,/San Marcos de Gandía/);
   assert.match(elements.get('modalBody').html,/Sin descripción/);
   const actions=elements.get('modalActions').children;
-  assert.deepEqual(actions.map(button=>button.textContent),['Cancelar','Cambiar título','Añadir descripción','📅 Añadir']);
-  assert.equal(actions[3].dataset.a,'calendar');
+  assert.deepEqual(actions.map(button=>button.textContent),['Cancelar','Cambiar título','Cambiar fecha y hora','Añadir descripción','📅 Añadir']);
+  assert.equal(actions[4].dataset.a,'calendar');
 
   let saved=null,micTarget=null;
   ui.showCalendarFieldEditor(event,'description',{onSave:value=>saved=value,onMic:id=>micTarget=id,onCancel:()=>{}});
@@ -377,18 +377,45 @@ test('evento y recordatorio comparten ficha editable sin añadir pasos al guarda
   assert.equal(micTarget,'calendarFieldDraft');
   assert.equal(saved,'Preparar el aniversario');
 
+  let changedWhen=null;
+  ui.showCalendarDateTimeEditor(event,{onSave:value=>changedWhen=value,onCancel:()=>{}});
+  const dateEditor=elements.get('modalBody').children[0];
+  assert.equal(dateEditor.children[0].children[0].value,'2026-08-28');
+  assert.equal(dateEditor.children[1].children[0].value,'21:00');
+  dateEditor.children[0].children[0].value='2026-08-29';
+  dateEditor.children[1].children[0].value='22:15';
+  dateEditor.children[2].onclick();
+  assert.deepEqual(changedWhen,{date:'2026-08-29',time:'22:15'});
+
   const reminder={...reminderFixture(),aiIntent:{...reminderFixture().aiIntent,notes:null},proposal:{intent:'reminder.create'}};
   ui.showEntryAction(reminder);
   assert.match(elements.get('modalBody').html,/Llamar a Miguel Ibiza/);
-  assert.deepEqual(elements.get('modalActions').children.map(button=>button.textContent),['Cancelar','Cambiar título','Añadir descripción','⏰ Programar']);
+  assert.deepEqual(elements.get('modalActions').children.map(button=>button.textContent),['Cancelar','Cambiar título','Cambiar fecha y hora','Añadir descripción','⏰ Programar']);
 
   const linked={...event,schedule:{dueAt:'2026-08-26T21:00:00',title:'Comprobar el equipo',status:'pending_confirmation'},calendarStatus:'pending'};
   ui.showEntryAction(linked);
   assert.match(elements.get('modalBody').html,/Cena con María/);
   assert.match(elements.get('modalBody').html,/Aviso vinculado/);
   assert.match(elements.get('modalBody').html,/Comprobar el equipo/);
-  assert.deepEqual(elements.get('modalActions').children.map(button=>button.textContent),['Cancelar','Cambiar título','Cambiar aviso','Cambiar ubicación','Añadir descripción','📅 Crear los dos']);
-  assert.equal(elements.get('modalActions').children[5].dataset.a,'calendar-bundle');
+  assert.deepEqual(elements.get('modalActions').children.map(button=>button.textContent),['Cancelar','Cambiar título','Cambiar fecha y hora','Cambiar aviso','Cambiar ubicación','Añadir descripción','📅 Crear los dos']);
+  assert.equal(elements.get('modalActions').children[6].dataset.a,'calendar-bundle');
+});
+
+test('evento y recordatorio permiten corregir fecha y hora antes de guardar',()=>{
+  const event={id:'event-date',scheduledDate:'2026-09-14',scheduledTime:'18:00',aiIntent:{date:'2026-09-14',time:'18:00'},proposal:{intent:'calendar.create'}};
+  const changedEvent=updateCalendarDateTime(event,'2026-09-15','19:30');
+  assert.equal(changedEvent.scheduledDate,'2026-09-15');
+  assert.equal(changedEvent.scheduledTime,'19:30');
+  assert.deepEqual([changedEvent.aiIntent.date,changedEvent.aiIntent.time],['2026-09-15','19:30']);
+
+  const reminder={id:'reminder-date',scheduledDate:'2026-09-10',scheduledTime:'10:00',aiIntent:{date:'2026-09-10',time:'10:00'},proposal:{intent:'reminder.create'},schedule:{dueAt:'2026-09-10T10:00:00'}};
+  const changedReminder=updateCalendarDateTime(reminder,'2026-09-11','11:15');
+  assert.equal(changedReminder.schedule.dueAt,'2026-09-11T11:15:00');
+
+  const linked={...event,aiIntent:{...event.aiIntent,linkedReminder:{title:'Preparar equipo',date:'2026-09-12',time:'18:00'}},schedule:{dueAt:'2026-09-12T18:00:00'},proposal:{intent:'calendar.create'}};
+  const changedLinked=updateCalendarDateTime(linked,'2026-09-20','20:00');
+  assert.equal(changedLinked.schedule.dueAt,'2026-09-18T20:00:00');
+  assert.deepEqual([changedLinked.aiIntent.linkedReminder.date,changedLinked.aiIntent.linkedReminder.time],['2026-09-18','20:00']);
 });
 import { markCancelledReminder } from '../js/pending.js';
 
