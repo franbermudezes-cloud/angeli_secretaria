@@ -1,7 +1,7 @@
-import { typeLabel } from "./classifier.js?v=0.21.35";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.35";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.35";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.35";
+import { typeLabel } from "./classifier.js?v=0.21.36";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.36";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.36";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.36";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -123,7 +123,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.35";
+    image.src = "assets/angeli-welcome.gif?v=0.21.36";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
