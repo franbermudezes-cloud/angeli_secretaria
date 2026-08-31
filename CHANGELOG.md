@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.21.32 · Confirmación real de notas
+
+- Una nota nueva permanece como borrador y no llega a Firestore ni a Google Sheets hasta pulsar `Guardar nota`.
+- La ficha previa muestra título, contenido, categoría, relación, motivo y etiquetas.
+- `Modificar` permite corregir todos esos campos y regresar a la ficha antes de confirmar.
+- Cancelar descarta el borrador y limpia sus posibles adjuntos remotos, sin dejar una entrada oculta.
+
 ## V0.21.31 · Notas clasificadas y consultables
 
 - Las notas conservan un título útil, ámbito, relación opcional, motivo y hasta cinco etiquetas sin exigir datos para poder guardarlas.

@@ -13,6 +13,25 @@ export function noteClassificationFromIntent(interpretation = {}) {
   return normalizeNoteClassification(interpretation.noteClassification);
 }
 
+export function updateNoteDraft(entry = {}, values = {}) {
+  const title = clean(values.title) || noteTitle(entry);
+  const text = clean(values.text) || clean(entry.text);
+  const noteClassification = normalizeNoteClassification({
+    scope: values.scope,
+    relationType: values.relationType,
+    relationName: values.relationName,
+    purpose: values.purpose,
+    tags: Array.isArray(values.tags) ? values.tags : String(values.tags || "").split(",")
+  });
+  return {
+    ...entry,
+    text,
+    noteClassification,
+    aiIntent: { ...(entry.aiIntent || {}), title, noteClassification },
+    updatedAt: new Date().toISOString()
+  };
+}
+
 export function findNoteMatches(entries = [], interpretation = {}) {
   const query = normalized(interpretation.noteQuery || "");
   const requested = normalizeNoteClassification(interpretation.noteClassification);

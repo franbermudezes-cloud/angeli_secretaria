@@ -1,6 +1,6 @@
-import { typeLabel } from "./classifier.js?v=0.21.31";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.31";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.31";
+import { typeLabel } from "./classifier.js?v=0.21.32";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.32";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.32";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -121,7 +121,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.31";
+    image.src = "assets/angeli-welcome.gif?v=0.21.32";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -240,6 +240,64 @@ export function createUI({ getMedia }) {
     openModal({ title: matches.length === 1 ? "He encontrado esta nota" : "He encontrado estas notas", lead: query ? `Relacionadas con ${query}.` : "Estas son tus notas pendientes.", body, actions: [{ label: "Cerrar", kind: "confirm", onClick: closeLayers }] });
   }
 
+  function noteConfirmationCard(note) {
+    const classification = note.noteClassification || note.aiIntent?.noteClassification || {};
+    const relation = classification.relationName ? '<span class="calendar-field-label">Relacionada con</span><b>' + esc(classification.relationName) + '</b>' : '';
+    const purpose = classification.purpose ? '<span class="calendar-field-label">Motivo</span><b>' + esc(classification.purpose) + '</b>' : '';
+    const tags = classification.tags?.length ? '<span class="calendar-field-label">Etiquetas</span><b>' + esc(classification.tags.join(" · ")) + '</b>' : '';
+    return '<div class="calendar-confirmation note-confirmation"><span class="calendar-field-label">Título</span><strong>' + esc(noteTitle(note)) + '</strong><span class="calendar-field-label">Contenido</span><b>' + esc(note.text) + '</b><span class="calendar-field-label">Clasificación</span><b>' + esc(noteClassificationLabel(classification)) + '</b>' + relation + purpose + tags + '</div>';
+  }
+
+  function showNoteConfirmation(note, { onSave, onEdit, onCancel } = {}) {
+    openModal({
+      title: "¿Guardo esta nota?",
+      lead: "Comprueba el contenido y su clasificación. Nada se guardará hasta que confirmes.",
+      body: noteConfirmationCard(note),
+      actions: [
+        { label: "Cancelar", kind: "secondary", onClick: onCancel || closeLayers },
+        { label: "Modificar", kind: "secondary", onClick: onEdit },
+        { label: "Guardar nota", kind: "confirm", onClick: onSave }
+      ]
+    });
+  }
+
+  function showNoteEditor(note, { onSave, onCancel } = {}) {
+    const classification = note.noteClassification || note.aiIntent?.noteClassification || {};
+    const form = document.createElement("div");
+    form.className = "note-editor";
+    form.innerHTML = '<label>Título<input id="noteDraftTitle" type="text"></label>' +
+      '<label>Contenido<textarea id="noteDraftText" rows="4"></textarea></label>' +
+      '<label>Categoría<select id="noteDraftScope"><option value="general">General</option><option value="personal">Personal</option><option value="company">Empresa</option></select></label>' +
+      '<label>Relación<select id="noteDraftRelationType"><option value="none">Sin relación</option><option value="person">Persona</option><option value="client">Cliente</option><option value="project">Proyecto</option><option value="event">Evento</option></select></label>' +
+      '<label>Nombre relacionado<input id="noteDraftRelationName" type="text" placeholder="Persona, cliente, proyecto o evento"></label>' +
+      '<label>Motivo<input id="noteDraftPurpose" type="text"></label>' +
+      '<label>Etiquetas<input id="noteDraftTags" type="text" placeholder="Separadas por comas"></label>';
+    openModal({
+      title: "Modificar nota",
+      lead: "Corrige únicamente lo que necesites y vuelve a revisar la ficha.",
+      body: form,
+      actions: [
+        { label: "Volver", kind: "secondary", onClick: onCancel },
+        { label: "Revisar cambios", kind: "confirm", onClick: () => onSave?.({
+          title: $("noteDraftTitle").value,
+          text: $("noteDraftText").value,
+          scope: $("noteDraftScope").value,
+          relationType: $("noteDraftRelationType").value,
+          relationName: $("noteDraftRelationName").value,
+          purpose: $("noteDraftPurpose").value,
+          tags: $("noteDraftTags").value
+        }) }
+      ]
+    });
+    $("noteDraftTitle").value = noteTitle(note);
+    $("noteDraftText").value = note.text || "";
+    $("noteDraftScope").value = classification.scope || "general";
+    $("noteDraftRelationType").value = classification.relationType || "none";
+    $("noteDraftRelationName").value = classification.relationName || "";
+    $("noteDraftPurpose").value = classification.purpose || "";
+    $("noteDraftTags").value = (classification.tags || []).join(", ");
+  }
+
   function entryBody(note) {
     const description = note.proposal?.description || "Entrada guardada";
     const location = note.location ? "<br>📍 " + esc(note.location) : "";
@@ -259,12 +317,7 @@ export function createUI({ getMedia }) {
     const intent = note.proposal?.intent || "note";
     const base = { title: "Entrada preparada", lead: "Angeli ha entendido esto. Confirma solo si quieres realizar la acción.", body: entryBody(note) };
     if (intent === "note") {
-      const classification = note.noteClassification || note.aiIntent?.noteClassification || {};
-      const relation = classification.relationName ? '<span class="calendar-field-label">Relacionada con</span><b>' + esc(classification.relationName) + '</b>' : '';
-      const purpose = classification.purpose ? '<span class="calendar-field-label">Motivo</span><b>' + esc(classification.purpose) + '</b>' : '';
-      const tags = classification.tags?.length ? '<span class="calendar-field-label">Etiquetas</span><b>' + esc(classification.tags.join(" · ")) + '</b>' : '';
-      const card = '<div class="calendar-confirmation note-confirmation"><span class="calendar-field-label">Título</span><strong>' + esc(noteTitle(note)) + '</strong><span class="calendar-field-label">Clasificación</span><b>' + esc(noteClassificationLabel(classification)) + '</b>' + relation + purpose + tags + '</div>';
-      showCompletion({ title: "✓ Nota guardada", lead: "Ya está sincronizada y clasificada.", body: card });
+      showCompletion({ title: "✓ Nota guardada", lead: "Ya está sincronizada y clasificada.", body: noteConfirmationCard(note) });
       return;
     }
     if (intent === "calendar.create" && note.schedule) {
@@ -567,7 +620,7 @@ export function createUI({ getMedia }) {
     $("preview").innerHTML = files.map(file => '<img class="thumb" src="' + URL.createObjectURL(file) + '" alt="Imagen preparada">').join("");
   }
 
-  return { $, notify, setGoogleStatus, setSyncStatus, render, showImagePreview, showEntryAction, showCalendarEvent, showInteractionQuestion, showCalendarFieldEditor, showPendingChoices, showReminderResults, showReminderCancellation, showNoteResults, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
+  return { $, notify, setGoogleStatus, setSyncStatus, render, showImagePreview, showEntryAction, showCalendarEvent, showInteractionQuestion, showCalendarFieldEditor, showPendingChoices, showReminderResults, showReminderCancellation, showNoteResults, showNoteConfirmation, showNoteEditor, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
 }
 
 function esc(value) {

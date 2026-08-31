@@ -337,3 +337,9 @@ Cloud Run deja de aceptar el ID token efímero de Google Identity Services y pas
 - «Recuérdame», «avísame» y «tienes que avisarme» pertenecen al mismo flujo compuesto.
 - `linkedReminder.time` puede ser temporalmente nulo mientras la conversación espera la hora; al recibirla hereda la hora del evento.
 - Una respuesta corta dentro de esta operación no puede cambiar su intención a Nota ni sobrescribir título, ubicación o tarea del aviso.
+
+## V0.21.32 — Las notas se confirman antes de persistir
+
+- La interpretación de una nota genera primero un borrador local; Firestore y Google Sheets solo reciben la nota después de `Guardar nota`.
+- La ficha editable comprende título, contenido, ámbito, relación, motivo y etiquetas.
+- Cancelar un borrador no crea entradas y retira los adjuntos que ya se hubieran subido a Drive.

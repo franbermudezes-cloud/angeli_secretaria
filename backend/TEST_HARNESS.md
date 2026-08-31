@@ -1,5 +1,11 @@
 # Entorno automático de pruebas reales
 
+V0.21.32: la puerta PWA cubre la confirmación previa de Notas. Verifica que la
+ficha completa puede corregirse, que categorías y etiquetas se normalizan y
+que el flujo de creación se detiene en un borrador hasta que el usuario pulsa
+`Guardar nota`. La ergonomía final del formulario se comprueba manualmente en
+móvil.
+
 V0.21.31: la puerta PWA cubre el primer bloque de Notas. Verifica clasificación no bloqueante, persistencia íntegra de los metadatos en la serialización de Firestore y consultas que filtran por relación, texto, etiqueta o ámbito sin crear otra entrada. La recepción real en Google Sheets y la interpretación periódica de Gemini permanecen como comprobaciones externas, no se simulan como éxitos.
 
 V0.21.30: `P03-external-update` crea un aviso real, modifica directamente en
