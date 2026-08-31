@@ -16,6 +16,7 @@ import { fixtureTitle, reminderFixture } from './reminder-event-fixture.mjs';
 import { applyCalendarUpdateToEntries, buildCalendarSearch, calendarEvent, scheduledReminderEvent, listAllCalendarPages, reconcileReminderEntries, linkedReminderSearch, calendarEventsForIntent } from '../js/google.js';
 import { fromCloudEntry, toCloudEntry } from '../js/cloud-entry.js';
 import { findNoteMatches, normalizeNoteClassification, updateNoteDraft } from '../js/notes.js';
+import { addNoteSetting, normalizeNoteSettings, removeNoteSetting, renameNoteSetting, settingLabel } from '../js/note-settings.js';
 
 test('notas: clasifica sin bloquear y conserva los metadatos en Firestore',()=>{
   const classification=normalizeNoteClassification({scope:'company',relationType:'project',relationName:'Karaoke',purpose:'Revisar el precio de las licencias',tags:['licencias','presupuesto','licencias']});
@@ -67,6 +68,27 @@ test('notas: el borrador permite corregir toda la ficha antes de guardarla',()=>
   assert.match(app,/proposal\.intent==="note"[\s\S]*reviewNoteDraft\(entry\)[\s\S]*return/);
   assert.match(ui,/Nada se guardará hasta que confirmes/);
   assert.match(ui,/Guardar nota/);
+});
+
+test('ajustes de notas: categorías y relaciones son flexibles y sincronizables',()=>{
+  let settings=normalizeNoteSettings();
+  settings=addNoteSetting(settings,'categories','Clientes VIP');
+  settings=addNoteSetting(settings,'relationTypes','Proveedor');
+  const category=settings.categories.find(option=>option.label==='Clientes VIP');
+  const relation=settings.relationTypes.find(option=>option.label==='Proveedor');
+  assert.ok(category?.id);assert.ok(relation?.id);
+  settings=renameNoteSetting(settings,'categories',category.id,'Clientes preferentes');
+  assert.equal(settingLabel(settings,'categories',category.id),'Clientes preferentes');
+  settings=removeNoteSetting(settings,'relationTypes',relation.id);
+  assert.equal(settings.relationTypes.some(option=>option.id===relation.id),false);
+  const customNote={id:'custom-category',type:'note',status:'pending',text:'Revisar vencimiento',noteClassification:{scope:category.id,categoryLabel:'Clientes preferentes',relationType:'none',tags:[]}};
+  assert.deepEqual(findNoteMatches([customNote],{noteQuery:'Clientes preferentes'}),[customNote]);
+  const rules=readFileSync(new URL('../firestore.rules',import.meta.url),'utf8');
+  const firebase=JSON.parse(readFileSync(new URL('../firebase.json',import.meta.url),'utf8'));
+  assert.match(rules,/users\/\{userId\}\/settings\/\{settingId\}/);
+  assert.match(rules,/request\.auth\.uid == userId/);
+  assert.equal(firebase.firestore[0].database,'angelifirebase');
+  assert.equal(firebase.firestore[0].rules,'firestore.rules');
 });
 
 test('reprogramar entiende frases naturales y separa objetivo de nueva fecha y hora',()=>{

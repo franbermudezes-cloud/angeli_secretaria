@@ -1,5 +1,10 @@
 # Entorno automático de pruebas reales
 
+V0.21.33: la puerta PWA cubre la configuración flexible de Notas. Comprueba
+altas, renombrados, bajas, identificadores estables y la regla de Firestore que
+limita `users/{uid}/settings/*` al propietario. La sincronización visual entre
+móvil y escritorio se valida manualmente tras desplegar las reglas.
+
 V0.21.32: la puerta PWA cubre la confirmación previa de Notas. Verifica que la
 ficha completa puede corregirse, que categorías y etiquetas se normalizan y
 que el flujo de creación se detiene en un borrador hasta que el usuario pulsa

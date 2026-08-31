@@ -1,0 +1,8 @@
+{
+  "firestore": [
+    {
+      "database": "angelifirebase",
+      "rules": "firestore.rules"
+    }
+  ]
+}
