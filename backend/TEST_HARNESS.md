@@ -1,5 +1,12 @@
 # Entorno automático de pruebas reales
 
+V0.21.36: la puerta PWA comprueba los seis accesos directos incluidos y la
+migración de sus versiones ya guardadas en el dispositivo. Verifica que cada
+acceso conserve su intención aunque la interpretación inicial sea una nota y
+que las consultas de Calendar y Contactos entren directamente en la integración
+sin mostrar una confirmación redundante. La elección final de un teléfono y la
+confirmación de crear o cancelar eventos continúan siendo acciones del usuario.
+
 V0.21.35: la puerta PWA recorre el ciclo completo de una nota: creación,
 edición, paso a hecha, consulta separada de hechas y pendientes, reapertura y
 borrado. También comprueba que el listado consultado expone Editar, Hecho o

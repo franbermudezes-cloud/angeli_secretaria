@@ -1,5 +1,13 @@
 # Changelog
 
+## V0.21.36 · Accesos directos operativos
+
+- Los seis accesos incluidos conservan la intención elegida aunque la IA devuelva otra clasificación.
+- Los accesos antiguos del dispositivo se enriquecen automáticamente, sin obligar a recrearlos.
+- Recordatorio, evento y cancelación preparan una orden explícita antes del dictado.
+- Hoy, Próxima semana y Llamar contacto ejecutan directamente la consulta necesaria sin una tarjeta intermedia.
+- Las pruebas recorren los seis accesos, la migración heredada y la ejecución directa de Calendar y Contactos.
+
 ## V0.21.35 · Ciclo completo de notas
 
 - Las consultas muestran acciones para editar, completar o reabrir y borrar cada nota.

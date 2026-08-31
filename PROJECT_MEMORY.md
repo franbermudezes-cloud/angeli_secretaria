@@ -1,5 +1,9 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-08-31 — V0.21.36 · Accesos directos operativos
+
+Un acceso directo expresa una intención, no solo un texto sugerido. Los seis accesos base y sus copias heredadas conservan esa intención aunque Gemini o el clasificador local interpreten otra cosa. Las consultas de agenda y la búsqueda de contactos se ejecutan al enviar la voz, sin pedir después otro clic para «Consultar» o «Llamar ahora». Los accesos personalizados reconocibles reciben la misma semántica; los desconocidos continúan como órdenes naturales sin forzar una acción.
+
 ## 2026-08-31 — V0.21.35 · Ciclo completo de notas
 
 Las consultas de notas son operativas, no listas planas. Cada resultado permite editar su ficha completa, marcarlo como hecho o reabrirlo y borrarlo con confirmación. Las expresiones «notas pendientes», «notas hechas» y «todas las notas» eligen el estado sin depender de Gemini. Tras cada acción se vuelve al mismo contexto de consulta y Firestore sigue siendo la única fuente compartida entre dispositivos.
