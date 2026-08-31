@@ -15,7 +15,7 @@ import { mockProvider, interpret, localCalendarUpdate, localLinkedCalendarIntent
 import { fixtureTitle, reminderFixture } from './reminder-event-fixture.mjs';
 import { applyCalendarUpdateToEntries, buildCalendarSearch, calendarEvent, scheduledReminderEvent, listAllCalendarPages, reconcileReminderEntries, linkedReminderSearch, calendarEventsForIntent } from '../js/google.js';
 import { fromCloudEntry, toCloudEntry } from '../js/cloud-entry.js';
-import { findNoteMatches, normalizeNoteClassification, updateNoteDraft } from '../js/notes.js';
+import { findNoteMatches, normalizeNoteClassification, removeNoteEntry, updateNoteDraft, updateNoteStatus } from '../js/notes.js';
 import { addNoteSetting, applyExplicitNoteCategory, normalizeNoteSettings, noteInterpretationContext, removeNoteSetting, renameNoteSetting, settingLabel } from '../js/note-settings.js';
 
 test('notas: clasifica sin bloquear y conserva los metadatos en Firestore',()=>{
@@ -108,6 +108,35 @@ test('notas: una relación explícita con Bodas no se convierte en categoría',(
   const settings=addNoteSetting(normalizeNoteSettings(),'categories','Bodas');
   const interpretation={intent:'note',title:'Llamar al fotógrafo',noteClassification:{scope:'general',relationType:'event',relationName:'Bodas',purpose:null,tags:[]}};
   assert.deepEqual(applyExplicitNoteCategory(interpretation,'Relaciona esta nota con Bodas: llamar al fotógrafo',settings),interpretation);
+});
+
+test('notas: ciclo completo permite editar, completar, consultar hechas, reabrir y borrar',()=>{
+  const created={id:'lifecycle-note',type:'note',status:'pending',text:'Comprar ruedas para butano',aiIntent:{intent:'note',title:'Comprar ruedas para butano'},noteClassification:{scope:'general',relationType:'none',tags:[]}};
+  const edited=updateNoteDraft(created,{title:'Comprar ruedas del carro del butano',text:'Comprar dos ruedas',scope:'personal',relationType:'none',tags:'compra, casa'});
+  assert.equal(edited.aiIntent.title,'Comprar ruedas del carro del butano');
+  assert.equal(edited.text,'Comprar dos ruedas');
+  const done=updateNoteStatus(edited,'done');
+  assert.equal(findNoteMatches([done],localNoteQuery('Muéstrame mis notas pendientes')).length,0);
+  assert.deepEqual(findNoteMatches([done],localNoteQuery('Muéstrame mis notas hechas')),[done]);
+  const reopened=updateNoteStatus(done,'pending');
+  assert.deepEqual(findNoteMatches([reopened],localNoteQuery('Muéstrame todas las notas')),[reopened]);
+  assert.deepEqual(removeNoteEntry([reopened],reopened.id),[]);
+});
+
+test('notas: el validador conserva estados permitidos y rechaza estados desconocidos',()=>{
+  const query=localNoteQuery('Muéstrame mis notas hechas');
+  assert.equal(validateIntent(query).noteStatus,'done');
+  assert.throws(()=>validateIntent({...query,noteStatus:'deleted'}),/Estado de nota IA no válido/);
+});
+
+test('notas: los resultados consultados ofrecen edición, estado y borrado confirmado',()=>{
+  const ui=readFileSync(new URL('../js/ui.js',import.meta.url),'utf8');
+  const app=readFileSync(new URL('../js/app.js',import.meta.url),'utf8');
+  assert.match(ui,/note-result-actions/);
+  assert.match(ui,/edit\.textContent = "Editar"/);
+  assert.match(ui,/showNoteDeleteConfirmation/);
+  assert.match(app,/onToggle:[\s\S]*updateNoteStatus/);
+  assert.match(app,/onDelete:[\s\S]*showNoteDeleteConfirmation/);
 });
 
 test('reprogramar entiende frases naturales y separa objetivo de nueva fecha y hora',()=>{

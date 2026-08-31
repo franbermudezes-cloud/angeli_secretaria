@@ -1,7 +1,7 @@
-import { typeLabel } from "./classifier.js?v=0.21.34";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.34";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.34";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.34";
+import { typeLabel } from "./classifier.js?v=0.21.35";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.35";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.35";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.35";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -123,7 +123,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.34";
+    image.src = "assets/angeli-welcome.gif?v=0.21.35";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -218,7 +218,7 @@ export function createUI({ getMedia }) {
     });
   }
 
-  function showNoteResults(matches, query = "") {
+  function showNoteResults(matches, query = "", { status = "pending", onEdit, onToggle, onDelete } = {}) {
     if (!matches.length) {
       showCompletion({ title: "No encuentro esas notas", lead: query ? `No hay notas relacionadas con ${query}.` : "Todavía no tienes notas guardadas." });
       return;
@@ -236,10 +236,31 @@ export function createUI({ getMedia }) {
       const text = document.createElement("p");
       text.textContent = entry.text || "";
       content.append(title, detail, text);
-      item.append(content);
+      const actions = document.createElement("div");
+      actions.className = "inline-actions note-result-actions";
+      const edit = document.createElement("button"); edit.className = "small-btn"; edit.textContent = "Editar"; edit.onclick = () => onEdit?.(entry);
+      const toggle = document.createElement("button"); toggle.className = "small-btn"; toggle.textContent = entry.status === "done" ? "Reabrir" : "✓ Hecho"; toggle.onclick = () => onToggle?.(entry);
+      const remove = document.createElement("button"); remove.className = "small-btn danger"; remove.textContent = "Borrar"; remove.onclick = () => onDelete?.(entry);
+      actions.append(edit, toggle, remove);
+      item.append(content, actions);
       body.append(item);
     });
-    openModal({ title: matches.length === 1 ? "He encontrado esta nota" : "He encontrado estas notas", lead: query ? `Relacionadas con ${query}.` : "Estas son tus notas pendientes.", body, actions: [{ label: "Cerrar", kind: "confirm", onClick: closeLayers }] });
+    const group = status === "done" ? "hechas" : status === "all" ? "guardadas" : "pendientes";
+    openModal({ title: matches.length === 1 ? "He encontrado esta nota" : "He encontrado estas notas", lead: query ? `Relacionadas con ${query}.` : `Estas son tus notas ${group}.`, body, actions: [{ label: "Cerrar", kind: "confirm", onClick: closeLayers }] });
+  }
+
+  function showNoteDeleteConfirmation(note, { onConfirm, onCancel } = {}) {
+    let deleting = false;
+    const confirmOnce = async () => {
+      if (deleting) return;
+      deleting = true;
+      try { await onConfirm?.(); }
+      finally { deleting = false; }
+    };
+    openModal({ title: "¿Borro esta nota?", lead: "Se eliminará de Angeli en todos tus dispositivos.", body: noteConfirmationCard(note), actions: [
+      { label: "Volver", kind: "secondary", onClick: onCancel },
+      { label: "Borrar definitivamente", kind: "danger", onClick: confirmOnce }
+    ] });
   }
 
   function noteConfirmationCard(note, settings = currentNoteSettings) {
@@ -646,7 +667,7 @@ export function createUI({ getMedia }) {
     $("preview").innerHTML = files.map(file => '<img class="thumb" src="' + URL.createObjectURL(file) + '" alt="Imagen preparada">').join("");
   }
 
-  return { $, notify, setGoogleStatus, setSyncStatus, render, showImagePreview, showEntryAction, showCalendarEvent, showInteractionQuestion, showCalendarFieldEditor, showPendingChoices, showReminderResults, showReminderCancellation, showNoteResults, showNoteConfirmation, showNoteEditor, showNoteSettings, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
+  return { $, notify, setGoogleStatus, setSyncStatus, render, showImagePreview, showEntryAction, showCalendarEvent, showInteractionQuestion, showCalendarFieldEditor, showPendingChoices, showReminderResults, showReminderCancellation, showNoteResults, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
 }
 
 function esc(value) {

@@ -1,19 +1,19 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.34";
-import{classify,actionData}from"./classifier.js?v=0.21.34";
-import{sendEntry}from"./sheets.js?v=0.21.34";
-import{createUI}from"./ui.js?v=0.21.34";
-import{createGoogleIntegration}from"./google.js?v=0.21.34";
-import{interpret,remoteProvider,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,protectCalendarInterpretation}from"./ai.js?v=0.21.34";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.34";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.34";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails}from"./schedule.js?v=0.21.34";
-import{createCloudSync}from"./firebase.js?v=0.21.34";
-import{createMediaService}from"./media.js?v=0.21.34";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.34";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.34";
-import{createAgendaActions}from"./agenda.js?v=0.21.34";
-import{findNoteMatches,noteClassificationFromIntent,updateNoteDraft}from"./notes.js?v=0.21.34";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.34";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.35";
+import{classify,actionData}from"./classifier.js?v=0.21.35";
+import{sendEntry}from"./sheets.js?v=0.21.35";
+import{createUI}from"./ui.js?v=0.21.35";
+import{createGoogleIntegration}from"./google.js?v=0.21.35";
+import{interpret,remoteProvider,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,protectCalendarInterpretation}from"./ai.js?v=0.21.35";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.35";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.35";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails}from"./schedule.js?v=0.21.35";
+import{createCloudSync}from"./firebase.js?v=0.21.35";
+import{createMediaService}from"./media.js?v=0.21.35";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.35";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.35";
+import{createAgendaActions}from"./agenda.js?v=0.21.35";
+import{findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.35";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.35";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],selectedFilter="all",selectedType="all",shortcutCapture=false,saving=false,noteDraftSaving=false;
@@ -156,7 +156,16 @@ async function add({interactionId=null}={}){
 function clearComposer(){$("text").value="";$("text").placeholder="Escribe o dicta tu instrucción…";autosize();finalText="";clearPendingMedia()}
 async function finishPending(entry){try{const completed=await completePendingWithCalendar(entry,item=>google.completeScheduledReminder(item));if(!await saveConfirmed(notes.map(item=>item.id===entry.id?completed:item)))return;clearComposer();ui.showCompletion({title:"✓ Pendiente completado",lead:`He marcado como hecho: ${entry.aiIntent?.title||entry.text}`})}catch(_){clearComposer();ui.showCompletion({title:"No he podido completar el pendiente",lead:"El aviso sigue activo en Calendar. Inténtalo de nuevo."})}}
 async function resolvePendingCompletion(interpretation){const matches=findPendingMatches(notes,interpretation);clearComposer();if(!matches.length){ui.showCompletion({title:"No encuentro ese pendiente",lead:"No he creado ninguna entrada nueva."});return}if(matches.length===1){await finishPending(matches[0]);return}ui.showPendingChoices(matches,{onSelect:finishPending,onCancel:ui.closeLayers})}
-function resolveNoteQuery(interpretation){const matches=findNoteMatches(notes,interpretation);clearComposer();ui.showNoteResults(matches,interpretation.noteQuery||"")}
+function resolveNoteQuery(interpretation){clearComposer();showNoteQueryResults(interpretation)}
+function showNoteQueryResults(interpretation){
+ const matches=findNoteMatches(notes,interpretation),query=interpretation.noteQuery||"";
+ ui.showNoteResults(matches,query,{
+  status:interpretation.noteStatus||"pending",
+  onEdit:entry=>ui.showNoteEditor(entry,{settings:noteSettings,onCancel:()=>showNoteQueryResults(interpretation),onSave:async values=>{const updated=updateNoteDraft(entry,values);if(await saveConfirmed(notes.map(item=>item.id===entry.id?updated:item)))showNoteQueryResults(interpretation)}}),
+  onToggle:async entry=>{const updated=updateNoteStatus(entry,entry.status==="done"?"pending":"done");if(await saveConfirmed(notes.map(item=>item.id===entry.id?updated:item))){ui.notify(updated.status==="done"?"Nota marcada como hecha":"Nota reabierta");showNoteQueryResults(interpretation)}},
+  onDelete:entry=>ui.showNoteDeleteConfirmation(entry,{onCancel:()=>showNoteQueryResults(interpretation),onConfirm:async()=>{if(!await saveConfirmed(removeNoteEntry(notes,entry.id)))return;try{for(const item of[...(entry.images||[]),...(entry.files||[])])await media.remove(typeof item==="string"?item:item.driveFileId||item.id)}catch(_){ui.notify("La nota se borró, pero quedó algún adjunto en Drive")}ui.notify("Nota borrada");showNoteQueryResults(interpretation)}})
+ });
+}
 async function resolveReminderQuery(interpretation){
  clearComposer();
  try{
@@ -296,7 +305,7 @@ async function handleEntryAction(event){
  }
 }
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.34",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.35",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}

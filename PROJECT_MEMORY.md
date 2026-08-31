@@ -1,5 +1,9 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-08-31 — V0.21.35 · Ciclo completo de notas
+
+Las consultas de notas son operativas, no listas planas. Cada resultado permite editar su ficha completa, marcarlo como hecho o reabrirlo y borrarlo con confirmación. Las expresiones «notas pendientes», «notas hechas» y «todas las notas» eligen el estado sin depender de Gemini. Tras cada acción se vuelve al mismo contexto de consulta y Firestore sigue siendo la única fuente compartida entre dispositivos.
+
 ## 2026-08-30 — V0.21.31 · Modelo base de notas
 
 Firestore continúa siendo la fuente operativa y Google Sheets el registro externo obligatorio. Una nota se clasifica sin bloquear su creación mediante título, ámbito (`general`, `personal` o `company`), relación opcional (`person`, `client`, `project` o `event`), motivo y hasta cinco etiquetas. La ausencia de clasificación explícita produce una nota general, nunca un interrogatorio. `note.query` consulta las entradas sincronizadas por cualquiera de esos campos y no guarda la pregunta como otra nota.

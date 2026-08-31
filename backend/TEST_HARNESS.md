@@ -1,5 +1,11 @@
 # Entorno automático de pruebas reales
 
+V0.21.35: la puerta PWA recorre el ciclo completo de una nota: creación,
+edición, paso a hecha, consulta separada de hechas y pendientes, reapertura y
+borrado. También comprueba que el listado consultado expone Editar, Hecho o
+Reabrir y un borrado con confirmación. Firestore entre dos dispositivos y la
+retirada real de un adjunto continúan como comprobaciones manuales.
+
 V0.21.34: la puerta PWA cubre la configuración flexible de Notas. Comprueba
 altas, renombrados, bajas, identificadores estables y la regla de Firestore que
 limita `users/{uid}/settings/*` al propietario. La sincronización visual entre
