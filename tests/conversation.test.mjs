@@ -17,6 +17,13 @@ import { applyCalendarUpdateToEntries, buildCalendarSearch, calendarEvent, sched
 import { fromCloudEntry, toCloudEntry } from '../js/cloud-entry.js';
 import { findNoteMatches, normalizeNoteClassification, removeNoteEntry, updateNoteDraft, updateNoteStatus } from '../js/notes.js';
 import { addNoteSetting, applyExplicitNoteCategory, normalizeNoteSettings, noteInterpretationContext, removeNoteSetting, renameNoteSetting, settingLabel } from '../js/note-settings.js';
+import { shortcutPrefix, shortcutSemantics, shortcutType } from '../js/shortcuts.js';
+
+test('una petición normal sin acceso directo no intenta leer action de null',()=>{
+  assert.equal(shortcutType(null),null);
+  assert.equal(shortcutPrefix(null),'');
+  assert.deepEqual(shortcutSemantics(null),{action:null,direct:false});
+});
 
 test('notas: clasifica sin bloquear y conserva los metadatos en Firestore',()=>{
   const classification=normalizeNoteClassification({scope:'company',relationType:'project',relationName:'Karaoke',purpose:'Revisar el precio de las licencias',tags:['licencias','presupuesto','licencias']});

@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { DEFAULT_SHORTCUTS, normalizeShortcuts, routeShortcutIntent, shortcutPrefix, shortcutSemantics } from "../js/shortcuts.js";
+import { DEFAULT_SHORTCUTS, normalizeShortcuts, routeShortcutIntent, shortcutPrefix, shortcutSemantics, shortcutType } from "../js/shortcuts.js";
+
+test("una petición normal sin acceso directo no intenta leer action de null", () => {
+  assert.equal(shortcutType(null), null);
+  assert.equal(shortcutPrefix(null), "");
+  assert.deepEqual(shortcutSemantics(null), { action: null, direct: false });
+});
 
 test("accesos directos: los seis accesos base conservan una intención explícita", () => {
   assert.deepEqual(DEFAULT_SHORTCUTS.map(item => item.action), [

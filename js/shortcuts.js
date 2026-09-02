@@ -1,5 +1,5 @@
-import { contactQuery } from "./classifier.js?v=0.21.37";
-import { calendarQueryRange, temporalData } from "./temporal.js?v=0.21.37";
+import { contactQuery } from "./classifier.js?v=0.21.38";
+import { calendarQueryRange, temporalData } from "./temporal.js?v=0.21.38";
 
 export const DEFAULT_SHORTCUTS = [
   { label: "🗓️ Hoy", command: "¿Qué tengo hoy?", action: "calendar.query", direct: true },
@@ -16,6 +16,7 @@ export function normalizeShortcuts(saved) {
 }
 
 export function shortcutSemantics(shortcut = {}) {
+  shortcut = shortcut || {};
   if (shortcut.action) return { action: shortcut.action, direct: Boolean(shortcut.direct) };
   const value = `${shortcut.label || ""} ${shortcut.command || ""}`.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   if (/\b(?:cancelar|cancela|anular|anula|borrar evento)\b/.test(value)) return { action: "calendar.delete", direct: true };
@@ -27,11 +28,13 @@ export function shortcutSemantics(shortcut = {}) {
 }
 
 export function shortcutPrefix(shortcut = {}) {
+  shortcut = shortcut || {};
   if (shortcut.prefix) return shortcut.prefix;
   return { "contact.call": "Llama a ", "reminder.create": "Recuérdame ", "calendar.create": "Añade al calendario ", "calendar.delete": "Cancela " }[shortcut.action] || "";
 }
 
 export function shortcutType(shortcut = {}) {
+  shortcut = shortcut || {};
   return { "contact.call": "contact", "reminder.create": "reminder", "calendar.create": "calendar", "calendar.query": "calendar", "calendar.delete": "calendar" }[shortcut.action] || null;
 }
 

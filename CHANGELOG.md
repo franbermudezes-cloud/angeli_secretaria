@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.21.38 · Peticiones normales restauradas
+
+- Las órdenes escritas o dictadas sin usar un acceso directo vuelven a procesarse con normalidad.
+- Las utilidades de accesos directos aceptan explícitamente la ausencia de etiqueta y no intentan leer `action` de un valor nulo.
+- Una prueba reproduce la regresión que bloqueaba consultas y otras peticiones normales tras V0.21.37.
+
 ## V0.21.37 · Fecha y hora editables
 
 - Los modales de evento, recordatorio y evento con aviso permiten corregir fecha y hora antes de guardar en Calendar.
