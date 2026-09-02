@@ -1,4 +1,4 @@
-import{calendarQueryRange,cleanTemporalText,temporalData}from"./temporal.js?v=0.21.40";
+import{calendarQueryRange,cleanTemporalText,naturalQueryRange,temporalData}from"./temporal.js?v=0.21.41";
 
 export const VALID_INTENTS=["note","note.query","task.create","task.complete","reminder.create","reminder.query","calendar.create","calendar.query","calendar.update","calendar.delete","contact.call","file.store","photo.store"];
 const SENSITIVE_INTENTS=new Set(["calendar.update","calendar.delete","contact.call"]);
@@ -60,8 +60,9 @@ export function localReminderQuery(text = "") {
   const normalized = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   if (!/\b(?:que|cuales|dime|muestrame|consulta)\b.*\brecordatorios?\b/i.test(normalized)) return null;
   const match = text.match(/\brecordatorios?\b(?:\s+(?:tengo|tenía|tenia|hay))?\s+(?:de|sobre)\s+(.+?)(?:[.!?,;]|$)/i);
-  return { ...EMPTY, intent: "reminder.query", confidence: .5,
-    target: match ? { title: match[1].trim(), date: null, time: null } : null,
+  const range=naturalQueryRange(text),title=match&&!range?match[1].trim():null;
+  return { ...EMPTY, intent: "reminder.query", confidence: .5, ...(range||{}),
+    target: title ? { title, date: null, time: null } : null,
     requiresConfirmation: false };
 }
 
@@ -71,7 +72,8 @@ export function localNoteQuery(text = "") {
   const match=value.match(/\bnotas?\b(?:\s+(?:que\s+)?(?:tengo|hay))?\s+(?:del?|sobre|relacionadas?\s+con)\s+(.+?)(?:[.!?,;]|$)/i);
   const scope=/\bpersonales?\b/i.test(value)?"personal":/\b(?:empresa|trabajo|profesionales?)\b/i.test(value)?"company":"general";
   const noteStatus=/\b(?:hechas?|completadas?|terminadas?|archivadas?)\b/i.test(value)?"done":/\btodas?\b/i.test(value)?"all":"pending";
-  return{...EMPTY,intent:"note.query",confidence:.5,noteQuery:match?match[1].trim():null,noteStatus,
+  const range=naturalQueryRange(value);
+  return{...EMPTY,intent:"note.query",confidence:.5,...(range||{}),noteQuery:match&&!range?match[1].trim():null,noteStatus,
     noteClassification:{scope,relationType:"none",relationName:null,purpose:null,tags:[]},requiresConfirmation:false};
 }
 

@@ -1,4 +1,4 @@
-import { completeInteraction, cancelInteraction } from "./conversation.js?v=0.21.40";
+import { completeInteraction, cancelInteraction } from "./conversation.js?v=0.21.41";
 
 // Solo tras confirmar el éxito del borrado que acaba de ejecutar Angeli.
 export function markCancelledReminder(entries, eventId) {
@@ -32,7 +32,7 @@ export function findReminderMatches(entries = [], interpretation = {}) {
 
   return entries
     // Cerrar la conversación al programar no significa realizar el recordatorio.
-    .filter(entry => (entry?.type === "reminder" || Boolean(entry?.schedule)) && entry.status !== "done"
+    .filter(entry => (entry?.type === "reminder" || Boolean(entry?.schedule)) && inRange(entry,interpretation.rangeStart,interpretation.rangeEnd) && entry.status !== "done"
       && entry.interaction?.status !== "cancelled"
       && !["cancelled", "completed"].includes(entry.schedule?.status))
     .map(entry => ({ entry, score: tokens.length ? matchScore(entry, tokens) : 1 }))
@@ -40,6 +40,8 @@ export function findReminderMatches(entries = [], interpretation = {}) {
     .sort((left, right) => right.score - left.score || recent(right.entry).localeCompare(recent(left.entry)))
     .map(candidate => candidate.entry);
 }
+
+function inRange(entry,start,end){if(!start&&!end)return true;const key=String(entry.schedule?.dueAt||entry.scheduledDate||entry.date||"").slice(0,10);return Boolean(key)&&(!start||key>=start)&&(!end||key<end)}
 
 export function completePending(entry, now = new Date().toISOString()) {
   const completed = completeInteraction(entry, now);

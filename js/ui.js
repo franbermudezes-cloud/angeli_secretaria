@@ -1,7 +1,7 @@
-import { typeLabel } from "./classifier.js?v=0.21.40";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.40";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.40";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.40";
+import { typeLabel } from "./classifier.js?v=0.21.41";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.41";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.41";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.41";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -123,7 +123,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.40";
+    image.src = "assets/angeli-welcome.gif?v=0.21.41";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -188,13 +188,13 @@ export function createUI({ getMedia }) {
     const body = document.createElement("div");
     body.className = "contact-options";
     matches.forEach(entry => {
-      const item = document.createElement(onSelect ? "button" : "div");
-      if (onSelect) { item.type = "button"; item.onclick = () => onSelect(entry); }
-      item.className = "contact-choice";
+      const item = document.createElement("button");
+      item.type = "button"; item.onclick = () => onSelect?.(entry);
+      item.className = "contact-choice manager-row";
       const title = document.createElement("strong");
       title.textContent = entry.aiIntent?.title || entry.text || "Recordatorio";
       const when = document.createElement("span");
-      when.textContent = entry.schedule ? scheduleWhen(entry.schedule) : "Pendiente";
+      when.textContent = (entry.schedule ? scheduleWhen(entry.schedule) : "Sin fecha") + " · " + (entry.status === "done" ? "Hecho" : "Pendiente");
       item.append(title, when);
       body.append(item);
     });
@@ -204,6 +204,23 @@ export function createUI({ getMedia }) {
       body,
       actions: [{ label: "Cerrar", kind: "confirm", onClick: closeLayers }]
     });
+  }
+
+  function showReminderDetail(entry,{onEdit,onComplete,onCancel,onBack}={}){
+    const details=calendarDetails(entry),body='<div class="manager-detail">'+calendarCard(entry)+'<span class="manager-status pending">'+esc(scheduleState(entry.schedule))+'</span></div>';
+    openModal({title:details.title,lead:"Ficha del recordatorio",body,actions:[
+      {label:"Volver",kind:"secondary",onClick:onBack},
+      {label:"Modificar",kind:"secondary",onClick:()=>onEdit?.(entry)},
+      {label:"✓ Hecho",kind:"confirm",onClick:()=>onComplete?.(entry)},
+      {label:"Cancelar aviso",kind:"danger",onClick:()=>onCancel?.(entry)}
+    ]});
+  }
+  function showReminderEditor(entry,{onSave,onCancel}={}){
+    const details=calendarDetails(entry),due=entry.schedule?.dueAt||"";
+    const form=document.createElement("div");form.className="record-editor";
+    form.innerHTML='<label>Título<input id="reminderEditTitle" type="text"></label><label>Fecha<input id="reminderEditDate" type="date"></label><label>Hora<input id="reminderEditTime" type="time"></label><label>Ubicación<input id="reminderEditLocation" type="text"></label><label>Descripción<textarea id="reminderEditDescription" rows="3"></textarea></label>';
+    openModal({title:"Modificar recordatorio",lead:"Corrige cualquier dato y guardaré el cambio también en Calendar.",body:form,actions:[{label:"Volver",kind:"secondary",onClick:onCancel},{label:"Guardar cambios",kind:"confirm",onClick:()=>{const date=$("reminderEditDate").value,time=$("reminderEditTime").value;if(!date||!time)return notify("Indica la fecha y la hora");onSave?.({title:$("reminderEditTitle").value.trim(),date,time,location:$("reminderEditLocation").value.trim(),description:$("reminderEditDescription").value.trim()})}}]});
+    $("reminderEditTitle").value=details.title;$("reminderEditDate").value=due.slice(0,10)||entry.scheduledDate||"";$("reminderEditTime").value=due.slice(11,16)||entry.scheduledTime||"";$("reminderEditLocation").value=details.location||"";$("reminderEditDescription").value=details.description||"";
   }
 
   function showReminderCancellation(entry) {
@@ -218,7 +235,7 @@ export function createUI({ getMedia }) {
     });
   }
 
-  function showNoteResults(matches, query = "", { status = "pending", onEdit, onToggle, onDelete } = {}) {
+  function showNoteResults(matches, query = "", { status = "pending", onOpen, onEdit, onToggle, onDelete } = {}) {
     if (!matches.length) {
       showCompletion({ title: "No encuentro esas notas", lead: query ? `No hay notas relacionadas con ${query}.` : "Todavía no tienes notas guardadas." });
       return;
@@ -238,15 +255,26 @@ export function createUI({ getMedia }) {
       content.append(title, detail, text);
       const actions = document.createElement("div");
       actions.className = "inline-actions note-result-actions";
+      const open = document.createElement("button"); open.className = "small-btn primary"; open.textContent = "Abrir ficha"; open.onclick = () => onOpen?.(entry);
       const edit = document.createElement("button"); edit.className = "small-btn"; edit.textContent = "Editar"; edit.onclick = () => onEdit?.(entry);
       const toggle = document.createElement("button"); toggle.className = "small-btn"; toggle.textContent = entry.status === "done" ? "Reabrir" : "✓ Hecho"; toggle.onclick = () => onToggle?.(entry);
       const remove = document.createElement("button"); remove.className = "small-btn danger"; remove.textContent = "Borrar"; remove.onclick = () => onDelete?.(entry);
-      actions.append(edit, toggle, remove);
+      actions.append(open,edit, toggle, remove);
       item.append(content, actions);
       body.append(item);
     });
     const group = status === "done" ? "hechas" : status === "all" ? "guardadas" : "pendientes";
     openModal({ title: matches.length === 1 ? "He encontrado esta nota" : "He encontrado estas notas", lead: query ? `Relacionadas con ${query}.` : `Estas son tus notas ${group}.`, body, actions: [{ label: "Cerrar", kind: "confirm", onClick: closeLayers }] });
+  }
+
+  function showNoteDetail(note,{onEdit,onToggle,onDelete,onBack}={}){
+    const state=note.status==="done"?"Hecha":"Pendiente";
+    openModal({title:noteTitle(note),lead:`Ficha de nota · ${state}`,body:noteConfirmationCard(note)+`<span class="manager-status ${note.status==="done"?"done":"pending"}">${state}</span>`,actions:[
+      {label:"Volver",kind:"secondary",onClick:onBack},
+      {label:"Editar",kind:"secondary",onClick:()=>onEdit?.(note)},
+      {label:note.status==="done"?"Reabrir":"✓ Hecha",kind:"confirm",onClick:()=>onToggle?.(note)},
+      {label:"Borrar",kind:"danger",onClick:()=>onDelete?.(note)}
+    ]});
   }
 
   function showNoteDeleteConfirmation(note, { onConfirm, onCancel } = {}) {
@@ -579,16 +607,23 @@ export function createUI({ getMedia }) {
     $("actionModal").classList.add("conversation-modal");
   }
 
-  function showCalendarEvent(note, google, eventId) {
+  function showCalendarEvent(note, google, eventId, {onEdit}={}) {
     const event = google.getCalendarResult(note.id)?.events?.find(item => item.id === eventId);
     if (!event) { showEntryAction(note, google); return; }
     openModal({title: event.summary, lead: event.when,
-      body: '<p>' + (event.allDay ? 'Todo el día' : 'Inicio: ' + esc(event.when)) + '</p>' +
-        (event.end ? '<p>Fin: ' + esc(event.allDay ? event.end + ' (fecha de fin exclusiva)' : new Date(event.end).toLocaleString('es-ES')) + '</p>' : ''),
+      body: '<div class="calendar-confirmation"><span class="calendar-field-label">Fecha y hora</span><b>' + esc(event.when) + '</b><span class="calendar-field-label">Ubicación</span><b>' + esc(event.location||'Sin ubicación') + '</b><span class="calendar-field-label">Descripción</span><b>' + esc(event.description||'Sin descripción') + '</b></div>',
       actions: [
         {label:'Volver a la agenda', kind:'soft', onClick:()=>showEntryAction(note,google)},
-        {label:'Anular este evento', kind:'danger', dataset:{a:'agenda-delete',id:note.id,eventId:event.id}}
+        {label:'Anular este evento', kind:'danger', dataset:{a:'agenda-delete',id:note.id,eventId:event.id}},
+        {label:'Modificar', kind:'secondary', onClick:()=>onEdit?.(event)}
       ]});
+  }
+
+  function showCalendarEventEditor(event,{onSave,onCancel}={}){
+    const form=document.createElement("div");form.className="record-editor";
+    form.innerHTML='<label>Título<input id="eventEditTitle" type="text"></label><label>Fecha<input id="eventEditDate" type="date"></label><label>Hora<input id="eventEditTime" type="time"></label><label>Ubicación<input id="eventEditLocation" type="text"></label><label>Descripción<textarea id="eventEditNotes" rows="3"></textarea></label>';
+    openModal({title:"Modificar evento",lead:"Puedes cambiar cualquier dato de esta cita.",body:form,actions:[{label:"Volver",kind:"secondary",onClick:onCancel},{label:"Guardar cambios",kind:"confirm",onClick:()=>onSave?.({title:$("eventEditTitle").value.trim(),date:$("eventEditDate").value,time:$("eventEditTime").value,location:$("eventEditLocation").value.trim(),notes:$("eventEditNotes").value.trim()})}]});
+    $("eventEditTitle").value=event.summary||"";$("eventEditDate").value=event.start?.slice(0,10)||"";$("eventEditTime").value=event.allDay?"":event.start?.slice(11,16)||"";$("eventEditLocation").value=event.location||"";$("eventEditNotes").value=event.description||"";
   }
 
   function calendarActions(note, google) {
@@ -685,7 +720,7 @@ export function createUI({ getMedia }) {
     $("preview").innerHTML = files.map(file => '<img class="thumb" src="' + URL.createObjectURL(file) + '" alt="Imagen preparada">').join("");
   }
 
-  return { $, notify, setGoogleStatus, setSyncStatus, render, showImagePreview, showEntryAction, showCalendarEvent, showInteractionQuestion, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderCancellation, showNoteResults, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
+  return { $, notify, setGoogleStatus, setSyncStatus, render, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
 }
 
 function esc(value) {

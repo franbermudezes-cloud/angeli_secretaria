@@ -25,6 +25,27 @@ test('una petición normal sin acceso directo no intenta leer action de null',()
   assert.deepEqual(shortcutSemantics(null),{action:null,direct:false});
 });
 
+test('gestor: notas y recordatorios respetan este mes y ventanas de días',()=>{
+  const now=new Date(2026,8,3,12),month=naturalQueryRange('dime las notas de este mes',now),last=naturalQueryRange('últimos 30 días',now),next=naturalQueryRange('próximos 60 días',now);
+  assert.deepEqual(month,{rangeStart:'2026-09-01',rangeEnd:'2026-10-01'});
+  assert.deepEqual(last,{rangeStart:'2026-08-04',rangeEnd:'2026-09-04'});
+  assert.deepEqual(next,{rangeStart:'2026-09-03',rangeEnd:'2026-11-03'});
+  assert.equal(localNoteQuery('Dime todas las notas que tengo de este mes').noteQuery,null);
+  assert.equal(localReminderQuery('Dime los recordatorios de los próximos 60 días').target,null);
+  const notes=[{id:'aug',type:'note',date:'2026-08-31',status:'pending',noteClassification:{}},{id:'sep',type:'note',date:'2026-09-02',status:'pending',noteClassification:{}}];
+  assert.deepEqual(findNoteMatches(notes,{...month,noteStatus:'pending'}).map(item=>item.id),['sep']);
+  const reminders=[{id:'past',type:'reminder',status:'pending',schedule:{status:'scheduled',dueAt:'2026-08-01T10:00:00'}},{id:'future',type:'reminder',status:'pending',schedule:{status:'scheduled',dueAt:'2026-09-20T10:00:00'}}];
+  assert.deepEqual(findReminderMatches(reminders,next).map(item=>item.id),['future']);
+});
+
+test('gestor: los tres listados abren fichas editables y conservan scroll',()=>{
+  const ui=readFileSync(new URL('../js/ui.js',import.meta.url),'utf8'),css=readFileSync(new URL('../styles-flow.css',import.meta.url),'utf8'),app=readFileSync(new URL('../js/app.js',import.meta.url),'utf8');
+  assert.match(ui,/showNoteDetail/);assert.match(ui,/showReminderDetail/);assert.match(ui,/showCalendarEventEditor/);
+  assert.match(ui,/Abrir ficha/);assert.match(ui,/Modificar recordatorio/);assert.match(ui,/Modificar evento/);
+  assert.match(app,/updateScheduledReminder/);assert.match(app,/updateListedCalendarEvent/);
+  assert.match(css,/\.manager-row/);assert.match(css,/\.record-editor/);
+});
+
 test('las preguntas pendientes de Gemini siempre se presentan en español',()=>{
   const event=validateIntent({intent:'calendar.create',confidence:.95,title:null,date:'2026-09-03',time:'18:00',missingFields:['title'],question:'What is the title of the event?',requiresConfirmation:true});
   assert.equal(event.question,'¿Qué título quieres poner al evento?');
@@ -151,8 +172,8 @@ test('notas: los resultados consultados ofrecen edición, estado y borrado confi
   assert.match(ui,/note-result-actions/);
   assert.match(ui,/edit\.textContent = "Editar"/);
   assert.match(ui,/showNoteDeleteConfirmation/);
-  assert.match(app,/onToggle:[\s\S]*updateNoteStatus/);
-  assert.match(app,/onDelete:[\s\S]*showNoteDeleteConfirmation/);
+  assert.match(app,/const toggle=[\s\S]*updateNoteStatus/);
+  assert.match(app,/const remove=[\s\S]*showNoteDeleteConfirmation/);
 });
 
 test('reprogramar entiende frases naturales y separa objetivo de nueva fecha y hora',()=>{
@@ -256,7 +277,7 @@ test('agenda: reúne todas las páginas de Calendar sin duplicar acciones parcia
 test('agenda: un ciclo anómalo de páginas se muestra como error, no como lista incompleta',async()=>{
   await assert.rejects(()=>listAllCalendarPages(async()=>({items:[{id:'one'}],nextPageToken:'loop'}),new URLSearchParams(),2),/demasiadas páginas/);
 });
-import { temporalData, calendarQueryRange } from '../js/temporal.js';
+import { temporalData, calendarQueryRange, naturalQueryRange } from '../js/temporal.js';
 import { preserveCancellation } from '../js/conversation.js';
 import { localCalendarCancellation } from '../js/ai.js';
 import { createUI } from '../js/ui.js';

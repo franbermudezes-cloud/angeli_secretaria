@@ -1,6 +1,6 @@
-import { cleanTemporalText } from "./temporal.js?v=0.21.40";
-import { calendarDetails } from "./schedule.js?v=0.21.40";
-import { semanticCalendarTarget } from "./ai.js?v=0.21.40";
+import { cleanTemporalText } from "./temporal.js?v=0.21.41";
+import { calendarDetails } from "./schedule.js?v=0.21.41";
+import { semanticCalendarTarget } from "./ai.js?v=0.21.41";
 
 const CLIENT_ID = "172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
@@ -281,6 +281,11 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
     await calendarRequest("DELETE", `/${encodeURIComponent(eventId)}`);
   }
 
+  async function updateScheduledReminder(note){
+    const eventId=note.schedule?.calendarEventId;if(!eventId)return true;
+    try{const payload=scheduledReminderEvent(note);delete payload.id;await calendarRequest("PATCH",`/${encodeURIComponent(eventId)}`,payload);notify("Recordatorio actualizado en Calendar");return true}catch(_){notify("No se pudo actualizar el recordatorio en Calendar");return false}
+  }
+
   async function searchCalendar(note) {
     if (!CALENDAR_SEARCH_INTENTS.has(note.proposal?.intent)) return;
     try {
@@ -332,6 +337,18 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
     }
   }
 
+  async function updateListedCalendarEvent(note,eventId,changes){
+    const event=calendarResults.get(note.id)?.events?.find(item=>item.id===eventId);
+    if(!event)return false;
+    try{
+      const saved=await calendarRequest("PATCH",`/${encodeURIComponent(eventId)}`,calendarPatch(event,changes));
+      const result=calendarResults.get(note.id);
+      calendarResults.set(note.id,{...result,events:result.events.map(item=>item.id===eventId?calendarCandidate(saved):item)});
+      saveNotes(applyCalendarUpdateToEntries(getNotes(),note,eventId,"update",saved,changes));
+      notify("Evento actualizado");refresh();return true;
+    }catch(_){notify("No se pudo actualizar el evento");return false}
+  }
+
   function completeCalendarAction(note, eventId, action, saved, changes) {
     calendarResults.delete(note.id);
     saveNotes(applyCalendarUpdateToEntries(getNotes(), note, eventId, action, saved, changes));
@@ -355,10 +372,12 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
     createScheduledReminder,
     cancelScheduledReminder,
     completeScheduledReminder,
+    updateScheduledReminder,
     reconcileScheduledReminders,
     searchCalendar,
     deleteCalendarEvent,
     updateCalendarEvent,
+    updateListedCalendarEvent,
     getContactResult: id => contactResults.get(id),
     getCalendarResult: id => calendarResults.get(id),
     clearContactResult: id => contactResults.delete(id),
@@ -538,7 +557,10 @@ export function applyCalendarUpdateToEntries(entries, note, eventId, action, sav
     return {
       ...item,
       ...(directEvent ? { calendarStatus: "synced", calendarUrl: saved?.htmlLink || item.calendarUrl || "" } : {}),
-      ...(changes.location ? { location: changes.location } : {}),
+      ...(changes.title ? { calendarTitle: changes.title } : {}),
+      ...(changes.location !== undefined ? { location: changes.location } : {}),
+      ...(changes.notes !== undefined ? { calendarDescription: changes.notes } : {}),
+      ...((changes.title||changes.notes!==undefined)?{aiIntent:{...item.aiIntent,...(changes.title?{title:changes.title}:{}),...(changes.notes!==undefined?{notes:changes.notes||null}:{})}}:{}),
       ...(changes.date ? { scheduledDate: changes.date } : {}),
       ...(changes.time ? { scheduledTime: changes.time } : {}),
       ...(reminderEvent && date && time ? { schedule: { ...item.schedule, status: "scheduled", dueAt: `${date}T${time}:00` } } : {})
@@ -554,7 +576,10 @@ function calendarCandidate(event) {
     start,
     end: event.end?.dateTime || event.end?.date || "",
     when: new Date(start).toLocaleString("es-ES", { dateStyle: "medium", timeStyle: "short" }),
-    allDay: !event.start?.dateTime
+    allDay: !event.start?.dateTime,
+    location: event.location || "",
+    description: event.description || "",
+    htmlLink: event.htmlLink || ""
   };
 }
 
@@ -576,9 +601,10 @@ export function calendarEventsForIntent(items = [], intent = "calendar.query") {
 function calendarPatch(event, changes) {
   const result = {};
   if (changes.title) result.summary = changes.title;
-  if (changes.location) result.location = changes.location;
-  if (changes.notes) result.description = changes.notes;
+  if (changes.location !== undefined) result.location = changes.location;
+  if (changes.notes !== undefined) result.description = changes.notes;
   if (changes.date || changes.time) {
+    if(event.allDay){const start=changes.date||event.start.slice(0,10),finish=new Date(`${start}T12:00:00`);finish.setDate(finish.getDate()+1);result.start={date:start};result.end={date:finish.toISOString().slice(0,10)};return result}
     const date = changes.date || event.start.slice(0, 10);
     const time = changes.time || event.start.slice(11, 16);
     result.start = { dateTime: calendarDateTime(date, time), timeZone: "Europe/Madrid" };

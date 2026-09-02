@@ -1,5 +1,11 @@
 # Entorno automático de pruebas reales
 
+V0.21.41: la puerta PWA cubre el gestor flotante de notas, recordatorios y
+eventos: listados desplazables, apertura de ficha individual, acciones de
+edición/estado/borrado y filtros naturales por mes o ventanas de días. La
+modificación real de un evento o aviso continúa usando Calendar; las notas se
+actualizan en Firestore.
+
 V0.21.40: la puerta PWA comprueba que evento, recordatorio y evento con aviso
 ofrecen añadir o cambiar la ubicación en su ficha. También verifica que el
 valor corregido sea el mismo que se envía al campo nativo `location` de
