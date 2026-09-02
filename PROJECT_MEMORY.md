@@ -1,5 +1,9 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-02 — V0.21.38 · Peticiones normales restauradas
+
+Las funciones que reciben un acceso directo opcional deben admitir también `null`, porque el compositor normal no tiene ninguna etiqueta asociada. Leer propiedades del acceso sin normalizarlo bloqueaba cualquier instrucción con `Cannot read properties of null (reading 'action')`. La ausencia de acceso directo significa orden natural y debe continuar hacia la IA o el respaldo local.
+
 ## 2026-08-31 — V0.21.37 · Fecha y hora editables
 
 Toda ficha de creación que termine en Calendar debe permitir corregir fecha y hora antes de ejecutar: evento, recordatorio y evento con aviso vinculado. La corrección modifica el dato real que se enviará a Calendar. Si existe un aviso vinculado, se desplaza junto al evento conservando su antelación original.

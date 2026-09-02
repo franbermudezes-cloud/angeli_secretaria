@@ -262,6 +262,8 @@ La primera fase automatiza las integraciones reales ya aislables:
 - Base de `P06/P07`: subir un adjunto a Drive y eliminarlo.
 
 La misma puerta ejecuta además `tests/conversation.test.mjs`, que protege el
+compositor normal frente a la ausencia de acceso directo y reproduce la
+regresión `null.action` de V0.21.37. También protege el
 coordinador local sin simular éxitos de Google: P01 pregunta únicamente la
 hora pendiente, P02 conserva la intención y el identificador de la operación,
 P03 localiza y completa el pendiente existente sin crear otra entrada (y exige
