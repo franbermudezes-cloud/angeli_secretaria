@@ -1,5 +1,13 @@
 # Changelog
 
+## V0.21.41 · Gestor flotante de notas, recordatorios y agenda
+
+- Las consultas abren un listado profesional, desplazable y seleccionable; cada elemento conduce a su ficha completa.
+- Las notas permiten editar, marcar como hechas o pendientes y borrar con confirmación.
+- Los recordatorios permiten modificar título, fecha, hora, ubicación y descripción, completar o cancelar, sincronizando el cambio con Calendar.
+- Los eventos de agenda muestran todos sus campos y permiten modificarlos o anularlos desde la misma ficha.
+- «Este mes», «últimos 30 días» y «próximos 60 días» aplican intervalos reales a notas y recordatorios.
+
 ## V0.21.40 · Ubicación editable en Calendar
 
 - Todos los modales de creación de Calendar permiten añadir o cambiar la ubicación antes de guardar.

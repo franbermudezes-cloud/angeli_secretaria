@@ -379,3 +379,8 @@ Cloud Run deja de aceptar el ID token efímero de Google Identity Services y pas
 - Las categorías y relaciones configuradas se incluyen como contexto acotado en cada interpretación, tanto con una conversación activa como sin ella.
 - Una orden explícita «anota/apunta/guarda en X» prima como categoría X; no debe reutilizar ese mismo valor como relación salvo que la persona lo pida expresamente.
 - Los identificadores personalizados siguen el formato seguro de slug y el backend limita a 30 opciones por grupo.
+# Gestor unificado de entradas (V0.21.41)
+
+- Las consultas de notas, recordatorios y agenda usan un patrón común: listado flotante desplazable → ficha individual → acción → regreso al listado.
+- Firestore sigue siendo la fuente operativa de notas y recordatorios; Calendar es la fuente real de eventos y avisos. Google Sheets/Drive son registro y adjuntos, no la fuente desde la que se reconstruye el panel.
+- Las consultas temporales admiten mes actual y ventanas naturales de días sin confundir el periodo con el texto que se busca.

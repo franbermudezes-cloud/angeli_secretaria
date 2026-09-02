@@ -47,12 +47,14 @@ export function findNoteMatches(entries = [], interpretation = {}) {
   const requested = normalizeNoteClassification(interpretation.noteClassification);
   const status = ["pending", "done", "all"].includes(interpretation.noteStatus) ? interpretation.noteStatus : "pending";
   return entries
-    .filter(entry => entry?.type === "note" && (status === "all" || (status === "done" ? entry.status === "done" : entry.status !== "done")))
+    .filter(entry => entry?.type === "note" && inRange(entry.date||entry.updatedAt,interpretation.rangeStart,interpretation.rangeEnd) && (status === "all" || (status === "done" ? entry.status === "done" : entry.status !== "done")))
     .map(entry => ({ entry, score: noteScore(entry, query, requested) }))
     .filter(result => result.score > 0 || (!query && isUnfiltered(requested)))
     .sort((left, right) => right.score - left.score || String(right.entry.date || "").localeCompare(String(left.entry.date || "")))
     .map(result => result.entry);
 }
+
+function inRange(value,start,end){if(!start&&!end)return true;const key=String(value||"").slice(0,10);return Boolean(key)&&(!start||key>=start)&&(!end||key<end)}
 
 export function noteTitle(entry = {}) {
   return clean(entry.aiIntent?.title) || clean(entry.text) || "Nota";
