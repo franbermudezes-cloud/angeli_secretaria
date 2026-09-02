@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.21.40 · Ubicación editable en Calendar
+
+- Todos los modales de creación de Calendar permiten añadir o cambiar la ubicación antes de guardar.
+- La ubicación continúa siendo opcional: Angeli no añade una pregunta innecesaria cuando no se dicta.
+- La ficha muestra siempre el campo, incluso cuando todavía está vacío, y conserva el valor en el payload real de Calendar.
+
 ## V0.21.39 · Preguntas siempre en español
 
 - Angeli genera en la propia PWA las preguntas de seguimiento correspondientes al dato que falta.

@@ -381,8 +381,9 @@ test('evento y recordatorio comparten ficha editable sin añadir pasos al guarda
   assert.match(elements.get('modalBody').html,/San Marcos de Gandía/);
   assert.match(elements.get('modalBody').html,/Sin descripción/);
   const actions=elements.get('modalActions').children;
-  assert.deepEqual(actions.map(button=>button.textContent),['Cancelar','Cambiar título','Cambiar fecha y hora','Añadir descripción','📅 Añadir']);
-  assert.equal(actions[4].dataset.a,'calendar');
+  assert.deepEqual(actions.map(button=>button.textContent),['Cancelar','Cambiar título','Cambiar fecha y hora','Cambiar ubicación','Añadir descripción','📅 Añadir']);
+  assert.equal(actions[3].dataset.field,'location');
+  assert.equal(actions[5].dataset.a,'calendar');
 
   let saved=null,micTarget=null;
   ui.showCalendarFieldEditor(event,'description',{onSave:value=>saved=value,onMic:id=>micTarget=id,onCancel:()=>{}});
@@ -392,6 +393,14 @@ test('evento y recordatorio comparten ficha editable sin añadir pasos al guarda
   controls.children[1].onclick();
   assert.equal(micTarget,'calendarFieldDraft');
   assert.equal(saved,'Preparar el aniversario');
+
+  ui.showCalendarFieldEditor({...event,location:null},'location',{onSave:value=>saved=value,onMic:id=>micTarget=id,onCancel:()=>{}});
+  const locationEditor=elements.get('modalBody').children[0],locationDraft=locationEditor.children[0];
+  assert.equal(locationDraft.placeholder,'Di o escribe el recinto o dirección…');
+  locationDraft.value='Complejo San Marcos de Gandía';
+  locationEditor.children[1].children[1].onclick();
+  assert.equal(saved,'Complejo San Marcos de Gandía');
+  assert.equal(updateCalendarDetails(event,'location',saved).location,'Complejo San Marcos de Gandía');
 
   let changedWhen=null;
   ui.showCalendarDateTimeEditor(event,{onSave:value=>changedWhen=value,onCancel:()=>{}});
@@ -406,7 +415,7 @@ test('evento y recordatorio comparten ficha editable sin añadir pasos al guarda
   const reminder={...reminderFixture(),aiIntent:{...reminderFixture().aiIntent,notes:null},proposal:{intent:'reminder.create'}};
   ui.showEntryAction(reminder);
   assert.match(elements.get('modalBody').html,/Llamar a Miguel Ibiza/);
-  assert.deepEqual(elements.get('modalActions').children.map(button=>button.textContent),['Cancelar','Cambiar título','Cambiar fecha y hora','Añadir descripción','⏰ Programar']);
+  assert.deepEqual(elements.get('modalActions').children.map(button=>button.textContent),['Cancelar','Cambiar título','Cambiar fecha y hora','Añadir ubicación','Añadir descripción','⏰ Programar']);
 
   const linked={...event,schedule:{dueAt:'2026-08-26T21:00:00',title:'Comprobar el equipo',status:'pending_confirmation'},calendarStatus:'pending'};
   ui.showEntryAction(linked);
