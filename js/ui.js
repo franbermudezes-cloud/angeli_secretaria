@@ -1,7 +1,7 @@
-import { typeLabel } from "./classifier.js?v=0.21.39";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.39";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.39";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.39";
+import { typeLabel } from "./classifier.js?v=0.21.40";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.40";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.40";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.40";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -123,7 +123,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.39";
+    image.src = "assets/angeli-welcome.gif?v=0.21.40";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -400,7 +400,7 @@ export function createUI({ getMedia }) {
         showCompletion({ title: "✓ Pendiente completado", lead: "Lo he marcado como hecho.", body: detail });
         return;
       }
-      openModal({ ...base, title: note.schedule.status === "error" ? "No se pudo programar" : "¿Programo este aviso?", lead: "Comprueba el título. Si está bien, solo tienes que programarlo.", body: detail, actions: [{ label: "Cancelar", kind: "secondary", onClick: closeLayers }, { label: "Cambiar título", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "title" } }, { label: "Cambiar fecha y hora", kind: "secondary", dataset: { a: "edit-calendar-datetime", id: note.id } }, { label: calendarDetails(note).description ? "Cambiar descripción" : "Añadir descripción", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "description" } }, { label: note.schedule.status === "error" ? "Reintentar" : "⏰ Programar", kind: "confirm", dataset: { a: "schedule", id: note.id } }] });
+      openModal({ ...base, title: note.schedule.status === "error" ? "No se pudo programar" : "¿Programo este aviso?", lead: "Comprueba el título. Si está bien, solo tienes que programarlo.", body: detail, actions: [{ label: "Cancelar", kind: "secondary", onClick: closeLayers }, { label: "Cambiar título", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "title" } }, { label: "Cambiar fecha y hora", kind: "secondary", dataset: { a: "edit-calendar-datetime", id: note.id } }, { label: calendarDetails(note).location ? "Cambiar ubicación" : "Añadir ubicación", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "location" } }, { label: calendarDetails(note).description ? "Cambiar descripción" : "Añadir descripción", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "description" } }, { label: note.schedule.status === "error" ? "Reintentar" : "⏰ Programar", kind: "confirm", dataset: { a: "schedule", id: note.id } }] });
       return;
     }
     if (intent === "calendar.create") {
@@ -413,6 +413,7 @@ export function createUI({ getMedia }) {
         { label: "Cancelar", kind: "secondary", onClick: closeLayers },
         { label: "Cambiar título", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "title" } },
         { label: "Cambiar fecha y hora", kind: "secondary", dataset: { a: "edit-calendar-datetime", id: note.id } },
+        { label: calendarDetails(note).location ? "Cambiar ubicación" : "Añadir ubicación", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "location" } },
         { label: calendarDetails(note).description ? "Cambiar descripción" : "Añadir descripción", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "description" } },
         { label: "📅 Añadir", kind: "confirm", dataset: { a: "calendar", id: note.id } }
       ] });

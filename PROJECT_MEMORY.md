@@ -1,5 +1,9 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-02 — V0.21.40 · Ubicación editable sin hacerla obligatoria
+
+Toda ficha que vaya a crear un elemento en Calendar ofrece `Añadir ubicación` o `Cambiar ubicación`: eventos, recordatorios y eventos con aviso vinculado. El lugar sigue siendo opcional para no convertir una orden completa en más pasos; cuando el usuario lo añade, se guarda en el campo nativo `location` de Calendar.
+
 ## 2026-09-02 — V0.21.39 · Las preguntas de seguimiento pertenecen a la interfaz
 
 La PWA no muestra literalmente el texto libre que Gemini proponga para pedir un dato pendiente. La IA identifica qué campo falta y Angeli formula la pregunta con microcopy canónica en español según la intención. Así, título, fecha, hora, ubicación, contacto y objetivo mantienen el idioma y el tono de la aplicación aunque el proveedor responda en otro idioma.

@@ -1,5 +1,10 @@
 # Entorno automático de pruebas reales
 
+V0.21.40: la puerta PWA comprueba que evento, recordatorio y evento con aviso
+ofrecen añadir o cambiar la ubicación en su ficha. También verifica que el
+valor corregido sea el mismo que se envía al campo nativo `location` de
+Calendar.
+
 V0.21.39: la puerta PWA reproduce una respuesta de Gemini que solicita en inglés
 el título de un evento y comprueba que Angeli la sustituye por su pregunta
 canónica en español. La misma prueba cubre los datos pendientes de fecha, hora,
