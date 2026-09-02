@@ -1,5 +1,10 @@
 # Entorno automático de pruebas reales
 
+V0.21.39: la puerta PWA reproduce una respuesta de Gemini que solicita en inglés
+el título de un evento y comprueba que Angeli la sustituye por su pregunta
+canónica en español. La misma prueba cubre los datos pendientes de fecha, hora,
+ubicación y contacto.
+
 V0.21.37: la puerta PWA comprueba que los tres modales de creación de Calendar
 (evento, recordatorio y evento con aviso) muestran «Cambiar fecha y hora». Las
 pruebas verifican que la corrección actualiza el payload real y que un aviso

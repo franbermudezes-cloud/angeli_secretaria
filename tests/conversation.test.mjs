@@ -25,6 +25,15 @@ test('una petición normal sin acceso directo no intenta leer action de null',()
   assert.deepEqual(shortcutSemantics(null),{action:null,direct:false});
 });
 
+test('las preguntas pendientes de Gemini siempre se presentan en español',()=>{
+  const event=validateIntent({intent:'calendar.create',confidence:.95,title:null,date:'2026-09-03',time:'18:00',missingFields:['title'],question:'What is the title of the event?',requiresConfirmation:true});
+  assert.equal(event.question,'¿Qué título quieres poner al evento?');
+  assert.equal(validateIntent({...event,missingFields:['date'],question:'What day is it?'}).question,'¿Para qué día es?');
+  assert.equal(validateIntent({...event,missingFields:['time'],question:'What time?'}).question,'¿A qué hora?');
+  assert.equal(validateIntent({...event,missingFields:['location'],question:'Where is it?'}).question,'¿Dónde es?');
+  assert.equal(validateIntent({...event,intent:'contact.call',missingFields:['contactName'],question:'Who?'}).question,'¿Con quién quieres contactar?');
+});
+
 test('notas: clasifica sin bloquear y conserva los metadatos en Firestore',()=>{
   const classification=normalizeNoteClassification({scope:'company',relationType:'project',relationName:'Karaoke',purpose:'Revisar el precio de las licencias',tags:['licencias','presupuesto','licencias']});
   const entry={id:'note-karaoke',type:'note',text:'Apunta para el proyecto Karaoke que debemos revisar el precio de las licencias',noteClassification:classification,aiIntent:{intent:'note',title:'Precio de las licencias',noteClassification:classification}};

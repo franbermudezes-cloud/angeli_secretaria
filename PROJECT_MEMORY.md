@@ -1,5 +1,9 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-02 — V0.21.39 · Las preguntas de seguimiento pertenecen a la interfaz
+
+La PWA no muestra literalmente el texto libre que Gemini proponga para pedir un dato pendiente. La IA identifica qué campo falta y Angeli formula la pregunta con microcopy canónica en español según la intención. Así, título, fecha, hora, ubicación, contacto y objetivo mantienen el idioma y el tono de la aplicación aunque el proveedor responda en otro idioma.
+
 ## 2026-09-02 — V0.21.38 · Peticiones normales restauradas
 
 Las funciones que reciben un acceso directo opcional deben admitir también `null`, porque el compositor normal no tiene ninguna etiqueta asociada. Leer propiedades del acceso sin normalizarlo bloqueaba cualquier instrucción con `Cannot read properties of null (reading 'action')`. La ausencia de acceso directo significa orden natural y debe continuar hacia la IA o el respaldo local.
