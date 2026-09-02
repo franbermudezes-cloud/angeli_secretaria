@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.21.39 · Preguntas siempre en español
+
+- Angeli genera en la propia PWA las preguntas de seguimiento correspondientes al dato que falta.
+- Una pregunta devuelta por Gemini en otro idioma ya no llega literalmente al usuario.
+- La prueba de conversación cubre título, fecha, hora, ubicación y contacto pendientes.
+
 ## V0.21.38 · Peticiones normales restauradas
 
 - Las órdenes escritas o dictadas sin usar un acceso directo vuelven a procesarse con normalidad.
