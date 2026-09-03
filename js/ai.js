@@ -1,4 +1,4 @@
-import{calendarQueryRange,cleanTemporalText,naturalQueryRange,temporalData}from"./temporal.js?v=0.21.41";
+import{calendarQueryRange,cleanTemporalText,naturalQueryRange,temporalData}from"./temporal.js?v=0.21.42";
 
 export const VALID_INTENTS=["note","note.query","task.create","task.complete","reminder.create","reminder.query","calendar.create","calendar.query","calendar.update","calendar.delete","contact.call","file.store","photo.store"];
 const SENSITIVE_INTENTS=new Set(["calendar.update","calendar.delete","contact.call"]);
@@ -58,7 +58,9 @@ export function localCalendarUpdate(text = "", now = new Date(), active = null) 
 // Respaldo de lectura: la IA sigue siendo la primera opción en producción.
 export function localReminderQuery(text = "") {
   const normalized = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  if (!/\b(?:que|cuales|dime|muestrame|consulta)\b.*\brecordatorios?\b/i.test(normalized)) return null;
+  const explicitQuery=/\b(?:que|cuales|dime|muestrame|ensename|ver|listar|lista|busca|buscar|consulta|consultar)\b.*\brecordatorios?\b/i.test(normalized);
+  const bareQuery=/^(?:mis\s+|los\s+)?recordatorios?(?:\s+pendientes?)?[.!?]*$/i.test(normalized.trim());
+  if (!explicitQuery && !bareQuery) return null;
   const match = text.match(/\brecordatorios?\b(?:\s+(?:tengo|tenía|tenia|hay))?\s+(?:de|sobre)\s+(.+?)(?:[.!?,;]|$)/i);
   const range=naturalQueryRange(text),title=match&&!range?match[1].trim():null;
   return { ...EMPTY, intent: "reminder.query", confidence: .5, ...(range||{}),
@@ -68,7 +70,7 @@ export function localReminderQuery(text = "") {
 
 export function localNoteQuery(text = "") {
   const value=String(text||"").trim(),normalized=value.normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-  if(!/\b(?:que|cuales|dime|muestrame|busca|consulta|ensename)\b.*\bnotas?\b/i.test(normalized))return null;
+  if(!/\b(?:que|cuales|dime|muestrame|busca|consulta|ensename|ver|listar|lista)\b.*\bnotas?\b/i.test(normalized))return null;
   const match=value.match(/\bnotas?\b(?:\s+(?:que\s+)?(?:tengo|hay))?\s+(?:del?|sobre|relacionadas?\s+con)\s+(.+?)(?:[.!?,;]|$)/i);
   const scope=/\bpersonales?\b/i.test(value)?"personal":/\b(?:empresa|trabajo|profesionales?)\b/i.test(value)?"company":"general";
   const noteStatus=/\b(?:hechas?|completadas?|terminadas?|archivadas?)\b/i.test(value)?"done":/\btodas?\b/i.test(value)?"all":"pending";

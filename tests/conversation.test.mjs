@@ -38,6 +38,23 @@ test('gestor: notas y recordatorios respetan este mes y ventanas de días',()=>{
   assert.deepEqual(findReminderMatches(reminders,next).map(item=>item.id),['future']);
 });
 
+test('consultas directas: «ver» y la petición breve nunca se guardan como nota',()=>{
+  const doneNotes=localNoteQuery('Ver las notas que tenemos hechas');
+  assert.equal(doneNotes.intent,'note.query');
+  assert.equal(doneNotes.noteStatus,'done');
+  assert.equal(localReminderQuery('Ver recordatorios pendientes').intent,'reminder.query');
+  assert.equal(localReminderQuery('Recordatorios').intent,'reminder.query');
+  assert.equal(localReminderQuery('Mis recordatorios pendientes').intent,'reminder.query');
+});
+
+test('consultar recordatorios sin resultados muestra el estado vacío y no crea entrada',()=>{
+  const query=localReminderQuery('Ver recordatorios pendientes');
+  assert.deepEqual(findReminderMatches([],query),[]);
+  const ui=readFileSync(new URL('../js/ui.js',import.meta.url),'utf8');
+  assert.match(ui,/No hay recordatorios pendientes/);
+  assert.match(ui,/No tienes recordatorios pendientes/);
+});
+
 test('gestor: los tres listados abren fichas editables y conservan scroll',()=>{
   const ui=readFileSync(new URL('../js/ui.js',import.meta.url),'utf8'),css=readFileSync(new URL('../styles-flow.css',import.meta.url),'utf8'),app=readFileSync(new URL('../js/app.js',import.meta.url),'utf8');
   assert.match(ui,/showNoteDetail/);assert.match(ui,/showReminderDetail/);assert.match(ui,/showCalendarEventEditor/);

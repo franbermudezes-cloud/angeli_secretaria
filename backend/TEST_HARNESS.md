@@ -302,3 +302,7 @@ marcados como manuales hasta que exista un perfil Firebase aislado para el
 arnés. Las pruebas del coordinador no sustituyen la validación periódica del
 proveedor real: evitan que una respuesta corta vuelva a convertirse en una
 orden independiente si la IA falla o responde con baja confianza.
+
+## Consultas directas de notas y recordatorios (V0.21.42)
+
+La prueba local reproduce «Ver las notas que tenemos hechas», «Ver recordatorios pendientes» y la petición breve «Recordatorios». Comprueba la intención, el filtro de estado y el resultado vacío, y evita que cualquiera de esas órdenes cree una nota. La visualización final en móvil permanece como comprobación manual.

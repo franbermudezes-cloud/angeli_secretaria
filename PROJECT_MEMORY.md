@@ -384,3 +384,8 @@ Cloud Run deja de aceptar el ID token efímero de Google Identity Services y pas
 - Las consultas de notas, recordatorios y agenda usan un patrón común: listado flotante desplazable → ficha individual → acción → regreso al listado.
 - Firestore sigue siendo la fuente operativa de notas y recordatorios; Calendar es la fuente real de eventos y avisos. Google Sheets/Drive son registro y adjuntos, no la fuente desde la que se reconstruye el panel.
 - Las consultas temporales admiten mes actual y ventanas naturales de días sin confundir el periodo con el texto que se busca.
+
+## Consultas breves de entradas (V0.21.42)
+
+- «Ver», «listar» y una petición breve como «recordatorios» son órdenes de consulta explícitas. Nunca deben caer en el flujo de creación de una nota.
+- El estado pedido forma parte de la consulta: «notas hechas» muestra completadas y «notas pendientes» muestra abiertas. Si no hay recordatorios, Angeli lo indica sin crear ninguna entrada.
