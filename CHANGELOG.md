@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.21.42 · Consultas directas de notas y recordatorios
+
+- «Ver las notas que tenemos hechas» abre las notas completadas, no las pendientes.
+- «Ver recordatorios pendientes», «mis recordatorios» y la petición breve «recordatorios» se interpretan siempre como consultas y nunca como notas nuevas.
+- Una consulta sin coincidencias responde claramente que no hay recordatorios pendientes.
+
 ## V0.21.41 · Gestor flotante de notas, recordatorios y agenda
 
 - Las consultas abren un listado profesional, desplazable y seleccionable; cada elemento conduce a su ficha completa.
