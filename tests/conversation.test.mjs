@@ -11,7 +11,7 @@ import {
 } from "../js/conversation.js";
 import { calendarDetails, linkedScheduleFor, normalizeFutureCall, normalizeReminderSchedule, scheduleFor, scheduleTitle, updateCalendarDetails, updateCalendarDateTime } from "../js/schedule.js";
 import { completionTarget, completePending, completePendingWithCalendar, findPendingMatches, findReminderMatches } from "../js/pending.js";
-import { mockProvider, interpret, localCalendarUpdate, localLinkedCalendarIntent, localReminderQuery, localNoteQuery, protectCalendarInterpretation, validateIntent } from "../js/ai.js";
+import { mockProvider, interpret, localCalendarUpdate, localLinkedCalendarIntent, localReminderQuery, localNoteQuery, protectCalendarInterpretation, protectReadQuery, validateIntent } from "../js/ai.js";
 import { fixtureTitle, reminderFixture } from './reminder-event-fixture.mjs';
 import { applyCalendarUpdateToEntries, buildCalendarSearch, calendarEvent, scheduledReminderEvent, listAllCalendarPages, reconcileReminderEntries, linkedReminderSearch, calendarEventsForIntent } from '../js/google.js';
 import { fromCloudEntry, toCloudEntry } from '../js/cloud-entry.js';
@@ -45,6 +45,10 @@ test('consultas directas: «ver» y la petición breve nunca se guardan como not
   assert.equal(localReminderQuery('Ver recordatorios pendientes').intent,'reminder.query');
   assert.equal(localReminderQuery('Recordatorios').intent,'reminder.query');
   assert.equal(localReminderQuery('Mis recordatorios pendientes').intent,'reminder.query');
+  const wrongRemote={intent:'note',confidence:.99,title:'Recordatorios',source:'ai'};
+  assert.equal(protectReadQuery(wrongRemote,null,localReminderQuery('Recordatorios')).intent,'reminder.query');
+  assert.equal(protectReadQuery(wrongRemote,localNoteQuery('Ver las notas que tenemos hechas')).noteStatus,'done');
+  assert.equal(localNoteQuery('Guarda esta lista de notas de la reunión'),null);
 });
 
 test('consultar recordatorios sin resultados muestra el estado vacío y no crea entrada',()=>{

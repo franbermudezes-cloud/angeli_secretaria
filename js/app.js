@@ -3,7 +3,7 @@ import{classify,actionData}from"./classifier.js?v=0.21.42";
 import{sendEntry}from"./sheets.js?v=0.21.42";
 import{createUI}from"./ui.js?v=0.21.42";
 import{createGoogleIntegration}from"./google.js?v=0.21.42";
-import{interpret,remoteProvider,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,protectCalendarInterpretation}from"./ai.js?v=0.21.42";
+import{interpret,remoteProvider,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,protectCalendarInterpretation,protectReadQuery}from"./ai.js?v=0.21.42";
 import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.42";
 import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.42";
 import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.42";
@@ -110,13 +110,14 @@ async function add({interactionId=null,shortcut=null}={}){
    const fallbackType=active?.type||shortcutType(shortcutContext)||classify(text,images,files);
    const localLinked=localLinkedCalendarIntent(text,now);
    const noteQuery=(localLinked||shortcutContext?.action)?null:localNoteQuery(text);
-   const cancellation=(localLinked||noteQuery||(shortcutContext?.action&&shortcutContext.action!=="calendar.delete"))?null:localCalendarCancellation(text);
-   const localUpdate=(localLinked||noteQuery||shortcutContext?.action)?null:localCalendarUpdate(text,now,active);
-   const interpreted=await interpret(text,{provider:(value,context)=>google.interpretWithAI(value,remoteProvider,context),fallback:()=>localLinked||noteQuery||cancellation||localUpdate||localInterpretation(text,fallbackType,active),context:noteInterpretationContext(contextFor(active),noteSettings)});
+   const reminderQuery=(localLinked||shortcutContext?.action)?null:localReminderQuery(text);
+   const cancellation=(localLinked||noteQuery||reminderQuery||(shortcutContext?.action&&shortcutContext.action!=="calendar.delete"))?null:localCalendarCancellation(text);
+   const localUpdate=(localLinked||noteQuery||reminderQuery||shortcutContext?.action)?null:localCalendarUpdate(text,now,active);
+   const interpreted=await interpret(text,{provider:(value,context)=>google.interpretWithAI(value,remoteProvider,context),fallback:()=>localLinked||noteQuery||reminderQuery||cancellation||localUpdate||localInterpretation(text,fallbackType,active),context:noteInterpretationContext(contextFor(active),noteSettings)});
    const rawInterpretation=applyExplicitNoteCategory(routeShortcutIntent(interpreted,shortcutContext,text,now),text,noteSettings);
    if(rawInterpretation.source==="fallback")ui.updateWorking("Estoy revisando tu petición","Necesito confirmarla contigo antes de continuar.","");
    const deterministic=localLinked||cancellation||localUpdate;
-   const routedInterpretation=noteQuery?{...noteQuery,source:rawInterpretation.source,fallbackReason:rawInterpretation.fallbackReason}:preserveCancellation(active,protectCalendarInterpretation(rawInterpretation,deterministic));
+   const routedInterpretation=(noteQuery||reminderQuery)?protectReadQuery(rawInterpretation,noteQuery,reminderQuery):preserveCancellation(active,protectCalendarInterpretation(rawInterpretation,deterministic));
    const normalizedInterpretation=normalizeReminderSchedule(normalizeFutureCall(normalizeUndatedCall(routedInterpretation,text,active,now),text),text,now);
    if(normalizedInterpretation.intent==="task.complete"){await resolvePendingCompletion(normalizedInterpretation);return}
    if(normalizedInterpretation.intent==="reminder.query"){await resolveReminderQuery(normalizedInterpretation);return}
