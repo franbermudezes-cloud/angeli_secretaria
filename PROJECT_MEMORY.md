@@ -381,6 +381,11 @@ Cloud Run deja de aceptar el ID token efímero de Google Identity Services y pas
 - Los identificadores personalizados siguen el formato seguro de slug y el backend limita a 30 opciones por grupo.
 # Gestor unificado de entradas (V0.21.41)
 
+## Seguimiento 2026-09-08
+
+- V0.21.43 recupera el ajuste visual pendiente: texto arriba y acciones de agenda en dos columnas debajo.
+- Siguiente caso separado: Contactos/Calendar muestran «conectado de forma permanente» aunque Google pueda rechazar el grant. `GoogleSessions.connected()` comprueba existencia del secreto, no validez. `syncLinks()` conserva estado antiguo si falla y varios catch ocultan el motivo real. Antes de modificar la integración, verificar estado real y renovación/API con perfil aislado. Diferenciar autorización requerida, permisos insuficientes, fallo temporal y búsqueda vacía; no atribuir todos los errores a desconexión.
+
 - Las consultas de notas, recordatorios y agenda usan un patrón común: listado flotante desplazable → ficha individual → acción → regreso al listado.
 - Firestore sigue siendo la fuente operativa de notas y recordatorios; Calendar es la fuente real de eventos y avisos. Google Sheets/Drive son registro y adjuntos, no la fuente desde la que se reconstruye el panel.
 - Las consultas temporales admiten mes actual y ventanas naturales de días sin confundir el periodo con el texto que se busca.

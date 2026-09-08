@@ -240,6 +240,10 @@ Pull Request abierto. Cuando pasa y la rama empieza por `codex/`, el mismo
 workflow activa la fusión automática. El informe JSON se conserva como
 artefacto de GitHub durante 30 días.
 
+## V0.21.43 · Geometría de agenda
+
+`tests/agenda-long.html` ejecuta `tests/agenda-layout-check.js`: verifica 40 citas, igualdad de ancho, alineación horizontal, posición debajo del texto y scroll real. Se ejecuta en navegador local; no forma parte del job Node de integration-gate. La prueba no escribe en Calendar.
+
 ## Cobertura inicial
 
 Listado largo: prueba automática del contrato de estilos en conversation.test.mjs
