@@ -281,7 +281,8 @@ class InterpretEndpointTests(unittest.TestCase):
         app.set_test_dependencies(lambda text, now, timezone: VALID_RESPONSE.copy(), lambda token: {"uid": "other-sub", "email": "other@example.com", "email_verified": True})
         status, data = app.wsgi_request({"text": "Idea", "now": "2026-08-20T21:20:00+02:00", "timeZone": "Europe/Madrid"}, "Bearer test")
         self.assertEqual(status, "401 Unauthorized")
-        self.assertEqual(data["error"], "No autorizado")
+        self.assertEqual(data["error"], "Esta cuenta no está autorizada para Angeli")
+        self.assertEqual(data["code"], "account_not_allowed")
         os.environ.pop("ALLOWED_FIREBASE_EMAILS", None)
 
     def test_preflight_is_empty_and_allows_authorized_origin(self):
@@ -404,7 +405,7 @@ class InterpretEndpointTests(unittest.TestCase):
         os.environ["ALLOWED_FIREBASE_EMAILS"] = "owner@example.com"
         status, data = request_path("/google", {"integration": "calendar", "action": "list", "params": {}}, "Bearer test")
         self.assertEqual(status, "502 Bad Gateway")
-        self.assertEqual(data["error"], "Calendar no pudo completar la consulta")
+        self.assertEqual(data, {"error": "Calendar no está disponible temporalmente", "code": "integration_unavailable", "integration": "calendar"})
         os.environ.pop("ALLOWED_FIREBASE_EMAILS", None)
 
     def test_persistent_grant_body_is_read_once(self):
@@ -489,9 +490,11 @@ class InterpretEndpointTests(unittest.TestCase):
         os.environ.pop("ALLOWED_FIREBASE_EMAILS", None)
 
     def test_media_distinguishes_angeli_session_from_drive_access(self):
+        from google_sessions import GooglePermissionRequired
+
         class DriveDenied:
             def upload_drive_file(self, data, name, mime_type, kind):
-                raise PermissionError("La autorización de Drive no puede escribir en la carpeta configurada")
+                raise GooglePermissionRequired("La autorización de Drive no puede escribir en la carpeta configurada")
 
         os.environ.pop("ANGELI_AI_DEV_BYPASS_AUTH", None)
         os.environ["ALLOWED_FIREBASE_EMAILS"] = "owner@example.com"
@@ -502,16 +505,85 @@ class InterpretEndpointTests(unittest.TestCase):
         )
         extra = {"HTTP_X_ANGELI_NAME": "foto.jpg", "HTTP_X_ANGELI_TYPE": "image/jpeg", "HTTP_X_ANGELI_KIND": "image"}
         status, data = request_raw("/media/upload", b"photo", "Bearer test", extra)
-        self.assertEqual(status, "401 Unauthorized")
-        self.assertEqual(data["error"], "Drive no está autorizado para escribir en la carpeta configurada")
+        self.assertEqual(status, "403 Forbidden")
+        self.assertEqual(data, {"error": "Drive no tiene los permisos necesarios; vuelve a conectarlo", "code": "permission_required", "integration": "drive"})
         app.set_test_dependencies(
             lambda text, now, timezone: VALID_RESPONSE.copy(),
             lambda token: {"uid": "other-sub", "email": "other@example.com", "email_verified": True},
         )
         status, data = request_raw("/media/upload", b"photo", "Bearer test", extra)
         self.assertEqual(status, "401 Unauthorized")
-        self.assertEqual(data["error"], "La sesión de Angeli no está autorizada; inicia sesión de nuevo")
+        self.assertEqual(data["error"], "Esta cuenta no está autorizada para Angeli")
+        self.assertEqual(data["code"], "account_not_allowed")
         os.environ.pop("ALLOWED_FIREBASE_EMAILS", None)
+
+    def test_session_status_verifies_every_connection_instead_of_secret_presence(self):
+        class FakeSessions:
+            def connection_status(self, integration):
+                return {"state": "connected", "reason": f"verified-{integration}"}
+
+        app.set_test_dependencies(
+            lambda text, now, timezone: VALID_RESPONSE.copy(),
+            lambda token: {"uid": "approved-sub", "email": "owner@example.com", "email_verified": True},
+            lambda: FakeSessions(),
+        )
+        os.environ.pop("ANGELI_AI_DEV_BYPASS_AUTH", None)
+        os.environ["ALLOWED_FIREBASE_EMAILS"] = "owner@example.com"
+        status, data = request_path("/session/status", {}, "Bearer test")
+        self.assertEqual(status, "200 OK")
+        self.assertEqual(data["ai"], {"state": "connected", "reason": "authenticated_backend"})
+        for integration in ("contacts", "calendar", "drive"):
+            self.assertEqual(data[integration], {"state": "connected", "reason": f"verified-{integration}"})
+        os.environ.pop("ALLOWED_FIREBASE_EMAILS", None)
+
+    def test_google_connection_status_distinguishes_reconnect_permissions_and_outage(self):
+        from google_sessions import CALENDAR, GooglePermissionRequired, GoogleReconnectRequired, GoogleSessions
+
+        service = GoogleSessions("angeli-secretaria", "client-id")
+        service._read_secret = lambda name: '{"refresh_token":"test"}'
+        for error, expected in (
+            (GoogleReconnectRequired("revoked"), "reconnect_required"),
+            (GooglePermissionRequired("scope"), "permission_required"),
+            (RuntimeError("network"), "unavailable"),
+        ):
+            with self.subTest(expected=expected):
+                service.api = lambda *args, current=error, **kwargs: (_ for _ in ()).throw(current)
+                self.assertEqual(service.connection_status(CALENDAR)["state"], expected)
+
+    def test_google_connection_status_reports_missing_grant_without_calling_api(self):
+        from google_sessions import CONTACTS, GoogleSessions
+
+        service = GoogleSessions("angeli-secretaria", "client-id")
+        service._read_secret = lambda name: None
+        service.api = lambda *args, **kwargs: self.fail("No debe llamar a Google sin grant")
+        self.assertEqual(service.connection_status(CONTACTS), {"state": "disconnected", "reason": "missing_grant"})
+
+    def test_revoked_refresh_token_is_explicitly_reconnect_required(self):
+        from google_sessions import GoogleReconnectRequired, GoogleSessions
+
+        service = GoogleSessions("angeli-secretaria", "client-id")
+        revoked = HTTPError("https://oauth2.googleapis.com/token", 400, "Bad Request", {}, BytesIO(b'{"error":"invalid_grant"}'))
+        with patch("google_sessions.urlopen", side_effect=revoked):
+            with self.assertRaises(GoogleReconnectRequired):
+                service._post_form("https://oauth2.googleapis.com/token", {"grant_type": "refresh_token"})
+
+    def test_drive_connection_status_verifies_grant_without_writing(self):
+        from google_sessions import DRIVE, GoogleSessions
+
+        service = GoogleSessions("angeli-secretaria", "client-id")
+        service._read_secret = lambda name: '{"refresh_token":"test"}'
+        calls = []
+        service.api = lambda *args, **kwargs: calls.append(args) or {"user": {"permissionId": "test"}}
+        self.assertEqual(service.connection_status(DRIVE, ["folder"]), {"state": "connected", "reason": "verified"})
+        self.assertIn("/about?", calls[0][2])
+
+    def test_drive_connection_status_requires_a_configured_destination(self):
+        from google_sessions import DRIVE, GoogleSessions
+
+        service = GoogleSessions("angeli-secretaria", "client-id")
+        service._read_secret = lambda name: '{"refresh_token":"test"}'
+        service.api = lambda *args, **kwargs: self.fail("No debe llamar a Drive sin destinos")
+        self.assertEqual(service.connection_status(DRIVE, []), {"state": "disconnected", "reason": "missing_configuration"})
 
     def test_drive_requires_fixed_destinations_and_never_creates_folders(self):
         from google_sessions import GoogleSessions

@@ -1,5 +1,13 @@
 # Entorno automático de pruebas reales
 
+V0.21.44: antes de crear recursos, `connections-health` renueva los grants
+aislados y hace una lectura mínima real de Contactos, Calendar y la API de Drive.
+Un secreto presente pero revocado, sin permisos de lectura o no utilizable deja
+la puerta en rojo. Esta comprobación no escribe datos; P06 continúa validando
+por separado la carpeta concreta mediante una subida y su limpieza reales. Las
+pruebas locales cubren además el modal de arranque, los estados diferenciados y
+la prohibición de abrir OAuth automáticamente.
+
 V0.21.41: la puerta PWA cubre el gestor flotante de notas, recordatorios y
 eventos: listados desplazables, apertura de ficha individual, acciones de
 edición/estado/borrado y filtros naturales por mes o ventanas de días. La

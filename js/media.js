@@ -23,20 +23,20 @@ export function createMediaService({ getAuthToken, ensureDrive }) {
       body: file
     });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || "No se pudo subir el archivo a Drive");
+    if (!response.ok) throw responseError(response, data, "No se pudo subir el archivo a Drive");
     return data;
   }
 
   async function getMedia(id) {
     const response = await request("/media/download", { fileId: id });
-    if (!response.ok) throw new Error("No se pudo recuperar el archivo");
+    if (!response.ok) throw responseError(response, await response.json().catch(() => ({})), "No se pudo recuperar el archivo");
     return { blob: await response.blob(), type: response.headers.get("Content-Type") || "application/octet-stream" };
   }
 
   async function remove(id) {
     if (!id) return;
     const response = await request("/media/delete", { fileId: id });
-    if (!response.ok) throw new Error("No se pudo eliminar el archivo de Drive");
+    if (!response.ok) throw responseError(response, await response.json().catch(() => ({})), "No se pudo eliminar el archivo de Drive");
   }
 
   async function request(path, body) {
@@ -47,4 +47,10 @@ export function createMediaService({ getAuthToken, ensureDrive }) {
     });
   }
   return { upload, getMedia, remove };
+}
+
+function responseError(response, data, fallback) {
+  const error = new Error(data?.error || fallback);
+  Object.assign(error, { status: response.status, code: data?.code || "", integration: data?.integration || "drive" });
+  return error;
 }

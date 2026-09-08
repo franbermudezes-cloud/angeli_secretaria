@@ -1,7 +1,7 @@
-import { typeLabel } from "./classifier.js?v=0.21.43";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.43";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.43";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.43";
+import { typeLabel } from "./classifier.js?v=0.21.44";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.44";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.44";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.44";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -48,6 +48,50 @@ export function createUI({ getMedia }) {
     $("calendarStatus").textContent = calendar;
     $("driveStatus").textContent = drive;
     $("aiStatus").textContent = app;
+  }
+
+  function showConnectionHealth(problems, { onOpenSettings } = {}) {
+    if (!Array.isArray(problems) || !problems.length) return;
+    const body = document.createElement("div");
+    body.className = "connection-health-list";
+    problems.forEach(problem => {
+      const row = document.createElement("div");
+      row.className = `connection-health-row ${problem.state || "unavailable"}`;
+      const icon = document.createElement("span");
+      icon.className = "connection-health-icon";
+      icon.textContent = problem.state === "unavailable" ? "?" : "!";
+      const copy = document.createElement("div");
+      const title = document.createElement("strong");
+      title.textContent = problem.state === "unavailable"
+        ? `No he podido comprobar ${problem.label}`
+        : problem.state === "permission_required"
+          ? `${problem.label} necesita permisos`
+          : problem.integration === "ai"
+            ? "IA no está conectada"
+            : problem.integration === "contacts"
+              ? "Contactos no están conectados"
+              : `${problem.label} no está conectado`;
+      const detail = document.createElement("span");
+      detail.textContent = problem.state === "unavailable"
+        ? "Puede ser un fallo temporal. Vuelve a intentarlo en unos instantes."
+        : problem.integration === "ai"
+          ? "Inicia de nuevo la sesión de Angeli."
+          : problem.integration === "contacts"
+            ? "Vuelve a conectar Contactos desde Ajustes."
+            : `Vuelve a conectar ${problem.label} desde Ajustes.`;
+      copy.append(title, detail);
+      row.append(icon, copy);
+      body.append(row);
+    });
+    openModal({
+      title: "Revisa las conexiones",
+      lead: "Angeli ha comprobado sus servicios al abrirse.",
+      body,
+      actions: [
+        { label: "Ahora no", kind: "secondary", onClick: closeLayers },
+        { label: "Abrir conexiones", kind: "confirm", onClick: () => { closeLayers(); onOpenSettings?.(); } }
+      ]
+    });
   }
 
   function setSyncStatus({ state, error } = {}) {
@@ -123,7 +167,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.43";
+    image.src = "assets/angeli-welcome.gif?v=0.21.44";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -720,7 +764,7 @@ export function createUI({ getMedia }) {
     $("preview").innerHTML = files.map(file => '<img class="thumb" src="' + URL.createObjectURL(file) + '" alt="Imagen preparada">').join("");
   }
 
-  return { $, notify, setGoogleStatus, setSyncStatus, render, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
+  return { $, notify, setGoogleStatus, setSyncStatus, showConnectionHealth, render, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
 }
 
 function esc(value) {

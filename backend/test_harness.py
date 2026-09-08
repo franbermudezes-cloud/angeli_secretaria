@@ -19,7 +19,7 @@ from typing import Any
 from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
 
-from google_sessions import CALENDAR, GoogleSessions
+from google_sessions import CALENDAR, CONTACTS, DRIVE, GoogleSessions
 
 TEST_GRANT_PREFIX = "angeli-test-google"
 TEST_DRIVE_FOLDER_ID = "1A1iuK8xwn3icpNezmB2JeOvD8_fsKuEx"
@@ -53,6 +53,7 @@ class IntegrationHarness:
         pendientes manuales de esta primera fase; nunca se simulan como éxito.
         """
         try:
+            self._run("connections-health", self._connection_health)
             self._run("P03-complete", self._complete_reminder)
             self._run("P03-external", self._external_calendar_delete)
             self._run("P03-external-update", self._external_calendar_update)
@@ -70,6 +71,18 @@ class IntegrationHarness:
             self.cleanup()
             self._write_report()
         return self.results
+
+    def _connection_health(self) -> None:
+        """Comprueba los tres grants reales sin crear ni modificar datos."""
+        reports = {
+            CONTACTS: self.service.connection_status(CONTACTS),
+            CALENDAR: self.service.connection_status(CALENDAR),
+            DRIVE: self.service.connection_status(DRIVE, [TEST_DRIVE_FOLDER_ID]),
+        }
+        failures = [f"{name}={report.get('state', 'sin estado')}" for name, report in reports.items()
+                    if report.get("state") != "connected"]
+        if failures:
+            raise RuntimeError("Conexiones no verificadas: " + ", ".join(failures))
 
     def _run(self, case_id: str, action) -> None:
         try:

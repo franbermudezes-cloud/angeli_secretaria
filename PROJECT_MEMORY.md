@@ -383,8 +383,10 @@ Cloud Run deja de aceptar el ID token efímero de Google Identity Services y pas
 
 ## Seguimiento 2026-09-08
 
-- V0.21.43 recupera el ajuste visual pendiente: texto arriba y acciones de agenda en dos columnas debajo.
-- Siguiente caso separado: Contactos/Calendar muestran «conectado de forma permanente» aunque Google pueda rechazar el grant. `GoogleSessions.connected()` comprueba existencia del secreto, no validez. `syncLinks()` conserva estado antiguo si falla y varios catch ocultan el motivo real. Antes de modificar la integración, verificar estado real y renovación/API con perfil aislado. Diferenciar autorización requerida, permisos insuficientes, fallo temporal y búsqueda vacía; no atribuir todos los errores a desconexión.
+- V0.21.44 sustituye el estado basado en la existencia de secretos por una comprobación real y solo de lectura: token aceptado y llamada mínima a People, Calendar y las carpetas de Drive. La sesión IA se considera conectada cuando Firebase y Cloud Run validan la identidad; no se consume una inferencia de Gemini en cada apertura.
+- La comprobación se ejecuta al arrancar y al regresar tras más de dos minutos o recuperar la red. Si todo está conectado guarda silencio; si no, muestra un único modal y actualiza los textos de Ajustes. Nunca abre OAuth sin que la persona pulse Conectar.
+- «No conectado», «faltan permisos» y «no se pudo comprobar temporalmente» son estados diferentes. Las acciones conservan el código estructurado del backend para explicar cuál integración requiere atención.
+- El perfil aislado de `integration-gate` ya demostró lectura/escritura y limpieza reales en Calendar y Drive. V0.21.44 amplía la puerta con una lectura mínima real de Contactos y con las mismas comprobaciones de estado que usa la PWA.
 
 - Las consultas de notas, recordatorios y agenda usan un patrón común: listado flotante desplazable → ficha individual → acción → regreso al listado.
 - Firestore sigue siendo la fuente operativa de notas y recordatorios; Calendar es la fuente real de eventos y avisos. Google Sheets/Drive son registro y adjuntos, no la fuente desde la que se reconstruye el panel.

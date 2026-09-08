@@ -1,5 +1,14 @@
 # Changelog
 
+## V0.21.44 · Conexiones comprobadas al abrir
+
+- Al abrir Angeli se validan realmente la sesión, Contactos, Calendar y Drive; un secreto guardado ya no basta para afirmar que están conectados.
+- El menú distingue conexión comprobada, reconexión necesaria, permisos insuficientes y fallo temporal.
+- Si alguna comprobación falla aparece un único modal con el detalle y acceso a Conexiones; si todo está bien no aparece nada.
+- Las comprobaciones se repiten al volver a la aplicación o recuperar la red, sin abrir ventanas OAuth automáticamente.
+- Los errores de una acción identifican la integración afectada y no confunden un resultado vacío con una desconexión.
+- Drive comprueba su grant y su API sin crear archivos; la carpeta y la subida reales siguen cubiertas por P06 en la puerta de integración.
+
 ## V0.21.43 · Botones uniformes en agenda
 
 - «Ver» y «Anular» ocupan una fila inferior de dos columnas iguales, incluso con títulos largos.
