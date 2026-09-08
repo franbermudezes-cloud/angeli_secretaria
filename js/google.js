@@ -1,6 +1,6 @@
-import { cleanTemporalText } from "./temporal.js?v=0.21.43";
-import { calendarDetails } from "./schedule.js?v=0.21.43";
-import { semanticCalendarTarget } from "./ai.js?v=0.21.43";
+import { cleanTemporalText } from "./temporal.js?v=0.21.44";
+import { calendarDetails } from "./schedule.js?v=0.21.44";
+import { semanticCalendarTarget } from "./ai.js?v=0.21.44";
 
 const CLIENT_ID = "172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
@@ -11,10 +11,53 @@ const SCOPES = {
   drive: "https://www.googleapis.com/auth/drive.file",
 };
 const CALENDAR_SEARCH_INTENTS = new Set(["calendar.query", "calendar.update", "calendar.delete"]);
+const INTEGRATIONS = ["ai", "contacts", "calendar", "drive"];
+const LABELS = { ai: "IA", contacts: "Contactos", calendar: "Calendar", drive: "Drive" };
+const DISCONNECTED = { state: "disconnected", reason: "missing_grant" };
 
-export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes, getNotes, getAuthToken, getSession }) {
+export function normalizeConnectionReport(report = {}, signedIn = true) {
+  const normalized = {};
+  for (const integration of INTEGRATIONS) {
+    const value = report?.[integration];
+    if (!signedIn) normalized[integration] = { state: "disconnected", reason: "session_required" };
+    else if (typeof value === "boolean") normalized[integration] = value ? { state: "connected", reason: "legacy" } : { ...DISCONNECTED };
+    else if (value && ["connected", "disconnected", "reconnect_required", "permission_required", "unavailable", "checking"].includes(value.state)) normalized[integration] = value;
+    else normalized[integration] = { state: "unavailable", reason: "invalid_response" };
+  }
+  return normalized;
+}
+
+export function connectionProblems(report) {
+  return INTEGRATIONS.filter(integration => report?.[integration]?.state !== "connected")
+    .map(integration => ({ integration, label: LABELS[integration], ...report[integration] }));
+}
+
+export function connectionStatusText(integration, status, signedIn = true) {
+  const label = LABELS[integration];
+  if (status?.state === "checking") return `${label}: comprobando…`;
+  if (status?.state === "connected") return integration === "ai" ? "Sesión de Angeli conectada y comprobada"
+    : integration === "contacts" ? "Contactos conectados y comprobados" : `${label} conectado y comprobado`;
+  if (!signedIn || status?.reason === "session_required") return integration === "ai" ? "IA: no conectada" : "Inicia sesión en Angeli primero";
+  if (status?.state === "permission_required") return `${label}: faltan permisos`;
+  if (status?.state === "unavailable") return `${label}: no se pudo comprobar`;
+  return `${label}: no conectado`;
+}
+
+export function integrationFailureMessage(integration, error, fallback = "No se pudo completar la operación") {
+  const label = LABELS[integration] || "Google";
+  if (error?.code === "session_required") return "La sesión de Angeli ha caducado. Inicia sesión de nuevo.";
+  if (error?.code === "reconnect_required") return integration === "contacts"
+    ? "Contactos no están conectados. Vuelve a conectarlos desde Ajustes."
+    : `${label} no está conectado. Vuelve a conectarlo desde Ajustes.`;
+  if (error?.code === "permission_required") return `${label} necesita nuevos permisos. Vuelve a conectarlo desde Ajustes.`;
+  if (error?.code === "integration_unavailable") return `${label} no está disponible temporalmente. Inténtalo de nuevo en unos instantes.`;
+  return error?.message || fallback;
+}
+
+export function createGoogleIntegration({ notify, refresh, setStatus, showConnectionHealth, saveNotes, getNotes, getAuthToken, getSession }) {
   let scriptPromise = null;
-  let links = { contacts: false, calendar: false, drive: false };
+  let links = normalizeConnectionReport({}, false);
+  let healthRequest = null;
   const contactResults = new Map();
   const calendarResults = new Map();
   const calendarInFlight = new Set();
@@ -23,14 +66,11 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
 
   function updateStatus() {
     const session = getSession?.() || {};
-    const identityText = signedIn()
-      ? `Sesión iniciada${session.email ? ` · ${session.email}` : ""}`
-      : "Inicia sesión para sincronizar e interpretar";
     setStatus({
-      app: identityText,
-      contacts: links.contacts ? "Contactos conectados de forma permanente" : signedIn() ? "Contactos: pendiente de conectar" : "Inicia sesión en Angeli primero",
-      calendar: links.calendar ? "Calendario conectado de forma permanente" : signedIn() ? "Calendario: pendiente de conectar" : "Inicia sesión en Angeli primero",
-      drive: links.drive ? "Drive conectado de forma permanente" : signedIn() ? "Drive: pendiente de conectar" : "Inicia sesión en Angeli primero"
+      app: `${connectionStatusText("ai", links.ai, signedIn())}${signedIn() && session.email ? ` · ${session.email}` : ""}`,
+      contacts: connectionStatusText("contacts", links.contacts, signedIn()),
+      calendar: connectionStatusText("calendar", links.calendar, signedIn()),
+      drive: connectionStatusText("drive", links.drive, signedIn())
     });
   }
 
@@ -63,23 +103,83 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
     });
   }
 
-  async function request(path, body) {
+  async function request(path, body, retrySession = true) {
     const headers = { "Content-Type": "application/json" };
-    headers.Authorization = `Bearer ${await getAuthToken()}`;
+    headers.Authorization = `Bearer ${await getAuthToken(!retrySession)}`;
     const response = await fetch(API + path, { method: "POST", headers, body: JSON.stringify(body) });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || `Google respondió ${response.status}`);
+    if (!response.ok) {
+      if (response.status === 401 && data.code === "session_required" && retrySession) return request(path, body, false);
+      const error = new Error(data.error || `Google respondió ${response.status}`);
+      Object.assign(error, { status: response.status, code: data.code || "", integration: data.integration || "" });
+      throw error;
+    }
     return data;
   }
 
-  async function syncLinks() {
-    if (!signedIn()) return updateStatus();
-    try {
-      links = await request("/session/status", {});
-    } catch (_) {
-      // La identidad puede ser válida aunque el estado remoto no esté disponible.
+  async function syncLinks({ announce = false, force = false } = {}) {
+    if (healthRequest) {
+      const report = await healthRequest;
+      if (force) return syncLinks({ announce, force: false });
+      if (announce && connectionProblems(report).length) showConnectionHealth?.(connectionProblems(report));
+      return report;
     }
+    if (!signedIn()) {
+      links = normalizeConnectionReport({}, false);
+      updateStatus();
+      if (announce) showConnectionHealth?.(connectionProblems(links));
+      return links;
+    }
+    links = normalizeConnectionReport(Object.fromEntries(INTEGRATIONS.map(key => [key, { state: "checking" }])), true);
     updateStatus();
+    healthRequest = (async () => {
+      try {
+        links = normalizeConnectionReport(await request("/session/status", {}), true);
+      } catch (error) {
+        const state = ["session_required", "account_not_allowed"].includes(error.code) ? "reconnect_required" : "unavailable";
+        links = normalizeConnectionReport(Object.fromEntries(INTEGRATIONS.map(key => [key, {
+          state, reason: error.code || "verification_failed"
+        }])), true);
+      } finally {
+        updateStatus();
+      }
+      return links;
+    })();
+    try {
+      const report = await healthRequest;
+      if (announce && connectionProblems(report).length) showConnectionHealth?.(connectionProblems(report));
+      return report;
+    } finally {
+      healthRequest = null;
+    }
+  }
+
+  const isConnected = kind => links[kind]?.state === "connected";
+
+  function applyFailure(kind, error, fallback) {
+    const state = error?.code === "reconnect_required" ? "reconnect_required"
+      : error?.code === "permission_required" ? "permission_required"
+      : ["session_required", "account_not_allowed"].includes(error?.code) ? "reconnect_required" : "unavailable";
+    const target = error?.integration || kind;
+    links = { ...links, [target]: { state, reason: error?.code || "operation_failed" } };
+    if (error?.code === "session_required") links.ai = { state, reason: "session_required" };
+    updateStatus();
+    notify(integrationFailureMessage(target, error, fallback));
+  }
+
+  async function requireConnection(kind) {
+    if (isConnected(kind)) return true;
+    await syncLinks();
+    return isConnected(kind);
+  }
+
+  function statusError(kind) {
+    const state = links[kind]?.state;
+    const error = new Error(`${LABELS[kind]} no está conectado`);
+    error.code = state === "permission_required" ? "permission_required"
+      : state === "unavailable" ? "integration_unavailable" : "reconnect_required";
+    error.integration = kind;
+    return error;
   }
 
   async function connectPersistent(kind) {
@@ -87,22 +187,15 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
     try {
       const code = await requestCode(kind);
       await request("/oauth/exchange", { integration: kind, code, redirectUri: location.origin });
-      if (kind === "drive") {
-        await syncLinks();
-        if (!links.drive) {
-          notify("Drive necesita sus carpetas fijas configuradas");
-          return false;
-        }
-      } else {
-        // Contactos y Calendar conservan su flujo ya validado: el estado
-        // visual inmediato no depende de una segunda petición al servidor.
-        links = { ...links, [kind]: true };
+      await syncLinks({ force: true });
+      if (!isConnected(kind)) {
+        applyFailure(kind, { code: links[kind]?.state === "permission_required" ? "permission_required" : "integration_unavailable" });
+        return false;
       }
-      updateStatus();
-      notify(`${kind === "contacts" ? "Contactos" : kind === "calendar" ? "Calendario" : "Drive"} conectado de forma permanente`);
+      notify(kind === "contacts" ? "Contactos conectados y comprobados" : `${kind === "calendar" ? "Calendario" : "Drive"} conectado y comprobado`);
       return true;
     } catch (error) {
-      notify(`No se pudo guardar la conexión: ${error.message}`);
+      applyFailure(kind, error, `No se pudo guardar la conexión de ${LABELS[kind]}`);
       return false;
     }
   }
@@ -111,11 +204,11 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
   const connectCalendar = () => connectPersistent("calendar");
   async function connectDrive() {
     await syncLinks();
-    if (links.drive) notify("Drive está listo: fotos y archivos irán a sus carpetas fijas");
+    if (isConnected("drive")) notify("Drive está listo: fotos y archivos irán a sus carpetas fijas");
     else return connectPersistent("drive");
     return true;
   }
-  async function ensureDrive() { return links.drive || connectDrive(); }
+  async function ensureDrive() { return requireConnection("drive"); }
 
   async function callApi(body) {
     if (!signedIn()) throw new Error("Sesión de Angeli no iniciada");
@@ -149,7 +242,10 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
       notify("No hay un nombre de contacto para buscar");
       return;
     }
-    if (!links.contacts && !(await connectContacts())) return;
+    if (!(await requireConnection("contacts"))) {
+      applyFailure("contacts", statusError("contacts"), "No se pudieron consultar contactos");
+      return;
+    }
     try {
       const data = await callApi({ integration: "contacts", action: "search", query: note.contactQuery });
       const contacts = (data.results || []).map(result => ({
@@ -157,14 +253,18 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
         phones: (result.person?.phoneNumbers || []).map(phone => phone.value).filter(Boolean)
       }));
       contactResults.set(note.id, { contacts });
-    } catch (_) {
-      contactResults.set(note.id, { contacts: [], error: "No se pudieron consultar contactos" });
+    } catch (error) {
+      const message = integrationFailureMessage("contacts", error, "No se pudieron consultar contactos");
+      contactResults.set(note.id, { contacts: [], error: message });
+      applyFailure("contacts", error, message);
     }
     refresh();
   }
 
   async function calendarRequest(method, path, eventBody) {
-    if (!links.calendar && !(await connectCalendar())) throw new Error("Calendario no conectado");
+    if (!(await requireConnection("calendar"))) {
+      throw statusError("calendar");
+    }
     const eventId = path.startsWith("/") ? decodeURIComponent(path.slice(1)) : null;
     const action = method === "POST" ? "create" : method === "GET" ? "list" : method === "DELETE" ? "delete" : "patch";
     const payload = {
@@ -206,9 +306,9 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
         calendarUrl: saved.htmlLink || ""
       } : item));
       notify("Evento añadido al calendario");
-    } catch (_) {
+    } catch (error) {
       saveNotes(getNotes().map(item => item.id === note.id ? { ...item, calendarStatus: "error" } : item));
-      notify("No se pudo añadir el evento");
+      applyFailure("calendar", error, "No se pudo añadir el evento");
     } finally {
       calendarInFlight.delete(note.id);
     }
@@ -225,9 +325,9 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
         schedule: { ...item.schedule, status: "scheduled", calendarEventId: saved.id, calendarId: saved.calendarId || "primary", calendarUrl: saved.htmlLink || "" }
       } : item));
       notify("Aviso programado en Calendar");
-    } catch (_) {
+    } catch (error) {
       saveNotes(getNotes().map(item => item.id === note.id ? { ...item, schedule: { ...item.schedule, status: "error", lastError: "Calendar no pudo programar el aviso" } } : item));
-      notify("No se pudo programar el aviso");
+      applyFailure("calendar", error, "No se pudo programar el aviso");
     } finally {
       calendarInFlight.delete(note.id);
     }
@@ -247,7 +347,7 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
         schedule: { ...item.schedule, status: "scheduled", relatedEventId: event.id, calendarEventId: reminder.id, calendarId: reminder.calendarId || "primary", calendarUrl: reminder.htmlLink || "", lastError: null }
       } : item));
       notify("Evento y aviso añadidos a Calendar");
-    } catch (_) {
+    } catch (error) {
       let rollbackFailed = false;
       if (event?.id) { try { await calendarRequest("DELETE", `/${encodeURIComponent(event.id)}`); } catch (_) { rollbackFailed = true; } }
       saveNotes(getNotes().map(item => item.id === note.id ? {
@@ -256,7 +356,8 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
         ...(rollbackFailed ? { calendarEventId: event.id, calendarId: event.calendarId || "primary", calendarUrl: event.htmlLink || "" } : {}),
         schedule: { ...item.schedule, status: "error", lastError: rollbackFailed ? "El evento se creó, pero fallaron el aviso y su retirada" : "Calendar no pudo crear la operación completa" }
       } : item));
-      notify(rollbackFailed ? "El evento quedó creado; revisa Calendar antes de reintentar" : "No se pudo crear el evento con su aviso");
+      if (rollbackFailed) notify("El evento quedó creado; revisa Calendar antes de reintentar");
+      else applyFailure("calendar", error, "No se pudo crear el evento con su aviso");
     } finally {
       calendarInFlight.delete(note.id);
     }
@@ -270,8 +371,8 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
         schedule: { ...item.schedule, status: "cancelled" }
       } : item));
       notify("Aviso cancelado");
-    } catch (_) {
-      notify("No se pudo cancelar");
+    } catch (error) {
+      applyFailure("calendar", error, "No se pudo cancelar");
     }
   }
 
@@ -283,7 +384,7 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
 
   async function updateScheduledReminder(note){
     const eventId=note.schedule?.calendarEventId;if(!eventId)return true;
-    try{const payload=scheduledReminderEvent(note);delete payload.id;await calendarRequest("PATCH",`/${encodeURIComponent(eventId)}`,payload);notify("Recordatorio actualizado en Calendar");return true}catch(_){notify("No se pudo actualizar el recordatorio en Calendar");return false}
+    try{const payload=scheduledReminderEvent(note);delete payload.id;await calendarRequest("PATCH",`/${encodeURIComponent(eventId)}`,payload);notify("Recordatorio actualizado en Calendar");return true}catch(error){applyFailure("calendar",error,"No se pudo actualizar el recordatorio en Calendar");return false}
   }
 
   async function searchCalendar(note) {
@@ -299,7 +400,9 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
         query: search.query
       });
     } catch (error) {
-      calendarResults.set(note.id, { events: [], error: `No se pudo consultar Calendar: ${error.message || "error desconocido"}` });
+      const message = integrationFailureMessage("calendar", error, "No se pudo consultar Calendar");
+      calendarResults.set(note.id, { events: [], error: message });
+      applyFailure("calendar", error, message);
     }
     refresh();
   }
@@ -313,8 +416,8 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
       for (const reminder of linked) await calendarRequest("DELETE", `/${encodeURIComponent(reminder.id)}`);
       completeCalendarAction(note, eventId, "delete");
       notify(linked.length ? "Evento y aviso cancelados" : "Evento cancelado");
-    } catch (_) {
-      notify("No se pudo completar la cancelación");
+    } catch (error) {
+      applyFailure("calendar", error, "No se pudo completar la cancelación");
     }
   }
 
@@ -332,8 +435,8 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
       const saved = await calendarRequest("PATCH", `/${encodeURIComponent(eventId)}`, calendarPatch(event, changes));
       completeCalendarAction(note, eventId, "update", saved, changes);
       notify("Evento actualizado");
-    } catch (_) {
-      notify("No se pudo actualizar");
+    } catch (error) {
+      applyFailure("calendar", error, "No se pudo actualizar");
     }
   }
 
@@ -346,7 +449,7 @@ export function createGoogleIntegration({ notify, refresh, setStatus, saveNotes,
       calendarResults.set(note.id,{...result,events:result.events.map(item=>item.id===eventId?calendarCandidate(saved):item)});
       saveNotes(applyCalendarUpdateToEntries(getNotes(),note,eventId,"update",saved,changes));
       notify("Evento actualizado");refresh();return true;
-    }catch(_){notify("No se pudo actualizar el evento");return false}
+    }catch(error){applyFailure("calendar",error,"No se pudo actualizar el evento");return false}
   }
 
   function completeCalendarAction(note, eventId, action, saved, changes) {

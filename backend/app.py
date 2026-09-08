@@ -12,13 +12,22 @@ import re
 import sys
 import time
 from collections import defaultdict, deque
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime
 from io import BytesIO
 from typing import Any, Callable
 from urllib.parse import quote, urlencode
 from zoneinfo import ZoneInfo
 
-from google_sessions import CALENDAR, CONTACTS, DRIVE, GoogleResourceNotFound, GoogleSessions
+from google_sessions import (
+    CALENDAR,
+    CONTACTS,
+    DRIVE,
+    GooglePermissionRequired,
+    GoogleReconnectRequired,
+    GoogleResourceNotFound,
+    GoogleSessions,
+)
 
 MAX_TEXT_LENGTH = 500
 MAX_BODY_BYTES = 2_048
@@ -445,12 +454,37 @@ def test_sessions() -> GoogleSessions:
 
 def session_status() -> dict[str, Any]:
     service = sessions()
-    return {"ai": True, "contacts": service.connected(CONTACTS), "calendar": service.connected(CALENDAR), "drive": service.connected(DRIVE)}
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        pending = {integration: executor.submit(service.connection_status, integration) for integration in (CONTACTS, CALENDAR, DRIVE)}
+        result = {integration: task.result() for integration, task in pending.items()}
+    # Llegar aquí implica que Firebase autenticó al propietario y que el
+    # backend de IA aceptó su sesión. No se consume una inferencia de Gemini
+    # cada vez que se abre la PWA solo para mostrar este estado.
+    return {"ai": {"state": "connected", "reason": "authenticated_backend"}, **result}
 
 
 def test_session_status() -> dict[str, Any]:
     service = test_sessions()
     return {"contacts": service.connected(CONTACTS), "calendar": service.connected(CALENDAR), "drive": service.connected(DRIVE)}
+
+
+def integration_error(error: Exception, integration: str) -> tuple[str, dict[str, str]]:
+    labels = {CONTACTS: "Contactos", CALENDAR: "Calendar", DRIVE: "Drive"}
+    label = labels.get(integration, "Google")
+    if isinstance(error, GoogleReconnectRequired):
+        return "401 Unauthorized", {
+            "error": f"{label} necesita volver a conectarse",
+            "code": "reconnect_required", "integration": integration,
+        }
+    if isinstance(error, GooglePermissionRequired):
+        return "403 Forbidden", {
+            "error": f"{label} no tiene los permisos necesarios; vuelve a conectarlo",
+            "code": "permission_required", "integration": integration,
+        }
+    return "502 Bad Gateway", {
+        "error": f"{label} no está disponible temporalmente",
+        "code": "integration_unavailable", "integration": integration,
+    }
 
 
 def parse_media_upload(environ: dict[str, Any]) -> tuple[bytes, str, str, str]:
@@ -743,12 +777,14 @@ def app(environ: dict[str, Any], start_response: Callable):
     try:
         subject = verify_identity(environ)
     except PermissionError as error:
+        if "Usuario no autorizado" in str(error):
+            return json_response(start_response, "401 Unauthorized", {"error": "Esta cuenta no está autorizada para Angeli", "code": "account_not_allowed", "integration": "ai"}, origin)
         # No atribuir a Drive una sesión Firebase ausente, caducada o no
         # autorizada: antes ambos casos se traducían al mismo 401 de medios.
         if path.startswith("/media/"):
             print(f"media_identity_error path={path} reason={str(error)}", file=sys.stderr, flush=True)
-            return json_response(start_response, "401 Unauthorized", {"error": "La sesión de Angeli no está autorizada; inicia sesión de nuevo"}, origin)
-        return json_response(start_response, "401 Unauthorized", {"error": "No autorizado"}, origin)
+            return json_response(start_response, "401 Unauthorized", {"error": "La sesión de Angeli no está autorizada; inicia sesión de nuevo", "code": "session_required", "integration": "ai"}, origin)
+        return json_response(start_response, "401 Unauthorized", {"error": "La sesión de Angeli necesita volver a iniciarse", "code": "session_required", "integration": "ai"}, origin)
     try:
         enforce_rate_limit(subject)
         if path.startswith("/test/") and os.getenv("ANGELI_TEST_HARNESS_ENABLED") != "1":
@@ -762,7 +798,12 @@ def app(environ: dict[str, Any], start_response: Callable):
             integration, code, redirect_uri = oauth_payload.get("integration"), oauth_payload.get("code"), oauth_payload.get("redirectUri")
             if integration not in {CONTACTS, CALENDAR, DRIVE} or not isinstance(code, str) or not isinstance(redirect_uri, str) or redirect_uri not in configured_origins():
                 raise ValueError("Autorización no válida")
-            return json_response(start_response, "200 OK", sessions().exchange_code(integration, code, redirect_uri), origin)
+            try:
+                result = sessions().exchange_code(integration, code, redirect_uri)
+            except (GoogleReconnectRequired, GooglePermissionRequired, RuntimeError) as error:
+                status, payload = integration_error(error, integration)
+                return json_response(start_response, status, payload, origin)
+            return json_response(start_response, "200 OK", result, origin)
         if path == "/test/oauth/exchange":
             oauth_payload = parse_json_body(environ, {"integration", "code", "redirectUri"})
             integration, code, redirect_uri = oauth_payload.get("integration"), oauth_payload.get("code"), oauth_payload.get("redirectUri")
@@ -770,29 +811,32 @@ def app(environ: dict[str, Any], start_response: Callable):
                 raise ValueError("Autorización no válida")
             return json_response(start_response, "200 OK", test_sessions().exchange_code(integration, code, redirect_uri), origin)
         if path == "/google":
+            google_payload = parse_json_body(environ, {"integration", "action", "query", "event", "eventId", "params"})
+            integration = google_payload.get("integration")
             try:
-                result = persistent_google_action(parse_json_body(environ, {"integration", "action", "query", "event", "eventId", "params"}))
-            except PermissionError:
-                return json_response(start_response, "401 Unauthorized", {"error": "Calendar no está autorizado; conéctalo de nuevo"}, origin)
-            except RuntimeError:
-                return json_response(start_response, "502 Bad Gateway", {"error": "Calendar no pudo completar la consulta"}, origin)
+                result = persistent_google_action(google_payload)
+            except (GoogleReconnectRequired, GooglePermissionRequired, RuntimeError) as error:
+                status, payload = integration_error(error, integration)
+                return json_response(start_response, status, payload, origin)
             return json_response(start_response, "200 OK", result, origin)
         if path == "/media/upload":
             data, name, mime_type, kind = parse_media_upload(environ)
             try:
                 return json_response(start_response, "200 OK", sessions().upload_drive_file(data, name, mime_type, kind), origin)
-            except PermissionError as error:
+            except (GoogleReconnectRequired, GooglePermissionRequired, RuntimeError) as error:
                 print(f"media_drive_error path={path} reason={str(error)}", file=sys.stderr, flush=True)
-                return json_response(start_response, "401 Unauthorized", {"error": "Drive no está autorizado para escribir en la carpeta configurada"}, origin)
+                status, payload = integration_error(error, DRIVE)
+                return json_response(start_response, status, payload, origin)
         if path == "/media/download":
             payload = parse_json_body(environ, {"fileId"})
             file_id = payload.get("fileId")
             if not isinstance(file_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{10,200}", file_id): raise ValueError("Archivo no válido")
             try:
                 data, mime_type = sessions().download_drive_file(file_id)
-            except PermissionError as error:
+            except (GoogleReconnectRequired, GooglePermissionRequired, RuntimeError) as error:
                 print(f"media_drive_error path={path} reason={str(error)}", file=sys.stderr, flush=True)
-                return json_response(start_response, "401 Unauthorized", {"error": "Drive no puede leer este adjunto"}, origin)
+                status, payload = integration_error(error, DRIVE)
+                return json_response(start_response, status, payload, origin)
             return media_response(start_response, data, mime_type, origin)
         if path == "/media/delete":
             payload = parse_json_body(environ, {"fileId"})
@@ -800,9 +844,10 @@ def app(environ: dict[str, Any], start_response: Callable):
             if not isinstance(file_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{10,200}", file_id): raise ValueError("Archivo no válido")
             try:
                 sessions().delete_drive_file(file_id)
-            except PermissionError as error:
+            except (GoogleReconnectRequired, GooglePermissionRequired, RuntimeError) as error:
                 print(f"media_drive_error path={path} reason={str(error)}", file=sys.stderr, flush=True)
-                return json_response(start_response, "401 Unauthorized", {"error": "Drive no puede borrar este adjunto"}, origin)
+                status, payload = integration_error(error, DRIVE)
+                return json_response(start_response, status, payload, origin)
             return json_response(start_response, "200 OK", {"deleted": True}, origin)
         text, now, timezone, context = parse_request(environ)
         interpreter = _interpreter or vertex_interpret

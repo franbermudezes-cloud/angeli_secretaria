@@ -12,6 +12,9 @@ class FakeGoogleSessions:
         self.deleted_files = []
         self.next_id = 0
 
+    def connection_status(self, integration, drive_folder_ids=None):
+        return {"state": "connected", "reason": "verified"}
+
     def api(self, integration, method, url, body=None):
         if method == "POST":
             self.next_id += 1
@@ -105,6 +108,25 @@ class TestHarnessTests(unittest.TestCase):
         harness._calendar_update()
         harness.cleanup()
         self.assertEqual(service.events, {})
+
+    def test_connection_health_requires_contacts_calendar_and_drive(self):
+        service = FakeGoogleSessions()
+        checked = []
+        def status(integration, drive_folder_ids=None):
+            checked.append((integration, drive_folder_ids))
+            return {"state": "connected", "reason": "verified"}
+        service.connection_status = status
+        IntegrationHarness(service, prefix="ANGELI-TEST-unit")._connection_health()
+        self.assertEqual([item[0] for item in checked], ["contacts", "calendar", "drive"])
+        self.assertEqual(checked[-1][1], ["1A1iuK8xwn3icpNezmB2JeOvD8_fsKuEx"])
+
+    def test_connection_health_fails_when_a_real_grant_cannot_be_verified(self):
+        service = FakeGoogleSessions()
+        service.connection_status = lambda integration, drive_folder_ids=None: {
+            "state": "reconnect_required" if integration == "contacts" else "connected"
+        }
+        with self.assertRaisesRegex(RuntimeError, "contacts=reconnect_required"):
+            IntegrationHarness(service, prefix="ANGELI-TEST-unit")._connection_health()
 
     def test_reminder_payload_uses_pwa_constructor_and_cleans_up(self):
         service = FakeGoogleSessions()

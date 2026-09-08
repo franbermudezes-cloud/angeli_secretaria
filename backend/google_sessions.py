@@ -7,7 +7,9 @@ from __future__ import annotations
 
 import json
 import os
+from datetime import datetime, timezone
 from urllib.parse import urlencode
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 CONTACTS = "contacts"
@@ -25,6 +27,14 @@ class GoogleResourceNotFound(RuntimeError):
     def __init__(self, status_code: int):
         super().__init__("El recurso de Google ya no existe")
         self.status_code = status_code
+
+
+class GoogleReconnectRequired(PermissionError):
+    """El consentimiento existió, pero el refresh token ya no sirve."""
+
+
+class GooglePermissionRequired(PermissionError):
+    """La sesión existe, pero no autoriza la operación comprobada."""
 
 
 class GoogleSessions:
@@ -81,6 +91,49 @@ class GoogleSessions:
             return self.drive_configured() and bool(self._read_secret(self._secret_name(DRIVE)))
         return bool(self._read_secret(self._secret_name(integration)))
 
+    def connection_status(self, integration: str, drive_folder_ids: list[str] | None = None) -> dict:
+        """Comprueba de verdad el grant y una lectura mínima de la API.
+
+        No crea, modifica ni elimina recursos. Un secreto existente no se
+        considera conexión hasta que Google acepta su refresh token y la API
+        concreta responde con los permisos que Angeli necesita.
+        """
+        if integration not in SCOPES:
+            raise ValueError("Integración no válida")
+        try:
+            if not self._read_secret(self._secret_name(integration)):
+                return {"state": "disconnected", "reason": "missing_grant"}
+            if integration == CONTACTS:
+                self.api(CONTACTS, "GET", "https://people.googleapis.com/v1/people/me/connections?pageSize=1&personFields=names")
+            elif integration == CALENDAR:
+                params = urlencode({
+                    "singleEvents": "true", "maxResults": "1",
+                    "timeMin": datetime.now(timezone.utc).isoformat(),
+                })
+                self.api(CALENDAR, "GET", f"https://www.googleapis.com/calendar/v3/calendars/primary/events?{params}")
+            else:
+                folders = drive_folder_ids if drive_folder_ids is not None else [
+                    os.getenv("ANGELI_DRIVE_IMAGES_FOLDER_ID", "").strip(),
+                    os.getenv("ANGELI_DRIVE_FILES_FOLDER_ID", "").strip(),
+                ]
+                folders = list(dict.fromkeys(folder for folder in folders if folder))
+                if not folders:
+                    return {"state": "disconnected", "reason": "missing_configuration"}
+                for folder_id in folders:
+                    fields = "id,mimeType,capabilities(canAddChildren)"
+                    folder = self.api(DRIVE, "GET", f"https://www.googleapis.com/drive/v3/files/{folder_id}?fields={fields}")
+                    if folder.get("mimeType") != "application/vnd.google-apps.folder" or not folder.get("capabilities", {}).get("canAddChildren"):
+                        raise GooglePermissionRequired("Drive no puede añadir archivos a la carpeta configurada")
+            return {"state": "connected", "reason": "verified"}
+        except GoogleReconnectRequired:
+            return {"state": "reconnect_required", "reason": "invalid_grant"}
+        except GooglePermissionRequired:
+            return {"state": "permission_required", "reason": "insufficient_permissions"}
+        except GoogleResourceNotFound:
+            return {"state": "permission_required", "reason": "resource_not_found"}
+        except Exception:
+            return {"state": "unavailable", "reason": "verification_failed"}
+
     @staticmethod
     def drive_configured() -> bool:
         """Drive usa la cuenta de servicio y destinos compartidos, no OAuth web."""
@@ -107,7 +160,7 @@ class GoogleSessions:
     def _access_token(self, integration: str) -> str:
         raw = self._read_secret(self._secret_name(integration))
         if not raw:
-            raise PermissionError("Conecta primero esta integración")
+            raise GoogleReconnectRequired("Conecta primero esta integración")
         try:
             refresh = json.loads(raw)["refresh_token"]
         except (json.JSONDecodeError, KeyError, TypeError) as error:
@@ -117,7 +170,7 @@ class GoogleSessions:
             "refresh_token": refresh, "grant_type": "refresh_token",
         })
         if not token.get("access_token"):
-            raise PermissionError("La autorización de Google ha caducado; conéctala de nuevo")
+            raise GoogleReconnectRequired("La autorización de Google ha caducado; conéctala de nuevo")
         return token["access_token"]
 
     def api(self, integration: str, method: str, url: str, body: dict | None = None) -> dict:
@@ -128,13 +181,19 @@ class GoogleSessions:
             with urlopen(request, timeout=10) as response:
                 raw = response.read().decode("utf-8")
                 return json.loads(raw) if raw else {}
-        except Exception as error:
-            status = getattr(error, "code", None)
-            if status in {401, 403}:
-                raise PermissionError("La autorización de Google ha caducado; conéctala de nuevo") from error
+        except HTTPError as error:
+            status = error.code
+            if status == 401:
+                raise GoogleReconnectRequired("La autorización de Google ha caducado; conéctala de nuevo") from error
+            if status == 403:
+                if self._is_temporary_google_error(error):
+                    raise RuntimeError("Google está temporalmente ocupado") from error
+                raise GooglePermissionRequired("La autorización no incluye los permisos necesarios") from error
             if status in {404, 410}:
                 raise GoogleResourceNotFound(status) from error
             raise RuntimeError("Google no pudo completar la operación") from error
+        except (URLError, TimeoutError) as error:
+            raise RuntimeError("Google no está disponible temporalmente") from error
 
     def upload_drive_file(self, data: bytes, name: str, mime_type: str, kind: str) -> dict:
         parent = self._drive_folder(kind)
@@ -170,23 +229,61 @@ class GoogleSessions:
         try:
             with urlopen(request, timeout=30) as response:
                 return response.read(), response.headers.get_content_type() or "application/octet-stream"
-        except Exception as error:
-            if getattr(error, "code", None) in {401, 403}:
-                raise PermissionError("La autorización de Drive no puede escribir en la carpeta configurada") from error
+        except HTTPError as error:
+            if error.code == 401:
+                raise GoogleReconnectRequired("La autorización de Drive ha caducado; conéctala de nuevo") from error
+            if error.code == 403 and not self._is_temporary_google_error(error):
+                raise GooglePermissionRequired("Drive no puede escribir en la carpeta configurada") from error
             raise RuntimeError("Google Drive no pudo completar la operación") from error
+        except (URLError, TimeoutError) as error:
+            raise RuntimeError("Google Drive no está disponible temporalmente") from error
 
     def _raw(self, integration: str, method: str, url: str, data: bytes | None = None, content_type: str = "application/json") -> tuple[bytes, str]:
         request = Request(url, data=data, method=method, headers={"Authorization": f"Bearer {self._access_token(integration)}", "Content-Type": content_type})
         try:
             with urlopen(request, timeout=30) as response:
                 return response.read(), response.headers.get_content_type() or "application/octet-stream"
-        except Exception as error:
-            if getattr(error, "code", None) in {401, 403}:
-                raise PermissionError("La autorización de Google ha caducado; conéctala de nuevo") from error
+        except HTTPError as error:
+            if error.code == 401:
+                raise GoogleReconnectRequired("La autorización de Google ha caducado; conéctala de nuevo") from error
+            if error.code == 403 and not self._is_temporary_google_error(error):
+                raise GooglePermissionRequired("La autorización no incluye los permisos necesarios") from error
             raise RuntimeError("Google Drive no pudo completar la operación") from error
+        except (URLError, TimeoutError) as error:
+            raise RuntimeError("Google Drive no está disponible temporalmente") from error
 
     @staticmethod
     def _post_form(url: str, values: dict) -> dict:
         request = Request(url, data=urlencode(values).encode("utf-8"), method="POST", headers={"Content-Type": "application/x-www-form-urlencoded"})
-        with urlopen(request, timeout=10) as response:
-            return json.loads(response.read().decode("utf-8"))
+        try:
+            with urlopen(request, timeout=10) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except HTTPError as error:
+            payload = GoogleSessions._http_error_payload(error)
+            reason = payload.get("error")
+            if reason == "invalid_grant":
+                raise GoogleReconnectRequired("La autorización guardada ha caducado o fue revocada") from error
+            if reason in {"invalid_client", "unauthorized_client"}:
+                raise RuntimeError("El cliente OAuth del servidor no es válido") from error
+            raise RuntimeError("Google no pudo completar la autorización") from error
+        except (URLError, TimeoutError) as error:
+            raise RuntimeError("Google no está disponible temporalmente") from error
+
+    @staticmethod
+    def _http_error_payload(error: HTTPError) -> dict:
+        try:
+            value = json.loads(error.read().decode("utf-8"))
+            return value if isinstance(value, dict) else {}
+        except (AttributeError, UnicodeDecodeError, json.JSONDecodeError):
+            return {}
+
+    @staticmethod
+    def _is_temporary_google_error(error: HTTPError) -> bool:
+        payload = GoogleSessions._http_error_payload(error)
+        status = str(payload.get("error", {}).get("status", "")) if isinstance(payload.get("error"), dict) else ""
+        reasons = {
+            str(item.get("reason", ""))
+            for item in payload.get("error", {}).get("errors", [])
+            if isinstance(item, dict)
+        } if isinstance(payload.get("error"), dict) else set()
+        return status in {"RESOURCE_EXHAUSTED", "UNAVAILABLE"} or bool(reasons & {"rateLimitExceeded", "userRateLimitExceeded", "dailyLimitExceeded"})

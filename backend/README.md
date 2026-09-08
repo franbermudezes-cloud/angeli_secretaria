@@ -6,7 +6,7 @@ guarda refresh tokens.
 
 Además ofrece, siempre tras comprobar un ID token de Firebase del propietario:
 
-- `POST /session/status`: estado de las vinculaciones de Contactos, Calendar y Drive.
+- `POST /session/status`: comprueba la sesión de Angeli y verifica realmente, mediante lecturas mínimas, las vinculaciones de Contactos, Calendar y Drive. Devuelve estados diferenciados para reconexión, permisos y fallos temporales.
 - `POST /oauth/exchange`: intercambia un código OAuth; los refresh tokens de
   Contactos, Calendar y Drive se guardan exclusivamente en Secret Manager.
 - `POST /google`: consulta acotada de Contactos y operaciones de Calendar.

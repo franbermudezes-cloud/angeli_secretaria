@@ -13,7 +13,7 @@ import { calendarDetails, linkedScheduleFor, normalizeFutureCall, normalizeRemin
 import { completionTarget, completePending, completePendingWithCalendar, findPendingMatches, findReminderMatches } from "../js/pending.js";
 import { mockProvider, interpret, localCalendarUpdate, localLinkedCalendarIntent, localReminderQuery, localNoteQuery, protectCalendarInterpretation, protectReadQuery, validateIntent } from "../js/ai.js";
 import { fixtureTitle, reminderFixture } from './reminder-event-fixture.mjs';
-import { applyCalendarUpdateToEntries, buildCalendarSearch, calendarEvent, scheduledReminderEvent, listAllCalendarPages, reconcileReminderEntries, linkedReminderSearch, calendarEventsForIntent } from '../js/google.js';
+import { applyCalendarUpdateToEntries, buildCalendarSearch, calendarEvent, scheduledReminderEvent, listAllCalendarPages, reconcileReminderEntries, linkedReminderSearch, calendarEventsForIntent, normalizeConnectionReport, connectionProblems, connectionStatusText, integrationFailureMessage } from '../js/google.js';
 import { fromCloudEntry, toCloudEntry } from '../js/cloud-entry.js';
 import { findNoteMatches, normalizeNoteClassification, removeNoteEntry, updateNoteDraft, updateNoteStatus } from '../js/notes.js';
 import { addNoteSetting, applyExplicitNoteCategory, normalizeNoteSettings, noteInterpretationContext, removeNoteSetting, renameNoteSetting, settingLabel } from '../js/note-settings.js';
@@ -23,6 +23,40 @@ test('una petición normal sin acceso directo no intenta leer action de null',()
   assert.equal(shortcutType(null),null);
   assert.equal(shortcutPrefix(null),'');
   assert.deepEqual(shortcutSemantics(null),{action:null,direct:false});
+});
+
+test('conexiones: solo el estado comprobado se presenta como conectado',()=>{
+  const report=normalizeConnectionReport({
+    ai:{state:'connected',reason:'authenticated_backend'},
+    contacts:{state:'connected',reason:'verified'},
+    calendar:{state:'reconnect_required',reason:'invalid_grant'},
+    drive:{state:'unavailable',reason:'verification_failed'}
+  });
+  assert.equal(connectionStatusText('contacts',report.contacts),'Contactos conectados y comprobados');
+  assert.equal(connectionStatusText('calendar',report.calendar),'Calendar: no conectado');
+  assert.equal(connectionStatusText('drive',report.drive),'Drive: no se pudo comprobar');
+  assert.deepEqual(connectionProblems(report).map(item=>item.integration),['calendar','drive']);
+  assert.equal(integrationFailureMessage('calendar',{code:'reconnect_required'}),'Calendar no está conectado. Vuelve a conectarlo desde Ajustes.');
+  assert.equal(integrationFailureMessage('drive',{code:'integration_unavailable'}),'Drive no está disponible temporalmente. Inténtalo de nuevo en unos instantes.');
+});
+
+test('conexiones: una sesión cerrada marca IA y Google como no conectados',()=>{
+  const report=normalizeConnectionReport({},false);
+  assert.equal(report.ai.state,'disconnected');
+  assert.equal(connectionProblems(report).length,4);
+  assert.equal(connectionStatusText('ai',report.ai,false),'IA: no conectada');
+});
+
+test('conexiones: el arranque y la reanudación comprueban y avisan sin abrir OAuth',()=>{
+  const app=readFileSync(new URL('../js/app.js',import.meta.url),'utf8');
+  const google=readFileSync(new URL('../js/google.js',import.meta.url),'utf8');
+  const ui=readFileSync(new URL('../js/ui.js',import.meta.url),'utf8');
+  assert.match(app,/google\.syncLinks\(\{announce\}\)/);
+  assert.match(app,/visibilitychange/);
+  assert.match(app,/window\.addEventListener\("online"/);
+  assert.match(ui,/Revisa las conexiones/);
+  assert.match(ui,/Abrir conexiones/);
+  assert.doesNotMatch(google,/requireConnection\([^)]*\)[\s\S]{0,120}connectPersistent/);
 });
 
 test('gestor: notas y recordatorios respetan este mes y ventanas de días',()=>{
