@@ -1,5 +1,10 @@
 # Changelog
 
+## V0.21.43 · Botones uniformes en agenda
+
+- «Ver» y «Anular» ocupan una fila inferior de dos columnas iguales, incluso con títulos largos.
+- La fixture de 40 citas comprueba automáticamente la geometría real y el scroll al abrirse en un navegador.
+
 ## V0.21.42 · Consultas directas de notas y recordatorios
 
 - «Ver las notas que tenemos hechas» abre las notas completadas, no las pendientes.

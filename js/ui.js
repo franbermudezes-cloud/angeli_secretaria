@@ -1,7 +1,7 @@
-import { typeLabel } from "./classifier.js?v=0.21.42";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.42";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.42";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.42";
+import { typeLabel } from "./classifier.js?v=0.21.43";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.43";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.43";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.43";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -123,7 +123,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.42";
+    image.src = "assets/angeli-welcome.gif?v=0.21.43";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -640,10 +640,10 @@ export function createUI({ getMedia }) {
     if (!result.events.length) return '<div class="card-details meta">No he encontrado coincidencias.</div>';
     const choices = result.events.map(event => {
       let button = "";
-      if (intent === "calendar.query") button = '<div class="inline-actions">' + eventButton(note.id, event.id, "Ver", "primary", "agenda-view") + eventButton(note.id, event.id, "Anular", "danger", "agenda-delete") + '</div>';
+      if (intent === "calendar.query") button = '<div class="agenda-row-actions">' + eventButton(note.id, event.id, "Ver", "primary", "agenda-view") + eventButton(note.id, event.id, "Anular", "danger", "agenda-delete") + '</div>';
       if (intent === "calendar.delete") button = eventButton(note.id, event.id, "Cancelar", "danger", "calendar-delete");
       if (intent === "calendar.update") button = eventButton(note.id, event.id, "Modificar", "primary", "calendar-update");
-      return '<div class="choice"><div><b>' + esc(event.summary) + "</b><span>" + esc(event.when) + "</span></div>" + button + "</div>";
+      return '<div class="choice agenda-choice"><div class="agenda-choice-content"><b>' + esc(event.summary) + "</b><span>" + esc(event.when) + "</span></div>" + button + "</div>";
     }).join("");
     return '<div class="card-details">' + choices + "</div>";
   }
