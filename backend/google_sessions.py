@@ -96,7 +96,8 @@ class GoogleSessions:
 
         No crea, modifica ni elimina recursos. Un secreto existente no se
         considera conexión hasta que Google acepta su refresh token y la API
-        concreta responde con los permisos que Angeli necesita.
+        concreta permite leer el recurso mínimo configurado. Las operaciones de
+        escritura conservan su validación propia cuando se ejecutan.
         """
         if integration not in SCOPES:
             raise ValueError("Integración no válida")
@@ -120,10 +121,10 @@ class GoogleSessions:
                 if not folders:
                     return {"state": "disconnected", "reason": "missing_configuration"}
                 for folder_id in folders:
-                    fields = "id,mimeType,capabilities(canAddChildren)"
+                    fields = "id,mimeType"
                     folder = self.api(DRIVE, "GET", f"https://www.googleapis.com/drive/v3/files/{folder_id}?fields={fields}")
-                    if folder.get("mimeType") != "application/vnd.google-apps.folder" or not folder.get("capabilities", {}).get("canAddChildren"):
-                        raise GooglePermissionRequired("Drive no puede añadir archivos a la carpeta configurada")
+                    if folder.get("mimeType") != "application/vnd.google-apps.folder":
+                        raise GooglePermissionRequired("El destino configurado de Drive no es una carpeta accesible")
             return {"state": "connected", "reason": "verified"}
         except GoogleReconnectRequired:
             return {"state": "reconnect_required", "reason": "invalid_grant"}

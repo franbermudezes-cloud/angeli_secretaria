@@ -7,6 +7,7 @@
 - Si alguna comprobación falla aparece un único modal con el detalle y acceso a Conexiones; si todo está bien no aparece nada.
 - Las comprobaciones se repiten al volver a la aplicación o recuperar la red, sin abrir ventanas OAuth automáticamente.
 - Los errores de una acción identifican la integración afectada y no confunden un resultado vacío con una desconexión.
+- Drive comprueba la lectura de sus carpetas sin crear archivos; la capacidad real de subida sigue cubierta por P06 en la puerta de integración.
 
 ## V0.21.43 · Botones uniformes en agenda
 
