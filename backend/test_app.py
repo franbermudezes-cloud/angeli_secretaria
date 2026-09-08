@@ -567,23 +567,23 @@ class InterpretEndpointTests(unittest.TestCase):
             with self.assertRaises(GoogleReconnectRequired):
                 service._post_form("https://oauth2.googleapis.com/token", {"grant_type": "refresh_token"})
 
-    def test_drive_connection_status_verifies_readable_folder_without_writing(self):
+    def test_drive_connection_status_verifies_grant_without_writing(self):
         from google_sessions import DRIVE, GoogleSessions
 
         service = GoogleSessions("angeli-secretaria", "client-id")
         service._read_secret = lambda name: '{"refresh_token":"test"}'
-        service.api = lambda *args, **kwargs: {
-            "mimeType": "application/vnd.google-apps.folder", "capabilities": {"canAddChildren": False}
-        }
+        calls = []
+        service.api = lambda *args, **kwargs: calls.append(args) or {"user": {"permissionId": "test"}}
         self.assertEqual(service.connection_status(DRIVE, ["folder"]), {"state": "connected", "reason": "verified"})
+        self.assertIn("/about?", calls[0][2])
 
-    def test_drive_connection_status_rejects_a_destination_that_is_not_a_folder(self):
+    def test_drive_connection_status_requires_a_configured_destination(self):
         from google_sessions import DRIVE, GoogleSessions
 
         service = GoogleSessions("angeli-secretaria", "client-id")
         service._read_secret = lambda name: '{"refresh_token":"test"}'
-        service.api = lambda *args, **kwargs: {"mimeType": "image/jpeg"}
-        self.assertEqual(service.connection_status(DRIVE, ["file"])["state"], "permission_required")
+        service.api = lambda *args, **kwargs: self.fail("No debe llamar a Drive sin destinos")
+        self.assertEqual(service.connection_status(DRIVE, []), {"state": "disconnected", "reason": "missing_configuration"})
 
     def test_drive_requires_fixed_destinations_and_never_creates_folders(self):
         from google_sessions import GoogleSessions

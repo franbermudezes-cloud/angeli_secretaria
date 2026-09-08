@@ -1,10 +1,10 @@
 # Entorno automático de pruebas reales
 
 V0.21.44: antes de crear recursos, `connections-health` renueva los grants
-aislados y hace una lectura mínima real de Contactos, Calendar y la carpeta de
-Drive de pruebas. Un secreto presente pero revocado, sin permisos de lectura o
-no utilizable deja la puerta en rojo. Esta comprobación no escribe datos; P06
-continúa validando por separado una subida y su limpieza reales en Drive. Las
+aislados y hace una lectura mínima real de Contactos, Calendar y la API de Drive.
+Un secreto presente pero revocado, sin permisos de lectura o no utilizable deja
+la puerta en rojo. Esta comprobación no escribe datos; P06 continúa validando
+por separado la carpeta concreta mediante una subida y su limpieza reales. Las
 pruebas locales cubren además el modal de arranque, los estados diferenciados y
 la prohibición de abrir OAuth automáticamente.
 

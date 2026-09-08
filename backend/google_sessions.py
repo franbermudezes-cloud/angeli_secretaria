@@ -120,11 +120,12 @@ class GoogleSessions:
                 folders = list(dict.fromkeys(folder for folder in folders if folder))
                 if not folders:
                     return {"state": "disconnected", "reason": "missing_configuration"}
-                for folder_id in folders:
-                    fields = "id,mimeType"
-                    folder = self.api(DRIVE, "GET", f"https://www.googleapis.com/drive/v3/files/{folder_id}?fields={fields}")
-                    if folder.get("mimeType") != "application/vnd.google-apps.folder":
-                        raise GooglePermissionRequired("El destino configurado de Drive no es una carpeta accesible")
+                # ``drive.file`` permite crear los adjuntos de Angeli en el
+                # destino compartido, pero no garantiza que una carpeta ajena
+                # pueda inspeccionarse con files.get. Verificamos aquí el grant
+                # y la API sin escribir; P06 valida después la carpeta concreta
+                # mediante una subida real y su limpieza.
+                self.api(DRIVE, "GET", "https://www.googleapis.com/drive/v3/about?fields=user(permissionId)")
             return {"state": "connected", "reason": "verified"}
         except GoogleReconnectRequired:
             return {"state": "reconnect_required", "reason": "invalid_grant"}
