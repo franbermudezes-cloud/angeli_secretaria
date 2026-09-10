@@ -1,8 +1,8 @@
-import { typeLabel } from "./classifier.js?v=0.21.46";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.46";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.46";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.46";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.46";
+import { typeLabel } from "./classifier.js?v=0.21.47";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.47";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.47";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.47";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.47";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -49,6 +49,12 @@ export function createUI({ getMedia }) {
     $("calendarStatus").textContent = calendar;
     $("driveStatus").textContent = drive;
     $("aiStatus").textContent = app;
+  }
+
+  function setPushStatus(status = {}) {
+    $("pushStatus").textContent = status.text || "Estado de avisos desconocido";
+    $("pushEnable").textContent = status.state === "enabled" ? "Renovar" : "Activar";
+    $("pushTest").disabled = status.state !== "enabled";
   }
 
   function showConnectionHealth(problems, { onOpenSettings } = {}) {
@@ -168,7 +174,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.46";
+    image.src = "assets/angeli-welcome.gif?v=0.21.47";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -817,7 +823,7 @@ export function createUI({ getMedia }) {
     $("preview").innerHTML = files.map(file => '<img class="thumb" src="' + URL.createObjectURL(file) + '" alt="Imagen preparada">').join("");
   }
 
-  return { $, notify, setGoogleStatus, setSyncStatus, showConnectionHealth, render, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
+  return { $, notify, setGoogleStatus, setPushStatus, setSyncStatus, showConnectionHealth, render, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
 }
 
 function esc(value) {

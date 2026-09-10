@@ -1,6 +1,6 @@
-import { cleanTemporalText } from "./temporal.js?v=0.21.46";
-import { calendarDetails } from "./schedule.js?v=0.21.46";
-import { semanticCalendarTarget } from "./ai.js?v=0.21.46";
+import { cleanTemporalText } from "./temporal.js?v=0.21.47";
+import { calendarDetails } from "./schedule.js?v=0.21.47";
+import { semanticCalendarTarget } from "./ai.js?v=0.21.47";
 
 const CLIENT_ID = "172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
@@ -54,7 +54,7 @@ export function integrationFailureMessage(integration, error, fallback = "No se 
   return error?.message || fallback;
 }
 
-export function createGoogleIntegration({ notify, refresh, setStatus, showConnectionHealth, saveNotes, getNotes, getAuthToken, getSession }) {
+export function createGoogleIntegration({ notify, refresh, setStatus, showConnectionHealth, saveNotes, getNotes, getAuthToken, getSession, scheduleNotification, cancelNotification }) {
   let scriptPromise = null;
   let links = normalizeConnectionReport({}, false);
   let healthRequest = null;
@@ -63,6 +63,16 @@ export function createGoogleIntegration({ notify, refresh, setStatus, showConnec
   const calendarInFlight = new Set();
 
   const signedIn = () => Boolean(getSession?.().signedIn);
+
+  async function programAngeliNotification(note) {
+    try { await scheduleNotification?.(note); return true; }
+    catch (_) { notify("Calendar está programado, pero el aviso de Angeli necesita revisión en Ajustes"); return false; }
+  }
+
+  async function removeAngeliNotification(note) {
+    try { await cancelNotification?.(note); return true; }
+    catch (_) { notify("El aviso se retiró de Calendar, pero Angeli no pudo confirmar su retirada"); return false; }
+  }
 
   function updateStatus() {
     const session = getSession?.() || {};
@@ -324,6 +334,7 @@ export function createGoogleIntegration({ notify, refresh, setStatus, showConnec
         ...item,
         schedule: { ...item.schedule, status: "scheduled", calendarEventId: saved.id, calendarId: saved.calendarId || "primary", calendarUrl: saved.htmlLink || "" }
       } : item));
+      await programAngeliNotification({ ...note, schedule: { ...schedule, status: "scheduled", calendarEventId: saved.id } });
       notify("Aviso programado en Calendar");
     } catch (error) {
       saveNotes(getNotes().map(item => item.id === note.id ? { ...item, schedule: { ...item.schedule, status: "error", lastError: "Calendar no pudo programar el aviso" } } : item));
@@ -346,6 +357,7 @@ export function createGoogleIntegration({ notify, refresh, setStatus, showConnec
         calendarStatus: "synced", calendarEventId: event.id, calendarId: event.calendarId || "primary", calendarUrl: event.htmlLink || "",
         schedule: { ...item.schedule, status: "scheduled", relatedEventId: event.id, calendarEventId: reminder.id, calendarId: reminder.calendarId || "primary", calendarUrl: reminder.htmlLink || "", lastError: null }
       } : item));
+      await programAngeliNotification({ ...note, schedule: { ...schedule, status: "scheduled", relatedEventId: event.id, calendarEventId: reminder.id } });
       notify("Evento y aviso añadidos a Calendar");
     } catch (error) {
       let rollbackFailed = false;
@@ -370,6 +382,7 @@ export function createGoogleIntegration({ notify, refresh, setStatus, showConnec
         ...item,
         schedule: { ...item.schedule, status: "cancelled" }
       } : item));
+      await removeAngeliNotification(note);
       notify("Aviso cancelado");
     } catch (error) {
       applyFailure("calendar", error, "No se pudo cancelar");
@@ -380,11 +393,12 @@ export function createGoogleIntegration({ notify, refresh, setStatus, showConnec
     const eventId = note.schedule?.calendarEventId;
     if (!eventId) return;
     await calendarRequest("DELETE", `/${encodeURIComponent(eventId)}`);
+    await removeAngeliNotification(note);
   }
 
   async function updateScheduledReminder(note){
     const eventId=note.schedule?.calendarEventId;if(!eventId)return true;
-    try{const payload=scheduledReminderEvent(note);delete payload.id;await calendarRequest("PATCH",`/${encodeURIComponent(eventId)}`,payload);notify("Recordatorio actualizado en Calendar");return true}catch(error){applyFailure("calendar",error,"No se pudo actualizar el recordatorio en Calendar");return false}
+    try{const payload=scheduledReminderEvent(note);delete payload.id;await calendarRequest("PATCH",`/${encodeURIComponent(eventId)}`,payload);await programAngeliNotification(note);notify("Recordatorio actualizado en Calendar");return true}catch(error){applyFailure("calendar",error,"No se pudo actualizar el recordatorio en Calendar");return false}
   }
 
   async function searchCalendar(note) {

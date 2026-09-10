@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.21.47 · Avisos propios de Angeli
+
+- Cada instalación móvil o de escritorio puede activar sus avisos desde Ajustes y enviar una notificación de prueba.
+- Los recordatorios confirmados conservan su evento y aviso de Google Calendar y programan además una notificación propia de Angeli mediante FCM y Cloud Tasks.
+- Modificar, completar o cancelar el recordatorio actualiza o retira la entrega pendiente; el backend descarta tareas antiguas antes de enviar.
+- Los tokens de dispositivo y la programación permanecen en la base `angelifirebase`; la entrega acepta únicamente la identidad de servicio dedicada.
+
 ## V0.21.46 · Título y contenido de notas
 
 - La ficha usa el contenido interpretado de la nota, sin copiar la orden de creación cuando hay detalle disponible.
