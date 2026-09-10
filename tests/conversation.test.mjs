@@ -18,6 +18,7 @@ import { fromCloudEntry, toCloudEntry } from '../js/cloud-entry.js';
 import { findNoteMatches, normalizeNoteClassification, removeNoteEntry, updateNoteDraft, updateNoteStatus } from '../js/notes.js';
 import { addNoteSetting, applyExplicitNoteCategory, normalizeNoteSettings, noteInterpretationContext, removeNoteSetting, renameNoteSetting, settingLabel } from '../js/note-settings.js';
 import { shortcutPrefix, shortcutSemantics, shortcutType } from '../js/shortcuts.js';
+import { localWhatsApp, whatsappChoices, whatsappPhone, whatsappUrl } from '../js/whatsapp.js';
 
 test('una petición normal sin acceso directo no intenta leer action de null',()=>{
   assert.equal(shortcutType(null),null);
@@ -1073,4 +1074,46 @@ test("P05 entiende tienes que avisarme y pregunta la hora sin convertir la orden
   assert.equal(completed.interpretation.linkedReminder.time,"18:00");
   assert.equal(completed.interaction.status,"pending_confirmation");
   assert.ok(linkedScheduleFor(completed.interpretation));
+});
+
+test("WhatsApp: extrae destinatario y mensaje sin confundirlo con una llamada", () => {
+  const intent=localWhatsApp("Envía un WhatsApp a Monse diciendo llego diez minutos tarde");
+  assert.equal(intent.intent,"whatsapp.compose");
+  assert.equal(intent.contactName,"Monse");
+  assert.equal(intent.notes,"llego diez minutos tarde");
+  const turn=resolveConversationTurn({text:"Envía un WhatsApp a Monse diciendo llego diez minutos tarde",interpretation:validateIntent(intent)});
+  assert.equal(turn.interaction.status,INTERACTION_STATUS.PENDING_CONFIRMATION);
+});
+
+test("WhatsApp: pide el mensaje y la respuesta continúa la misma operación", () => {
+  const first=resolveConversationTurn({text:"WhatsApp a Pepe",interpretation:validateIntent(localWhatsApp("WhatsApp a Pepe"))});
+  assert.deepEqual(first.interaction.missingFields,["notes"]);
+  assert.equal(first.interaction.question,"¿Qué mensaje quieres escribir?");
+  const active={id:"wa-pepe",aiIntent:first.interpretation,interaction:first.interaction};
+  const second=resolveConversationTurn({active,text:"Dile que llego a las ocho",interpretation:validateIntent(localWhatsApp("Dile que llego a las ocho",active))});
+  assert.equal(second.interpretation.contactName,"Pepe");
+  assert.equal(second.interpretation.notes,"Dile que llego a las ocho");
+  assert.equal(second.interaction.status,INTERACTION_STATUS.PENDING_CONFIRMATION);
+});
+
+test("WhatsApp: prepara URL internacional y no ejecuta el envío", () => {
+  assert.equal(whatsappPhone("612 345 678"),"34612345678");
+  assert.equal(whatsappPhone("+34 612 345 678"),"34612345678");
+  assert.equal(whatsappPhone("61234"),null);
+  assert.equal(whatsappUrl("612 345 678","Hola, Monse"),"https://wa.me/34612345678?text=Hola%2C%20Monse");
+  assert.throws(()=>whatsappUrl("123","Hola"),/prefijo internacional/);
+});
+
+test("WhatsApp: ofrece todos los teléfonos sin duplicarlos y permite corregir el texto", () => {
+  const choices=whatsappChoices({id:"wa",contactQuery:"Monse"},{contacts:[{name:"Monse",phones:["612 345 678","612 345 678","+34 699 111 222"]}]});
+  assert.equal(choices.length,2);
+  const ui=readFileSync(new URL('../js/ui.js',import.meta.url),'utf8');
+  assert.match(ui,/El mensaje quedará escrito para que tú pulses Enviar en WhatsApp/);
+  assert.match(ui,/data-a="open-whatsapp"/);
+  assert.match(ui,/Cambiar mensaje/);
+  assert.match(ui,/Indicar otro número/);
+  assert.match(ui,/🎙️ Dictar/);
+  const app=readFileSync(new URL('../js/app.js',import.meta.url),'utf8');
+  assert.match(app,/Mensaje preparado en WhatsApp/);
+  assert.doesNotMatch(app,/Mensaje enviado/);
 });

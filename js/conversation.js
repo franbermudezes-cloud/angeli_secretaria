@@ -152,12 +152,13 @@ function missingFor(intent) {
   if (Array.isArray(intent.missingFields) && intent.missingFields.length) return uniqueKnownFields(intent.missingFields);
   if (intent.intent === "calendar.create") return [!intent.date && "date", !intent.time && "time"].filter(Boolean);
   if (intent.intent === "reminder.create") return [!intent.date && "date", !intent.time && "time"].filter(Boolean);
+  if (intent.intent === "whatsapp.compose") return [!intent.contactName && !intent.phone && "contactName", !intent.notes && "notes"].filter(Boolean);
   if ((intent.intent === "calendar.update" || intent.intent === "calendar.delete") && !intent.target?.title) return ["target"];
   return [];
 }
 
 function uniqueKnownFields(fields) {
-  const allowed = new Set(["title", "date", "time", "location", "contactName", "phone", "target"]);
+  const allowed = new Set(["title", "date", "time", "location", "contactName", "phone", "notes", "target"]);
   return [...new Set(fields.filter(field => allowed.has(field)))];
 }
 
@@ -167,6 +168,7 @@ function questionFor(intent, missingFields) {
   if (missingFields.includes("date")) return "¿Qué día quieres hacerlo?";
   if (missingFields.includes("time")) return "¿A qué hora?";
   if (missingFields.includes("target")) return "¿Qué evento quieres modificar o cancelar?";
-  if (missingFields.includes("contactName") || missingFields.includes("phone")) return "¿A quién quieres llamar?";
+  if (missingFields.includes("contactName") || missingFields.includes("phone")) return intent.intent === "whatsapp.compose" ? "¿A quién quieres escribir por WhatsApp?" : "¿A quién quieres llamar?";
+  if (missingFields.includes("notes")) return "¿Qué mensaje quieres escribir?";
   return "¿Puedes darme un poco más de información?";
 }

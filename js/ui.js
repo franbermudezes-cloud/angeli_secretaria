@@ -1,7 +1,8 @@
-import { typeLabel } from "./classifier.js?v=0.21.44";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.44";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.44";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.44";
+import { typeLabel } from "./classifier.js?v=0.21.45";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.45";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.45";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.45";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.45";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -167,7 +168,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.44";
+    image.src = "assets/angeli-welcome.gif?v=0.21.45";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -491,6 +492,28 @@ export function createUI({ getMedia }) {
       ] });
       return;
     }
+    if (intent === "whatsapp.compose") {
+      const result = !note.phone && google ? google.getContactResult(note.id) : null;
+      const choices = whatsappChoices(note, result).filter(item => whatsappPhone(item.phone));
+      const message = '<div class="calendar-confirmation"><span class="calendar-field-label">Destinatario</span><strong>' + esc(note.contactQuery || note.aiIntent?.contactName || "Sin destinatario") + '</strong><span class="calendar-field-label">Mensaje preparado</span><b>' + esc(note.aiIntent?.notes || "Sin mensaje") + '</b></div>';
+      if (result?.error) {
+        openModal({ ...base, title: "No puedo consultar Contactos", lead: result.error, body: message, actions: [{ label: "Cerrar", kind: "secondary", onClick: closeLayers }] });
+        return;
+      }
+      if (result && !choices.length) {
+        openModal({ ...base, title: "No encuentro un móvil", lead: "Puedes indicar otro número con prefijo internacional.", body: message, actions: [{ label: "Cambiar mensaje", kind: "secondary", dataset:{a:"edit-whatsapp",id:note.id} }, { label: "Indicar número", kind: "confirm", dataset:{a:"edit-whatsapp-phone",id:note.id} }, { label: "Cerrar", kind: "secondary", onClick: closeLayers }] });
+        return;
+      }
+      const numbers = choices.map(item => '<button class="contact-choice" data-a="open-whatsapp" data-id="' + esc(note.id) + '" data-phone="' + esc(item.phone) + '"><strong>💬 ' + esc(item.name) + '</strong><span>' + esc(item.phone) + '</span></button>').join("");
+      openModal({ ...base, title: choices.length > 1 ? "Elige el WhatsApp" : "¿Abrimos WhatsApp?", lead: choices.length ? "El mensaje quedará escrito para que tú pulses Enviar en WhatsApp." : "Primero buscaré el contacto y después podrás revisar el número.", body: message + (numbers ? '<div class="contact-options">' + numbers + '</div>' : ""), actions: [
+        { label: "Ahora no", kind: "secondary", onClick: closeLayers },
+        { label: "Cambiar mensaje", kind: "secondary", dataset:{a:"edit-whatsapp",id:note.id} },
+        { label: "Indicar otro número", kind: "secondary", dataset:{a:"edit-whatsapp-phone",id:note.id} },
+        ...(numbers ? [] : [{ label: "Buscar contacto", kind: "confirm", dataset:{a:"search-contact",id:note.id} }])
+      ] });
+      $("actionModal").classList.add("call-choice-modal");
+      return;
+    }
     if (intent === "contact.call") {
       const result = !note.phone && google ? google.getContactResult(note.id) : null;
       if (result) {
@@ -589,6 +612,32 @@ export function createUI({ getMedia }) {
     content.append(dateLabel,timeLabel,save);
     openModal({title:"Cambiar fecha y hora",lead:"Corrige cuándo debe aparecer en Calendar.",body:content,actions:[{label:"Volver",kind:"secondary",onClick:onCancel}]});
     $("actionModal").classList.add("conversation-modal");
+  }
+
+  function showWhatsAppEditor(note, { onSave, onCancel, onMic } = {}) {
+    const draft = document.createElement("textarea");
+    draft.id = "whatsappMessageDraft";
+    draft.className = "active-draft conversation-draft";
+    draft.rows = 5;
+    draft.value = note.aiIntent?.notes || "";
+    draft.placeholder = "Escribe el mensaje…";
+    openModal({ title: "Editar mensaje", lead: "Este texto se abrirá preparado en WhatsApp.", body: draft, actions: [
+      { label: "Volver", kind: "secondary", onClick: onCancel },
+      { label: "🎙️ Dictar", kind: "secondary", onClick: () => { draft.blur(); onMic?.(draft.id); } },
+      { label: "Guardar texto", kind: "confirm", onClick: () => { const value=draft.value.trim(); if(!value){notify("Escribe el mensaje");return} onSave?.(value); } }
+    ] });
+    $("actionModal").classList.add("conversation-modal");
+  }
+
+  function showWhatsAppPhoneEditor(note, { onSave, onCancel } = {}) {
+    const phone = document.createElement("input");
+    phone.type = "tel";
+    phone.value = note.phone || "";
+    phone.placeholder = "+34 600 000 000";
+    openModal({ title: "Indicar otro número", lead: "Escribe el prefijo del país y el teléfono.", body: phone, actions: [
+      { label: "Volver", kind: "secondary", onClick: onCancel },
+      { label: "Usar este número", kind: "confirm", onClick: () => { if(!whatsappPhone(phone.value)){notify("Revisa el número y añade el prefijo internacional");return} onSave?.(phone.value.trim()); } }
+    ] });
   }
 
   function showInteractionQuestion(note, { onSend, onMic, onCancel, value = "" } = {}) {
@@ -764,7 +813,7 @@ export function createUI({ getMedia }) {
     $("preview").innerHTML = files.map(file => '<img class="thumb" src="' + URL.createObjectURL(file) + '" alt="Imagen preparada">').join("");
   }
 
-  return { $, notify, setGoogleStatus, setSyncStatus, showConnectionHealth, render, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
+  return { $, notify, setGoogleStatus, setSyncStatus, showConnectionHealth, render, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
 }
 
 function esc(value) {

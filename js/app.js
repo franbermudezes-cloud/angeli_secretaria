@@ -1,20 +1,21 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.44";
-import{classify,actionData}from"./classifier.js?v=0.21.44";
-import{sendEntry}from"./sheets.js?v=0.21.44";
-import{createUI}from"./ui.js?v=0.21.44";
-import{createGoogleIntegration}from"./google.js?v=0.21.44";
-import{interpret,remoteProvider,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,protectCalendarInterpretation,protectReadQuery}from"./ai.js?v=0.21.44";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.44";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.44";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.44";
-import{createCloudSync}from"./firebase.js?v=0.21.44";
-import{createMediaService}from"./media.js?v=0.21.44";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.44";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.44";
-import{createAgendaActions}from"./agenda.js?v=0.21.44";
-import{findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.44";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.44";
-import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.44";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.45";
+import{classify,actionData}from"./classifier.js?v=0.21.45";
+import{sendEntry}from"./sheets.js?v=0.21.45";
+import{createUI}from"./ui.js?v=0.21.45";
+import{createGoogleIntegration}from"./google.js?v=0.21.45";
+import{interpret,remoteProvider,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,protectCalendarInterpretation,protectReadQuery}from"./ai.js?v=0.21.45";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.45";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.45";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.45";
+import{createCloudSync}from"./firebase.js?v=0.21.45";
+import{createMediaService}from"./media.js?v=0.21.45";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.45";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.45";
+import{createAgendaActions}from"./agenda.js?v=0.21.45";
+import{findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.45";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.45";
+import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.45";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.45";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -111,12 +112,15 @@ async function add({interactionId=null,shortcut=null}={}){
    ui.updateWorking("Interpretando tu instrucción","Angeli está preparando la acción adecuada…","");
    const fallbackType=active?.type||shortcutType(shortcutContext)||classify(text,images,files);
    const localLinked=localLinkedCalendarIntent(text,now);
-   const noteQuery=(localLinked||shortcutContext?.action)?null:localNoteQuery(text);
+   const whatsApp=localWhatsApp(text,active);
+   const noteQuery=(localLinked||whatsApp||shortcutContext?.action)?null:localNoteQuery(text);
    const reminderQuery=(localLinked||shortcutContext?.action)?null:localReminderQuery(text);
    const cancellation=(localLinked||noteQuery||reminderQuery||(shortcutContext?.action&&shortcutContext.action!=="calendar.delete"))?null:localCalendarCancellation(text);
    const localUpdate=(localLinked||noteQuery||reminderQuery||shortcutContext?.action)?null:localCalendarUpdate(text,now,active);
-   const interpreted=await interpret(text,{provider:(value,context)=>google.interpretWithAI(value,remoteProvider,context),fallback:()=>localLinked||noteQuery||reminderQuery||cancellation||localUpdate||localInterpretation(text,fallbackType,active),context:noteInterpretationContext(contextFor(active),noteSettings)});
-   const rawInterpretation=applyExplicitNoteCategory(routeShortcutIntent(interpreted,shortcutContext,text,now),text,noteSettings);
+   const interpreted=await interpret(text,{provider:(value,context)=>google.interpretWithAI(value,remoteProvider,context),fallback:()=>localLinked||whatsApp||noteQuery||reminderQuery||cancellation||localUpdate||localInterpretation(text,fallbackType,active),context:noteInterpretationContext(contextFor(active),noteSettings)});
+   const aiWhatsApp=interpreted.intent==="whatsapp.compose";
+   const whatsAppInterpretation=whatsApp?{...interpreted,intent:"whatsapp.compose",contactName:(aiWhatsApp?interpreted.contactName:null)||whatsApp.contactName||null,phone:(aiWhatsApp?interpreted.phone:null)||whatsApp.phone||null,notes:(aiWhatsApp?interpreted.notes:null)||whatsApp.notes||null,requiresConfirmation:true,missingFields:[],question:null}:interpreted;
+   const rawInterpretation=applyExplicitNoteCategory(routeShortcutIntent(whatsAppInterpretation,shortcutContext,text,now),text,noteSettings);
    if(rawInterpretation.source==="fallback")ui.updateWorking("Estoy revisando tu petición","Necesito confirmarla contigo antes de continuar.","");
    const deterministic=localLinked||cancellation||localUpdate;
    const routedInterpretation=(noteQuery||reminderQuery)?protectReadQuery(rawInterpretation,noteQuery,reminderQuery):preserveCancellation(active,protectCalendarInterpretation(rawInterpretation,deterministic));
@@ -308,6 +312,15 @@ async function handleEntryAction(event){
   ui.showEntryAction(notes.find(item=>item.id===note.id)||current,google);return;
  }
  if(action==="call"){completeCurrentAction(note.id);ui.closeLayers();window.location.href=`tel:${button.dataset.phone}`;return}
+ if(action==="edit-whatsapp"){
+  ui.showWhatsAppEditor(note,{onMic:draftId=>start({inConversation:true,draftId}),onCancel:()=>ui.showEntryAction(notes.find(item=>item.id===note.id)||note,google),onSave:async message=>{const next={...note,aiIntent:{...note.aiIntent,notes:message},interaction:{...note.interaction,collectedData:{...(note.interaction?.collectedData||{}),notes:message},updatedAt:new Date().toISOString()}};if(await saveConfirmed(notes.map(item=>item.id===note.id?next:item)))ui.showEntryAction(next,google)}});return;
+ }
+ if(action==="edit-whatsapp-phone"){
+  ui.showWhatsAppPhoneEditor(note,{onCancel:()=>ui.showEntryAction(notes.find(item=>item.id===note.id)||note,google),onSave:async phone=>{const next={...note,phone,aiIntent:{...note.aiIntent,phone},interaction:{...note.interaction,collectedData:{...(note.interaction?.collectedData||{}),phone},updatedAt:new Date().toISOString()}};if(await saveConfirmed(notes.map(item=>item.id===note.id?next:item)))ui.showEntryAction(next,google)}});return;
+ }
+ if(action==="open-whatsapp"){
+  try{const url=whatsappUrl(button.dataset.phone,note.aiIntent?.notes),link=document.createElement("a");link.href=url;link.target="_blank";link.rel="noopener";document.body.append(link);completeCurrentAction(note.id);ui.closeLayers();link.click();link.remove();ui.notify("Mensaje preparado en WhatsApp")}catch(error){ui.notify(error.message||"No se pudo abrir WhatsApp")}return;
+ }
  if(action==="search-contact"){
   ui.showWorking("Buscando contacto","Angeli está buscando a "+(note.contactQuery||"ese contacto")+"…","");
   await google.searchContact(note);ui.showEntryAction(notes.find(item=>item.id===note.id)||note,google);return;
@@ -324,7 +337,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.44",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.45",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}

@@ -1,5 +1,13 @@
 # Entorno automático de pruebas reales
 
+V0.21.45: la puerta PWA cubre la preparación de WhatsApp de punta a punta sin
+enviar mensajes: interpretación separada de una llamada, solicitud del dato que
+falte, continuidad conversacional, selección no duplicada de teléfonos de
+Contacts, normalización internacional, texto editable y URL oficial codificada.
+`connections-health` mantiene la lectura mínima real del grant aislado de
+Contactos. Abrir la aplicación WhatsApp y pulsar Enviar son comprobaciones
+manuales expresas; el arnés nunca representa a la persona ni envía mensajes.
+
 V0.21.44: antes de crear recursos, `connections-health` renueva los grants
 aislados y hace una lectura mínima real de Contactos, Calendar y la API de Drive.
 Un secreto presente pero revocado, sin permisos de lectura o no utilizable deja
