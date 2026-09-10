@@ -392,6 +392,13 @@ Cloud Run deja de aceptar el ID token efímero de Google Identity Services y pas
 - Firestore sigue siendo la fuente operativa de notas y recordatorios; Calendar es la fuente real de eventos y avisos. Google Sheets/Drive son registro y adjuntos, no la fuente desde la que se reconstruye el panel.
 - Las consultas temporales admiten mes actual y ventanas naturales de días sin confundir el periodo con el texto que se busca.
 
+## WhatsApp personal (V0.21.45)
+
+- WhatsApp se integra con Click to Chat (`wa.me`), no con Business API ni n8n: Angeli busca el teléfono mediante la conexión ya comprobada de Google Contacts, prepara el texto y abre el chat.
+- La última pulsación de Enviar pertenece siempre a la persona dentro de WhatsApp. Angeli solo confirma «Mensaje preparado» porque no conoce la entrega real.
+- El flujo es conversacional: pregunta únicamente el destinatario o el mensaje que falte, permite editar el texto y elegir el teléfono si hay varias coincidencias. No requiere OAuth, secretos ni permisos nuevos.
+- Pendientes posteriores, separados en sus propios PR: ampliar/abrir imágenes, ciclo completo de archivos en Drive, registrar URL de adjuntos en Sheets, notificaciones PWA cerrada y una posible copia externa de notas.
+
 ## Consultas breves de entradas (V0.21.42)
 
 - «Ver», «listar» y una petición breve como «recordatorios» son órdenes de consulta explícitas. Nunca deben caer en el flujo de creación de una nota.

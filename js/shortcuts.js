@@ -1,10 +1,11 @@
-import { contactQuery } from "./classifier.js?v=0.21.44";
-import { calendarQueryRange, temporalData } from "./temporal.js?v=0.21.44";
+import { contactQuery } from "./classifier.js?v=0.21.45";
+import { calendarQueryRange, temporalData } from "./temporal.js?v=0.21.45";
 
 export const DEFAULT_SHORTCUTS = [
   { label: "🗓️ Hoy", command: "¿Qué tengo hoy?", action: "calendar.query", direct: true },
   { label: "🗓️ Próxima semana", command: "¿Qué tengo la semana que viene?", action: "calendar.query", direct: true },
   { label: "📞 Llamar contacto", prompt: "Di el nombre del contacto.", prefix: "Llama a ", dictate: true, action: "contact.call", direct: true },
+  { label: "💬 WhatsApp", prompt: "Di el contacto y el mensaje.", prefix: "Envía un WhatsApp a ", dictate: true, action: "whatsapp.compose" },
   { label: "＋ Nuevo evento", prompt: "Cuéntame el evento: fecha, hora y lugar.", prefix: "Añade al calendario ", action: "calendar.create" },
   { label: "⏰ Recordatorio", prompt: "¿Qué quieres que te recuerde y cuándo?", prefix: "Recuérdame ", action: "reminder.create" },
   { label: "✕ Cancelar evento", prompt: "¿Qué evento quieres cancelar?", prefix: "Cancela ", action: "calendar.delete", direct: true }
@@ -21,6 +22,7 @@ export function shortcutSemantics(shortcut = {}) {
   const value = `${shortcut.label || ""} ${shortcut.command || ""}`.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   if (/\b(?:cancelar|cancela|anular|anula|borrar evento)\b/.test(value)) return { action: "calendar.delete", direct: true };
   if (/\b(?:recordatorio|recuerdame|avisame)\b/.test(value)) return { action: "reminder.create", direct: false };
+  if (/\bwhats?app\b/.test(value)) return { action: "whatsapp.compose", direct: false };
   if (/\b(?:llamar|llama|telefono|contacto)\b/.test(value)) return { action: "contact.call", direct: true };
   if (/\b(?:que tengo|agenda|calendario|citas?)\b/.test(value)) return { action: "calendar.query", direct: true };
   if (/\b(?:nuevo evento|crear evento|anadir evento)\b/.test(value)) return { action: "calendar.create", direct: false };
@@ -30,12 +32,12 @@ export function shortcutSemantics(shortcut = {}) {
 export function shortcutPrefix(shortcut = {}) {
   shortcut = shortcut || {};
   if (shortcut.prefix) return shortcut.prefix;
-  return { "contact.call": "Llama a ", "reminder.create": "Recuérdame ", "calendar.create": "Añade al calendario ", "calendar.delete": "Cancela " }[shortcut.action] || "";
+  return { "contact.call": "Llama a ", "whatsapp.compose": "Envía un WhatsApp a ", "reminder.create": "Recuérdame ", "calendar.create": "Añade al calendario ", "calendar.delete": "Cancela " }[shortcut.action] || "";
 }
 
 export function shortcutType(shortcut = {}) {
   shortcut = shortcut || {};
-  return { "contact.call": "contact", "reminder.create": "reminder", "calendar.create": "calendar", "calendar.query": "calendar", "calendar.delete": "calendar" }[shortcut.action] || null;
+  return { "contact.call": "contact", "whatsapp.compose": "contact", "reminder.create": "reminder", "calendar.create": "calendar", "calendar.query": "calendar", "calendar.delete": "calendar" }[shortcut.action] || null;
 }
 
 export function routeShortcutIntent(interpretation, shortcut, text, now = new Date()) {
@@ -47,6 +49,7 @@ export function routeShortcutIntent(interpretation, shortcut, text, now = new Da
   const time = interpretation.time || temporal.scheduledTime || null;
   const base = { ...interpretation, intent: action, date, time, question: null };
   if (action === "contact.call") return { ...base, date: null, time: null, contactName: interpretation.contactName || contactQuery(text) || null, requiresConfirmation: true, missingFields: [] };
+  if (action === "whatsapp.compose") return { ...base, date: null, time: null, contactName: interpretation.contactName || contactQuery(text) || null, requiresConfirmation: true };
   if (action === "calendar.query") return { ...base, ...(calendarQueryRange(text, now) || {}), requiresConfirmation: false, missingFields: [] };
   if (action === "calendar.delete") {
     const title = interpretation.target?.title || cleanInstruction(text, action) || interpretation.title;

@@ -678,6 +678,18 @@ class InterpretEndpointTests(unittest.TestCase):
         }
         self.assertEqual(app.validate_interpretation(note)["noteClassification"]["scope"], "bodas")
 
+    def test_whatsapp_contract_is_conversational_and_never_claims_delivery(self):
+        missing = VALID_RESPONSE | {
+            "intent": "whatsapp.compose", "contactName": "Pepe", "notes": None,
+            "missingFields": ["notes"], "question": "What message?", "requiresConfirmation": True,
+        }
+        validated = app.validate_interpretation(missing)
+        self.assertEqual(validated["intent"], "whatsapp.compose")
+        self.assertEqual(validated["missingFields"], ["notes"])
+        self.assertTrue(validated["requiresConfirmation"])
+        self.assertIn("solo prepara el chat", app.SYSTEM_INSTRUCTION)
+        self.assertIn("nunca afirma que el mensaje se haya enviado", app.SYSTEM_INSTRUCTION)
+
 
 def request_path(path, payload, authorization="", origin=""):
     body = __import__("json").dumps(payload).encode("utf-8")

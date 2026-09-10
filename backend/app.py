@@ -46,10 +46,11 @@ VALID_INTENTS = {
     "calendar.update",
     "calendar.delete",
     "contact.call",
+    "whatsapp.compose",
     "file.store",
     "photo.store",
 }
-SENSITIVE_INTENTS = {"calendar.update", "calendar.delete", "contact.call"}
+SENSITIVE_INTENTS = {"calendar.update", "calendar.delete", "contact.call", "whatsapp.compose"}
 ALLOWED_FIELDS = {
     "intent",
     "confidence",
@@ -148,6 +149,14 @@ Miguel Ibiza». contact.call se reserva exclusivamente para llamadas que deben
 ocurrir ahora. Ejemplo: «Llama a Miguel Ibiza mañana a las nueve de la noche»
 produce reminder.create, contactName «Miguel Ibiza», fecha y hora; nunca debe
 abrir el marcador en ese momento.
+Para preparar un mensaje de WhatsApp usa whatsapp.compose. contactName contiene
+solo la persona destinataria y notes contiene únicamente el texto del mensaje,
+sin fórmulas como «envía un WhatsApp a». Si falta la persona, incluye solo
+contactName en missingFields; si falta el texto, incluye solo notes. Ejemplos:
+«Envía un WhatsApp a Monse diciendo llego diez minutos tarde» produce
+contactName «Monse» y notes «Llego diez minutos tarde»; «WhatsApp a Pepe»
+pregunta «¿Qué mensaje quieres escribir?». Esta intención solo prepara el chat:
+la aplicación nunca afirma que el mensaje se haya enviado.
 Para reminder.create, si se dice una hora pero no un día, usa la fecha de
 `now` cuando esa hora aún está por llegar; si ya pasó, usa el día siguiente.
 Interpreta «a las dos y cuarto», «a las 2 y 15 minutos» y expresiones
@@ -187,7 +196,7 @@ explícitos como «notas personales» o «notas de empresa». title debe ser nul
 la consulta nunca crea una nota nueva.
 Si faltan datos imprescindibles para calendar.create o reminder.create, indica
 en missingFields los nombres de los campos que faltan (date, time, title,
-location, contactName, phone o target) y formula una única pregunta breve en
+location, contactName, phone, notes o target) y formula una única pregunta breve en
 question. No inventes ni conviertas una operación incompleta en una nota. Si no
 falta nada, missingFields debe ser [] y question debe ser null.
 No ejecutes ni sugieras llamadas a APIs, almacenamiento ni acciones externas."""
@@ -274,7 +283,7 @@ RESPONSE_SCHEMA: dict[str, Any] = {
             ]
         },
         "requiresConfirmation": {"type": "boolean"},
-        "missingFields": {"type": "array", "items": {"type": "string", "enum": ["title", "date", "time", "location", "contactName", "phone", "target"]}, "maxItems": 7},
+        "missingFields": {"type": "array", "items": {"type": "string", "enum": ["title", "date", "time", "location", "contactName", "phone", "notes", "target"]}, "maxItems": 7},
         "question": {"type": ["string", "null"]},
     },
 }
@@ -386,7 +395,7 @@ def validate_context(value: Any) -> dict[str, Any] | None:
     if not isinstance(collected, dict) or not set(collected).issubset({"title", "date", "time", "rangeStart", "rangeEnd", "location", "contactName", "phone", "notes", "target", "changes", "linkedReminder"}):
         raise ValueError("Contexto conversacional no válido")
     missing = value.get("missingFields", [])
-    if not isinstance(missing, list) or len(missing) > 7 or any(item not in {"title", "date", "time", "location", "contactName", "phone", "target"} for item in missing):
+    if not isinstance(missing, list) or len(missing) > 7 or any(item not in {"title", "date", "time", "location", "contactName", "phone", "notes", "target"} for item in missing):
         raise ValueError("Contexto conversacional no válido")
     turns = value.get("turns", [])
     if not isinstance(turns, list) or len(turns) > 6:
@@ -637,7 +646,7 @@ def validate_interpretation(raw: Any) -> dict[str, Any]:
     validate_linked_reminder(result["linkedReminder"])
     validate_note_classification(result["noteClassification"])
     missing = result["missingFields"]
-    allowed_missing = {"title", "date", "time", "location", "contactName", "phone", "target"}
+    allowed_missing = {"title", "date", "time", "location", "contactName", "phone", "notes", "target"}
     if missing is None:
         result["missingFields"] = []
     elif not isinstance(missing, list) or len(missing) > 7 or any(item not in allowed_missing for item in missing):

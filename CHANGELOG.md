@@ -1,5 +1,13 @@
 # Changelog
 
+## V0.21.45 · WhatsApp preparado desde Contactos
+
+- Angeli entiende peticiones naturales como «Envía un WhatsApp a Monse diciendo…» y mantiene la conversación si falta el destinatario o el mensaje.
+- Reutiliza la conexión existente de Google Contacts, permite elegir entre varios teléfonos y corregir el texto antes de salir de Angeli.
+- Abre WhatsApp mediante su enlace oficial con el mensaje escrito; el envío final siempre lo confirma la persona dentro de WhatsApp y Angeli no afirma que se haya enviado.
+- Se añade el acceso directo «💬 WhatsApp» sin introducir otra cuenta, OAuth, secreto ni servicio externo.
+- La puerta automática cubre extracción, conversación, números españoles e internacionales, duplicados, URL codificada y textos de confirmación.
+
 ## V0.21.44 · Conexiones comprobadas al abrir
 
 - Al abrir Angeli se validan realmente la sesión, Contactos, Calendar y Drive; un secreto guardado ya no basta para afirmar que están conectados.
