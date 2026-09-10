@@ -411,3 +411,11 @@ El usuario confirmó WhatsApp en el móvil: recogida del texto, selección entre
 Se reprodujo que la creación de notas usaba la orden original como contenido, ignorando `aiIntent.notes`, y aceptaba títulos idénticos a la orden. La preparación de la ficha pasa a `js/notes.js`: conserva el detalle interpretado, limpia el prefijo de creación en el respaldo y solicita título/contenido ausentes mediante el editor existente, antes de confirmar. No se modifican integraciones ni el contrato de datos. Prueba móvil pendiente: «Añade una nota personal en la que tengo que enviar un correo»; verificar contenido limpio, título breve o solicitud de título, categoría Personal y edición posterior.
 
 Verificación local: 79 pruebas Node aprobadas y formulario comprobado en navegador: bloqueo de título vacío, contenido limpio, categoría Personal, confirmación y modificación posterior. La puerta real de integración se ejecuta en el PR.
+
+## 2026-09-10 — Avisos propios de Angeli V0.21.47
+
+Se adopta FCM Web Push para identificar cada instalación de la PWA y Cloud Tasks para entregar el aviso aunque Angeli esté cerrada. El usuario activa el permiso mediante una pulsación explícita en Ajustes y puede comprobarlo con «Probar aviso». Los tokens viven en `users/{uid}/pushDevices` y la programación privada en `users/{uid}/pushReminders`, siempre dentro de la base con nombre `angelifirebase`.
+
+Calendar continúa siendo el respaldo visible. Crear o modificar un recordatorio programa las dos vías; completar o cancelar retira ambas. Cada tarea contiene únicamente UID, ID de entrada y fecha técnica. Antes de enviar, Cloud Run vuelve a leer Firestore y exige que la programación coincida y que el recordatorio siga activo, por lo que una tarea antigua no puede generar un aviso obsoleto.
+
+Infraestructura comprobada y configurada en `angeli-secretaria`: APIs Cloud Tasks y FCM activas; cola `angeli-reminders` en `europe-west1`; certificado web push generado; cuenta `angeli-notification-delivery` con invocación de Cloud Run; y cuenta `angeli-ai-interpreter` con acceso limitado a `angelifirebase`, encolado/cancelación de tareas, envío FCM y uso de la identidad de entrega. Falta completar la comprobación real desde cada dispositivo después de publicar V0.21.47.

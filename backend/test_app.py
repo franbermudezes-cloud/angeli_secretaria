@@ -30,6 +30,63 @@ VALID_RESPONSE = {
 }
 
 
+class FakePush:
+    delivery_account = "delivery@example.test"
+    delivery_url = "https://backend.test/push/deliver"
+
+    def __init__(self):
+        self.calls = []
+
+    def register(self, uid, token, label): self.calls.append(("register", uid, token, label)); return {"registered": True}
+    def schedule(self, uid, entry_id, due_at): self.calls.append(("schedule", uid, entry_id, due_at)); return {"scheduled": True}
+    def cancel(self, uid, entry_id): self.calls.append(("cancel", uid, entry_id)); return {"cancelled": True}
+    def send_test(self, uid): self.calls.append(("test", uid)); return {"delivered": 1}
+    def deliver(self, uid, entry_id, due_at): self.calls.append(("deliver", uid, entry_id, due_at)); return {"delivered": 1}
+
+
+def post(path, payload, authorization="Bearer test"):
+    body = __import__("json").dumps(payload).encode()
+    captured = {}
+    def start_response(status, headers): captured["status"] = status
+    response = b"".join(app.app({"REQUEST_METHOD": "POST", "PATH_INFO": path, "CONTENT_LENGTH": str(len(body)), "wsgi.input": BytesIO(body), "HTTP_AUTHORIZATION": authorization}, start_response))
+    return captured["status"], __import__("json").loads(response)
+
+
+class PushEndpointTests(unittest.TestCase):
+    def setUp(self):
+        os.environ["ANGELI_AI_DEV_BYPASS_AUTH"] = "1"
+        os.environ.pop("K_SERVICE", None)
+        app._rate_windows.clear()
+        self.push = FakePush()
+        app.set_test_dependencies(push_factory=lambda: self.push)
+
+    def tearDown(self):
+        app.set_test_dependencies()
+        os.environ.pop("ANGELI_AI_DEV_BYPASS_AUTH", None)
+
+    def test_register_schedule_cancel_and_test_use_authenticated_user(self):
+        cases = [
+            ("/push/register", {"token": "x" * 80, "label": "Mac"}, "register"),
+            ("/push/schedule", {"entryId": "entry-1", "dueAt": "2026-09-11T10:00:00+02:00"}, "schedule"),
+            ("/push/cancel", {"entryId": "entry-1"}, "cancel"),
+            ("/push/test", {}, "test"),
+        ]
+        for path, payload, action in cases:
+            with self.subTest(path=path):
+                status, _ = post(path, payload)
+                self.assertEqual(status, "200 OK")
+                self.assertEqual(self.push.calls[-1][0], action)
+                self.assertEqual(self.push.calls[-1][1], "local-test-user")
+
+    @patch("app.verify_delivery_identity")
+    def test_delivery_requires_dedicated_identity_and_exact_schedule(self, verify):
+        status, data = post("/push/deliver", {"uid": "owner", "entryId": "entry-1", "dueAt": "2026-09-11T08:00:00+00:00"})
+        self.assertEqual(status, "200 OK")
+        self.assertEqual(data["delivered"], 1)
+        verify.assert_called_once()
+        self.assertEqual(self.push.calls[-1], ("deliver", "owner", "entry-1", "2026-09-11T08:00:00+00:00"))
+
+
 class InterpretEndpointTests(unittest.TestCase):
     def setUp(self):
         os.environ["ANGELI_AI_DEV_BYPASS_AUTH"] = "1"

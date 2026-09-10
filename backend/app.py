@@ -28,6 +28,7 @@ from google_sessions import (
     GoogleResourceNotFound,
     GoogleSessions,
 )
+from push_notifications import PushNotifications, verify_delivery_identity
 
 MAX_TEXT_LENGTH = 500
 MAX_BODY_BYTES = 2_048
@@ -292,6 +293,7 @@ _rate_windows: dict[str, deque[float]] = defaultdict(deque)
 _interpreter: Callable[[str, str, str], dict[str, Any]] | None = None
 _identity_verifier: Callable[[str], dict[str, Any]] | None = None
 _sessions_factory: Callable[[], GoogleSessions] | None = None
+_push_factory: Callable[[], PushNotifications] | None = None
 
 
 class OutputValidationError(ValueError):
@@ -600,6 +602,10 @@ def enforce_rate_limit(subject: str) -> None:
     window.append(now)
 
 
+def push_notifications() -> PushNotifications:
+    return _push_factory() if _push_factory else PushNotifications()
+
+
 def validate_interpretation(raw: Any) -> dict[str, Any]:
     if not isinstance(raw, dict) or not set(raw).issubset(ALLOWED_FIELDS):
         raise ValueError("Respuesta estructurada no válida")
@@ -779,11 +785,20 @@ def app(environ: dict[str, Any], start_response: Callable):
     if environ.get("REQUEST_METHOD") == "OPTIONS":
         return cors_preflight_response(start_response, origin)
     path = environ.get("PATH_INFO")
-    if environ.get("REQUEST_METHOD") != "POST" or path not in {"/interpret", "/session/status", "/oauth/exchange", "/google", "/media/upload", "/media/download", "/media/delete", "/test/session/status", "/test/oauth/exchange"}:
+    routes = {"/interpret", "/session/status", "/oauth/exchange", "/google", "/media/upload", "/media/download", "/media/delete", "/push/register", "/push/schedule", "/push/cancel", "/push/test", "/push/deliver", "/test/session/status", "/test/oauth/exchange"}
+    if environ.get("REQUEST_METHOD") != "POST" or path not in routes:
         return json_response(start_response, "404 Not Found", {"error": "No encontrado"}, origin)
     if environ.get("HTTP_ORIGIN") and not origin:
         return json_response(start_response, "403 Forbidden", {"error": "Origen no permitido"})
     try:
+        if path == "/push/deliver":
+            service = push_notifications()
+            verify_delivery_identity(environ, service.delivery_account, service.delivery_url.rsplit("/push/deliver", 1)[0])
+            delivery = parse_json_body(environ, {"uid", "entryId", "dueAt"})
+            uid, entry_id, due_at = delivery.get("uid"), delivery.get("entryId"), delivery.get("dueAt")
+            if not isinstance(uid, str) or not uid or not isinstance(entry_id, str) or not entry_id or not isinstance(due_at, str):
+                raise ValueError("Entrega no válida")
+            return json_response(start_response, "200 OK", service.deliver(uid, entry_id, due_at), origin)
         subject = verify_identity(environ)
     except PermissionError as error:
         if "Usuario no autorizado" in str(error):
@@ -800,6 +815,18 @@ def app(environ: dict[str, Any], start_response: Callable):
             return json_response(start_response, "404 Not Found", {"error": "No encontrado"}, origin)
         if path == "/session/status":
             return json_response(start_response, "200 OK", session_status(), origin)
+        if path == "/push/register":
+            payload = parse_json_body(environ, {"token", "label"})
+            return json_response(start_response, "200 OK", push_notifications().register(subject, payload.get("token"), payload.get("label") or "Dispositivo"), origin)
+        if path == "/push/schedule":
+            payload = parse_json_body(environ, {"entryId", "dueAt"})
+            return json_response(start_response, "200 OK", push_notifications().schedule(subject, payload.get("entryId"), payload.get("dueAt")), origin)
+        if path == "/push/cancel":
+            payload = parse_json_body(environ, {"entryId"})
+            return json_response(start_response, "200 OK", push_notifications().cancel(subject, payload.get("entryId")), origin)
+        if path == "/push/test":
+            parse_json_body(environ, set())
+            return json_response(start_response, "200 OK", push_notifications().send_test(subject), origin)
         if path == "/test/session/status":
             return json_response(start_response, "200 OK", test_session_status(), origin)
         if path == "/oauth/exchange":
@@ -883,9 +910,9 @@ def app(environ: dict[str, Any], start_response: Callable):
         return json_response(start_response, "503 Service Unavailable", {"error": "Interpretación no disponible"}, origin)
 
 
-def set_test_dependencies(interpreter: Callable[[str, str, str], dict[str, Any]] | None = None, verifier: Callable[[str], dict[str, Any]] | None = None, session_factory: Callable[[], GoogleSessions] | None = None) -> None:
-    global _interpreter, _identity_verifier, _sessions_factory
-    _interpreter, _identity_verifier, _sessions_factory = interpreter, verifier, session_factory
+def set_test_dependencies(interpreter: Callable[[str, str, str], dict[str, Any]] | None = None, verifier: Callable[[str], dict[str, Any]] | None = None, session_factory: Callable[[], GoogleSessions] | None = None, push_factory: Callable[[], PushNotifications] | None = None) -> None:
+    global _interpreter, _identity_verifier, _sessions_factory, _push_factory
+    _interpreter, _identity_verifier, _sessions_factory, _push_factory = interpreter, verifier, session_factory, push_factory
 
 
 def wsgi_request(payload: dict[str, Any], authorization: str = "") -> tuple[str, dict[str, Any]]:

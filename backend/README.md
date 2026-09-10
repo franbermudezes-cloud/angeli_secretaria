@@ -11,6 +11,8 @@ Además ofrece, siempre tras comprobar un ID token de Firebase del propietario:
   Contactos, Calendar y Drive se guardan exclusivamente en Secret Manager.
 - `POST /google`: consulta acotada de Contactos y operaciones de Calendar.
 - `POST /media/upload`, `/media/download` y `/media/delete`: adjuntos de Angeli en Drive.
+- `POST /push/register`, `/push/schedule`, `/push/cancel` y `/push/test`: dispositivos y avisos propios de la PWA.
+- `POST /push/deliver`: entrega interna invocada por Cloud Tasks con una identidad OIDC dedicada.
 
 No escribe en Sheets ni descarga la agenda completa. Cuando la persona propietaria conecta Drive, recibe y sirve únicamente los adjuntos creados por Angeli mediante `drive.file`; no analiza el resto de Mi unidad.
 
@@ -25,6 +27,11 @@ necesita `roles/secretmanager.secretAccessor` y
 - `angeli-google-contacts-grant`
 - `angeli-google-calendar-grant`
 - `angeli-google-drive-grant`
+
+Para los avisos, la identidad de Cloud Run necesita acceso de datos a la base
+`angelifirebase`, `roles/cloudtasks.enqueuer`, `roles/cloudtasks.taskDeleter`,
+`roles/firebasecloudmessaging.admin` y permiso para usar la cuenta de entrega.
+La cuenta `angeli-notification-delivery` solo necesita invocar este servicio.
 
 El SDK obtiene Application Default Credentials de la identidad del servicio;
 no se usan API keys ni archivos JSON de cuentas de servicio.
@@ -41,6 +48,11 @@ Variables necesarias:
   separados por coma. Actualmente: `franbermudez.es@gmail.com`.
 - `ALLOWED_ORIGINS`: orígenes exactos de GitHub Pages y de desarrollo local,
   separados por coma.
+- `ANGELI_FIRESTORE_DATABASE`: `angelifirebase`.
+- `ANGELI_PUSH_QUEUE_LOCATION`: `europe-west1`.
+- `ANGELI_PUSH_QUEUE`: `angeli-reminders`.
+- `ANGELI_PUSH_DELIVERY_URL`: URL pública exacta terminada en `/push/deliver`.
+- `ANGELI_PUSH_DELIVERY_SERVICE_ACCOUNT`: correo de la identidad OIDC de entrega.
 
 La PWA envía un ID token de Firebase en `Authorization: Bearer <id-token>`.
 El servicio verifica su firma, proyecto, expiración y correo validado antes de

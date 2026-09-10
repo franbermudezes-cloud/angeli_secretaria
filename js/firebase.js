@@ -26,7 +26,11 @@ import {
   setDoc,
   waitForPendingWrites
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
-import { fromCloudEntry, sameEntry, toCloudEntry } from "./cloud-entry.js?v=0.21.46";
+import { getMessaging, getToken, isSupported, onMessage } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging.js";
+import { fromCloudEntry, sameEntry, toCloudEntry } from "./cloud-entry.js?v=0.21.47";
+
+const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
+const VAPID_KEY = "BHyc8Ne9wyaAFoju-9FNG5_qCXPOLSQhHhsfye9bdFlAv3zdLfAvjcvb29Cyrtj80kSq7gJ3qGJ9k3Mb_EqYt_o";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAFM5NjcxX9lC5MpfII4B3Kx7lV9SsUAsc",
@@ -50,6 +54,7 @@ export function createCloudSync({ notify }) {
   let unsubscribe = null;
   let unsubscribeSettings = null;
   let callbacks = {};
+  let messaging = null;
 
   async function initialize(handlers) {
     callbacks = handlers || {};
@@ -71,9 +76,10 @@ export function createCloudSync({ notify }) {
       user = nextUser || null;
       stopListening();
       callbacks.onAuthChange?.(session());
-      if (!user) { callbacks.onSyncStatus?.({ state: "signed-out" }); return; }
+      if (!user) { callbacks.onSyncStatus?.({ state: "signed-out" }); callbacks.onPushStatus?.(pushStatus()); return; }
       subscribe();
       subscribeSettings();
+      if (Notification.permission === "granted") void enablePush(false);
     });
   }
 
@@ -112,6 +118,41 @@ export function createCloudSync({ notify }) {
   async function disconnect() {
     if (auth) await signOut(auth);
   }
+
+  function pushStatus() {
+    if (!("Notification" in window) || !("serviceWorker" in navigator)) return { state: "unsupported", text: "Este navegador no admite avisos" };
+    if (!user) return { state: "signed-out", text: "Inicia sesión en Angeli primero" };
+    if (Notification.permission === "denied") return { state: "blocked", text: "Avisos bloqueados en el navegador" };
+    if (Notification.permission === "granted") return { state: "enabled", text: "Avisos activos en este dispositivo" };
+    return { state: "available", text: "Activa los avisos en este dispositivo" };
+  }
+
+  async function pushRequest(path, body = {}) {
+    const token = await getAuthToken();
+    const response = await fetch(API + path, { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || "No se pudo configurar el aviso");
+    return result;
+  }
+
+  async function enablePush(askPermission = true) {
+    if (!user) throw new Error("Inicia sesión en Angeli primero");
+    if (!await isSupported()) throw new Error("Este navegador no admite avisos");
+    if (askPermission && Notification.permission === "default") await Notification.requestPermission();
+    if (Notification.permission !== "granted") { callbacks.onPushStatus?.(pushStatus()); throw new Error("Los avisos no están permitidos"); }
+    const registration = await navigator.serviceWorker.ready;
+    messaging ||= getMessaging(auth.app);
+    const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: registration });
+    if (!token) throw new Error("No se pudo identificar este dispositivo");
+    await pushRequest("/push/register", { token, label: `${navigator.platform || "Dispositivo"} · ${navigator.userAgent.includes("Mobile") ? "móvil" : "ordenador"}` });
+    onMessage(messaging, payload => registration.showNotification(payload.data?.title || "Angeli", { body: payload.data?.body || "Tienes un recordatorio.", icon: "icon-192.png", badge: "icon-192.png", data: { url: payload.data?.url || "./" }, tag: payload.data?.entryId || "angeli-test" }));
+    callbacks.onPushStatus?.(pushStatus());
+    return true;
+  }
+
+  async function schedulePush(entry) { return pushRequest("/push/schedule", { entryId: entry.id, dueAt: entry.schedule?.dueAt }); }
+  async function cancelPush(entry) { return pushRequest("/push/cancel", { entryId: entry.id }); }
+  async function testPush() { return pushRequest("/push/test"); }
 
   function subscribe() {
     callbacks.onSyncStatus?.({ state: "connecting" });
@@ -169,5 +210,5 @@ export function createCloudSync({ notify }) {
     return doc(db, "users", user.uid, "settings", "notes");
   }
 
-  return { initialize, session, isSignedIn, getAuthToken, connect, disconnect, syncNotes, saveNoteSettings };
+  return { initialize, session, isSignedIn, getAuthToken, connect, disconnect, syncNotes, saveNoteSettings, pushStatus, enablePush, schedulePush, cancelPush, testPush };
 }
