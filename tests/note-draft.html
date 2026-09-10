@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Prueba aislada de ficha de nota</title></head><body>
+<script type="module">
+import { createUI } from '../js/ui.js';
+import { prepareNoteDraft, missingNoteDraftFields, updateNoteDraft } from '../js/notes.js';
+const page = new DOMParser().parseFromString(await (await fetch('../index.html')).text(), 'text/html');
+page.querySelectorAll('script').forEach(node => node.remove());
+const base = document.createElement('base'); base.href = new URL('../', location.href).href;
+document.head.append(base, ...page.head.querySelectorAll('link[rel="stylesheet"], style'));
+document.body.append(...page.body.childNodes);
+const ui = createUI({getMedia:async()=>null});
+ui.dismissWelcome();
+const text = 'Añade una nota personal en la que tengo que enviar un correo';
+const entry = prepareNoteDraft({text, aiIntent:{title:text, notes:text, noteClassification:{scope:'personal'}}}, {categories:[{id:'personal',label:'Personal'}]});
+function review(draft) {
+  const missingFields = missingNoteDraftFields(draft);
+  if(missingFields.length) return edit(draft,missingFields);
+  ui.showNoteConfirmation(draft,{onEdit:()=>edit(draft),onCancel:ui.closeLayers,onSave:()=>ui.showCompletion({title:'Prueba completada',lead:'La ficha es válida. No se ha guardado ninguna nota.'})});
+}
+function edit(draft,missingFields=[]) {ui.showNoteEditor(draft,{missingFields,onCancel:ui.closeLayers,onSave:values=>review(updateNoteDraft(draft,values))});}
+review(entry);
+</script></body></html>
