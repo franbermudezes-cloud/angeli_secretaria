@@ -1,8 +1,8 @@
-import { typeLabel } from "./classifier.js?v=0.21.45";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.45";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.45";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.45";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.45";
+import { typeLabel } from "./classifier.js?v=0.21.46";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.46";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.46";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.46";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.46";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -168,7 +168,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.45";
+    image.src = "assets/angeli-welcome.gif?v=0.21.46";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -360,7 +360,7 @@ export function createUI({ getMedia }) {
     });
   }
 
-  function showNoteEditor(note, { settings = currentNoteSettings, onSave, onCancel } = {}) {
+  function showNoteEditor(note, { settings = currentNoteSettings, missingFields = [], onSave, onCancel } = {}) {
     const classification = note.noteClassification || note.aiIntent?.noteClassification || {};
     const normalizedSettings = normalizeNoteSettings(settings);
     const form = document.createElement("div");
@@ -373,12 +373,16 @@ export function createUI({ getMedia }) {
       '<label>Motivo<input id="noteDraftPurpose" type="text"></label>' +
       '<label>Etiquetas<input id="noteDraftTags" type="text" placeholder="Separadas por comas"></label>';
     openModal({
-      title: "Modificar nota",
-      lead: "Corrige únicamente lo que necesites y vuelve a revisar la ficha.",
+      title: missingFields.length ? "Completar nota" : "Modificar nota",
+      lead: missingFields.includes("text") ? "¿Qué quieres guardar en esta nota? Añade el contenido y un título breve." : missingFields.includes("title") ? "¿Qué título quieres ponerle a esta nota? El contenido ya está preparado." : "Corrige únicamente lo que necesites y vuelve a revisar la ficha.",
       body: form,
       actions: [
-        { label: "Volver", kind: "secondary", onClick: onCancel },
-        { label: "Revisar cambios", kind: "confirm", onClick: () => onSave?.({
+        { label: missingFields.length ? "Cancelar" : "Volver", kind: "secondary", onClick: onCancel },
+        { label: "Revisar cambios", kind: "confirm", onClick: () => {
+          for (const id of ["noteDraftTitle", "noteDraftText"]) {
+            if (!$(id).value.trim()) { notify(id === "noteDraftTitle" ? "Escribe un título para la nota" : "Escribe el contenido de la nota"); $(id).focus(); return; }
+          }
+          onSave?.({
           title: $("noteDraftTitle").value,
           text: $("noteDraftText").value,
           scope: $("noteDraftScope").value,
@@ -388,10 +392,10 @@ export function createUI({ getMedia }) {
           relationName: $("noteDraftRelationName").value,
           purpose: $("noteDraftPurpose").value,
           tags: $("noteDraftTags").value
-        }) }
+        }); } }
       ]
     });
-    $("noteDraftTitle").value = noteTitle(note);
+    $("noteDraftTitle").value = missingFields.includes("title") ? "" : noteTitle(note);
     $("noteDraftText").value = note.text || "";
     $("noteDraftScope").value = classification.scope || "general";
     $("noteDraftRelationType").value = classification.relationType || "none";

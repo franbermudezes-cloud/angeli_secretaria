@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.21.46 · Título y contenido de notas
+
+- La ficha usa el contenido interpretado de la nota, sin copiar la orden de creación cuando hay detalle disponible.
+- El respaldo elimina la fórmula de creación y la categoría del contenido. Si el título repite la orden o faltan datos, pide completarlos en el editor antes de confirmar el guardado.
+- Modificar contenido mantiene alineados el texto de la nota y el detalle interpretado.
+- Regresión cubierta en las pruebas del coordinador; comprobación móvil pendiente con la frase original del usuario.
+
 ## V0.21.45 · WhatsApp preparado desde Contactos
 
 - Angeli entiende peticiones naturales como «Envía un WhatsApp a Monse diciendo…» y mantiene la conversación si falta el destinatario o el mensaje.

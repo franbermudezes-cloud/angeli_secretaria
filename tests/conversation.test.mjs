@@ -15,7 +15,7 @@ import { mockProvider, interpret, localCalendarUpdate, localLinkedCalendarIntent
 import { fixtureTitle, reminderFixture } from './reminder-event-fixture.mjs';
 import { applyCalendarUpdateToEntries, buildCalendarSearch, calendarEvent, scheduledReminderEvent, listAllCalendarPages, reconcileReminderEntries, linkedReminderSearch, calendarEventsForIntent, normalizeConnectionReport, connectionProblems, connectionStatusText, integrationFailureMessage } from '../js/google.js';
 import { fromCloudEntry, toCloudEntry } from '../js/cloud-entry.js';
-import { findNoteMatches, normalizeNoteClassification, removeNoteEntry, updateNoteDraft, updateNoteStatus } from '../js/notes.js';
+import { prepareNoteDraft, missingNoteDraftFields, findNoteMatches, normalizeNoteClassification, removeNoteEntry, updateNoteDraft, updateNoteStatus } from '../js/notes.js';
 import { addNoteSetting, applyExplicitNoteCategory, normalizeNoteSettings, noteInterpretationContext, removeNoteSetting, renameNoteSetting, settingLabel } from '../js/note-settings.js';
 import { shortcutPrefix, shortcutSemantics, shortcutType } from '../js/shortcuts.js';
 import { localWhatsApp, whatsappChoices, whatsappPhone, whatsappUrl } from '../js/whatsapp.js';
@@ -158,7 +158,7 @@ test('notas: el borrador permite corregir toda la ficha antes de guardarla',()=>
   assert.deepEqual(updated.noteClassification,{scope:'personal',relationType:'project',relationName:'Reforma de casa',purpose:'Preparar el salón',tags:['casa','compra']});
   const app=readFileSync(new URL('../js/app.js',import.meta.url),'utf8');
   const ui=readFileSync(new URL('../js/ui.js',import.meta.url),'utf8');
-  assert.match(app,/proposal\.intent==="note"[\s\S]*reviewNoteDraft\(entry\)[\s\S]*return/);
+  assert.match(app,/proposal\.intent==="note"[\s\S]*reviewNoteDraft\(prepareNoteDraft\(entry,noteSettings\)\)[\s\S]*return/);
   assert.match(ui,/Nada se guardará hasta que confirmes/);
   assert.match(ui,/Guardar nota/);
 });
@@ -1116,4 +1116,39 @@ test("WhatsApp: ofrece todos los teléfonos sin duplicarlos y permite corregir e
   const app=readFileSync(new URL('../js/app.js',import.meta.url),'utf8');
   assert.match(app,/Mensaje preparado en WhatsApp/);
   assert.doesNotMatch(app,/Mensaje enviado/);
+});
+
+const noteSettingsFixture = { categories: [{ id: 'personal', label: 'Personal' }, { id: 'company', label: 'Empresa' }] };
+test('nota: separa el detalle de la IA de la orden original y conserva la categoría', () => {
+  const draft = prepareNoteDraft({text:'Añade una nota personal en la que tengo que enviar un correo a Marta sobre el presupuesto', aiIntent:{intent:'note',title:'Correo a Marta',notes:'Tengo que enviar un correo a Marta sobre el presupuesto',noteClassification:{scope:'personal'}}}, noteSettingsFixture);
+  assert.equal(draft.text, 'Tengo que enviar un correo a Marta sobre el presupuesto');
+  assert.equal(draft.aiIntent.title, 'Correo a Marta');
+  assert.equal(draft.aiIntent.noteClassification.scope, 'personal');
+  assert.deepEqual(missingNoteDraftFields(draft), []);
+});
+test('nota: la regresión de título duplicado pide título y limpia el contenido sin inventarlo', () => {
+  const text = 'Añade una nota personal en la que tengo que enviar un correo';
+  for (const notes of [null, text]) {
+    const draft = prepareNoteDraft({text,aiIntent:{title:text,notes}},noteSettingsFixture);
+    assert.equal(draft.text, 'tengo que enviar un correo');
+    assert.equal(draft.aiIntent.title, '');
+    assert.deepEqual(missingNoteDraftFields(draft), ['title']);
+  }
+});
+test('nota: una orden sin contenido solicita los datos que faltan', () => {
+  const draft = prepareNoteDraft({text:'Añade una nota personal',aiIntent:{title:'Nota',notes:null}},noteSettingsFixture);
+  assert.equal(draft.text, '');
+  assert.deepEqual(missingNoteDraftFields(draft), ['title','text']);
+});
+test('nota: conserva contenido libre, detalle largo y metadatos al preparar y modificar', () => {
+  const text = 'El presupuesto incluye transporte. Preguntar por el plazo y conservar la oferta anterior.';
+  const draft = prepareNoteDraft({id:'original',text,images:[{id:'image'}],aiIntent:{title:'Presupuesto',notes:text}},noteSettingsFixture);
+  assert.equal(draft.text,text);
+  assert.equal(draft.id,'original');
+  assert.deepEqual(draft.images,[{id:'image'}]);
+  const edited = updateNoteDraft(draft,{title:'Oferta revisada',text:'Consultar el plazo',scope:'personal'});
+  assert.equal(edited.aiIntent.title,'Oferta revisada');
+  assert.equal(edited.aiIntent.notes,'Consultar el plazo');
+  assert.equal(edited.text,'Consultar el plazo');
+  assert.deepEqual(missingNoteDraftFields(edited),[]);
 });

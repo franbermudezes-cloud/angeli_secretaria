@@ -403,3 +403,11 @@ Cloud Run deja de aceptar el ID token efímero de Google Identity Services y pas
 
 - «Ver», «listar» y una petición breve como «recordatorios» son órdenes de consulta explícitas. Nunca deben caer en el flujo de creación de una nota.
 - El estado pedido forma parte de la consulta: «notas hechas» muestra completadas y «notas pendientes» muestra abiertas. Si no hay recordatorios, Angeli lo indica sin crear ninguna entrada.
+
+## 2026-09-10 — Revisión de notas V0.21.46
+
+El usuario confirmó WhatsApp en el móvil: recogida del texto, selección entre contactos coincidentes y apertura con envío final manual correctos.
+
+Se reprodujo que la creación de notas usaba la orden original como contenido, ignorando `aiIntent.notes`, y aceptaba títulos idénticos a la orden. La preparación de la ficha pasa a `js/notes.js`: conserva el detalle interpretado, limpia el prefijo de creación en el respaldo y solicita título/contenido ausentes mediante el editor existente, antes de confirmar. No se modifican integraciones ni el contrato de datos. Prueba móvil pendiente: «Añade una nota personal en la que tengo que enviar un correo»; verificar contenido limpio, título breve o solicitud de título, categoría Personal y edición posterior.
+
+Verificación local: 79 pruebas Node aprobadas y formulario comprobado en navegador: bloqueo de título vacío, contenido limpio, categoría Personal, confirmación y modificación posterior. La puerta real de integración se ejecuta en el PR.

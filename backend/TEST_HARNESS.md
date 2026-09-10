@@ -1,5 +1,13 @@
 # Entorno automático de pruebas reales
 
+V0.21.46: regresión de notas en `tests/conversation.test.mjs`: separación de
+contenido interpretado y orden, título duplicado, datos vacíos y edición sin
+pérdida de adjuntos. La prueba local `tests/note-draft.html` permite comprobar
+el editor y la confirmación sin guardar ni llamar a servicios externos.
+Validación manual Android pendiente: dictar «Añade una nota personal en la que
+tengo que enviar un correo», completar el título si se solicita, confirmar y
+volver a modificar título y contenido.
+
 V0.21.45: la puerta PWA cubre la preparación de WhatsApp de punta a punta sin
 enviar mensajes: interpretación separada de una llamada, solicitud del dato que
 falte, continuidad conversacional, selección no duplicada de teléfonos de

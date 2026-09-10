@@ -1,3 +1,30 @@
+// Preparación local de la ficha; no cambia el contrato de almacenamiento.
+export function prepareNoteDraft(entry, settings = {}) {
+  const intent = entry.aiIntent || {};
+  const original = clean(entry.text);
+  const stripCommand = value => {
+    let text = clean(value).replace(/^\s*(?:(?:añade|añadir|anota|apunta|guarda|guardar|crea|crear)(?:me)?|(?:quiero|necesito)\s+(?:crear|añadir|guardar)?)\s+(?:una\s+)?nota\b\s*/i, "");
+    if (text !== clean(value)) {
+      for (const category of settings.categories || []) {
+        const label = category.label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        text = text.replace(new RegExp(`^(?:en\\s+(?:la\\s+categor[ií]a\\s+)?)?${label}(?=\\s|[,:.]|$)`, "i"), "").trim();
+      }
+      text = text.replace(/^[,:.]*\s*(?:(?:en\s+la\s+que|que\s+(?:diga|dice)|con\s+(?:el\s+)?(?:contenido|texto))\s*:?\s*|(?:sobre|de|para)\s+)?/i, "").trim();
+    }
+    return text;
+  };
+  const text = stripCommand(intent.notes || original);
+  const candidate = clean(intent.title);
+  // Una repetición de la orden no es un título interpretado. Pedimos uno
+  // explícito en vez de inventar un resumen o recortar información al azar.
+  const title = candidate && !/^nota[.!]*$/i.test(candidate) && candidate !== original && candidate !== text && stripCommand(candidate) === candidate ? candidate : "";
+  return { ...entry, text, aiIntent: { ...intent, title, notes: text || null } };
+}
+
+export function missingNoteDraftFields(entry) {
+  return [!clean(entry.aiIntent?.title) && "title", !clean(entry.text) && "text"].filter(Boolean);
+}
+
 const SAFE_ID = /^[a-z0-9][a-z0-9-]{0,63}$/;
 
 export function normalizeNoteClassification(value = {}) {
@@ -29,7 +56,7 @@ export function updateNoteDraft(entry = {}, values = {}) {
     ...entry,
     text,
     noteClassification,
-    aiIntent: { ...(entry.aiIntent || {}), title, noteClassification },
+    aiIntent: { ...(entry.aiIntent || {}), title, notes: text, noteClassification },
     updatedAt: new Date().toISOString()
   };
 }
