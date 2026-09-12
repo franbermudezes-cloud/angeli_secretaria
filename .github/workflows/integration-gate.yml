@@ -61,6 +61,9 @@ jobs:
       - name: Ejecutar pruebas del coordinador conversacional
         run: node --test tests/conversation.test.mjs
 
+      - name: Verificar el registro de adjuntos en Sheets
+        run: node --test tests/sheets.test.mjs
+
       - name: Ejecutar arnés real aislado
         run: python backend/test_harness.py
 
