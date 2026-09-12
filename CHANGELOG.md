@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.21.52 · Enlaces de adjuntos en Google Sheets
+
+- El registro externo incluye ahora en `Archivo` los nombres de fotos y ficheros adjuntos y en `Enlace` sus URL de Google Drive.
+- Si una referencia antigua no conserva `webViewLink`, Angeli recompone el enlace de Drive a partir del identificador remoto.
+- Las entradas sin adjuntos mantienen ambos campos vacíos.
+
 ## V0.21.51 · Banner de escritorio en primer plano
 
 - Cuando Angeli está abierta en un ordenador, el mensaje recibido usa el canal nativo de notificaciones de la ventana para que Chrome y la PWA instalada muestren el banner de macOS.

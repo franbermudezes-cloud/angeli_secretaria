@@ -1,5 +1,9 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-12 — Enlaces de adjuntos en Sheets V0.21.52
+
+La hoja operativa real `Secretaria_Angeli.xlsx`, propiedad de `franbermudez.es@gmail.com`, conserva 23 columnas y ya dispone de `Archivo` y `Enlace`. El Apps Script activo es `Angeli Secretaria V0.8`; su endpoint respondió correctamente a la comprobación de estado. Una escritura mínima confirmó que el contrato actual guarda `archivo` en la columna `Archivo` y `enlace` en `Enlace`; las dos filas técnicas creadas durante la comprobación se vaciaron y una exportación posterior confirmó que no quedó ningún dato de prueba. El fallo estaba en la PWA: `js/sheets.js` enviaba únicamente los nombres de `entry.files`, omitía las fotos y nunca incluía `enlace`. Desde V0.21.52 se registran en el mismo orden todas las referencias de `images` y `files`, usando el `webViewLink` devuelto por Drive o reconstruyéndolo con el ID remoto. Sheets continúa siendo un registro externo y Firestore sigue siendo la fuente operativa.
+
 ## 2026-09-12 — Banner de escritorio en primer plano V0.21.51
 
 La prueba V0.21.50 confirmó mediante el aviso interno que FCM entregaba el mensaje a Chrome, pero macOS no presentaba el banner aun con ambos perfiles de Chrome autorizados. En escritorio y primer plano se usa `new Notification` para pasar por el canal nativo de la ventana; el service worker continúa atendiendo móvil y segundo plano.
