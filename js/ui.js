@@ -1,9 +1,9 @@
-import { typeLabel } from "./classifier.js?v=0.21.50";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.50";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.50";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.50";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.50";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.50";
+import { typeLabel } from "./classifier.js?v=0.21.51";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.51";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.51";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.51";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.51";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.51";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -181,7 +181,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.50";
+    image.src = "assets/angeli-welcome.gif?v=0.21.51";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";

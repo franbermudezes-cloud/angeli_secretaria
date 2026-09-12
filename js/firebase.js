@@ -27,8 +27,8 @@ import {
   waitForPendingWrites
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 import { deleteToken, getMessaging, getToken, isSupported, onMessage } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging.js";
-import { fromCloudEntry, sameEntry, toCloudEntry } from "./cloud-entry.js?v=0.21.50";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.50";
+import { fromCloudEntry, sameEntry, toCloudEntry } from "./cloud-entry.js?v=0.21.51";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.51";
 
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
 const VAPID_KEY = "BHyc8Ne9wyaAFoju-9FNG5_qCXPOLSQhHhsfye9bdFlAv3zdLfAvjcvb29Cyrtj80kSq7gJ3qGJ9k3Mb_EqYt_o";
@@ -161,7 +161,18 @@ export function createCloudSync({ notify }) {
         onMessage(messaging, payload => {
           const title=payload.data?.title||"Angeli",body=payload.data?.body||"Tienes un recordatorio.";
           if(!payload.data?.entryId) notify(`${title}: ${body}`);
-          void registration.showNotification(title, { body, icon: "icon-192.png", badge: "icon-192.png", data: { url: payload.data?.url || "./" }, tag: payload.data?.entryId || "angeli-test" }).catch(()=>notify(`${title}: ${body}`));
+          const options={body,icon:"icon-192.png",badge:"icon-192.png",data:{url:payload.data?.url||"./"},tag:payload.data?.entryId||"angeli-test"};
+          try{
+            // Chrome en macOS puede recibir el mensaje en primer plano sin
+            // presentar showNotification del service worker. La notificación
+            // de ventana usa el canal nativo que macOS asigna a ese perfil.
+            if(!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){
+              const notification=new Notification(title,options);
+              notification.onclick=()=>{window.focus();notification.close()};
+              return;
+            }
+          }catch(_){/* continuar con el canal del service worker */}
+          void registration.showNotification(title,options).catch(()=>notify(`${title}: ${body}`));
         });
         foregroundListenerReady = true;
       }
