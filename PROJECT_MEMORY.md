@@ -1,5 +1,9 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-13 — Avisos de segundo plano fiables V0.21.53
+
+La revisión posterior a la primera prueba real de avisos detectó dos fallos del entregador. Las tareas fechadas se programaban en Cloud Tasks, pero su entrada no contiene `schedule.status`, por lo que `/push/deliver` las descartaba como inactivas. Además, la entrega concreta se retiraba de Firestore antes de llamar a FCM; una excepción temporal dejaba el reintento de Cloud Tasks sin una entrega válida. Desde V0.21.53 una tarea pendiente con `scheduledDate` y `scheduledTime` es elegible y cada entrega se consume únicamente después de que FCM responda. Las pruebas del servicio de notificaciones forman parte de `integration-gate`.
+
 ## 2026-09-12 — Enlaces de adjuntos en Sheets V0.21.52
 
 La hoja operativa real `Secretaria_Angeli.xlsx`, propiedad de `franbermudez.es@gmail.com`, conserva 23 columnas y ya dispone de `Archivo` y `Enlace`. El Apps Script activo es `Angeli Secretaria V0.8`; su endpoint respondió correctamente a la comprobación de estado. Una escritura mínima confirmó que el contrato actual guarda `archivo` en la columna `Archivo` y `enlace` en `Enlace`; las dos filas técnicas creadas durante la comprobación se vaciaron y una exportación posterior confirmó que no quedó ningún dato de prueba. El fallo estaba en la PWA: `js/sheets.js` enviaba únicamente los nombres de `entry.files`, omitía las fotos y nunca incluía `enlace`. Desde V0.21.52 se registran en el mismo orden todas las referencias de `images` y `files`, usando el `webViewLink` devuelto por Drive o reconstruyéndolo con el ID remoto. Sheets continúa siendo un registro externo y Firestore sigue siendo la fuente operativa.
