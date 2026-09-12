@@ -423,3 +423,9 @@ Infraestructura comprobada y configurada en `angeli-secretaria`: APIs Cloud Task
 ## 2026-09-12 — Botón de prueba visible V0.21.48
 
 La activación real del dispositivo se confirmó porque Ajustes mostraba «Avisos activos en este dispositivo» y «Renovar». El botón «Probar aviso» existía, pero heredaba `.small-btn.subtle`, una regla histórica con `display:none`. Se retira esa clase únicamente del botón de prueba; los controles secundarios antiguos mantienen su comportamiento.
+## 2026-09-12 — Preferencias completas de avisos V0.21.49
+
+- `Ajustes > Avisos Angeli > Configurar` reúne el estado del dispositivo, activación, prueba, desactivación y las preferencias sincronizadas en Firestore (`users/{uid}/settings/notifications`).
+- Cada pendiente puede generar aviso anticipado, puntual y posterior. El posterior solo se entrega mientras la entrada siga pendiente; los tipos pueden activarse por separado.
+- El servidor desplaza o descarta avisos dentro del horario de descanso según la preferencia de la cuenta. Al guardar ajustes, la PWA vuelve a programar las entradas pendientes.
+- La desactivación es local al dispositivo y elimina su token FCM del servidor. Los demás dispositivos conservan su estado.

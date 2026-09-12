@@ -48,10 +48,13 @@ test('conexiones: una sesión cerrada marca IA y Google como no conectados',()=>
   assert.equal(connectionStatusText('ai',report.ai,false),'IA: no conectada');
 });
 
-test('avisos: el botón de prueba no hereda la clase que oculta controles secundarios',()=>{
+test('avisos: ajustes abre la configuración completa y conserva la prueba por dispositivo',()=>{
   const index=readFileSync(new URL('../index.html',import.meta.url),'utf8');
-  assert.match(index,/class="small-btn" id="pushTest"/);
-  assert.doesNotMatch(index,/class="small-btn subtle" id="pushTest"/);
+  const ui=readFileSync(new URL('../js/ui.js',import.meta.url),'utf8');
+  assert.match(index,/id="pushSettings"/);
+  assert.match(ui,/data-push="test"/);
+  assert.match(ui,/notificationBefore/);
+  assert.match(ui,/notificationQuietStart/);
 });
 
 test('conexiones: el arranque y la reanudación comprueban y avisan sin abrir OAuth',()=>{

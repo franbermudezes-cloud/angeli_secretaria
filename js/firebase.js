@@ -26,8 +26,9 @@ import {
   setDoc,
   waitForPendingWrites
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
-import { getMessaging, getToken, isSupported, onMessage } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging.js";
-import { fromCloudEntry, sameEntry, toCloudEntry } from "./cloud-entry.js?v=0.21.48";
+import { deleteToken, getMessaging, getToken, isSupported, onMessage } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging.js";
+import { fromCloudEntry, sameEntry, toCloudEntry } from "./cloud-entry.js?v=0.21.49";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.49";
 
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
 const VAPID_KEY = "BHyc8Ne9wyaAFoju-9FNG5_qCXPOLSQhHhsfye9bdFlAv3zdLfAvjcvb29Cyrtj80kSq7gJ3qGJ9k3Mb_EqYt_o";
@@ -53,8 +54,10 @@ export function createCloudSync({ notify }) {
   let user = null;
   let unsubscribe = null;
   let unsubscribeSettings = null;
+  let unsubscribeNotificationSettings = null;
   let callbacks = {};
   let messaging = null;
+  let currentPushToken = "";
 
   async function initialize(handlers) {
     callbacks = handlers || {};
@@ -79,7 +82,7 @@ export function createCloudSync({ notify }) {
       if (!user) { callbacks.onSyncStatus?.({ state: "signed-out" }); callbacks.onPushStatus?.(pushStatus()); return; }
       subscribe();
       subscribeSettings();
-      if (Notification.permission === "granted") void enablePush(false);
+      if (Notification.permission === "granted" && localStorage.getItem("angeliPushDisabled") !== "1") void enablePush(false);
     });
   }
 
@@ -123,7 +126,8 @@ export function createCloudSync({ notify }) {
     if (!("Notification" in window) || !("serviceWorker" in navigator)) return { state: "unsupported", text: "Este navegador no admite avisos" };
     if (!user) return { state: "signed-out", text: "Inicia sesión en Angeli primero" };
     if (Notification.permission === "denied") return { state: "blocked", text: "Avisos bloqueados en el navegador" };
-    if (Notification.permission === "granted") return { state: "enabled", text: "Avisos activos en este dispositivo" };
+    if (Notification.permission === "granted" && localStorage.getItem("angeliPushDisabled") !== "1") return { state: "enabled", text: "Avisos activos en este dispositivo" };
+    if (Notification.permission === "granted") return { state: "available", text: "Avisos desactivados en este dispositivo" };
     return { state: "available", text: "Activa los avisos en este dispositivo" };
   }
 
@@ -145,14 +149,29 @@ export function createCloudSync({ notify }) {
     const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: registration });
     if (!token) throw new Error("No se pudo identificar este dispositivo");
     await pushRequest("/push/register", { token, label: `${navigator.platform || "Dispositivo"} · ${navigator.userAgent.includes("Mobile") ? "móvil" : "ordenador"}` });
+    currentPushToken = token;
+    localStorage.removeItem("angeliPushDisabled");
     onMessage(messaging, payload => registration.showNotification(payload.data?.title || "Angeli", { body: payload.data?.body || "Tienes un recordatorio.", icon: "icon-192.png", badge: "icon-192.png", data: { url: payload.data?.url || "./" }, tag: payload.data?.entryId || "angeli-test" }));
     callbacks.onPushStatus?.(pushStatus());
     return true;
   }
 
-  async function schedulePush(entry) { return pushRequest("/push/schedule", { entryId: entry.id, dueAt: entry.schedule?.dueAt }); }
+  async function disablePush() {
+    if (currentPushToken) await pushRequest("/push/unregister", { token: currentPushToken });
+    if (messaging) await deleteToken(messaging).catch(() => false);
+    currentPushToken = "";
+    localStorage.setItem("angeliPushDisabled", "1");
+    callbacks.onPushStatus?.(pushStatus());
+    return true;
+  }
+
+  async function schedulePush(entry) {
+    const dueAt=entry.schedule?.dueAt||(entry.scheduledDate&&entry.scheduledTime?`${entry.scheduledDate}T${entry.scheduledTime}:00`:null);
+    if(!dueAt) return {scheduled:false,reason:"missing_date"};
+    return pushRequest("/push/schedule", { entryId: entry.id, dueAt });
+  }
   async function cancelPush(entry) { return pushRequest("/push/cancel", { entryId: entry.id }); }
-  async function testPush() { return pushRequest("/push/test"); }
+  async function testPush() { return pushRequest("/push/test", { token: currentPushToken || undefined }); }
 
   function subscribe() {
     callbacks.onSyncStatus?.({ state: "connecting" });
@@ -188,9 +207,18 @@ export function createCloudSync({ notify }) {
     return true;
   }
 
+  async function saveNotificationSettings(settings) {
+    if (!user || !db) throw new Error("Inicia sesión en Angeli para guardar ajustes");
+    await setDoc(notificationSettingsDocument(), normalizeNotificationSettings(settings));
+    await waitForPendingWrites(db);
+    return true;
+  }
+
   function subscribeSettings() {
     unsubscribeSettings?.();
     unsubscribeSettings = onSnapshot(noteSettingsDocument(), snapshot => callbacks.onNoteSettings?.(snapshot.exists() ? snapshot.data() : null), error => callbacks.onNoteSettingsError?.(error));
+    unsubscribeNotificationSettings?.();
+    unsubscribeNotificationSettings = onSnapshot(notificationSettingsDocument(), snapshot => callbacks.onNotificationSettings?.(normalizeNotificationSettings(snapshot.exists() ? snapshot.data() : {})), error => callbacks.onNotificationSettingsError?.(error));
   }
 
   function stopListening() {
@@ -198,6 +226,8 @@ export function createCloudSync({ notify }) {
     unsubscribe = null;
     if (unsubscribeSettings) unsubscribeSettings();
     unsubscribeSettings = null;
+    if (unsubscribeNotificationSettings) unsubscribeNotificationSettings();
+    unsubscribeNotificationSettings = null;
   }
 
   function entriesCollection() {
@@ -210,5 +240,10 @@ export function createCloudSync({ notify }) {
     return doc(db, "users", user.uid, "settings", "notes");
   }
 
-  return { initialize, session, isSignedIn, getAuthToken, connect, disconnect, syncNotes, saveNoteSettings, pushStatus, enablePush, schedulePush, cancelPush, testPush };
+  function notificationSettingsDocument() {
+    if (!user || !db) throw new Error("Sesión de Angeli no disponible");
+    return doc(db, "users", user.uid, "settings", "notifications");
+  }
+
+  return { initialize, session, isSignedIn, getAuthToken, connect, disconnect, syncNotes, saveNoteSettings, saveNotificationSettings, pushStatus, enablePush, disablePush, schedulePush, cancelPush, testPush };
 }

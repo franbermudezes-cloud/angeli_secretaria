@@ -785,7 +785,7 @@ def app(environ: dict[str, Any], start_response: Callable):
     if environ.get("REQUEST_METHOD") == "OPTIONS":
         return cors_preflight_response(start_response, origin)
     path = environ.get("PATH_INFO")
-    routes = {"/interpret", "/session/status", "/oauth/exchange", "/google", "/media/upload", "/media/download", "/media/delete", "/push/register", "/push/schedule", "/push/cancel", "/push/test", "/push/deliver", "/test/session/status", "/test/oauth/exchange"}
+    routes = {"/interpret", "/session/status", "/oauth/exchange", "/google", "/media/upload", "/media/download", "/media/delete", "/push/register", "/push/unregister", "/push/schedule", "/push/cancel", "/push/test", "/push/deliver", "/test/session/status", "/test/oauth/exchange"}
     if environ.get("REQUEST_METHOD") != "POST" or path not in routes:
         return json_response(start_response, "404 Not Found", {"error": "No encontrado"}, origin)
     if environ.get("HTTP_ORIGIN") and not origin:
@@ -794,11 +794,11 @@ def app(environ: dict[str, Any], start_response: Callable):
         if path == "/push/deliver":
             service = push_notifications()
             verify_delivery_identity(environ, service.delivery_account, service.delivery_url.rsplit("/push/deliver", 1)[0])
-            delivery = parse_json_body(environ, {"uid", "entryId", "dueAt"})
-            uid, entry_id, due_at = delivery.get("uid"), delivery.get("entryId"), delivery.get("dueAt")
-            if not isinstance(uid, str) or not uid or not isinstance(entry_id, str) or not entry_id or not isinstance(due_at, str):
+            delivery = parse_json_body(environ, {"uid", "entryId", "dueAt", "generation", "kind"})
+            uid, entry_id, due_at, generation, kind = delivery.get("uid"), delivery.get("entryId"), delivery.get("dueAt"), delivery.get("generation"), delivery.get("kind")
+            if not isinstance(uid, str) or not uid or not isinstance(entry_id, str) or not entry_id or not isinstance(due_at, str) or not isinstance(generation, str) or kind not in {"before", "at", "after"}:
                 raise ValueError("Entrega no válida")
-            return json_response(start_response, "200 OK", service.deliver(uid, entry_id, due_at), origin)
+            return json_response(start_response, "200 OK", service.deliver(uid, entry_id, due_at, generation, kind), origin)
         subject = verify_identity(environ)
     except PermissionError as error:
         if "Usuario no autorizado" in str(error):
@@ -818,6 +818,9 @@ def app(environ: dict[str, Any], start_response: Callable):
         if path == "/push/register":
             payload = parse_json_body(environ, {"token", "label"})
             return json_response(start_response, "200 OK", push_notifications().register(subject, payload.get("token"), payload.get("label") or "Dispositivo"), origin)
+        if path == "/push/unregister":
+            payload = parse_json_body(environ, {"token"})
+            return json_response(start_response, "200 OK", push_notifications().unregister(subject, payload.get("token")), origin)
         if path == "/push/schedule":
             payload = parse_json_body(environ, {"entryId", "dueAt"})
             return json_response(start_response, "200 OK", push_notifications().schedule(subject, payload.get("entryId"), payload.get("dueAt")), origin)
@@ -825,8 +828,8 @@ def app(environ: dict[str, Any], start_response: Callable):
             payload = parse_json_body(environ, {"entryId"})
             return json_response(start_response, "200 OK", push_notifications().cancel(subject, payload.get("entryId")), origin)
         if path == "/push/test":
-            parse_json_body(environ, set())
-            return json_response(start_response, "200 OK", push_notifications().send_test(subject), origin)
+            payload = parse_json_body(environ, {"token"})
+            return json_response(start_response, "200 OK", push_notifications().send_test(subject, payload.get("token")), origin)
         if path == "/test/session/status":
             return json_response(start_response, "200 OK", test_session_status(), origin)
         if path == "/oauth/exchange":
