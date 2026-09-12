@@ -100,6 +100,8 @@ class PushNotifications:
         schedule = entry.get("schedule") or {}
         if schedule.get("relatedEventId"):
             return "linked"
+        if (schedule.get("action") or {}).get("kind") == "contact.call":
+            return "calls"
         if entry.get("type") == "contact" or (entry.get("aiIntent") or {}).get("intent") == "contact.call":
             return "calls"
         if entry.get("type") == "task":
@@ -140,8 +142,6 @@ class PushNotifications:
             from zoneinfo import ZoneInfo
             due = due.replace(tzinfo=ZoneInfo("Europe/Madrid"))
         due = due.astimezone(timezone.utc)
-        if due <= datetime.now(timezone.utc):
-            raise ValueError("El aviso debe estar en el futuro")
         client = self._tasks()
         reminder_ref = self._reminder_ref(uid, entry_id)
         previous = reminder_ref.get()
@@ -216,6 +216,9 @@ class PushNotifications:
         programmed_data = programmed.to_dict() or {} if programmed.exists else {}
         if not programmed.exists or programmed_data.get("dueAt") != due_at or programmed_data.get("generation") != generation:
             return {"delivered": 0, "skipped": "stale"}
+        programmed_kinds = {item.get("kind") for item in programmed_data.get("tasks", [])}
+        if kind not in programmed_kinds:
+            return {"delivered": 0, "skipped": "already_delivered"}
         snapshot = self._db().collection("users").document(uid).collection("entries").document(entry_id).get()
         if not snapshot.exists:
             return {"delivered": 0, "skipped": "missing"}

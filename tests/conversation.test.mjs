@@ -66,6 +66,14 @@ test('avisos: la prueba espera el token local y nunca se envía a todos los disp
   assert.match(firebase,/notify\(`\$\{title\}: \$\{body\}`\)/);
 });
 
+test('avisos: las tareas fechadas se programan y los fallos al reprogramar se muestran',()=>{
+  const app=readFileSync(new URL('../js/app.js',import.meta.url),'utf8');
+  assert.match(app,/const datedTask=entry\.type==="task"/);
+  assert.match(app,/waitForServer:datedTask/);
+  assert.match(app,/entry\.type==="task"&&entry\.status==="pending"&&entry\.scheduledDate&&entry\.scheduledTime/);
+  assert.match(app,/results\.filter\(result=>result\.status==="rejected"\)/);
+});
+
 test('conexiones: el arranque y la reanudación comprueban y avisan sin abrir OAuth',()=>{
   const app=readFileSync(new URL('../js/app.js',import.meta.url),'utf8');
   const google=readFileSync(new URL('../js/google.js',import.meta.url),'utf8');
