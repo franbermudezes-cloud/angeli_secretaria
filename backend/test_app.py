@@ -38,10 +38,11 @@ class FakePush:
         self.calls = []
 
     def register(self, uid, token, label): self.calls.append(("register", uid, token, label)); return {"registered": True}
+    def unregister(self, uid, token): self.calls.append(("unregister", uid, token)); return {"unregistered": True}
     def schedule(self, uid, entry_id, due_at): self.calls.append(("schedule", uid, entry_id, due_at)); return {"scheduled": True}
     def cancel(self, uid, entry_id): self.calls.append(("cancel", uid, entry_id)); return {"cancelled": True}
-    def send_test(self, uid): self.calls.append(("test", uid)); return {"delivered": 1}
-    def deliver(self, uid, entry_id, due_at): self.calls.append(("deliver", uid, entry_id, due_at)); return {"delivered": 1}
+    def send_test(self, uid, token=None): self.calls.append(("test", uid, token)); return {"delivered": 1}
+    def deliver(self, uid, entry_id, due_at, generation, kind): self.calls.append(("deliver", uid, entry_id, due_at, generation, kind)); return {"delivered": 1}
 
 
 def post(path, payload, authorization="Bearer test"):
@@ -67,6 +68,7 @@ class PushEndpointTests(unittest.TestCase):
     def test_register_schedule_cancel_and_test_use_authenticated_user(self):
         cases = [
             ("/push/register", {"token": "x" * 80, "label": "Mac"}, "register"),
+            ("/push/unregister", {"token": "x" * 80}, "unregister"),
             ("/push/schedule", {"entryId": "entry-1", "dueAt": "2026-09-11T10:00:00+02:00"}, "schedule"),
             ("/push/cancel", {"entryId": "entry-1"}, "cancel"),
             ("/push/test", {}, "test"),
@@ -80,11 +82,11 @@ class PushEndpointTests(unittest.TestCase):
 
     @patch("app.verify_delivery_identity")
     def test_delivery_requires_dedicated_identity_and_exact_schedule(self, verify):
-        status, data = post("/push/deliver", {"uid": "owner", "entryId": "entry-1", "dueAt": "2026-09-11T08:00:00+00:00"})
+        status, data = post("/push/deliver", {"uid": "owner", "entryId": "entry-1", "dueAt": "2026-09-11T08:00:00+00:00", "generation": "g1", "kind": "after"})
         self.assertEqual(status, "200 OK")
         self.assertEqual(data["delivered"], 1)
         verify.assert_called_once()
-        self.assertEqual(self.push.calls[-1], ("deliver", "owner", "entry-1", "2026-09-11T08:00:00+00:00"))
+        self.assertEqual(self.push.calls[-1], ("deliver", "owner", "entry-1", "2026-09-11T08:00:00+00:00", "g1", "after"))
 
 
 class InterpretEndpointTests(unittest.TestCase):

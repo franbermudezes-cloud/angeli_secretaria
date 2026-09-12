@@ -1006,3 +1006,9 @@ Este archivo registra los cambios funcionales relevantes de Angeli Secretaria. E
 - El envío a Google se realiza en modo `no-cors`, por lo que el cliente no puede confirmar la respuesta del servidor.
 - Imágenes y entradas dependen de la cuota de `localStorage`; los archivos adjuntos no se suben actualmente.
 - Las versiones visibles y de caché no están completamente alineadas: la interfaz muestra `V0.9` y manifest/Service Worker usan `0.8.1`.
+## V0.21.49 · Configuración completa de avisos Angeli
+
+- Añade un modal en Ajustes para activar, probar y desactivar avisos en cada dispositivo.
+- Sincroniza por cuenta el aviso a la hora, la antelación, la repetición posterior y los tipos de entrada.
+- Respeta un horario de descanso configurable y permite entregar después los avisos aplazados.
+- Reprograma los avisos pendientes al guardar cambios y admite avisos propios para eventos normales de Calendar.
