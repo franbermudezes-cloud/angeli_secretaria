@@ -111,6 +111,17 @@ class PushNotifications:
         return "reminders"
 
     @staticmethod
+    def _is_active_entry(entry: dict[str, Any]) -> bool:
+        if entry.get("status") != "pending":
+            return False
+        schedule = entry.get("schedule") or {}
+        if schedule.get("status") == "scheduled":
+            return True
+        if entry.get("type") == "calendar" and entry.get("calendarStatus") == "synced":
+            return True
+        return entry.get("type") == "task" and bool(entry.get("scheduledDate") and entry.get("scheduledTime"))
+
+    @staticmethod
     def _after_quiet_hours(moment: datetime, quiet: dict[str, Any]) -> datetime | None:
         if not quiet.get("enabled"):
             return moment
@@ -224,21 +235,23 @@ class PushNotifications:
             return {"delivered": 0, "skipped": "missing"}
         entry = snapshot.to_dict() or {}
         schedule = entry.get("schedule") or {}
-        is_active_event = entry.get("type") == "calendar" and entry.get("calendarStatus") == "synced"
-        if entry.get("status") != "pending" or (schedule.get("status") != "scheduled" and not is_active_event):
+        if not self._is_active_entry(entry):
             return {"delivered": 0, "skipped": "inactive"}
-        remaining = [item for item in programmed_data.get("tasks", []) if item.get("kind") != kind]
-        if remaining:
-            self._reminder_ref(uid, entry_id).update({"tasks": remaining, "updatedAt": datetime.now(timezone.utc)})
-        else:
-            self._reminder_ref(uid, entry_id).delete()
         title = str(schedule.get("title") or entry.get("title") or entry.get("text") or "Recordatorio")[:100]
         body = str(schedule.get("description") or "Tienes un recordatorio pendiente en Angeli.")[:240]
         if kind == "before":
             body = f"Próximamente: {body}"
         elif kind == "after":
             body = f"Sigue pendiente: {body}"
-        return self._send(uid, title, body, entry_id, f"./?reminder={entry_id}")
+        result = self._send(uid, title, body, entry_id, f"./?reminder={entry_id}")
+        # Conservar la entrega hasta que FCM responda permite que Cloud Tasks
+        # repita la petición si el envío falla de forma temporal.
+        remaining = [item for item in programmed_data.get("tasks", []) if item.get("kind") != kind]
+        if remaining:
+            self._reminder_ref(uid, entry_id).update({"tasks": remaining, "updatedAt": datetime.now(timezone.utc)})
+        else:
+            self._reminder_ref(uid, entry_id).delete()
+        return result
 
     def _send(self, uid: str, title: str, body: str, entry_id: str, url: str, only_token: str | None = None) -> dict[str, Any]:
         from firebase_admin import messaging

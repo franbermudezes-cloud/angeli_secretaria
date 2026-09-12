@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.21.53 · Avisos fiables con Angeli cerrada
+
+- Las tareas con fecha y hora permanecen activas para el entregador aunque no utilicen el objeto `schedule` de Calendar.
+- Una caída temporal de FCM ya no consume el aviso antes de enviarlo; Cloud Tasks puede repetir la misma entrega.
+- La puerta obligatoria ejecuta también las pruebas unitarias específicas del servicio de notificaciones.
+
 ## V0.21.52 · Enlaces de adjuntos en Google Sheets
 
 - El registro externo incluye ahora en `Archivo` los nombres de fotos y ficheros adjuntos y en `Enlace` sus URL de Google Drive.
