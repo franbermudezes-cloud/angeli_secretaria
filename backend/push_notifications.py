@@ -207,6 +207,8 @@ class PushNotifications:
         return {"cancelled": True}
 
     def send_test(self, uid: str, token: str | None = None) -> dict[str, Any]:
+        if not isinstance(token, str) or not token:
+            raise ValueError("Dispositivo no válido")
         return self._send(uid, "Angeli está lista", "Los avisos funcionan en este dispositivo.", "", "./", token)
 
     def deliver(self, uid: str, entry_id: str, due_at: str, generation: str, kind: str) -> dict[str, Any]:

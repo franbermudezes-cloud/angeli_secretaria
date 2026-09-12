@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.21.50 · Prueba dirigida al dispositivo actual
+
+- «Probar aviso» espera a que el navegador obtenga y registre su token antes de enviar la prueba.
+- El backend exige ese token y no usa los demás dispositivos como alternativa; una prueba iniciada en el ordenador se dirige únicamente al ordenador.
+- Cuando Angeli está abierta, la recepción también se confirma dentro de la PWA, además de solicitar la notificación del sistema.
+
 ## V0.21.48 · Botón visible para probar avisos
 
 - «Probar aviso» permanece visible en Ajustes cuando los avisos están activos, en móvil y ordenador.

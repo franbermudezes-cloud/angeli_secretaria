@@ -57,6 +57,15 @@ test('avisos: ajustes abre la configuración completa y conserva la prueba por d
   assert.match(ui,/notificationQuietStart/);
 });
 
+test('avisos: la prueba espera el token local y nunca se envía a todos los dispositivos',()=>{
+  const firebase=readFileSync(new URL('../js/firebase.js',import.meta.url),'utf8');
+  assert.match(firebase,/if \(!currentPushToken\) await enablePush\(false\)/);
+  assert.match(firebase,/pushRequest\("\/push\/test", \{ token: currentPushToken \}\)/);
+  assert.doesNotMatch(firebase,/currentPushToken \|\| undefined/);
+  assert.match(firebase,/registration\.showNotification/);
+  assert.match(firebase,/notify\(`\$\{title\}: \$\{body\}`\)/);
+});
+
 test('conexiones: el arranque y la reanudación comprueban y avisan sin abrir OAuth',()=>{
   const app=readFileSync(new URL('../js/app.js',import.meta.url),'utf8');
   const google=readFileSync(new URL('../js/google.js',import.meta.url),'utf8');

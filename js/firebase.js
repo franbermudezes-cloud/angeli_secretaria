@@ -27,8 +27,8 @@ import {
   waitForPendingWrites
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 import { deleteToken, getMessaging, getToken, isSupported, onMessage } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging.js";
-import { fromCloudEntry, sameEntry, toCloudEntry } from "./cloud-entry.js?v=0.21.49";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.49";
+import { fromCloudEntry, sameEntry, toCloudEntry } from "./cloud-entry.js?v=0.21.50";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.50";
 
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
 const VAPID_KEY = "BHyc8Ne9wyaAFoju-9FNG5_qCXPOLSQhHhsfye9bdFlAv3zdLfAvjcvb29Cyrtj80kSq7gJ3qGJ9k3Mb_EqYt_o";
@@ -58,6 +58,8 @@ export function createCloudSync({ notify }) {
   let callbacks = {};
   let messaging = null;
   let currentPushToken = "";
+  let pushRegistrationPending = false;
+  let foregroundListenerReady = false;
 
   async function initialize(handlers) {
     callbacks = handlers || {};
@@ -82,7 +84,7 @@ export function createCloudSync({ notify }) {
       if (!user) { callbacks.onSyncStatus?.({ state: "signed-out" }); callbacks.onPushStatus?.(pushStatus()); return; }
       subscribe();
       subscribeSettings();
-      if (Notification.permission === "granted" && localStorage.getItem("angeliPushDisabled") !== "1") void enablePush(false);
+      if (Notification.permission === "granted" && localStorage.getItem("angeliPushDisabled") !== "1") void enablePush(false).catch(() => callbacks.onPushStatus?.(pushStatus()));
     });
   }
 
@@ -126,7 +128,8 @@ export function createCloudSync({ notify }) {
     if (!("Notification" in window) || !("serviceWorker" in navigator)) return { state: "unsupported", text: "Este navegador no admite avisos" };
     if (!user) return { state: "signed-out", text: "Inicia sesión en Angeli primero" };
     if (Notification.permission === "denied") return { state: "blocked", text: "Avisos bloqueados en el navegador" };
-    if (Notification.permission === "granted" && localStorage.getItem("angeliPushDisabled") !== "1") return { state: "enabled", text: "Avisos activos en este dispositivo" };
+    if (Notification.permission === "granted" && currentPushToken) return { state: "enabled", text: "Avisos activos en este dispositivo" };
+    if (Notification.permission === "granted" && pushRegistrationPending) return { state: "connecting", text: "Preparando avisos en este dispositivo…" };
     if (Notification.permission === "granted") return { state: "available", text: "Avisos desactivados en este dispositivo" };
     return { state: "available", text: "Activa los avisos en este dispositivo" };
   }
@@ -144,16 +147,29 @@ export function createCloudSync({ notify }) {
     if (!await isSupported()) throw new Error("Este navegador no admite avisos");
     if (askPermission && Notification.permission === "default") await Notification.requestPermission();
     if (Notification.permission !== "granted") { callbacks.onPushStatus?.(pushStatus()); throw new Error("Los avisos no están permitidos"); }
-    const registration = await navigator.serviceWorker.ready;
-    messaging ||= getMessaging(auth.app);
-    const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: registration });
-    if (!token) throw new Error("No se pudo identificar este dispositivo");
-    await pushRequest("/push/register", { token, label: `${navigator.platform || "Dispositivo"} · ${navigator.userAgent.includes("Mobile") ? "móvil" : "ordenador"}` });
-    currentPushToken = token;
-    localStorage.removeItem("angeliPushDisabled");
-    onMessage(messaging, payload => registration.showNotification(payload.data?.title || "Angeli", { body: payload.data?.body || "Tienes un recordatorio.", icon: "icon-192.png", badge: "icon-192.png", data: { url: payload.data?.url || "./" }, tag: payload.data?.entryId || "angeli-test" }));
+    pushRegistrationPending = true;
     callbacks.onPushStatus?.(pushStatus());
-    return true;
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      messaging ||= getMessaging(auth.app);
+      const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: registration });
+      if (!token) throw new Error("No se pudo identificar este dispositivo");
+      await pushRequest("/push/register", { token, label: `${navigator.platform || "Dispositivo"} · ${navigator.userAgent.includes("Mobile") ? "móvil" : "ordenador"}` });
+      currentPushToken = token;
+      localStorage.removeItem("angeliPushDisabled");
+      if (!foregroundListenerReady) {
+        onMessage(messaging, payload => {
+          const title=payload.data?.title||"Angeli",body=payload.data?.body||"Tienes un recordatorio.";
+          if(!payload.data?.entryId) notify(`${title}: ${body}`);
+          void registration.showNotification(title, { body, icon: "icon-192.png", badge: "icon-192.png", data: { url: payload.data?.url || "./" }, tag: payload.data?.entryId || "angeli-test" }).catch(()=>notify(`${title}: ${body}`));
+        });
+        foregroundListenerReady = true;
+      }
+      return true;
+    } finally {
+      pushRegistrationPending = false;
+      callbacks.onPushStatus?.(pushStatus());
+    }
   }
 
   async function disablePush() {
@@ -171,7 +187,11 @@ export function createCloudSync({ notify }) {
     return pushRequest("/push/schedule", { entryId: entry.id, dueAt });
   }
   async function cancelPush(entry) { return pushRequest("/push/cancel", { entryId: entry.id }); }
-  async function testPush() { return pushRequest("/push/test", { token: currentPushToken || undefined }); }
+  async function testPush() {
+    if (!currentPushToken) await enablePush(false);
+    if (!currentPushToken) throw new Error("Este dispositivo todavía no está preparado");
+    return pushRequest("/push/test", { token: currentPushToken });
+  }
 
   function subscribe() {
     callbacks.onSyncStatus?.({ state: "connecting" });
