@@ -1,10 +1,10 @@
-import { typeLabel } from "./classifier.js?v=0.21.54";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.54";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.54";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.54";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.54";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.54";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.21.54";
+import { typeLabel } from "./classifier.js?v=0.21.55";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.55";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.55";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.55";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.55";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.55";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.21.55";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -182,7 +182,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.54";
+    image.src = "assets/angeli-welcome.gif?v=0.21.55";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -822,6 +822,7 @@ export function createUI({ getMedia }) {
   function renderMediaLibrary(items, state = {}) {
     document.querySelectorAll("#libraryList img[data-object-url]").forEach(image => URL.revokeObjectURL(image.dataset.objectUrl));
     const shown = filterMediaLibrary(items, state);
+    $("libraryTitle").textContent = state.kind === "image" ? "Galería" : state.kind === "file" ? "Archivos" : "Fotos y archivos";
     $("libraryCount").textContent = `${shown.length} elemento${shown.length === 1 ? "" : "s"}`;
     const categories = [...new Map(items.map(item => [item.category, item.categoryLabel])).entries()];
     $("libraryCategory").innerHTML = '<option value="all">Todas las categorías</option>' + categories.map(([value, label]) => `<option value="${esc(value)}">${esc(label)}</option>`).join("");

@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.21.55 · Cabecera funcional
+
+- La cabecera sustituye los accesos sin uso de enviar y buscar por cuatro secciones directas: Galería, Archivos, Notas y Recordatorios.
+- Galería y Archivos abren la biblioteca con el filtro correspondiente; Notas abre todas las notas y Recordatorios muestra los pendientes.
+- El logotipo permanece a la izquierda y Ajustes a la derecha, con una distribución compacta para móvil.
+
 ## V0.21.54 · Biblioteca de fotos y archivos
 
 - La cabecera incorpora un apartado propio que reúne todos los adjuntos guardados en las entradas de Firestore.

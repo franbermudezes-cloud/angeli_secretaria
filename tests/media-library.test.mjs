@@ -24,6 +24,13 @@ const [html, app, serviceWorker] = await Promise.all([
 assert.match(html, /id="mediaLibrary"/);
 assert.match(html, /data-library-kind="image"/);
 assert.match(html, /id="viewerShare"/);
+assert.match(html, /id="galleryOpen"/);
+assert.match(html, /id="filesOpen"/);
+assert.match(html, /id="notesOpen"/);
+assert.match(html, /id="remindersOpen"/);
+assert.match(html, /id="menuOpen"/);
+assert.doesNotMatch(html, /id="headerSend"/);
+assert.doesNotMatch(html, /id="searchToggle"/);
 assert.match(app, /navigator\.share\(\{files:\[file\]/);
 assert.match(app, /ui\.showMediaViewer/);
 assert.match(serviceWorker, /js\/media-library\.js/);
