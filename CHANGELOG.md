@@ -1,5 +1,10 @@
 # Changelog
 
+## V0.21.48 · Botón visible para probar avisos
+
+- «Probar aviso» permanece visible en Ajustes cuando los avisos están activos, en móvil y ordenador.
+- La corrección no modifica permisos, dispositivos registrados ni recordatorios programados.
+
 ## V0.21.47 · Avisos propios de Angeli
 
 - Cada instalación móvil o de escritorio puede activar sus avisos desde Ajustes y enviar una notificación de prueba.
