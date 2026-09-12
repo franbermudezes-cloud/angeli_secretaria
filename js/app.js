@@ -1,23 +1,23 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.54";
-import{classify,actionData}from"./classifier.js?v=0.21.54";
-import{sendEntry}from"./sheets.js?v=0.21.54";
-import{createUI}from"./ui.js?v=0.21.54";
-import{createGoogleIntegration}from"./google.js?v=0.21.54";
-import{interpret,remoteProvider,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,protectCalendarInterpretation,protectReadQuery}from"./ai.js?v=0.21.54";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.54";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.54";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.54";
-import{createCloudSync}from"./firebase.js?v=0.21.54";
-import{createMediaService}from"./media.js?v=0.21.54";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.54";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.54";
-import{createAgendaActions}from"./agenda.js?v=0.21.54";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.54";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.54";
-import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.54";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.54";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.54";
-import{mediaLibraryItems}from"./media-library.js?v=0.21.54";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.55";
+import{classify,actionData}from"./classifier.js?v=0.21.55";
+import{sendEntry}from"./sheets.js?v=0.21.55";
+import{createUI}from"./ui.js?v=0.21.55";
+import{createGoogleIntegration}from"./google.js?v=0.21.55";
+import{interpret,remoteProvider,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,protectCalendarInterpretation,protectReadQuery}from"./ai.js?v=0.21.55";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.55";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.55";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.55";
+import{createCloudSync}from"./firebase.js?v=0.21.55";
+import{createMediaService}from"./media.js?v=0.21.55";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.55";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.55";
+import{createAgendaActions}from"./agenda.js?v=0.21.55";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.55";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.55";
+import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.55";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.55";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.55";
+import{mediaLibraryItems}from"./media-library.js?v=0.21.55";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -34,7 +34,7 @@ function prepareShortcut(shortcut){pendingShortcut=shortcut;if(shortcut.command)
 function createShortcut(initial=""){const command=prompt("Escribe la orden que ejecutará Angeli.",initial);if(!command?.trim())return;const label=prompt("Nombre corto para el acceso directo.",command.trim().slice(0,24));if(!label?.trim())return;shortcuts.push({label:label.trim(),command:command.trim()});saveShortcuts();ui.notify("Acceso directo creado")}
 function editShortcuts(){if(!shortcuts.length){ui.notify("No hay accesos para editar");return}const choices=shortcuts.map((shortcut,index)=>`${index+1}. ${shortcut.label}`).join("\n"),value=prompt(`Indica el número del acceso que quieres eliminar:\n${choices}`);const index=Number(value)-1;if(!Number.isInteger(index)||!shortcuts[index])return;shortcuts.splice(index,1);saveShortcuts();ui.notify("Acceso directo eliminado")}
 function scrollConversation(){requestAnimationFrame(()=>$("mainContent").scrollTo({top:$("mainContent").scrollHeight,behavior:"smooth"}))}
-function setSending(active){["add","headerSend"].forEach(id=>{$(id).disabled=active});}
+function setSending(active){$("add").disabled=active}
 function clearPendingMedia(){pendingImages=[];pendingFiles=[];$("cameraInput").value="";$("photoInput").value="";$("fileInput").value="";$("preview").innerHTML="";}
 async function saveConfirmed(nextNotes,previousNotes=notes,{waitForServer=false}={}){if(!cloud.isSignedIn()){ui.notify("Inicia sesión en Angeli antes de guardar");return false}notes=nextNotes;render();ui.setSyncStatus({state:"pending"});const syncing=cloud.syncNotes(nextNotes,previousNotes);if(waitForServer){try{await syncing;return true}catch(error){ui.setSyncStatus({state:"error",error});ui.notify("La instrucción sigue pendiente de sincronizar. Revisa Datos en Ajustes.");return false}}void syncing.catch(error=>{ui.setSyncStatus({state:"error",error});ui.notify("La instrucción sigue pendiente de sincronizar. Revisa Datos en Ajustes.")});return true}
 function save(nextNotes,previousNotes=notes){void saveConfirmed(nextNotes,previousNotes);return true}
@@ -211,7 +211,7 @@ function readImages(files,msg){pendingImages=files;ui.showImagePreview(files);ui
 function libraryItems(){return mediaLibraryItems(notes)}
 function refreshLibrary(){ui.renderMediaLibrary(libraryItems(),libraryState)}
 function libraryItem(key){return libraryItems().find(item=>item.key===key)}
-function openLibrary(){libraryState={kind:"all",category:"all",query:""};$("librarySearch").value="";document.querySelectorAll("[data-library-kind]").forEach(button=>button.classList.toggle("active",button.dataset.libraryKind==="all"));ui.openMediaLibrary(libraryItems(),libraryState)}
+function openLibrary(kind="all"){libraryState={kind,category:"all",query:""};$("librarySearch").value="";document.querySelectorAll("[data-library-kind]").forEach(button=>button.classList.toggle("active",button.dataset.libraryKind===kind));ui.openMediaLibrary(libraryItems(),libraryState)}
 function openLibraryEntry(item){const entry=notes.find(note=>note.id===item.entryId);if(!entry)return;ui.closeMediaViewer();ui.closeMediaLibrary();ui.showEntryAction(entry,google)}
 async function downloadLibraryItem(item,{share=false}={}){
  try{
@@ -243,19 +243,20 @@ function showNotificationSettings(){
 $("pushSettings").onclick=()=>{ui.closeLayers();showNotificationSettings()};
 $("resetData").onclick=async()=>{if(!confirm("Se borrará únicamente la caché temporal de este dispositivo. Tus entradas y adjuntos seguirán en Angeli y se volverán a cargar. ¿Continuar?"))return;try{await deleteMediaDB();clearNotes();clearPendingMedia();$("text").value="";ui.notify("Caché local eliminada; tus datos siguen en Angeli")}catch(e){ui.notify("No se pudo eliminar toda la caché local")}};
 $("add").onclick=add;
-$("headerSend").onclick=add;
 $("text").oninput=()=>{autosize();ui.updateDraft($("text").value)};
 $("text").onfocus=()=>{if(!$("actionModal").classList.contains("show"))setTimeout(()=>{if(!$("actionModal").classList.contains("show"))openDraft()},120)};
 $("text").onkeydown=event=>{if(event.key==="Enter"&&!event.shiftKey){event.preventDefault();add()}};
 $("attachToggle").onclick=()=>$("attachmentChoices").classList.toggle("show");
-$("libraryOpen").onclick=openLibrary;
+$("galleryOpen").onclick=()=>openLibrary("image");
+$("filesOpen").onclick=()=>openLibrary("file");
+$("notesOpen").onclick=()=>showNoteQueryResults(localNoteQuery("Muéstrame todas las notas"));
+$("remindersOpen").onclick=()=>void resolveReminderQuery(localReminderQuery("Recordatorios pendientes"));
 $("libraryClose").onclick=ui.closeMediaLibrary;
 $("viewerClose").onclick=ui.closeMediaViewer;
 $("librarySearch").oninput=event=>{libraryState.query=event.target.value;refreshLibrary()};
 $("libraryCategory").onchange=event=>{libraryState.category=event.target.value;refreshLibrary()};
 document.querySelector(".library-filters").onclick=event=>{const button=event.target.closest("[data-library-kind]");if(!button)return;libraryState.kind=button.dataset.libraryKind;document.querySelectorAll("[data-library-kind]").forEach(item=>item.classList.toggle("active",item===button));refreshLibrary()};
 $("libraryList").onclick=event=>{const button=event.target.closest("[data-library-action]");if(!button)return;const item=libraryItem(button.dataset.libraryKey);if(!item)return;const action=button.dataset.libraryAction;if(action==="entry")openLibraryEntry(item);else if(action==="share")void downloadLibraryItem(item,{share:true});else void openLibraryItem(item)};
-$("searchToggle").onclick=()=>$("searchPanel").classList.toggle("show");
 $("menuOpen").onclick=ui.openMenu;$("menuClose").onclick=ui.closeLayers;$("scrim").onclick=()=>{if(!$("actionModal").classList.contains("conversation-modal"))ui.closeLayers()};
 $("clearView").onclick=()=>{if(confirm("Esto limpia solo la conversación visible. Tus entradas, fotos y archivos seguirán guardados. ¿Continuar?")){$("list").innerHTML='<div class="empty">Vista limpia. Tus datos siguen guardados.</div>';ui.notify("Vista limpiada")}};
 $("shortcutManual").onclick=()=>createShortcut();
@@ -379,7 +380,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.54",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.55",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}
