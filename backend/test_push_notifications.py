@@ -6,6 +6,10 @@ from push_notifications import PushNotifications
 
 
 class QuietHoursTests(unittest.TestCase):
+    def test_future_call_is_classified_from_schedule_action(self):
+        entry = {"type": "reminder", "schedule": {"action": {"kind": "contact.call"}}}
+        self.assertEqual(PushNotifications._entry_type(entry), "calls")
+
     def test_night_notice_moves_to_quiet_end(self):
         madrid = ZoneInfo("Europe/Madrid")
         moment = datetime(2026, 9, 12, 23, 15, tzinfo=madrid).astimezone(timezone.utc)

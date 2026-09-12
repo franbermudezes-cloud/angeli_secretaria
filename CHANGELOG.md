@@ -1,5 +1,14 @@
 # Changelog
 
+## V0.21.50 · Prueba dirigida al dispositivo actual
+
+- «Probar aviso» espera a que el navegador obtenga y registre su token antes de enviar la prueba.
+- El backend exige ese token y no usa los demás dispositivos como alternativa; una prueba iniciada en el ordenador se dirige únicamente al ordenador.
+- Cuando Angeli está abierta, la recepción también se confirma dentro de la PWA, además de solicitar la notificación del sistema.
+- Las tareas con fecha y hora se programan al guardarlas y se vuelven a programar cuando cambian los ajustes.
+- Las llamadas futuras respetan el selector de llamadas; un seguimiento posterior puede programarse aunque la hora original ya haya pasado.
+- Los reintentos de Cloud Tasks no duplican avisos ya entregados y la interfaz informa si alguna reprogramación falla.
+
 ## V0.21.48 · Botón visible para probar avisos
 
 - «Probar aviso» permanece visible en Ajustes cuando los avisos están activos, en móvil y ordenador.

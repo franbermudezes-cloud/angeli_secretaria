@@ -1,22 +1,22 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.49";
-import{classify,actionData}from"./classifier.js?v=0.21.49";
-import{sendEntry}from"./sheets.js?v=0.21.49";
-import{createUI}from"./ui.js?v=0.21.49";
-import{createGoogleIntegration}from"./google.js?v=0.21.49";
-import{interpret,remoteProvider,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,protectCalendarInterpretation,protectReadQuery}from"./ai.js?v=0.21.49";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.49";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.49";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.49";
-import{createCloudSync}from"./firebase.js?v=0.21.49";
-import{createMediaService}from"./media.js?v=0.21.49";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.49";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.49";
-import{createAgendaActions}from"./agenda.js?v=0.21.49";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.49";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.49";
-import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.49";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.49";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.49";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.50";
+import{classify,actionData}from"./classifier.js?v=0.21.50";
+import{sendEntry}from"./sheets.js?v=0.21.50";
+import{createUI}from"./ui.js?v=0.21.50";
+import{createGoogleIntegration}from"./google.js?v=0.21.50";
+import{interpret,remoteProvider,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,protectCalendarInterpretation,protectReadQuery}from"./ai.js?v=0.21.50";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.50";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.50";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.50";
+import{createCloudSync}from"./firebase.js?v=0.21.50";
+import{createMediaService}from"./media.js?v=0.21.50";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.50";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.50";
+import{createAgendaActions}from"./agenda.js?v=0.21.50";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.50";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.50";
+import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.50";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.50";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.50";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -34,7 +34,7 @@ function editShortcuts(){if(!shortcuts.length){ui.notify("No hay accesos para ed
 function scrollConversation(){requestAnimationFrame(()=>$("mainContent").scrollTo({top:$("mainContent").scrollHeight,behavior:"smooth"}))}
 function setSending(active){["add","headerSend"].forEach(id=>{$(id).disabled=active});}
 function clearPendingMedia(){pendingImages=[];pendingFiles=[];$("cameraInput").value="";$("photoInput").value="";$("fileInput").value="";$("preview").innerHTML="";}
-async function saveConfirmed(nextNotes,previousNotes=notes){if(!cloud.isSignedIn()){ui.notify("Inicia sesión en Angeli antes de guardar");return false}notes=nextNotes;render();ui.setSyncStatus({state:"pending"});void cloud.syncNotes(nextNotes,previousNotes).catch(error=>{ui.setSyncStatus({state:"error",error});ui.notify("La instrucción sigue pendiente de sincronizar. Revisa Datos en Ajustes.")});return true}
+async function saveConfirmed(nextNotes,previousNotes=notes,{waitForServer=false}={}){if(!cloud.isSignedIn()){ui.notify("Inicia sesión en Angeli antes de guardar");return false}notes=nextNotes;render();ui.setSyncStatus({state:"pending"});const syncing=cloud.syncNotes(nextNotes,previousNotes);if(waitForServer){try{await syncing;return true}catch(error){ui.setSyncStatus({state:"error",error});ui.notify("La instrucción sigue pendiente de sincronizar. Revisa Datos en Ajustes.");return false}}void syncing.catch(error=>{ui.setSyncStatus({state:"error",error});ui.notify("La instrucción sigue pendiente de sincronizar. Revisa Datos en Ajustes.")});return true}
 function save(nextNotes,previousNotes=notes){void saveConfirmed(nextNotes,previousNotes);return true}
 const cloud=createCloudSync({notify:ui.notify});
 const google=createGoogleIntegration({notify:ui.notify,refresh:render,setStatus:ui.setGoogleStatus,showConnectionHealth:problems=>ui.showConnectionHealth(problems,{onOpenSettings:ui.openMenu}),saveNotes:save,getNotes:()=>notes,getAuthToken:cloud.getAuthToken,getSession:cloud.session,scheduleNotification:cloud.schedulePush,cancelNotification:cloud.cancelPush});
@@ -147,8 +147,10 @@ async function add({interactionId=null,shortcut=null}={}){
      return;
    }
    ui.updateWorking("Guardando","Angeli está registrando tu instrucción…","");
-   const nextNotes=active?notes.map(item=>item.id===active.id?entry:item):[entry,...notes];
-   if(!await saveConfirmed(nextNotes)){if(hasMedia)await Promise.allSettled([...images,...files].map(item=>media.remove(item.driveFileId||item.id)));ui.closeLayers();return}
+   const previousNotes=notes,nextNotes=active?notes.map(item=>item.id===active.id?entry:item):[entry,...notes];
+   const datedTask=entry.type==="task"&&entry.status==="pending"&&entry.scheduledDate&&entry.scheduledTime;
+   if(!await saveConfirmed(nextNotes,previousNotes,{waitForServer:datedTask})){if(hasMedia)await Promise.allSettled([...images,...files].map(item=>media.remove(item.driveFileId||item.id)));ui.closeLayers();return}
+   if(datedTask){try{await cloud.schedulePush(entry)}catch(_){ui.notify("La tarea se guardó, pero su aviso necesita reintento")}}
    clearComposer();
    if(!active){try{await sendEntry(entry,now);ui.notify("Entrada registrada en Google")}catch(e){ui.notify("Entrada sincronizada · Google Sheets no respondió")}}
    if(entry.interaction.status==="awaiting_input")continueConversation(entry);
@@ -215,7 +217,7 @@ $("driveDisconnect").onclick=google.disconnectDrive;
 $("aiConnect").onclick=cloud.connect;
 $("aiDisconnect").onclick=cloud.disconnect;
 function showNotificationSettings(){
- ui.showNotificationSettings(notificationSettings,{status:cloud.pushStatus(),onActivate:async()=>{try{await cloud.enablePush(true);ui.notify("Avisos activados en este dispositivo");showNotificationSettings()}catch(error){ui.notify(error.message||"No se pudieron activar los avisos")}},onTest:async()=>{try{const result=await cloud.testPush();ui.notify(result.delivered?"Aviso de prueba enviado":"No hay dispositivos activos")}catch(error){ui.notify(error.message||"No se pudo enviar el aviso de prueba")}},onDisable:async()=>{try{await cloud.disablePush();ui.notify("Avisos desactivados en este dispositivo");showNotificationSettings()}catch(error){ui.notify(error.message||"No se pudieron desactivar los avisos")}},onSave:async value=>{notificationSettings=normalizeNotificationSettings(value);try{await cloud.saveNotificationSettings(notificationSettings);await Promise.allSettled(notes.filter(entry=>entry.schedule?.status==="scheduled"||(entry.type==="calendar"&&entry.calendarStatus==="synced")).map(entry=>cloud.schedulePush(entry)));ui.closeLayers();ui.notify("Ajustes de avisos guardados")}catch(error){ui.notify(error.message||"No se pudieron guardar los ajustes")}}});
+ ui.showNotificationSettings(notificationSettings,{status:cloud.pushStatus(),onActivate:async()=>{try{await cloud.enablePush(true);ui.notify("Avisos activados en este dispositivo");showNotificationSettings()}catch(error){ui.notify(error.message||"No se pudieron activar los avisos")}},onTest:async()=>{try{const result=await cloud.testPush();ui.notify(result.delivered?"Aviso de prueba enviado":"No hay dispositivos activos")}catch(error){ui.notify(error.message||"No se pudo enviar el aviso de prueba")}},onDisable:async()=>{try{await cloud.disablePush();ui.notify("Avisos desactivados en este dispositivo");showNotificationSettings()}catch(error){ui.notify(error.message||"No se pudieron desactivar los avisos")}},onSave:async value=>{notificationSettings=normalizeNotificationSettings(value);try{await cloud.saveNotificationSettings(notificationSettings);const eligible=notes.filter(entry=>entry.schedule?.status==="scheduled"||(entry.type==="calendar"&&entry.calendarStatus==="synced")||(entry.type==="task"&&entry.status==="pending"&&entry.scheduledDate&&entry.scheduledTime));const results=await Promise.allSettled(eligible.map(entry=>cloud.schedulePush(entry))),failed=results.filter(result=>result.status==="rejected").length;if(failed){ui.notify(`Ajustes guardados, pero ${failed} aviso${failed===1?" necesita":"s necesitan"} reintento`);return}ui.closeLayers();ui.notify("Ajustes de avisos guardados")}catch(error){ui.notify(error.message||"No se pudieron guardar los ajustes")}}});
 }
 $("pushSettings").onclick=()=>{ui.closeLayers();showNotificationSettings()};
 $("resetData").onclick=async()=>{if(!confirm("Se borrará únicamente la caché temporal de este dispositivo. Tus entradas y adjuntos seguirán en Angeli y se volverán a cargar. ¿Continuar?"))return;try{await deleteMediaDB();clearNotes();clearPendingMedia();$("text").value="";ui.notify("Caché local eliminada; tus datos siguen en Angeli")}catch(e){ui.notify("No se pudo eliminar toda la caché local")}};
@@ -349,7 +351,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.49",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.50",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}

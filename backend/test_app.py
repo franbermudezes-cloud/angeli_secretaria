@@ -71,7 +71,7 @@ class PushEndpointTests(unittest.TestCase):
             ("/push/unregister", {"token": "x" * 80}, "unregister"),
             ("/push/schedule", {"entryId": "entry-1", "dueAt": "2026-09-11T10:00:00+02:00"}, "schedule"),
             ("/push/cancel", {"entryId": "entry-1"}, "cancel"),
-            ("/push/test", {}, "test"),
+            ("/push/test", {"token": "x" * 80}, "test"),
         ]
         for path, payload, action in cases:
             with self.subTest(path=path):

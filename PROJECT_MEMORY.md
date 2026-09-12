@@ -1,5 +1,11 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-12 — Diagnóstico de prueba de escritorio V0.21.50
+
+Firestore confirmó dos instalaciones registradas (`Linux armv81 · móvil` y `MacIntel · ordenador`). Al probar desde el ordenador, la PWA podía considerar activos los avisos solo porque el permiso del navegador estaba concedido, aunque el token de esa carga aún no estuviera disponible. `/push/test` recibía entonces un token vacío y enviaba a todos los dispositivos, por lo que la prueba aparecía en el móvil. La corrección espera el token local, obliga al backend a recibirlo y muestra también una confirmación dentro de Angeli cuando está en primer plano.
+
+La revisión del mismo flujo detectó cuatro bordes que se corrigen en la misma versión: las tareas fechadas también deben programarse; una llamada futura se clasifica por `schedule.action.kind`; los ajustes pueden conservar un seguimiento futuro aunque la hora base haya pasado; y cada entrega comprueba que su clase siga pendiente para impedir duplicados por reintentos. Si falla una reprogramación, el modal permanece abierto y lo indica.
+
 ## 2026-09-02 — V0.21.40 · Ubicación editable sin hacerla obligatoria
 
 Toda ficha que vaya a crear un elemento en Calendar ofrece `Añadir ubicación` o `Cambiar ubicación`: eventos, recordatorios y eventos con aviso vinculado. El lugar sigue siendo opcional para no convertir una orden completa en más pasos; cuando el usuario lo añade, se guarda en el campo nativo `location` de Calendar.
