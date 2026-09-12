@@ -1,28 +1,30 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.53";
-import{classify,actionData}from"./classifier.js?v=0.21.53";
-import{sendEntry}from"./sheets.js?v=0.21.53";
-import{createUI}from"./ui.js?v=0.21.53";
-import{createGoogleIntegration}from"./google.js?v=0.21.53";
-import{interpret,remoteProvider,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,protectCalendarInterpretation,protectReadQuery}from"./ai.js?v=0.21.53";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.53";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.53";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.53";
-import{createCloudSync}from"./firebase.js?v=0.21.53";
-import{createMediaService}from"./media.js?v=0.21.53";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.53";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.53";
-import{createAgendaActions}from"./agenda.js?v=0.21.53";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.53";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.53";
-import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.53";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.53";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.53";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.54";
+import{classify,actionData}from"./classifier.js?v=0.21.54";
+import{sendEntry}from"./sheets.js?v=0.21.54";
+import{createUI}from"./ui.js?v=0.21.54";
+import{createGoogleIntegration}from"./google.js?v=0.21.54";
+import{interpret,remoteProvider,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,protectCalendarInterpretation,protectReadQuery}from"./ai.js?v=0.21.54";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.54";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.54";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.54";
+import{createCloudSync}from"./firebase.js?v=0.21.54";
+import{createMediaService}from"./media.js?v=0.21.54";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.54";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.54";
+import{createAgendaActions}from"./agenda.js?v=0.21.54";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.54";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.54";
+import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.54";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.54";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.54";
+import{mediaLibraryItems}from"./media-library.js?v=0.21.54";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
 let lastConnectionCheck=0;
 let noteSettings=normalizeNoteSettings(DEFAULT_NOTE_SETTINGS);
 let notificationSettings=normalizeNotificationSettings(DEFAULT_NOTIFICATION_SETTINGS);
+let libraryState={kind:"all",category:"all",query:""};
 let shortcuts=normalizeShortcuts(readShortcuts()||DEFAULT_SHORTCUTS);
 function render(){ui.render({notes,selectedFilter,selectedType,google,noteSettings})}
 function autosize(){const text=$("text");text.style.height="auto";text.style.height=Math.min(text.scrollHeight,78)+"px"}
@@ -206,6 +208,25 @@ function stop(){listening=false;if(rec){try{rec.stop()}catch(e){}}rec=null;setMi
 function start({inConversation=false,draftId=null}={}){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){ui.notify("Este navegador no admite dictado");return}if(listening){stop();return}if(!inConversation)openDraft();const target=draftId?$(draftId):$("text");finalText=target?.value.trim()||"";rec=new SR();rec.lang="es-ES";rec.continuous=false;rec.interimResults=true;rec.maxAlternatives=1;let sessionFinal=finalText||"",lastInterim="";const paint=value=>{if(target)target.value=value;if(!draftId){$("text").value=value;autosize()}ui.updateDraft(value)};rec.onstart=()=>{listening=true;setMicState(true);$("hint").textContent="Escuchando. Pulsa Enviar cuando la instrucción esté completa."};rec.onresult=e=>{let finalPart="",interimPart="";for(let i=e.resultIndex;i<e.results.length;i++){const result=e.results[i],phrase=(result[0]?.transcript||"").trim();if(!phrase)continue;if(result.isFinal)finalPart+=(finalPart?" ":"")+phrase;else interimPart+=(interimPart?" ":"")+phrase}if(finalPart){sessionFinal+=(sessionFinal?" ":"")+finalPart;lastInterim=""}else lastInterim=interimPart;finalText=sessionFinal;paint((sessionFinal+(lastInterim?" "+lastInterim:"")).trim())};rec.onerror=e=>{listening=false;setMicState(false);$("hint").textContent="Dictado detenido.";ui.notify(e.error==="not-allowed"?"Permiso de micrófono denegado":"Error de dictado: "+e.error)};rec.onend=()=>{finalText=sessionFinal;paint(finalText);listening=false;setMicState(false);$("hint").textContent="Dictado terminado. Puedes continuar o pulsar Enviar cuando acabes.";if(shortcutCapture&&finalText){shortcutCapture=false;createShortcut(finalText);$("text").value="";finalText=""}if(!draftId)autosize()};try{rec.start()}catch(e){listening=false;setMicState(false);ui.notify("No se pudo iniciar el dictado")}}
 function readImages(files,msg){pendingImages=files;ui.showImagePreview(files);ui.notify(msg)}
 
+function libraryItems(){return mediaLibraryItems(notes)}
+function refreshLibrary(){ui.renderMediaLibrary(libraryItems(),libraryState)}
+function libraryItem(key){return libraryItems().find(item=>item.key===key)}
+function openLibrary(){libraryState={kind:"all",category:"all",query:""};$("librarySearch").value="";document.querySelectorAll("[data-library-kind]").forEach(button=>button.classList.toggle("active",button.dataset.libraryKind==="all"));ui.openMediaLibrary(libraryItems(),libraryState)}
+function openLibraryEntry(item){const entry=notes.find(note=>note.id===item.entryId);if(!entry)return;ui.closeMediaViewer();ui.closeMediaLibrary();ui.showEntryAction(entry,google)}
+async function downloadLibraryItem(item,{share=false}={}){
+ try{
+  ui.notify(share?"Preparando para compartir…":"Abriendo archivo…");
+  const result=await media.getMedia(item.driveId),file=new File([result.blob],item.name,{type:result.type||item.mimeType});
+  if(share&&navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]}))){await navigator.share({files:[file],title:item.name,text:item.entryText});return}
+  const url=URL.createObjectURL(result.blob),link=document.createElement("a");link.href=url;if(share)link.download=item.name;link.target="_blank";link.rel="noopener";document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+  if(share)ui.notify("Tu dispositivo no ofrece compartir aquí; he descargado el archivo")
+ }catch(error){if(error?.name!=="AbortError")ui.notify("No se pudo recuperar el archivo")}
+}
+async function openLibraryItem(item){
+ if(item.kind!=="image"){await downloadLibraryItem(item);return}
+ try{ui.notify("Cargando imagen…");const result=await media.getMedia(item.driveId),url=URL.createObjectURL(result.blob);ui.showMediaViewer(item,url,{onEntry:()=>openLibraryEntry(item),onShare:()=>downloadLibraryItem(item,{share:true})})}catch(_){ui.notify("No se pudo ampliar la imagen")}
+}
+
 $("mic").onclick=start;$("micMini").onclick=start;
 $("clear").onclick=()=>{$("text").value="";finalText="";pendingShortcut=null;autosize();ui.notify("Borrador limpiado")};
 $("contactsConnect").onclick=google.connectContacts;
@@ -227,6 +248,13 @@ $("text").oninput=()=>{autosize();ui.updateDraft($("text").value)};
 $("text").onfocus=()=>{if(!$("actionModal").classList.contains("show"))setTimeout(()=>{if(!$("actionModal").classList.contains("show"))openDraft()},120)};
 $("text").onkeydown=event=>{if(event.key==="Enter"&&!event.shiftKey){event.preventDefault();add()}};
 $("attachToggle").onclick=()=>$("attachmentChoices").classList.toggle("show");
+$("libraryOpen").onclick=openLibrary;
+$("libraryClose").onclick=ui.closeMediaLibrary;
+$("viewerClose").onclick=ui.closeMediaViewer;
+$("librarySearch").oninput=event=>{libraryState.query=event.target.value;refreshLibrary()};
+$("libraryCategory").onchange=event=>{libraryState.category=event.target.value;refreshLibrary()};
+document.querySelector(".library-filters").onclick=event=>{const button=event.target.closest("[data-library-kind]");if(!button)return;libraryState.kind=button.dataset.libraryKind;document.querySelectorAll("[data-library-kind]").forEach(item=>item.classList.toggle("active",item===button));refreshLibrary()};
+$("libraryList").onclick=event=>{const button=event.target.closest("[data-library-action]");if(!button)return;const item=libraryItem(button.dataset.libraryKey);if(!item)return;const action=button.dataset.libraryAction;if(action==="entry")openLibraryEntry(item);else if(action==="share")void downloadLibraryItem(item,{share:true});else void openLibraryItem(item)};
 $("searchToggle").onclick=()=>$("searchPanel").classList.toggle("show");
 $("menuOpen").onclick=ui.openMenu;$("menuClose").onclick=ui.closeLayers;$("scrim").onclick=()=>{if(!$("actionModal").classList.contains("conversation-modal"))ui.closeLayers()};
 $("clearView").onclick=()=>{if(confirm("Esto limpia solo la conversación visible. Tus entradas, fotos y archivos seguirán guardados. ¿Continuar?")){$("list").innerHTML='<div class="empty">Vista limpia. Tus datos siguen guardados.</div>';ui.notify("Vista limpiada")}};
@@ -351,7 +379,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.53",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.54",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}

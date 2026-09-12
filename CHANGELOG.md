@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.21.54 · Biblioteca de fotos y archivos
+
+- La cabecera incorpora un apartado propio que reúne todos los adjuntos guardados en las entradas de Firestore.
+- La biblioteca permite buscar, separar fotos y archivos y filtrar por la categoría de su entrada.
+- Las imágenes se amplían dentro de Angeli; cada elemento permite volver a su ficha y compartir el archivo original mediante el menú del dispositivo, con descarga como alternativa.
+- Drive continúa siendo la única copia de los archivos y las miniaturas se recuperan solo al abrir la biblioteca.
+
 ## V0.21.53 · Avisos fiables con Angeli cerrada
 
 - Las tareas con fecha y hora permanecen activas para el entregador aunque no utilicen el objeto `schedule` de Calendar.

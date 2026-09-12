@@ -1,9 +1,10 @@
-import { typeLabel } from "./classifier.js?v=0.21.53";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.53";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.53";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.53";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.53";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.53";
+import { typeLabel } from "./classifier.js?v=0.21.54";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.54";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.54";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.54";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.54";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.54";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.21.54";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -181,7 +182,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.53";
+    image.src = "assets/angeli-welcome.gif?v=0.21.54";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -803,6 +804,67 @@ export function createUI({ getMedia }) {
     hydrateImages();
   }
 
+  async function hydrateLibraryImages() {
+    for (const image of document.querySelectorAll("#libraryList img[data-library-image]")) {
+      if (!image.isConnected) continue;
+      try {
+        const media = await getMedia("images", image.dataset.libraryImage);
+        if (!media || !image.isConnected) continue;
+        const url = URL.createObjectURL(media.blob);
+        image.src = url;
+        image.dataset.objectUrl = url;
+      } catch (_) {
+        image.alt = "No se pudo cargar la miniatura";
+      }
+    }
+  }
+
+  function renderMediaLibrary(items, state = {}) {
+    document.querySelectorAll("#libraryList img[data-object-url]").forEach(image => URL.revokeObjectURL(image.dataset.objectUrl));
+    const shown = filterMediaLibrary(items, state);
+    $("libraryCount").textContent = `${shown.length} elemento${shown.length === 1 ? "" : "s"}`;
+    const categories = [...new Map(items.map(item => [item.category, item.categoryLabel])).entries()];
+    $("libraryCategory").innerHTML = '<option value="all">Todas las categorías</option>' + categories.map(([value, label]) => `<option value="${esc(value)}">${esc(label)}</option>`).join("");
+    $("libraryCategory").value = state.category || "all";
+    $("libraryList").innerHTML = shown.length ? '<div class="library-grid">' + shown.map(item => {
+      const preview = item.kind === "image" ? `<img data-library-image="${esc(item.driveId)}" alt="${esc(item.name)}">` : '<span aria-hidden="true">📄</span>';
+      const date = item.date ? new Date(item.date).toLocaleDateString("es-ES") : "";
+      const meta = [item.categoryLabel, date, mediaSize(item.size)].filter(Boolean).join(" · ");
+      return `<article class="library-item"><button class="library-preview" data-library-action="open" data-library-key="${esc(item.key)}" aria-label="Abrir ${esc(item.name)}">${preview}</button><div class="library-item-body"><strong title="${esc(item.name)}">${esc(item.name)}</strong><span>${esc(meta)}</span><span title="${esc(item.entryText)}">${esc(item.entryText)}</span><div class="library-actions"><button data-library-action="entry" data-library-key="${esc(item.key)}">Ver ficha</button><button data-library-action="share" data-library-key="${esc(item.key)}">Compartir</button></div></div></article>`;
+    }).join("") + "</div>" : '<div class="empty">No hay fotos o archivos con estos filtros.</div>';
+    void hydrateLibraryImages();
+  }
+
+  function openMediaLibrary(items, state) {
+    renderMediaLibrary(items, state);
+    $("mediaLibrary").classList.add("show");
+    $("mediaLibrary").setAttribute("aria-hidden", "false");
+  }
+
+  function closeMediaLibrary() {
+    closeMediaViewer();
+    document.querySelectorAll("#libraryList img[data-object-url]").forEach(image => URL.revokeObjectURL(image.dataset.objectUrl));
+    $("mediaLibrary").classList.remove("show");
+    $("mediaLibrary").setAttribute("aria-hidden", "true");
+  }
+
+  function showMediaViewer(item, objectUrl, { onEntry, onShare }) {
+    $("viewerTitle").textContent = item.name;
+    $("viewerBody").innerHTML = `<img src="${esc(objectUrl)}" alt="${esc(item.name)}">`;
+    $("mediaViewer").classList.add("show");
+    $("mediaViewer").setAttribute("aria-hidden", "false");
+    $("viewerEntry").onclick = onEntry;
+    $("viewerShare").onclick = onShare;
+  }
+
+  function closeMediaViewer() {
+    const image = $("viewerBody")?.querySelector("img");
+    if (image?.src?.startsWith("blob:")) URL.revokeObjectURL(image.src);
+    if ($("viewerBody")) $("viewerBody").innerHTML = "";
+    $("mediaViewer")?.classList.remove("show");
+    $("mediaViewer")?.setAttribute("aria-hidden", "true");
+  }
+
   function renderCard(note, google) {
     const id = esc(note.id);
     const location = note.location ? '<div class="meta">📍 ' + esc(note.location) + "</div>" : "";
@@ -830,7 +892,7 @@ export function createUI({ getMedia }) {
     $("preview").innerHTML = files.map(file => '<img class="thumb" src="' + URL.createObjectURL(file) + '" alt="Imagen preparada">').join("");
   }
 
-  return { $, notify, setGoogleStatus, setPushStatus, setSyncStatus, showConnectionHealth, showNotificationSettings, render, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
+  return { $, notify, setGoogleStatus, setPushStatus, setSyncStatus, showConnectionHealth, showNotificationSettings, render, openMediaLibrary, renderMediaLibrary, closeMediaLibrary, showMediaViewer, closeMediaViewer, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
 }
 
 function esc(value) {

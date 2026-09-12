@@ -1,5 +1,9 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-13 — Biblioteca de fotos y archivos V0.21.54
+
+Las notas permanecen dentro de Angeli; no se copiarán ahora en Google Keep ni en otra aplicación. Los adjuntos disponen de un apartado propio accesible desde la cabecera. La biblioteca deriva su índice de las entradas existentes en Firestore, permite buscar y filtrar por fotos, archivos y categoría, amplía imágenes, abre documentos, comparte el original y conduce a la ficha relacionada. No crea otra base ni otra copia: los bytes continúan únicamente en las carpetas fijas de Drive y se descargan bajo demanda.
+
 ## 2026-09-13 — Avisos de segundo plano fiables V0.21.53
 
 La revisión posterior a la primera prueba real de avisos detectó dos fallos del entregador. Las tareas fechadas se programaban en Cloud Tasks, pero su entrada no contiene `schedule.status`, por lo que `/push/deliver` las descartaba como inactivas. Además, la entrega concreta se retiraba de Firestore antes de llamar a FCM; una excepción temporal dejaba el reintento de Cloud Tasks sin una entrega válida. Desde V0.21.53 una tarea pendiente con `scheduledDate` y `scheduledTime` es elegible y cada entrega se consume únicamente después de que FCM responda. Las pruebas del servicio de notificaciones forman parte de `integration-gate`.

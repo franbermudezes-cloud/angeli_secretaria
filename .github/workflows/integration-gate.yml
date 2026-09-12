@@ -64,6 +64,9 @@ jobs:
       - name: Verificar el registro de adjuntos en Sheets
         run: node --test tests/sheets.test.mjs
 
+      - name: Verificar la biblioteca de adjuntos
+        run: node tests/media-library.test.mjs
+
       - name: Ejecutar arnés real aislado
         run: python backend/test_harness.py
 
