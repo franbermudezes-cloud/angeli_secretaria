@@ -419,3 +419,7 @@ Se adopta FCM Web Push para identificar cada instalación de la PWA y Cloud Task
 Calendar continúa siendo el respaldo visible. Crear o modificar un recordatorio programa las dos vías; completar o cancelar retira ambas. Cada tarea contiene únicamente UID, ID de entrada y fecha técnica. Antes de enviar, Cloud Run vuelve a leer Firestore y exige que la programación coincida y que el recordatorio siga activo, por lo que una tarea antigua no puede generar un aviso obsoleto.
 
 Infraestructura comprobada y configurada en `angeli-secretaria`: APIs Cloud Tasks y FCM activas; cola `angeli-reminders` en `europe-west1`; certificado web push generado; cuenta `angeli-notification-delivery` con invocación de Cloud Run; y cuenta `angeli-ai-interpreter` con acceso limitado a `angelifirebase`, encolado/cancelación de tareas, envío FCM y uso de la identidad de entrega. Falta completar la comprobación real desde cada dispositivo después de publicar V0.21.47.
+
+## 2026-09-12 — Botón de prueba visible V0.21.48
+
+La activación real del dispositivo se confirmó porque Ajustes mostraba «Avisos activos en este dispositivo» y «Renovar». El botón «Probar aviso» existía, pero heredaba `.small-btn.subtle`, una regla histórica con `display:none`. Se retira esa clase únicamente del botón de prueba; los controles secundarios antiguos mantienen su comportamiento.
