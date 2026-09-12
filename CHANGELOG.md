@@ -1,5 +1,10 @@
 # Changelog
 
+## V0.21.51 · Banner de escritorio en primer plano
+
+- Cuando Angeli está abierta en un ordenador, el mensaje recibido usa el canal nativo de notificaciones de la ventana para que Chrome y la PWA instalada muestren el banner de macOS.
+- En móvil y con Angeli cerrada se mantiene la entrega mediante el service worker.
+
 ## V0.21.50 · Prueba dirigida al dispositivo actual
 
 - «Probar aviso» espera a que el navegador obtenga y registre su token antes de enviar la prueba.

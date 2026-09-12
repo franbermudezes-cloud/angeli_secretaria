@@ -63,6 +63,7 @@ test('avisos: la prueba espera el token local y nunca se envía a todos los disp
   assert.match(firebase,/pushRequest\("\/push\/test", \{ token: currentPushToken \}\)/);
   assert.doesNotMatch(firebase,/currentPushToken \|\| undefined/);
   assert.match(firebase,/registration\.showNotification/);
+  assert.match(firebase,/new Notification\(title,options\)/);
   assert.match(firebase,/notify\(`\$\{title\}: \$\{body\}`\)/);
 });
 

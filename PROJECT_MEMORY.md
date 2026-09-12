@@ -1,5 +1,9 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-12 — Banner de escritorio en primer plano V0.21.51
+
+La prueba V0.21.50 confirmó mediante el aviso interno que FCM entregaba el mensaje a Chrome, pero macOS no presentaba el banner aun con ambos perfiles de Chrome autorizados. En escritorio y primer plano se usa `new Notification` para pasar por el canal nativo de la ventana; el service worker continúa atendiendo móvil y segundo plano.
+
 ## 2026-09-12 — Diagnóstico de prueba de escritorio V0.21.50
 
 Firestore confirmó dos instalaciones registradas (`Linux armv81 · móvil` y `MacIntel · ordenador`). Al probar desde el ordenador, la PWA podía considerar activos los avisos solo porque el permiso del navegador estaba concedido, aunque el token de esa carga aún no estuviera disponible. `/push/test` recibía entonces un token vacío y enviaba a todos los dispositivos, por lo que la prueba aparecía en el móvil. La corrección espera el token local, obliga al backend a recibirlo y muestra también una confirmación dentro de Angeli cuando está en primer plano.
