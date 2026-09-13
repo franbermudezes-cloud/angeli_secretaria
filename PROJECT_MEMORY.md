@@ -1,5 +1,9 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-13 — Biblioteca de notas y edición de adjuntos V0.21.58
+
+El acceso Notas deja de presentar resultados dentro del modal conversacional y abre una biblioteca independiente. Incluye búsqueda por título, contenido, categoría, relación, motivo y etiquetas; filtros Pendientes, Hechas y Todas; filtro de categoría; y acciones para ver ficha, reclasificar, cambiar el estado y borrar. En Galería y Archivos, Ver ficha abre ahora una ficha específica del adjunto. Si una entrada anterior no tiene `mediaContext`, ofrece Clasificar ahora; si ya lo tiene, permite modificarlo y sincroniza el cambio en Firestore.
+
 ## 2026-09-13 — Contexto de adjuntos y Agenda V0.21.57
 
 Cada nueva selección de fotos o archivos abre una ficha previa obligatoria con motivo, categoría y relación opcional. Las categorías y tipos de relación son los mismos que los de Notas, por lo que siguen siendo configurables desde un único lugar. El contexto se guarda en `mediaContext` dentro de la entrada de Firestore y la biblioteca lo usa para filtrar, buscar y explicar el adjunto. Los adjuntos anteriores continúan usando la clasificación heredada de su entrada. La cabecera añade Agenda entre Recordatorios y Ajustes; ejecuta una consulta directa de Calendar para los próximos 90 días y muestra todos los eventos pendientes sin pedir una frase adicional.

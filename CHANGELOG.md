@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.21.58 · Biblioteca de notas y fichas de adjuntos
+
+- Notas abre una biblioteca propia con búsqueda y filtros por estado y categoría.
+- Cada nota puede abrirse, reclasificarse, marcarse como hecha o borrarse desde esa biblioteca.
+- Ver ficha en Galería y Archivos muestra el contexto real del adjunto y permite clasificar imágenes antiguas o modificar su clasificación.
+
 ## V0.21.57 · Contexto de adjuntos y Agenda
 
 - Al elegir una foto o un archivo, Angeli pregunta para qué se guarda, su categoría y su relación opcional con una persona, cliente, proyecto o evento.
