@@ -1,5 +1,16 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-14 — Relación explícita entre adjuntos y notas V0.21.64
+
+Repaso de punta a punta pedido por el propietario del área Notas/Galería/Archivos, la última función que había quedado a medias en una sesión anterior. Dos hallazgos reales, encontrados por lectura de código y confirmados con datos reales en producción (con autorización expresa del propietario, usando su Chrome ya conectado):
+
+1. `showEntryAction` mostraba un mensaje fijo sin ningún dato («Guardado — La entrada se ha guardado en tu conversación») al guardar una foto o archivo suelto, o una tarea sin fecha — cualquier intención que no cayera en una de las ramas explícitas (nota, calendario, aviso, contacto, WhatsApp). Causa raíz: `js/intents.js` nunca definió una descripción para `photo.store`/`file.store` (caían en el valor por defecto, "Nota preparada", incorrecto), y el mensaje final ignoraba `entryBody(note)` por completo. Corregido reutilizando `entryBody`, que ya muestra tipo, descripción real y contexto de clasificación.
+2. La ficha de un adjunto (`showMediaEntryDetail`) nunca decía explícitamente con qué estaba relacionado — solo se intuía por la etiqueta de un botón ("Abrir nota" vs "Añadir nota"). Nueva función `mediaRelationCard`: si el adjunto pertenece a una nota, muestra su título/contenido/estado; si no, muestra la relación de persona/cliente/proyecto o dice explícitamente que no hay ninguna. El listado de Galería/Archivos añade el mismo indicador («📝 Nota vinculada») a simple vista.
+
+Hallazgos menores registrados pero no corregidos aún (baja prioridad, decisión pendiente del propietario): la ficha de una nota (`showNoteDetail`) lista los nombres de sus adjuntos como texto, sin miniatura, aunque la tarjeta de conversación sí la muestra; una nota con adjunto muestra la categoría dos veces en la tarjeta de conversación (una por la nota, otra por el contexto del adjunto).
+
+Nota sobre el arnés de integración: `backend/test_harness.py` valida el backend contra las APIs reales de Google — no puede detectar bugs de interfaz. Estos tres cambios (V0.21.62, V0.21.63, V0.21.64) fueron todos de frontend puro, encontrados y verificados probando la interfaz real, no con el arnés.
+
 ## 2026-09-14 — Fichas del Dietario y botón de acciones rápidas V0.21.63
 
 Prueba real en dispositivo de V0.21.62 (filtros ya corregidos) reveló tres problemas nuevos: 1) tocar «Avisos» abría la ficha y se cerraba sola casi al instante; 2) tocar «Adjuntos» mostraba «La entrada se ha guardado en tu conversación», que ni siquiera es cierto; 3) la pulsación larga para el menú rápido no respondía nunca en el móvil.

@@ -1,12 +1,12 @@
-import { typeLabel } from "./classifier.js?v=0.21.63";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.63";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.63";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.63";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.63";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.63";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.21.63";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.21.63";
-import { groupDietarioByDay } from "./dietario.js?v=0.21.63";
+import { typeLabel } from "./classifier.js?v=0.21.64";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.64";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.64";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.64";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.64";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.64";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.21.64";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.21.64";
+import { groupDietarioByDay } from "./dietario.js?v=0.21.64";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -184,7 +184,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.63";
+    image.src = "assets/angeli-welcome.gif?v=0.21.64";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -643,7 +643,7 @@ export function createUI({ getMedia }) {
       openModal({ ...base, title, body, actions: result ? [{ label: "Cerrar", kind: "confirm", onClick: closeLayers }] : [{ label: "Ahora no", kind: "secondary", onClick: closeLayers }, { label, kind: "confirm", dataset: { a: "search-calendar", id: note.id } }] });
       return;
     }
-    showCompletion({ title: "Guardado", lead: "La entrada se ha guardado en tu conversación." });
+    showCompletion({ title: "✓ Guardado en Angeli", lead: "Ya está sincronizado en tu conversación.", body: entryBody(note) });
   }
 
   function showCalendarFieldEditor(note, field, { onSave, onMic, onCancel } = {}) {
@@ -882,7 +882,8 @@ export function createUI({ getMedia }) {
       const preview = item.kind === "image" ? `<img data-library-image="${esc(item.driveId)}" alt="${esc(item.name)}">` : '<span aria-hidden="true">📄</span>';
       const date = item.date ? new Date(item.date).toLocaleDateString("es-ES") : "";
       const meta = [item.categoryLabel, date, mediaSize(item.size)].filter(Boolean).join(" · ");
-      return `<article class="library-item"><button class="library-preview" data-library-action="open" data-library-key="${esc(item.key)}" aria-label="Abrir ${esc(item.name)}">${preview}</button><div class="library-item-body"><strong title="${esc(item.name)}">${esc(item.name)}</strong><span>${esc(meta)}</span><span title="${esc(item.entryText)}">${esc(item.entryText)}</span>${item.relation?`<span title="${esc(item.relation)}">🔗 ${esc(item.relation)}</span>`:""}<div class="library-actions"><button data-library-action="entry" data-library-key="${esc(item.key)}">Ver ficha</button><button data-library-action="share" data-library-key="${esc(item.key)}">Compartir</button></div></div></article>`;
+      const linkedNote = item.entryType === "note" ? `<span title="Vinculado a una nota">📝 Nota vinculada</span>` : "";
+      return `<article class="library-item"><button class="library-preview" data-library-action="open" data-library-key="${esc(item.key)}" aria-label="Abrir ${esc(item.name)}">${preview}</button><div class="library-item-body"><strong title="${esc(item.name)}">${esc(item.name)}</strong><span>${esc(meta)}</span><span title="${esc(item.entryText)}">${esc(item.entryText)}</span>${linkedNote}${item.relation?`<span title="${esc(item.relation)}">🔗 ${esc(item.relation)}</span>`:""}<div class="library-actions"><button data-library-action="entry" data-library-key="${esc(item.key)}">Ver ficha</button><button data-library-action="share" data-library-key="${esc(item.key)}">Compartir</button></div></div></article>`;
     }).join("") + "</div>" : '<div class="empty">No hay fotos o archivos con estos filtros.</div>';
     void hydrateLibraryImages();
   }
@@ -1016,9 +1017,26 @@ export function createUI({ getMedia }) {
     $("mediaViewer")?.setAttribute("aria-hidden", "true");
   }
 
+  // La persona necesita saber, sin adivinarlo por el botón, con qué está
+  // relacionado el adjunto: una nota concreta, o la persona/cliente/proyecto
+  // que se eligió al clasificarlo.
+  function mediaRelationCard(entry) {
+    if (entry.type === "note") {
+      return '<div class="calendar-confirmation"><span class="calendar-field-label">Vinculado a la nota</span><strong>📝 ' + esc(noteTitle(entry)) + '</strong>' +
+        (entry.text ? '<span class="calendar-field-label">Contenido</span><b>' + esc(entry.text) + '</b>' : '') +
+        '<span class="calendar-field-label">Estado</span><b>' + (entry.status === "done" ? "Hecha" : "Pendiente") + '</b></div>';
+    }
+    // Si mediaContextCard ya va a mostrar la relación (persona/cliente/proyecto),
+    // no la repetimos aquí; solo lo decimos explícitamente cuando no hay ninguna.
+    if (mediaContextRelation(entry.mediaContext || {})) return '';
+    return '<div class="calendar-confirmation"><span class="calendar-field-label">Relacionado con</span><strong>Sin nota ni persona relacionada</strong></div>';
+  }
+
   function showMediaEntryDetail(entry, item, { onBack, onEdit, onNote } = {}) {
     const context = entry.mediaContext;
-    const body = context ? mediaContextCard(entry) : '<div class="empty">Esta imagen es anterior a la clasificación. Puedes indicar ahora para qué la guardaste.</div>';
+    const contextCard = entry.type !== "note" && context ? mediaContextCard(entry) : "";
+    const emptyState = entry.type !== "note" && !context ? '<div class="empty">Esta imagen es anterior a la clasificación. Puedes indicar ahora para qué la guardaste.</div>' : "";
+    const body = mediaRelationCard(entry) + contextCard + emptyState;
     openModal({title:item.name || "Ficha del adjunto",lead:"Información para localizar este adjunto.",body,actions:[
       {label:"Volver",kind:"secondary",onClick:onBack},
       {label:context ? "Modificar clasificación" : "Clasificar ahora",kind:"secondary",onClick:()=>onEdit?.(entry)},

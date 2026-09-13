@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.21.64 · Relación explícita entre adjuntos y notas
+
+- Guardar una foto o un archivo suelto (sin convertirlo en nota), o una tarea sin fecha, mostraba un mensaje fijo sin ningún dato real («Guardado — La entrada se ha guardado en tu conversación»). Ahora muestra el tipo, la descripción real y la clasificación (motivo, categoría, relación) que se acaba de elegir.
+- La ficha de un adjunto (Galería/Archivos) ya dice explícitamente con qué está relacionado: si pertenece a una nota, muestra su título, contenido y estado; si no, muestra la persona/cliente/proyecto elegido al clasificarlo, o «Sin nota ni persona relacionada» cuando no se indicó ninguna.
+- El listado de Galería/Archivos añade un indicador «📝 Nota vinculada» junto a cada adjunto que pertenece a una nota, visible de un vistazo sin tener que abrir la ficha.
+
 ## V0.21.63 · Fichas del Dietario y botón de acciones rápidas
 
 - Abrir un aviso desde el Dietario cerraba su ficha solo a los 1.8 segundos: reutilizaba `showEntryAction`, pensada para una confirmación justo tras crear algo, no para repasar una entrada que ya existía. Nueva ficha persistente (`showDietarioDetail`) sin autocierre para eventos, avisos y el resto de tipos.
