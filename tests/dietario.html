@@ -1,0 +1,14 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../styles.css?v=0.21.61"><link rel="stylesheet" href="../styles-flow.css?v=0.21.61"><title>Prueba de dietario</title></head><body><div class="app-shell"><section id="dietarioLibrary" class="media-library show" aria-hidden="false"><header class="library-header"><div><strong>Dietario</strong><span id="dietarioCount">0 elementos</span></div><button id="dietarioClose" class="icon-button">×</button></header><div class="library-controls"><div class="library-filters"><button class="filter" data-dietario-range="today">Hoy</button><button class="filter active" data-dietario-range="week">Esta semana</button><button class="filter" data-dietario-range="all">Todo</button></div><div class="library-filters"><button class="filter active" data-dietario-type="all">Todo</button><button class="filter" data-dietario-type="calendar">📅 Eventos</button><button class="filter" data-dietario-type="reminder">🔔 Avisos</button><button class="filter" data-dietario-type="note">📝 Notas</button><button class="filter" data-dietario-type="attach">🗂️ Adjuntos</button></div></div><div id="dietarioList" class="library-list"></div></section><div id="actionModal"><h2 id="modalTitle"></h2><p id="modalLead"></p><div id="modalBody"></div><div id="modalActions"></div></div></div><div id="toast"></div><script type="module">
+import { createUI } from "../js/ui.js?v=0.21.61";
+const now = new Date("2026-09-15T09:00:00");
+const notes = [
+  { id: "cal1", type: "calendar", scheduledDate: "2026-09-15", scheduledTime: "10:00", calendarTitle: "Revisión con Laura Gómez", calendarStatus: "synced", location: "Oficina" },
+  { id: "rem1", type: "reminder", status: "pending", schedule: { dueAt: "2026-09-15T12:30:00", status: "scheduled", action: { kind: "reminder" }, title: "Llamar al dentista" } },
+  { id: "note1", type: "note", status: "pending", date: "2026-09-10T08:00:00", text: "Idea: renovar contrato Movistar", aiIntent: { title: "Renovar contrato Movistar" }, noteClassification: { scope: "casa", categoryLabel: "Casa" }, images: [{ id: "i1" }], files: [{ id: "f1", name: "factura.pdf" }] },
+  { id: "cal2", type: "calendar", scheduledDate: "2026-09-17", scheduledTime: "21:00", calendarTitle: "Cena con Marta", calendarStatus: "synced", location: "Restaurante Casa Pepa" },
+  { id: "file1", type: "file", status: "pending", date: "2026-09-12T08:00:00", text: "Presupuesto reforma cocina", mediaContext: { categoryLabel: "Proyecto cocina" }, files: [{ id: "f2", name: "presupuesto.pdf" }] },
+  { id: "note2", type: "note", status: "pending", date: "2026-09-01T08:00:00", text: "Comprar regalo cumpleaños Ana" }
+];
+const ui = createUI({ getMedia: async () => null });
+ui.renderDietario(notes, { range: "week", type: "all" });
+</script></body></html>

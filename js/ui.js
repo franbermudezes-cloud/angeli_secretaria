@@ -1,11 +1,12 @@
-import { typeLabel } from "./classifier.js?v=0.21.60";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.60";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.60";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.60";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.60";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.60";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.21.60";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.21.60";
+import { typeLabel } from "./classifier.js?v=0.21.61";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.61";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.61";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.61";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.61";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.61";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.21.61";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.21.61";
+import { groupDietarioByDay } from "./dietario.js?v=0.21.61";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -183,7 +184,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.60";
+    image.src = "assets/angeli-welcome.gif?v=0.21.61";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -924,6 +925,33 @@ export function createUI({ getMedia }) {
     $("noteLibrary").setAttribute("aria-hidden", "true");
   }
 
+  const DIETARIO_TYPE_ICON = { calendar: "📅", reminder: "🔔", note: "📝", attach: "🗂️" };
+
+  function dietarioItemMarkup(item) {
+    return `<div class="dietario-item"><span class="dietario-rail ${item.rail}"></span><div class="dietario-icon ${item.rail}">${DIETARIO_TYPE_ICON[item.rail] || "📌"}</div><div class="dietario-body"><div class="dietario-top"><b>${esc(item.title)}</b>${item.time ? `<span class="dietario-time">${esc(item.time)}</span>` : ""}</div>${item.subtitle ? `<div class="dietario-sub">${esc(item.subtitle)}</div>` : ""}${item.attachmentCount ? `<span class="dietario-attachments">📎 ${item.attachmentCount}</span>` : ""}</div></div>`;
+  }
+
+  function renderDietario(notes, state = {}) {
+    const { days, undated } = groupDietarioByDay(notes, { range: state.range || "week", type: state.type || "all" });
+    const total = days.reduce((sum, day) => sum + day.items.length, 0) + undated.length;
+    $("dietarioCount").textContent = `${total} elemento${total === 1 ? "" : "s"}`;
+    if (!total) { $("dietarioList").innerHTML = '<div class="empty">No hay nada que mostrar en el dietario con estos filtros.</div>'; return; }
+    const daysHtml = days.map(day => `<div class="dietario-day" data-dietario-day="${esc(day.dateKey)}"><div class="dietario-day-head"><span class="dow">${esc(day.label.weekday)}</span><span class="num">${esc(day.label.day)}</span>${day.isToday ? '<span class="today-pill">Hoy</span>' : ""}</div>${day.items.map(item => `<button class="dietario-open" data-dietario-id="${esc(item.id)}" data-dietario-item-type="${esc(item.type)}">${dietarioItemMarkup(item)}</button>`).join("")}</div>`).join("");
+    const undatedHtml = undated.length ? `<div class="dietario-day dietario-undated"><div class="dietario-day-head"><span class="num">Sin fecha</span></div>${undated.map(item => `<button class="dietario-open" data-dietario-id="${esc(item.id)}" data-dietario-item-type="${esc(item.type)}">${dietarioItemMarkup(item)}</button>`).join("")}</div>` : "";
+    $("dietarioList").innerHTML = daysHtml + undatedHtml;
+  }
+
+  function openDietario(notes, state) {
+    renderDietario(notes, state);
+    $("dietarioLibrary").classList.add("show");
+    $("dietarioLibrary").setAttribute("aria-hidden", "false");
+  }
+
+  function closeDietario() {
+    $("dietarioLibrary").classList.remove("show");
+    $("dietarioLibrary").setAttribute("aria-hidden", "true");
+  }
+
   function openMediaLibrary(items, state) {
     renderMediaLibrary(items, state);
     $("mediaLibrary").classList.add("show");
@@ -992,7 +1020,7 @@ export function createUI({ getMedia }) {
     $("preview").innerHTML = files.map(file => '<img class="thumb" src="' + URL.createObjectURL(file) + '" alt="Imagen preparada">').join("");
   }
 
-  return { $, notify, setGoogleStatus, setPushStatus, setSyncStatus, showConnectionHealth, showNotificationSettings, render, openMediaLibrary, renderMediaLibrary, closeMediaLibrary, openNoteLibrary, renderNoteLibrary, closeNoteLibrary, showMediaViewer, closeMediaViewer, showMediaEntryDetail, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showMediaContextEditor, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
+  return { $, notify, setGoogleStatus, setPushStatus, setSyncStatus, showConnectionHealth, showNotificationSettings, render, openMediaLibrary, renderMediaLibrary, closeMediaLibrary, openNoteLibrary, renderNoteLibrary, closeNoteLibrary, openDietario, renderDietario, closeDietario, showMediaViewer, closeMediaViewer, showMediaEntryDetail, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showMediaContextEditor, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
 }
 
 function esc(value) {

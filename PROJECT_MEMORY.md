@@ -1,5 +1,9 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-13 — Dietario: agenda unificada por día V0.21.61
+
+El icono «Agenda» (🗓️) generaba confusión: solo consultaba Calendar, pero el nombre sugería algo más amplio. Se renombra a «Calendario» sin tocar su comportamiento (sigue siendo el atajo directo a `calendar.query`), y se añade un icono nuevo, «Dietario» (📔), que agrupa por día lo que ya vive en Firestore: eventos de Calendar, avisos (recordatorios, tareas con fecha, llamadas programadas), notas y adjuntos, con una sección final «Sin fecha». No crea ningún dato nuevo ni un modal paralelo: cada línea abre la ficha real ya existente para ese tipo de entrada (`ui.showEntryAction` o el detalle de nota). La agrupación vive en `js/dietario.js`, un módulo puro y testeado (`tests/dietario.test.mjs`), siguiendo el mismo patrón que `media-library.js` para la Galería. Pendiente para una versión futura: fusionar eventos reales de Calendar que Angeli no haya creado (hoy el Dietario solo agrupa lo que ya está sincronizado en Firestore, no hace una consulta en vivo a la API de Calendar).
+
 ## 2026-09-13 — Corrección urgente del arranque V0.21.60
 
 La V0.21.59 quedó bloqueada en la pantalla «Preparando tu asistente» por un cierre incorrecto en la función `openLibraryEntry`. Chrome informó `Unexpected token ')'` en `js/app.js`, aunque `node --check` y las pruebas unitarias habían pasado. Se reestructura la función para que los cierres del editor de nota y la ficha del adjunto sean inequívocos. La validación de esta regresión debe incluir un arranque real en Chrome y comprobar que desaparece `welcomeScreen`, además de las pruebas Node habituales.
