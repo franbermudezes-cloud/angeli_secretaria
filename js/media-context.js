@@ -1,4 +1,4 @@
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.59";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.60";
 
 export function normalizeMediaContext(value = {}, settings) {
   const normalizedSettings = normalizeNoteSettings(settings);
