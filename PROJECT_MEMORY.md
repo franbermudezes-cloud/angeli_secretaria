@@ -1,5 +1,9 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-13 — Prioridad de avisos móviles V0.21.56
+
+Una prueba real mostró que Cloud Tasks ejecutó `/push/deliver` a la hora prevista y el ordenador recibió el aviso, mientras el Samsung A54 mantuvo el mensaje hasta abrir la PWA. Los tokens de Chrome Android son Web Push y el backend enviaba mensajes de datos sin urgencia explícita; FCM puede retenerlos durante Doze. Desde V0.21.56 cada mensaje incluye los encabezados Web Push `Urgency: high` y `TTL: 86400`, adecuados para recordatorios visibles y puntuales. Base confirmada: `angelifirebase`; cola confirmada: `angeli-reminders` en `europe-west1`; entrega confirmada en Cloud Run con respuesta 200.
+
 ## 2026-09-13 — Cabecera funcional V0.21.55
 
 La cabecera conserva el logotipo de Angeli a la izquierda y Ajustes a la derecha. Entre ambos presenta cuatro accesos directos: Galería, Archivos, Notas y Recordatorios. Los antiguos iconos de enviar y buscar se retiran de la cabecera porque el usuario no los utilizaba. Galería y Archivos reutilizan la biblioteca con su filtro inicial; Notas abre el gestor con todas las notas y Recordatorios abre los pendientes.

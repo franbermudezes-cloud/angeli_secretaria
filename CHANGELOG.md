@@ -1,5 +1,10 @@
 # Changelog
 
+## V0.21.56 · Avisos móviles puntuales en segundo plano
+
+- Los avisos Web Push se envían con urgencia alta para que Android pueda despertar la PWA cuando el móvil está en reposo.
+- La entrega conserva un día de vigencia si el dispositivo está temporalmente sin conexión.
+
 ## V0.21.55 · Cabecera funcional
 
 - La cabecera sustituye los accesos sin uso de enviar y buscar por cuatro secciones directas: Galería, Archivos, Notas y Recordatorios.
