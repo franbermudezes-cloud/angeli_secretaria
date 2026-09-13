@@ -1,5 +1,10 @@
 # Changelog
 
+## V0.21.60 · Corrección del arranque
+
+- Se corrige el cierre de la acción «Añadir nota» en la ficha de Galería y Archivos, cuyo error de sintaxis impedía retirar la pantalla de carga en ordenador y móvil.
+- El flujo se comprueba además con el motor real de Chrome para detectar errores que no reprodujo el análisis de Node.
+
 ## V0.21.59 · Notas enlazadas con fotos y archivos
 
 - El editor de notas permite añadir fotos y documentos desde el selector del dispositivo.
