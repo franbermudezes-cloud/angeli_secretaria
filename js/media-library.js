@@ -2,12 +2,12 @@
 export function mediaLibraryItems(entries = []) {
   return entries.flatMap(entry => {
     const typeLabel = ({ note: "Notas", task: "Tareas", reminder: "Recordatorios", calendar: "Calendario", contact: "Contactos", photo: "Fotos", file: "Archivos" })[entry.type] || "Otros";
-    const context = entry.mediaContext || {};
-    const relation = [context.relationTypeLabel, context.relationName].filter(Boolean).join(": ");
+    const context = entry.mediaContext || {}, classification = entry.noteClassification || {};
+    const relation = [context.relationTypeLabel || classification.relationTypeLabel, context.relationName || classification.relationName].filter(Boolean).join(": ");
     const common = {
       entryId: entry.id,
-      entryText: context.purpose || entry.text || "Entrada con adjunto",
-      purpose: context.purpose || "",
+      entryText: context.purpose || classification.purpose || entry.text || "Entrada con adjunto",
+      purpose: context.purpose || classification.purpose || "",
       relation,
       entryType: entry.type || "note",
       status: entry.status || "pending",

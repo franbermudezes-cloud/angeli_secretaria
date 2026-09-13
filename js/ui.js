@@ -1,11 +1,11 @@
-import { typeLabel } from "./classifier.js?v=0.21.58";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.58";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.58";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.58";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.58";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.58";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.21.58";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.21.58";
+import { typeLabel } from "./classifier.js?v=0.21.59";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.59";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.59";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.59";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.59";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.59";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.21.59";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.21.59";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -183,7 +183,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.58";
+    image.src = "assets/angeli-welcome.gif?v=0.21.59";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -359,7 +359,10 @@ export function createUI({ getMedia }) {
     const category = settingLabel(settings, "categories", classification.scope, classification.categoryLabel || noteClassificationLabel(classification));
     const relationType = classification.relationType !== "none" ? settingLabel(settings, "relationTypes", classification.relationType, classification.relationTypeLabel) : "";
     const relationLabel = relationType && classification.relationName ? `${relationType}: ${classification.relationName}` : classification.relationName || "";
-    return '<div class="calendar-confirmation note-confirmation"><span class="calendar-field-label">Título</span><strong>' + esc(noteTitle(note)) + '</strong><span class="calendar-field-label">Contenido</span><b>' + esc(note.text) + '</b><span class="calendar-field-label">Categoría</span><b>' + esc(category) + '</b>' + (relationLabel ? '<span class="calendar-field-label">Relacionada con</span><b>' + esc(relationLabel) + '</b>' : '') + purpose + tags + '</div>';
+    const attachments = [...(note.images || []), ...(note.files || []), ...(note._pendingImages || []), ...(note._pendingFiles || [])];
+    const attachmentNames = attachments.map((item,index) => typeof item === "string" ? `Adjunto ${index + 1}` : item.name || `Adjunto ${index + 1}`);
+    const attachmentRow = attachmentNames.length ? '<span class="calendar-field-label">Adjuntos</span><b>' + esc(attachmentNames.join(" · ")) + '</b>' : '';
+    return '<div class="calendar-confirmation note-confirmation"><span class="calendar-field-label">Título</span><strong>' + esc(noteTitle(note)) + '</strong><span class="calendar-field-label">Contenido</span><b>' + esc(note.text) + '</b><span class="calendar-field-label">Categoría</span><b>' + esc(category) + '</b>' + (relationLabel ? '<span class="calendar-field-label">Relacionada con</span><b>' + esc(relationLabel) + '</b>' : '') + purpose + tags + attachmentRow + '</div>';
   }
 
   function showNoteConfirmation(note, { settings = currentNoteSettings, onSave, onEdit, onCancel } = {}) {
@@ -386,7 +389,13 @@ export function createUI({ getMedia }) {
       '<label>Relación<select id="noteDraftRelationType"><option value="none">Sin relación</option>' + normalizedSettings.relationTypes.map(option => '<option value="' + esc(option.id) + '">' + esc(option.label) + '</option>').join("") + '</select></label>' +
       '<label>Nombre relacionado<input id="noteDraftRelationName" type="text" placeholder="Persona, cliente, proyecto o evento"></label>' +
       '<label>Motivo<input id="noteDraftPurpose" type="text"></label>' +
-      '<label>Etiquetas<input id="noteDraftTags" type="text" placeholder="Separadas por comas"></label>';
+      '<label>Etiquetas<input id="noteDraftTags" type="text" placeholder="Separadas por comas"></label>' +
+      '<div class="note-attachment-picker"><strong>Adjuntos</strong><div id="noteDraftAttachments" class="media-context-files"></div><div class="note-attachment-actions"><label>🖼️ Añadir foto<input id="noteDraftImages" type="file" accept="image/*" multiple hidden></label><label>📎 Añadir archivo<input id="noteDraftFiles" type="file" multiple hidden></label></div></div>';
+    let newImages = [...(note._pendingImages || [])], newFiles = [...(note._pendingFiles || [])];
+    const paintAttachments = () => {
+      const existing = [...(note.images || []), ...(note.files || [])].map((item,index) => typeof item === "string" ? `Adjunto ${index + 1}` : item.name || `Adjunto ${index + 1}`);
+      $("noteDraftAttachments").innerHTML = [...existing, ...newImages.map(file => file.name), ...newFiles.map(file => file.name)].map(name => `<span>📎 ${esc(name)}</span>`).join("") || '<span>Sin adjuntos</span>';
+    };
     openModal({
       title: missingFields.length ? "Completar nota" : "Modificar nota",
       lead: missingFields.includes("text") ? "¿Qué quieres guardar en esta nota? Añade el contenido y un título breve." : missingFields.includes("title") ? "¿Qué título quieres ponerle a esta nota? El contenido ya está preparado." : "Corrige únicamente lo que necesites y vuelve a revisar la ficha.",
@@ -406,7 +415,9 @@ export function createUI({ getMedia }) {
           relationTypeLabel: settingLabel(normalizedSettings, "relationTypes", $("noteDraftRelationType").value),
           relationName: $("noteDraftRelationName").value,
           purpose: $("noteDraftPurpose").value,
-          tags: $("noteDraftTags").value
+          tags: $("noteDraftTags").value,
+          images: newImages,
+          files: newFiles
         }); } }
       ]
     });
@@ -417,6 +428,9 @@ export function createUI({ getMedia }) {
     $("noteDraftRelationName").value = classification.relationName || "";
     $("noteDraftPurpose").value = classification.purpose || "";
     $("noteDraftTags").value = (classification.tags || []).join(", ");
+    $("noteDraftImages").onchange = event => { newImages = [...newImages, ...event.target.files]; paintAttachments(); };
+    $("noteDraftFiles").onchange = event => { newFiles = [...newFiles, ...event.target.files]; paintAttachments(); };
+    paintAttachments();
   }
 
   function showNoteSettings(settings, { onAction, onAddCategory, onAddRelation } = {}) {
@@ -894,7 +908,8 @@ export function createUI({ getMedia }) {
       const relation = classification.relationName ? `${settingLabel(currentNoteSettings, "relationTypes", classification.relationType, classification.relationTypeLabel)}: ${classification.relationName}` : "";
       const date = note.date ? new Date(note.date).toLocaleDateString("es-ES") : "";
       const done = note.status === "done";
-      return `<article class="note-library-item${done ? " done" : ""}"><div class="note-library-top"><strong>${esc(noteTitle(note))}</strong><span class="note-library-state">${done ? "Hecha" : "Pendiente"}</span></div><p>${esc(note.text || "Sin contenido")}</p><div class="note-library-meta"><span>${esc(category)}</span>${relation ? `<span>· ${esc(relation)}</span>` : ""}${date ? `<span>· ${esc(date)}</span>` : ""}</div><div class="note-library-actions"><button class="primary" data-note-action="open" data-note-id="${esc(note.id)}">Ver ficha</button><button data-note-action="edit" data-note-id="${esc(note.id)}">Reclasificar</button><button data-note-action="toggle" data-note-id="${esc(note.id)}">${done ? "Reabrir" : "✓ Hecha"}</button><button data-note-action="delete" data-note-id="${esc(note.id)}">Borrar</button></div></article>`;
+      const attachmentCount = (note.images || []).length + (note.files || []).length;
+      return `<article class="note-library-item${done ? " done" : ""}"><div class="note-library-top"><strong>${esc(noteTitle(note))}</strong><span class="note-library-state">${done ? "Hecha" : "Pendiente"}</span></div><p>${esc(note.text || "Sin contenido")}</p><div class="note-library-meta"><span>${esc(category)}</span>${relation ? `<span>· ${esc(relation)}</span>` : ""}${date ? `<span>· ${esc(date)}</span>` : ""}${attachmentCount ? `<span>· 📎 ${attachmentCount}</span>` : ""}</div><div class="note-library-actions"><button class="primary" data-note-action="open" data-note-id="${esc(note.id)}">Ver ficha</button><button data-note-action="edit" data-note-id="${esc(note.id)}">Reclasificar</button><button data-note-action="toggle" data-note-id="${esc(note.id)}">${done ? "Reabrir" : "✓ Hecha"}</button><button data-note-action="delete" data-note-id="${esc(note.id)}">Borrar</button></div></article>`;
     }).join("") + "</div>" : '<div class="empty">No hay notas con estos filtros.</div>';
   }
 
@@ -939,12 +954,13 @@ export function createUI({ getMedia }) {
     $("mediaViewer")?.setAttribute("aria-hidden", "true");
   }
 
-  function showMediaEntryDetail(entry, item, { onBack, onEdit } = {}) {
+  function showMediaEntryDetail(entry, item, { onBack, onEdit, onNote } = {}) {
     const context = entry.mediaContext;
     const body = context ? mediaContextCard(entry) : '<div class="empty">Esta imagen es anterior a la clasificación. Puedes indicar ahora para qué la guardaste.</div>';
     openModal({title:item.name || "Ficha del adjunto",lead:"Información para localizar este adjunto.",body,actions:[
       {label:"Volver",kind:"secondary",onClick:onBack},
-      {label:context ? "Modificar clasificación" : "Clasificar ahora",kind:"confirm",onClick:()=>onEdit?.(entry)}
+      {label:context ? "Modificar clasificación" : "Clasificar ahora",kind:"secondary",onClick:()=>onEdit?.(entry)},
+      {label:entry.type === "note" ? "Abrir nota" : "Añadir nota",kind:"confirm",onClick:()=>onNote?.(entry)}
     ]});
   }
 

@@ -1,5 +1,9 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-13 — Enlace bidireccional entre Notas y adjuntos V0.21.59
+
+Notas, Galería y Archivos representan ahora vistas de las mismas entradas de Firestore. El editor de una nota acepta imágenes y documentos, los sube a Drive al guardar y los incorpora a `images` o `files`; el índice derivado los presenta automáticamente en Galería o Archivos. La clasificación de la nota alimenta también `mediaContext`, por lo que ambas vistas conservan categoría, relación y motivo. Desde la ficha de un adjunto, Añadir nota convierte esa misma entrada en nota, preserva sus referencias remotas y evita duplicar el archivo. Si ya está enlazado, el botón abre la nota existente.
+
 ## 2026-09-13 — Biblioteca de notas y edición de adjuntos V0.21.58
 
 El acceso Notas deja de presentar resultados dentro del modal conversacional y abre una biblioteca independiente. Incluye búsqueda por título, contenido, categoría, relación, motivo y etiquetas; filtros Pendientes, Hechas y Todas; filtro de categoría; y acciones para ver ficha, reclasificar, cambiar el estado y borrar. En Galería y Archivos, Ver ficha abre ahora una ficha específica del adjunto. Si una entrada anterior no tiene `mediaContext`, ofrece Clasificar ahora; si ya lo tiene, permite modificarlo y sincroniza el cambio en Firestore.

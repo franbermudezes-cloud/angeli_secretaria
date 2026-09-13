@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.21.59 · Notas enlazadas con fotos y archivos
+
+- El editor de notas permite añadir fotos y documentos desde el selector del dispositivo.
+- Los adjuntos de una nota aparecen también en Galería o Archivos con la misma clasificación y relación.
+- La ficha de una foto o archivo permite añadirle una nota completa; la entrada pasa a estar disponible también en Notas sin duplicar el adjunto.
+- Las fichas y tarjetas de notas muestran sus adjuntos enlazados.
+
 ## V0.21.58 · Biblioteca de notas y fichas de adjuntos
 
 - Notas abre una biblioteca propia con búsqueda y filtros por estado y categoría.
