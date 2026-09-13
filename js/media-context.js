@@ -1,6 +1,10 @@
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.64";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.65";
 
-export function normalizeMediaContext(value = {}, settings) {
+// El valor por defecto de un parámetro solo actúa sobre "undefined": si
+// pendingMediaContext aún es null (antes de la primera clasificación), un
+// "= {}" en la firma no lo sustituye y toda lectura de propiedad revienta.
+export function normalizeMediaContext(value, settings) {
+  value = value || {};
   const normalizedSettings = normalizeNoteSettings(settings);
   const scope = normalizedSettings.categories.some(option => option.id === value.scope)
     ? value.scope
@@ -23,7 +27,8 @@ export function mediaContextComplete(value) {
   return !value?.relationType || value.relationType === "none" || Boolean(clean(value.relationName));
 }
 
-export function mediaContextRelation(value = {}) {
+export function mediaContextRelation(value) {
+  value = value || {};
   if (!clean(value.relationName)) return "";
   return [clean(value.relationTypeLabel), clean(value.relationName)].filter(Boolean).join(": ");
 }

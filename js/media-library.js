@@ -3,7 +3,13 @@ export function mediaLibraryItems(entries = []) {
   return entries.flatMap(entry => {
     const typeLabel = ({ note: "Notas", task: "Tareas", reminder: "Recordatorios", calendar: "Calendario", contact: "Contactos", photo: "Fotos", file: "Archivos" })[entry.type] || "Otros";
     const context = entry.mediaContext || {}, classification = entry.noteClassification || {};
-    const relation = [context.relationTypeLabel || classification.relationTypeLabel, context.relationName || classification.relationName].filter(Boolean).join(": ");
+    // Entradas antiguas llegaron a guardar literalmente "none" como
+    // relationTypeLabel (el identificador de "sin relación", no una
+    // etiqueta real). Se descarta explícitamente para que ese texto de
+    // depuración no se cuele en la interfaz como si fuera una relación real.
+    const relation = [context.relationTypeLabel || classification.relationTypeLabel, context.relationName || classification.relationName]
+      .filter(part => Boolean(part) && part !== "none")
+      .join(": ");
     const common = {
       entryId: entry.id,
       entryText: context.purpose || classification.purpose || entry.text || "Entrada con adjunto",

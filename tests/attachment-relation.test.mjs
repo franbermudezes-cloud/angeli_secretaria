@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { planIntent } from "../js/intents.js";
+import { mediaLibraryItems } from "../js/media-library.js";
+import { settingLabel } from "../js/note-settings.js";
 
 // Regresión: guardar una foto o un archivo suelto (sin convertirlo en nota),
 // o una tarea sin fecha, mostraba un mensaje fijo sin ningún dato real
@@ -33,5 +35,14 @@ assert.match(ui, /mediaRelationCard\(entry\)/);
 // adjuntos que pertenecen a una nota.
 assert.match(ui, /Nota vinculada/);
 assert.match(ui, /item\.entryType === "note"/);
+
+// Regresión real encontrada en producción: una nota antigua con
+// relationType "none" pero con relationTypeLabel guardado también como el
+// literal "none" (dato de una versión anterior a la normalización actual)
+// hacía que la Galería mostrase un chip "🔗 none" — el identificador
+// interno de "sin relación" filtrándose como si fuera una relación real.
+assert.equal(settingLabel({ categories: [], relationTypes: [] }, "relationTypes", "none"), "");
+const leaky = mediaLibraryItems([{ id: "old1", type: "note", noteClassification: { relationType: "none", relationTypeLabel: "none", relationName: "none" }, images: [{ id: "i1", name: "vieja.jpg" }] }]);
+assert.equal(leaky[0].relation, "");
 
 console.log("attachment-relation: ok");

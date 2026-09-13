@@ -1,5 +1,10 @@
 # Changelog
 
+## V0.21.65 · Corrección: adjuntar una foto o archivo suelto se quedaba bloqueado
+
+- Adjuntar una foto o un archivo directamente desde el compositor (sin pasar por una nota) rompía en silencio: el modal para elegir motivo, categoría y relación nunca llegaba a abrirse, dejando a la persona sin ninguna forma de continuar salvo descartar el adjunto. Causa: `normalizeMediaContext` recibía `null` (el valor inicial antes de la primera clasificación) y un `= {}` en la firma de la función no cubre `null`, solo `undefined`. Encontrado probando la aplicación real de punta a punta.
+- En Galería/Archivos, algunas notas antiguas mostraban un chip «🔗 none» — el identificador interno de «sin relación» filtrándose como si fuera una relación real. `settingLabel` ya no devuelve ese identificador como etiqueta cuando no hay ninguna configurada.
+
 ## V0.21.64 · Relación explícita entre adjuntos y notas
 
 - Guardar una foto o un archivo suelto (sin convertirlo en nota), o una tarea sin fecha, mostraba un mensaje fijo sin ningún dato real («Guardado — La entrada se ha guardado en tu conversación»). Ahora muestra el tipo, la descripción real y la clasificación (motivo, categoría, relación) que se acaba de elegir.

@@ -43,8 +43,15 @@ export function removeNoteSetting(settings, key, id) {
   return normalizeNoteSettings({ ...current, [key]: remaining });
 }
 
+// "none" es el identificador interno de "sin relación" en relationTypes,
+// nunca una etiqueta real que deba llegar a verse. Si no hay opción
+// configurada ni fallback, no lo devolvemos como si fuera un texto válido.
 export function settingLabel(settings, key, id, fallback = "") {
-  return normalizeNoteSettings(settings)[key]?.find(option => option.id === id)?.label || clean(fallback) || clean(id);
+  const found = normalizeNoteSettings(settings)[key]?.find(option => option.id === id)?.label;
+  if (found) return found;
+  const cleanFallback = clean(fallback);
+  if (cleanFallback) return cleanFallback;
+  return id === "none" ? "" : clean(id);
 }
 
 export function noteInterpretationContext(activeContext, settings) {
