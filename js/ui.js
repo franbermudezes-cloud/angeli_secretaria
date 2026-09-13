@@ -1,11 +1,11 @@
-import { typeLabel } from "./classifier.js?v=0.21.57";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.57";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.57";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.57";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.57";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.57";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.21.57";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.21.57";
+import { typeLabel } from "./classifier.js?v=0.21.58";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.58";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.58";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.58";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.58";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.58";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.21.58";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.21.58";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -183,7 +183,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.57";
+    image.src = "assets/angeli-welcome.gif?v=0.21.58";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -872,6 +872,43 @@ export function createUI({ getMedia }) {
     void hydrateLibraryImages();
   }
 
+  function renderNoteLibrary(items, state = {}) {
+    const query = String(state.query || "").trim().toLowerCase();
+    const shown = items.filter(note => {
+      const classification = note.noteClassification || {};
+      const statusMatches = state.status === "all" || (state.status === "done" ? note.status === "done" : note.status !== "done");
+      const categoryMatches = state.category === "all" || classification.scope === state.category;
+      const haystack = [noteTitle(note), note.text, classification.categoryLabel, classification.scope, classification.relationTypeLabel, classification.relationName, classification.purpose, ...(classification.tags || [])].filter(Boolean).join(" ").toLowerCase();
+      return statusMatches && categoryMatches && (!query || haystack.includes(query));
+    });
+    $("noteLibraryCount").textContent = `${shown.length} nota${shown.length === 1 ? "" : "s"}`;
+    const categories = [...new Map(items.map(note => {
+      const classification = note.noteClassification || {};
+      return [classification.scope || "general", settingLabel(currentNoteSettings, "categories", classification.scope, classification.categoryLabel || "General")];
+    })).entries()];
+    $("noteLibraryCategory").innerHTML = '<option value="all">Todas las categorías</option>' + categories.map(([value,label]) => `<option value="${esc(value)}">${esc(label)}</option>`).join("");
+    $("noteLibraryCategory").value = state.category || "all";
+    $("noteLibraryList").innerHTML = shown.length ? '<div class="note-library-grid">' + shown.map(note => {
+      const classification = note.noteClassification || {};
+      const category = settingLabel(currentNoteSettings, "categories", classification.scope, classification.categoryLabel || "General");
+      const relation = classification.relationName ? `${settingLabel(currentNoteSettings, "relationTypes", classification.relationType, classification.relationTypeLabel)}: ${classification.relationName}` : "";
+      const date = note.date ? new Date(note.date).toLocaleDateString("es-ES") : "";
+      const done = note.status === "done";
+      return `<article class="note-library-item${done ? " done" : ""}"><div class="note-library-top"><strong>${esc(noteTitle(note))}</strong><span class="note-library-state">${done ? "Hecha" : "Pendiente"}</span></div><p>${esc(note.text || "Sin contenido")}</p><div class="note-library-meta"><span>${esc(category)}</span>${relation ? `<span>· ${esc(relation)}</span>` : ""}${date ? `<span>· ${esc(date)}</span>` : ""}</div><div class="note-library-actions"><button class="primary" data-note-action="open" data-note-id="${esc(note.id)}">Ver ficha</button><button data-note-action="edit" data-note-id="${esc(note.id)}">Reclasificar</button><button data-note-action="toggle" data-note-id="${esc(note.id)}">${done ? "Reabrir" : "✓ Hecha"}</button><button data-note-action="delete" data-note-id="${esc(note.id)}">Borrar</button></div></article>`;
+    }).join("") + "</div>" : '<div class="empty">No hay notas con estos filtros.</div>';
+  }
+
+  function openNoteLibrary(items, state) {
+    renderNoteLibrary(items, state);
+    $("noteLibrary").classList.add("show");
+    $("noteLibrary").setAttribute("aria-hidden", "false");
+  }
+
+  function closeNoteLibrary() {
+    $("noteLibrary").classList.remove("show");
+    $("noteLibrary").setAttribute("aria-hidden", "true");
+  }
+
   function openMediaLibrary(items, state) {
     renderMediaLibrary(items, state);
     $("mediaLibrary").classList.add("show");
@@ -902,6 +939,15 @@ export function createUI({ getMedia }) {
     $("mediaViewer")?.setAttribute("aria-hidden", "true");
   }
 
+  function showMediaEntryDetail(entry, item, { onBack, onEdit } = {}) {
+    const context = entry.mediaContext;
+    const body = context ? mediaContextCard(entry) : '<div class="empty">Esta imagen es anterior a la clasificación. Puedes indicar ahora para qué la guardaste.</div>';
+    openModal({title:item.name || "Ficha del adjunto",lead:"Información para localizar este adjunto.",body,actions:[
+      {label:"Volver",kind:"secondary",onClick:onBack},
+      {label:context ? "Modificar clasificación" : "Clasificar ahora",kind:"confirm",onClick:()=>onEdit?.(entry)}
+    ]});
+  }
+
   function renderCard(note, google) {
     const id = esc(note.id);
     const location = note.location ? '<div class="meta">📍 ' + esc(note.location) + "</div>" : "";
@@ -930,7 +976,7 @@ export function createUI({ getMedia }) {
     $("preview").innerHTML = files.map(file => '<img class="thumb" src="' + URL.createObjectURL(file) + '" alt="Imagen preparada">').join("");
   }
 
-  return { $, notify, setGoogleStatus, setPushStatus, setSyncStatus, showConnectionHealth, showNotificationSettings, render, openMediaLibrary, renderMediaLibrary, closeMediaLibrary, showMediaViewer, closeMediaViewer, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showMediaContextEditor, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
+  return { $, notify, setGoogleStatus, setPushStatus, setSyncStatus, showConnectionHealth, showNotificationSettings, render, openMediaLibrary, renderMediaLibrary, closeMediaLibrary, openNoteLibrary, renderNoteLibrary, closeNoteLibrary, showMediaViewer, closeMediaViewer, showMediaEntryDetail, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showMediaContextEditor, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
 }
 
 function esc(value) {
