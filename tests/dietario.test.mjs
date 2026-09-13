@@ -89,9 +89,25 @@ assert.doesNotMatch(html, /class="filter" data-dietario-(?:range|type)/);
 assert.match(css, /\.dietario-filter/);
 assert.match(css, /\.library-filters\{[^}]*overflow-x:auto/);
 
-// Pulsación larga sobre una línea del dietario: acceso rápido a marcar
-// como hecho o eliminar sin abrir la ficha completa.
+// Botón "⋮" en cada línea del dietario: acceso rápido a marcar como hecho
+// o eliminar sin abrir la ficha completa. Una pulsación larga por temporizador
+// resultó nada fiable en dispositivos reales (el gesto de scroll de la lista
+// competía con el temporizador), así que se sustituye por un botón explícito.
 assert.match(app, /openDietarioQuickActions/);
-assert.match(app, /pointerdown/);
+assert.match(app, /data-dietario-quick/);
+assert.doesNotMatch(app, /pointerdown/);
+assert.match(ui, /data-dietario-quick/);
+
+// Regresión: abrir "Avisos" desde el dietario cerraba el modal solo a los
+// 1.8s porque reutilizaba showEntryAction (pensado para una confirmación
+// justo tras crear algo, no para repasar algo ya existente). "Adjuntos"
+// caía en el mensaje genérico de showEntryAction ("La entrada se ha
+// guardado en tu conversación"), que ni siquiera es cierto para el dietario.
+assert.match(ui, /function showDietarioDetail/);
+const openDietarioEntrySource = app.match(/function openDietarioEntry\(id\)\{[\s\S]*?\n\}/)?.[0] || "";
+assert.ok(openDietarioEntrySource, "openDietarioEntry debe existir");
+assert.doesNotMatch(openDietarioEntrySource, /showEntryAction\(entry,google\)/, "el dietario ya no debe reutilizar la pantalla de confirmación transitoria showEntryAction");
+assert.match(openDietarioEntrySource, /ui\.showDietarioDetail\(entry\)/);
+assert.match(openDietarioEntrySource, /mediaLibraryItems\(\[entry\]\)/, "las entradas de tipo foto/archivo deben abrir su ficha real de adjunto, no la genérica");
 
 console.log("dietario: ok");
