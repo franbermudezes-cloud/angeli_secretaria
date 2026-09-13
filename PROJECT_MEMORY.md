@@ -1,5 +1,9 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-13 — Contexto de adjuntos y Agenda V0.21.57
+
+Cada nueva selección de fotos o archivos abre una ficha previa obligatoria con motivo, categoría y relación opcional. Las categorías y tipos de relación son los mismos que los de Notas, por lo que siguen siendo configurables desde un único lugar. El contexto se guarda en `mediaContext` dentro de la entrada de Firestore y la biblioteca lo usa para filtrar, buscar y explicar el adjunto. Los adjuntos anteriores continúan usando la clasificación heredada de su entrada. La cabecera añade Agenda entre Recordatorios y Ajustes; ejecuta una consulta directa de Calendar para los próximos 90 días y muestra todos los eventos pendientes sin pedir una frase adicional.
+
 ## 2026-09-13 — Prioridad de avisos móviles V0.21.56
 
 Una prueba real mostró que Cloud Tasks ejecutó `/push/deliver` a la hora prevista y el ordenador recibió el aviso, mientras el Samsung A54 mantuvo el mensaje hasta abrir la PWA. Los tokens de Chrome Android son Web Push y el backend enviaba mensajes de datos sin urgencia explícita; FCM puede retenerlos durante Doze. Desde V0.21.56 cada mensaje incluye los encabezados Web Push `Urgency: high` y `TTL: 86400`, adecuados para recordatorios visibles y puntuales. Base confirmada: `angelifirebase`; cola confirmada: `angeli-reminders` en `europe-west1`; entrega confirmada en Cloud Run con respuesta 200.

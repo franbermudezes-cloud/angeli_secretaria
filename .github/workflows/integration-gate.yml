@@ -67,6 +67,9 @@ jobs:
       - name: Verificar la biblioteca de adjuntos
         run: node tests/media-library.test.mjs
 
+      - name: Verificar la clasificación de adjuntos
+        run: node tests/media-context.test.mjs
+
       - name: Ejecutar arnés real aislado
         run: python backend/test_harness.py
 

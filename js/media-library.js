@@ -2,14 +2,18 @@
 export function mediaLibraryItems(entries = []) {
   return entries.flatMap(entry => {
     const typeLabel = ({ note: "Notas", task: "Tareas", reminder: "Recordatorios", calendar: "Calendario", contact: "Contactos", photo: "Fotos", file: "Archivos" })[entry.type] || "Otros";
+    const context = entry.mediaContext || {};
+    const relation = [context.relationTypeLabel, context.relationName].filter(Boolean).join(": ");
     const common = {
       entryId: entry.id,
-      entryText: entry.text || "Entrada con adjunto",
+      entryText: context.purpose || entry.text || "Entrada con adjunto",
+      purpose: context.purpose || "",
+      relation,
       entryType: entry.type || "note",
       status: entry.status || "pending",
       date: entry.updatedAt || entry.date || "",
-      category: entry.noteClassification?.scope || entry.type || "other",
-      categoryLabel: entry.noteClassification?.categoryLabel || typeLabel
+      category: context.scope || entry.noteClassification?.scope || entry.type || "other",
+      categoryLabel: context.categoryLabel || entry.noteClassification?.categoryLabel || typeLabel
     };
     const mapItem = (item, kind, index) => {
       const data = typeof item === "string" ? { id: item } : (item || {});
@@ -37,7 +41,7 @@ export function filterMediaLibrary(items, { kind = "all", category = "all", quer
   return items.filter(item => {
     if (kind !== "all" && item.kind !== kind) return false;
     if (category !== "all" && item.category !== category) return false;
-    return !needle || [item.name, item.entryText, item.categoryLabel, item.mimeType]
+    return !needle || [item.name, item.entryText, item.categoryLabel, item.relation, item.mimeType]
       .filter(Boolean).join(" ").toLocaleLowerCase("es").includes(needle);
   });
 }

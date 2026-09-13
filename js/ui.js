@@ -1,10 +1,11 @@
-import { typeLabel } from "./classifier.js?v=0.21.56";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.56";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.56";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.56";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.56";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.56";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.21.56";
+import { typeLabel } from "./classifier.js?v=0.21.57";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.57";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.57";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.57";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.57";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.57";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.21.57";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.21.57";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -182,7 +183,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.56";
+    image.src = "assets/angeli-welcome.gif?v=0.21.57";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -435,10 +436,45 @@ export function createUI({ getMedia }) {
     ] });
   }
 
+  function showMediaContextEditor({ files = [], context = {}, settings = currentNoteSettings, onSave, onCancel } = {}) {
+    const normalizedSettings = normalizeNoteSettings(settings);
+    const current = normalizeMediaContext(context, normalizedSettings);
+    const form = document.createElement("div");
+    form.className = "note-editor media-context-editor";
+    form.innerHTML = '<div class="media-context-files">' + files.map(name => '<span>📎 ' + esc(name) + '</span>').join("") + '</div>' +
+      '<label>¿Para qué lo guardas?<textarea id="mediaContextPurpose" rows="3" placeholder="Ej.: Presupuesto de la reforma del local"></textarea></label>' +
+      '<label>Categoría<select id="mediaContextScope">' + normalizedSettings.categories.map(option => '<option value="' + esc(option.id) + '">' + esc(option.label) + '</option>').join("") + '</select></label>' +
+      '<label>Relacionado con<select id="mediaContextRelationType"><option value="none">Sin relación</option>' + normalizedSettings.relationTypes.map(option => '<option value="' + esc(option.id) + '">' + esc(option.label) + '</option>').join("") + '</select></label>' +
+      '<label id="mediaContextRelationRow">Nombre relacionado<input id="mediaContextRelationName" type="text" placeholder="Persona, cliente, proyecto o evento"></label>';
+    const toggleRelation = () => $("mediaContextRelationRow").classList.toggle("hidden", $("mediaContextRelationType").value === "none");
+    openModal({ title: "Organizar adjunto", lead: "Indica por qué lo guardas para poder encontrarlo después.", body: form, actions: [
+      { label: "Quitar adjunto", kind: "secondary", onClick: () => { closeLayers(); onCancel?.(); } },
+      { label: "Continuar", kind: "confirm", onClick: () => {
+        const purpose = $("mediaContextPurpose").value.trim(), relationType = $("mediaContextRelationType").value, relationName = $("mediaContextRelationName").value.trim();
+        if (!purpose) { notify("Explica brevemente para qué guardas este adjunto"); $("mediaContextPurpose").focus(); return; }
+        if (relationType !== "none" && !relationName) { notify("Indica con quién o con qué está relacionado"); $("mediaContextRelationName").focus(); return; }
+        onSave?.({ purpose, scope: $("mediaContextScope").value, relationType, relationName });
+      } }
+    ] });
+    $("mediaContextPurpose").value = current.purpose;
+    $("mediaContextScope").value = current.scope;
+    $("mediaContextRelationType").value = current.relationType;
+    $("mediaContextRelationName").value = current.relationName;
+    $("mediaContextRelationType").onchange = toggleRelation;
+    toggleRelation();
+  }
+
   function entryBody(note) {
     const description = note.proposal?.description || "Entrada guardada";
     const location = note.location ? "<br>📍 " + esc(note.location) : "";
-    return '<div class="proposal-box"><strong>' + esc(typeLabel(note.type)) + "</strong>" + esc(description) + location + "</div>";
+    return '<div class="proposal-box"><strong>' + esc(typeLabel(note.type)) + "</strong>" + esc(description) + location + "</div>" + mediaContextCard(note);
+  }
+
+  function mediaContextCard(note) {
+    const context = note.mediaContext;
+    if (!context) return "";
+    const relation = mediaContextRelation(context);
+    return '<div class="calendar-confirmation media-context-card"><span class="calendar-field-label">Motivo</span><strong>' + esc(context.purpose) + '</strong><span class="calendar-field-label">Categoría</span><b>' + esc(context.categoryLabel || context.scope) + '</b>' + (relation ? '<span class="calendar-field-label">Relacionado con</span><b>' + esc(relation) + '</b>' : '') + '</div>';
   }
 
   function calendarCard(note) {
@@ -795,8 +831,8 @@ export function createUI({ getMedia }) {
     const shown = notes.filter(note => {
       const matchesStatus = selectedFilter === "all" || note.status === selectedFilter;
       const matchesType = selectedType === "all" || note.type === selectedType;
-      const classification = note.noteClassification || {};
-      const matchesQuery = !query || [note.text, note.aiIntent?.title, classification.scope, classification.relationName, classification.purpose, ...(classification.tags || []), ...(note.files || []).map(file => file.name || file)].filter(Boolean).join(" ").toLowerCase().includes(query);
+      const classification = note.noteClassification || {}, mediaContext = note.mediaContext || {};
+      const matchesQuery = !query || [note.text, note.aiIntent?.title, classification.scope, classification.relationName, classification.purpose, ...(classification.tags || []), mediaContext.purpose, mediaContext.categoryLabel, mediaContext.relationTypeLabel, mediaContext.relationName, ...(note.files || []).map(file => file.name || file)].filter(Boolean).join(" ").toLowerCase().includes(query);
       return matchesStatus && matchesType && matchesQuery;
     });
     const cards = shown.map(note => renderCard(note, google)).join("");
@@ -831,7 +867,7 @@ export function createUI({ getMedia }) {
       const preview = item.kind === "image" ? `<img data-library-image="${esc(item.driveId)}" alt="${esc(item.name)}">` : '<span aria-hidden="true">📄</span>';
       const date = item.date ? new Date(item.date).toLocaleDateString("es-ES") : "";
       const meta = [item.categoryLabel, date, mediaSize(item.size)].filter(Boolean).join(" · ");
-      return `<article class="library-item"><button class="library-preview" data-library-action="open" data-library-key="${esc(item.key)}" aria-label="Abrir ${esc(item.name)}">${preview}</button><div class="library-item-body"><strong title="${esc(item.name)}">${esc(item.name)}</strong><span>${esc(meta)}</span><span title="${esc(item.entryText)}">${esc(item.entryText)}</span><div class="library-actions"><button data-library-action="entry" data-library-key="${esc(item.key)}">Ver ficha</button><button data-library-action="share" data-library-key="${esc(item.key)}">Compartir</button></div></div></article>`;
+      return `<article class="library-item"><button class="library-preview" data-library-action="open" data-library-key="${esc(item.key)}" aria-label="Abrir ${esc(item.name)}">${preview}</button><div class="library-item-body"><strong title="${esc(item.name)}">${esc(item.name)}</strong><span>${esc(meta)}</span><span title="${esc(item.entryText)}">${esc(item.entryText)}</span>${item.relation?`<span title="${esc(item.relation)}">🔗 ${esc(item.relation)}</span>`:""}<div class="library-actions"><button data-library-action="entry" data-library-key="${esc(item.key)}">Ver ficha</button><button data-library-action="share" data-library-key="${esc(item.key)}">Compartir</button></div></div></article>`;
     }).join("") + "</div>" : '<div class="empty">No hay fotos o archivos con estos filtros.</div>';
     void hydrateLibraryImages();
   }
@@ -873,7 +909,8 @@ export function createUI({ getMedia }) {
     const files = (note.files || []).map(file => '<button class="small-btn" data-a="open-file" data-id="' + id + '" data-media-id="' + esc(file.id) + '">📎 ' + esc(file.name) + "</button>").join(" ");
     const attachments = (images ? '<div class="media">' + images + "</div>" : "") + (files ? '<div class="file-line">' + files + "</div>" : "");
     const noteMeta = note.type === "note" ? '<div class="note-card-meta"><strong>' + esc(noteTitle(note)) + '</strong><span>' + esc(settingLabel(currentNoteSettings, "categories", note.noteClassification?.scope, note.noteClassification?.categoryLabel || noteClassificationLabel(note.noteClassification))) + '</span></div>' : '';
-    const extra = note.schedule ? scheduleActions(note) : note.type === "calendar" ? calendarActions(note, google) : note.type === "contact" ? contactActions(note, google) : noteMeta;
+    const mediaMeta = note.mediaContext ? mediaContextCard(note) : "";
+    const extra = (note.schedule ? scheduleActions(note) : note.type === "calendar" ? calendarActions(note, google) : note.type === "contact" ? contactActions(note, google) : noteMeta) + mediaMeta;
     const status = note.status === "done" ? "Reabrir" : "✓ Hecho";
     return '<article data-entry-id="' + id + '"><div class="message me"><div class="bubble">' + esc(note.text || "Entrada con adjunto") + '</div></div><div class="message angeli"><div class="avatar">A</div><div class="bubble"><span class="badge">' + esc(typeLabel(note.type)) + "</span><br>" + esc(note.proposal?.description || "Guardado en Angeli") + location + "</div></div>" + attachments + extra + '<div class="inline-actions"><button class="small-btn" data-a="toggle" data-id="' + id + '">' + status + '</button><button class="small-btn danger" data-a="delete" data-id="' + id + '">Borrar</button></div></article>';
   }
@@ -893,7 +930,7 @@ export function createUI({ getMedia }) {
     $("preview").innerHTML = files.map(file => '<img class="thumb" src="' + URL.createObjectURL(file) + '" alt="Imagen preparada">').join("");
   }
 
-  return { $, notify, setGoogleStatus, setPushStatus, setSyncStatus, showConnectionHealth, showNotificationSettings, render, openMediaLibrary, renderMediaLibrary, closeMediaLibrary, showMediaViewer, closeMediaViewer, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
+  return { $, notify, setGoogleStatus, setPushStatus, setSyncStatus, showConnectionHealth, showNotificationSettings, render, openMediaLibrary, renderMediaLibrary, closeMediaLibrary, showMediaViewer, closeMediaViewer, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showMediaContextEditor, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
 }
 
 function esc(value) {

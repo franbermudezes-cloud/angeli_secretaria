@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../styles.css?v=0.21.57"><link rel="stylesheet" href="../styles-flow.css?v=0.21.57"><title>Prueba de contexto de adjuntos</title></head>
+<body><div class="app-shell"><main id="mainContent"></main><div id="scrim" class="scrim"></div><section id="actionModal" class="action-modal"><div class="modal-handle"></div><h2 id="modalTitle"></h2><p id="modalLead"></p><div id="modalBody"></div><div id="modalActions" class="modal-actions"></div></section><div id="toast" class="toast"></div></div>
+<script type="module">
+import { createUI } from "../js/ui.js?v=0.21.57";
+const ui=createUI({getMedia:async()=>null});
+ui.showMediaContextEditor({files:["presupuesto-iluminacion.pdf","foto-local.jpg"],settings:{categories:[{id:"general",label:"General"},{id:"personal",label:"Personal"},{id:"company",label:"Empresa"}],relationTypes:[{id:"person",label:"Persona"},{id:"client",label:"Cliente"},{id:"project",label:"Proyecto"},{id:"event",label:"Evento"}]},onCancel:ui.closeLayers,onSave:value=>ui.showCompletion({title:"Ficha válida",lead:JSON.stringify(value)})});
+</script></body></html>

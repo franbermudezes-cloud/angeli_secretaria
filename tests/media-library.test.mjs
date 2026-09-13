@@ -4,15 +4,19 @@ import { filterMediaLibrary, mediaLibraryItems, mediaSize } from "../js/media-li
 
 const items = mediaLibraryItems([
   { id: "n1", date: "2026-09-12T10:00:00Z", text: "Contrato de Ana", type: "note", noteClassification: { scope: "personal", categoryLabel: "Personal" }, images: [{ driveFileId: "i1", name: "firma.jpg", type: "image/jpeg", size: 2048 }], files: [{ id: "f1", name: "contrato.pdf", type: "application/pdf", size: 1500000 }] },
-  { id: "n2", date: "2026-09-13T10:00:00Z", text: "Foto del montaje", type: "photo", images: ["legacy-id"] }
+  { id: "n2", date: "2026-09-13T10:00:00Z", text: "Foto del montaje", type: "photo", mediaContext: { purpose: "Estado del montaje de Ana", scope: "company", categoryLabel: "Empresa", relationTypeLabel: "Cliente", relationName: "Ana" }, images: ["legacy-id"] }
 ]);
 
 assert.equal(items.length, 3);
 assert.equal(items[0].driveId, "legacy-id");
+assert.equal(items[0].entryText, "Estado del montaje de Ana");
+assert.equal(items[0].category, "company");
+assert.equal(items[0].relation, "Cliente: Ana");
 assert.equal(items[1].category, "personal");
 assert.equal(filterMediaLibrary(items, { kind: "file" }).length, 1);
 assert.equal(filterMediaLibrary(items, { category: "personal" }).length, 2);
-assert.equal(filterMediaLibrary(items, { query: "ana" }).length, 2);
+assert.equal(filterMediaLibrary(items, { query: "ana" }).length, 3);
+assert.equal(filterMediaLibrary(items, { query: "cliente" }).length, 1);
 assert.equal(mediaSize(2048), "2 KB");
 assert.equal(mediaSize(1500000), "1.4 MB");
 
@@ -28,11 +32,14 @@ assert.match(html, /id="galleryOpen"/);
 assert.match(html, /id="filesOpen"/);
 assert.match(html, /id="notesOpen"/);
 assert.match(html, /id="remindersOpen"/);
+assert.match(html, /id="agendaOpen"/);
 assert.match(html, /id="menuOpen"/);
 assert.doesNotMatch(html, /id="headerSend"/);
 assert.doesNotMatch(html, /id="searchToggle"/);
 assert.match(app, /navigator\.share\(\{files:\[file\]/);
 assert.match(app, /ui\.showMediaViewer/);
+assert.match(app, /showMediaContextEditor/);
 assert.match(serviceWorker, /js\/media-library\.js/);
+assert.match(serviceWorker, /js\/media-context\.js/);
 
 console.log("media-library: ok");
