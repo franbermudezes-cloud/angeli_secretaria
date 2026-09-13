@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.21.57 · Contexto de adjuntos y Agenda
+
+- Al elegir una foto o un archivo, Angeli pregunta para qué se guarda, su categoría y su relación opcional con una persona, cliente, proyecto o evento.
+- La clasificación se sincroniza con la entrada en Firestore y reutiliza las categorías configurables de Notas.
+- La galería, el buscador y las fichas muestran el motivo y la relación para que cada adjunto pueda localizarse y entenderse después.
+- La cabecera incorpora Agenda y consulta directamente los próximos eventos de Calendar.
+
 ## V0.21.56 · Avisos móviles puntuales en segundo plano
 
 - Los avisos Web Push se envían con urgencia alta para que Android pueda despertar la PWA cuando el móvil está en reposo.
