@@ -76,6 +76,9 @@ jobs:
       - name: Verificar el dietario
         run: node tests/dietario.test.mjs
 
+      - name: Verificar la relación de adjuntos con notas
+        run: node tests/attachment-relation.test.mjs
+
       - name: Ejecutar arnés real aislado
         run: python backend/test_harness.py
 
