@@ -1,12 +1,12 @@
-import { typeLabel } from "./classifier.js?v=0.21.62";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.62";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.62";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.62";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.62";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.62";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.21.62";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.21.62";
-import { groupDietarioByDay } from "./dietario.js?v=0.21.62";
+import { typeLabel } from "./classifier.js?v=0.21.63";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.63";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.63";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.63";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.63";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.63";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.21.63";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.21.63";
+import { groupDietarioByDay } from "./dietario.js?v=0.21.63";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -184,7 +184,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.62";
+    image.src = "assets/angeli-welcome.gif?v=0.21.63";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -928,7 +928,7 @@ export function createUI({ getMedia }) {
   const DIETARIO_TYPE_ICON = { calendar: "📅", reminder: "🔔", note: "📝", attach: "🗂️" };
 
   function dietarioItemMarkup(item) {
-    return `<div class="dietario-item"><span class="dietario-rail ${item.rail}"></span><div class="dietario-icon ${item.rail}">${DIETARIO_TYPE_ICON[item.rail] || "📌"}</div><div class="dietario-body"><div class="dietario-top"><b>${esc(item.title)}</b>${item.time ? `<span class="dietario-time">${esc(item.time)}</span>` : ""}</div>${item.subtitle ? `<div class="dietario-sub">${esc(item.subtitle)}</div>` : ""}${item.attachmentCount ? `<span class="dietario-attachments">📎 ${item.attachmentCount}</span>` : ""}</div></div>`;
+    return `<span class="dietario-rail ${item.rail}"></span><div class="dietario-icon ${item.rail}">${DIETARIO_TYPE_ICON[item.rail] || "📌"}</div><div class="dietario-body"><div class="dietario-top"><b>${esc(item.title)}</b>${item.time ? `<span class="dietario-time">${esc(item.time)}</span>` : ""}</div>${item.subtitle ? `<div class="dietario-sub">${esc(item.subtitle)}</div>` : ""}${item.attachmentCount ? `<span class="dietario-attachments">📎 ${item.attachmentCount}</span>` : ""}</div><button class="dietario-quick" data-dietario-quick="${esc(item.id)}" aria-label="Más opciones">⋮</button>`;
   }
 
   function renderDietario(notes, state = {}) {
@@ -936,8 +936,8 @@ export function createUI({ getMedia }) {
     const total = days.reduce((sum, day) => sum + day.items.length, 0) + undated.length;
     $("dietarioCount").textContent = `${total} elemento${total === 1 ? "" : "s"}`;
     if (!total) { $("dietarioList").innerHTML = '<div class="empty">No hay nada que mostrar en el dietario con estos filtros.</div>'; return; }
-    const daysHtml = days.map(day => `<div class="dietario-day" data-dietario-day="${esc(day.dateKey)}"><div class="dietario-day-head"><span class="dow">${esc(day.label.weekday)}</span><span class="num">${esc(day.label.day)}</span>${day.isToday ? '<span class="today-pill">Hoy</span>' : ""}</div>${day.items.map(item => `<button class="dietario-open" data-dietario-id="${esc(item.id)}" data-dietario-item-type="${esc(item.type)}">${dietarioItemMarkup(item)}</button>`).join("")}</div>`).join("");
-    const undatedHtml = undated.length ? `<div class="dietario-day dietario-undated"><div class="dietario-day-head"><span class="num">Sin fecha</span></div>${undated.map(item => `<button class="dietario-open" data-dietario-id="${esc(item.id)}" data-dietario-item-type="${esc(item.type)}">${dietarioItemMarkup(item)}</button>`).join("")}</div>` : "";
+    const daysHtml = days.map(day => `<div class="dietario-day" data-dietario-day="${esc(day.dateKey)}"><div class="dietario-day-head"><span class="dow">${esc(day.label.weekday)}</span><span class="num">${esc(day.label.day)}</span>${day.isToday ? '<span class="today-pill">Hoy</span>' : ""}</div>${day.items.map(item => `<div class="dietario-item" data-dietario-id="${esc(item.id)}" data-dietario-item-type="${esc(item.type)}">${dietarioItemMarkup(item)}</div>`).join("")}</div>`).join("");
+    const undatedHtml = undated.length ? `<div class="dietario-day dietario-undated"><div class="dietario-day-head"><span class="num">Sin fecha</span></div>${undated.map(item => `<div class="dietario-item" data-dietario-id="${esc(item.id)}" data-dietario-item-type="${esc(item.type)}">${dietarioItemMarkup(item)}</div>`).join("")}</div>` : "";
     $("dietarioList").innerHTML = daysHtml + undatedHtml;
   }
 
@@ -950,6 +950,40 @@ export function createUI({ getMedia }) {
   function closeDietario() {
     $("dietarioLibrary").classList.remove("show");
     $("dietarioLibrary").setAttribute("aria-hidden", "true");
+  }
+
+  // Ficha persistente para ver (no crear) una entrada del dietario. A
+  // diferencia de showEntryAction, nunca se cierra sola: esa pantalla está
+  // pensada para confirmar algo recién hecho, no para repasar algo que ya
+  // existía. Reutiliza los mismos bloques de contenido que showEntryAction.
+  function showDietarioDetail(note) {
+    const bundled = note.proposal?.intent === "calendar.create" && note.schedule;
+    const soloReminder = note.schedule && !bundled;
+    const soloEvent = note.type === "calendar" && !note.schedule;
+    let title, lead, body;
+    if (bundled) {
+      title = calendarDetails(note).title;
+      lead = note.calendarStatus === "synced" && note.schedule.status === "scheduled" ? "Evento y aviso creados en Calendar." : scheduleState(note.schedule);
+      body = entryBody(note) + calendarCard(note) +
+        '<div class="calendar-confirmation"><span class="calendar-field-label">Aviso vinculado</span><strong>⏰ ' + esc(scheduleTitle(note)) + '</strong><span class="calendar-field-label">Cuándo avisa</span><b>' + esc(scheduleWhen(note.schedule)) + '</b></div>' +
+        (note.calendarUrl ? '<p><a href="' + esc(note.calendarUrl) + '" target="_blank" rel="noopener">Abrir evento</a></p>' : '') +
+        (note.schedule.calendarUrl ? '<p><a href="' + esc(note.schedule.calendarUrl) + '" target="_blank" rel="noopener">Abrir aviso</a></p>' : '');
+    } else if (soloReminder) {
+      title = scheduleTitle(note);
+      lead = scheduleState(note.schedule);
+      body = entryBody(note) + '<div class="calendar-confirmation"><span class="calendar-field-label">Cuándo</span><b>' + esc(scheduleWhen(note.schedule)) + '</b></div>' +
+        (note.schedule.calendarUrl ? '<p><a href="' + esc(note.schedule.calendarUrl) + '" target="_blank" rel="noopener">Abrir aviso en Calendar</a></p>' : '');
+    } else if (soloEvent) {
+      title = calendarDetails(note).title;
+      lead = note.calendarStatus === "synced" ? "En Calendar." : note.calendarStatus === "error" ? "No se pudo crear en Calendar." : "Pendiente de crear en Calendar.";
+      body = entryBody(note) + calendarCard(note) +
+        (note.calendarUrl ? '<p><a href="' + esc(note.calendarUrl) + '" target="_blank" rel="noopener">Abrir evento en Calendar</a></p>' : '');
+    } else {
+      title = note.aiIntent?.title || note.text || typeLabel(note.type);
+      lead = note.status === "done" ? "Hecho." : "Pendiente.";
+      body = entryBody(note);
+    }
+    openModal({ title, lead, body, actions: [{ label: "Cerrar", kind: "confirm", onClick: closeLayers }] });
   }
 
   function openMediaLibrary(items, state) {
@@ -1020,7 +1054,7 @@ export function createUI({ getMedia }) {
     $("preview").innerHTML = files.map(file => '<img class="thumb" src="' + URL.createObjectURL(file) + '" alt="Imagen preparada">').join("");
   }
 
-  return { $, notify, setGoogleStatus, setPushStatus, setSyncStatus, showConnectionHealth, showNotificationSettings, render, openMediaLibrary, renderMediaLibrary, closeMediaLibrary, openNoteLibrary, renderNoteLibrary, closeNoteLibrary, openDietario, renderDietario, closeDietario, showMediaViewer, closeMediaViewer, showMediaEntryDetail, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showMediaContextEditor, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
+  return { $, notify, setGoogleStatus, setPushStatus, setSyncStatus, showConnectionHealth, showNotificationSettings, render, openMediaLibrary, renderMediaLibrary, closeMediaLibrary, openNoteLibrary, renderNoteLibrary, closeNoteLibrary, openDietario, renderDietario, closeDietario, showDietarioDetail, showMediaViewer, closeMediaViewer, showMediaEntryDetail, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showMediaContextEditor, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
 }
 
 function esc(value) {

@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.21.63 · Fichas del Dietario y botón de acciones rápidas
+
+- Abrir un aviso desde el Dietario cerraba su ficha solo a los 1.8 segundos: reutilizaba `showEntryAction`, pensada para una confirmación justo tras crear algo, no para repasar una entrada que ya existía. Nueva ficha persistente (`showDietarioDetail`) sin autocierre para eventos, avisos y el resto de tipos.
+- Abrir un adjunto (foto o archivo) desde el Dietario mostraba el mensaje genérico «La entrada se ha guardado en tu conversación», que no era cierto. Ahora abre la ficha real ya existente del adjunto (la misma de Galería y Archivos).
+- La pulsación larga para el menú rápido (marcar como hecho/eliminar) no era fiable en dispositivos táctiles reales: el gesto de scroll de la lista competía con el temporizador. Se sustituye por un botón «⋮» siempre visible en cada línea.
+
 ## V0.21.62 · Corrección de filtros del Dietario
 
 - Los chips de periodo y tipo del Dietario no hacían nada al tocarlos: el manejador genérico de filtros de la conversación se ejecutaba después y sobrescribía su `onclick`, además de vaciar el estado «activo» de todos los chips `.filter` del documento en cada clic. Los chips del Dietario pasan a tener su propia clase y su propio contenedor con delegación de eventos, como ya hacían Notas y Galería.
