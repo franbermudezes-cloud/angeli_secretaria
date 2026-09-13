@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.21.62 · Corrección de filtros del Dietario
+
+- Los chips de periodo y tipo del Dietario no hacían nada al tocarlos: el manejador genérico de filtros de la conversación se ejecutaba después y sobrescribía su `onclick`, además de vaciar el estado «activo» de todos los chips `.filter` del documento en cada clic. Los chips del Dietario pasan a tener su propia clase y su propio contenedor con delegación de eventos, como ya hacían Notas y Galería.
+- La fila de filtros por tipo se recortaba sin poder desplazarse cuando no cabían los cinco chips (Todo, Eventos, Avisos, Notas, Adjuntos); `.library-filters` gana desplazamiento horizontal.
+- Pulsación larga sobre una línea del Dietario: abre un menú rápido para marcar como hecho/reabrir o eliminar la entrada sin tener que abrir antes su ficha completa.
+
 ## V0.21.61 · Dietario: agenda unificada por día
 
 - Nuevo icono «Dietario» en la cabecera, independiente del icono «Calendario» (antes «Agenda»): agrupa por día los eventos de Calendar, avisos, notas y adjuntos ya guardados en Firestore, con una sección final «Sin fecha» para lo que no tiene fecha asignada.
