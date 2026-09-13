@@ -1,24 +1,24 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.58";
-import{classify,actionData}from"./classifier.js?v=0.21.58";
-import{sendEntry}from"./sheets.js?v=0.21.58";
-import{createUI}from"./ui.js?v=0.21.58";
-import{createGoogleIntegration}from"./google.js?v=0.21.58";
-import{interpret,remoteProvider,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,protectCalendarInterpretation,protectReadQuery}from"./ai.js?v=0.21.58";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.58";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.58";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.58";
-import{createCloudSync}from"./firebase.js?v=0.21.58";
-import{createMediaService}from"./media.js?v=0.21.58";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.58";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.58";
-import{createAgendaActions}from"./agenda.js?v=0.21.58";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.58";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.58";
-import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.58";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.58";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.58";
-import{mediaLibraryItems}from"./media-library.js?v=0.21.58";
-import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.58";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.59";
+import{classify,actionData}from"./classifier.js?v=0.21.59";
+import{sendEntry}from"./sheets.js?v=0.21.59";
+import{createUI}from"./ui.js?v=0.21.59";
+import{createGoogleIntegration}from"./google.js?v=0.21.59";
+import{interpret,remoteProvider,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,protectCalendarInterpretation,protectReadQuery}from"./ai.js?v=0.21.59";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.59";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.59";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.59";
+import{createCloudSync}from"./firebase.js?v=0.21.59";
+import{createMediaService}from"./media.js?v=0.21.59";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.59";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.59";
+import{createAgendaActions}from"./agenda.js?v=0.21.59";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.59";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.59";
+import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.59";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.59";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.59";
+import{mediaLibraryItems}from"./media-library.js?v=0.21.59";
+import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.59";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],pendingMediaContext=null,selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -58,26 +58,37 @@ async function discardNoteDraft(entry){
  await Promise.allSettled([...(entry.images||[]),...(entry.files||[])].map(item=>media.remove(item.driveFileId||item.id)));
  ui.notify("Nota descartada");
 }
+function stageNoteDraft(entry,values){const updated=updateNoteDraft(entry,values),pendingImages=[...(values.images||[])],pendingFiles=[...(values.files||[])],hasMedia=Boolean((entry.images||[]).length||(entry.files||[]).length||pendingImages.length||pendingFiles.length);return{...updated,...(hasMedia?{mediaContext:normalizeMediaContext({purpose:values.purpose||values.text,scope:values.scope,relationType:values.relationType,relationName:values.relationName},noteSettings)}:{}),_pendingImages:pendingImages,_pendingFiles:pendingFiles}}
+async function uploadNoteAttachments(entry){
+ const pendingImages=entry._pendingImages||[],pendingFiles=entry._pendingFiles||[],uploaded=[];
+ const {_pendingImages,_pendingFiles,...clean}=entry;
+ try{
+  for(const file of pendingImages)uploaded.push(await media.upload(file,"image",entry.id));
+  const imageCount=uploaded.length;
+  for(const file of pendingFiles)uploaded.push(await media.upload(file,"file",entry.id));
+  return{...clean,images:[...(entry.images||[]),...uploaded.slice(0,imageCount)],files:[...(entry.files||[]),...uploaded.slice(imageCount)],updatedAt:new Date().toISOString()}
+ }catch(error){await Promise.allSettled(uploaded.map(item=>media.remove(item.driveFileId||item.id)));throw error}
+}
 function reviewNoteDraft(entry){
  const missing=missingNoteDraftFields(entry);
  if(missing.length){
-  ui.showNoteEditor(entry,{settings:noteSettings,missingFields:missing,onCancel:()=>discardNoteDraft(entry),onSave:values=>reviewNoteDraft(updateNoteDraft(entry,values))});
+  ui.showNoteEditor(entry,{settings:noteSettings,missingFields:missing,onCancel:()=>discardNoteDraft(entry),onSave:values=>reviewNoteDraft(stageNoteDraft(entry,values))});
   return;
  }
  ui.showNoteConfirmation(entry,{
   settings:noteSettings,
   onCancel:()=>discardNoteDraft(entry),
-  onEdit:()=>ui.showNoteEditor(entry,{settings:noteSettings,onCancel:()=>reviewNoteDraft(entry),onSave:values=>reviewNoteDraft(updateNoteDraft(entry,values))}),
+  onEdit:()=>ui.showNoteEditor(entry,{settings:noteSettings,onCancel:()=>reviewNoteDraft(entry),onSave:values=>reviewNoteDraft(stageNoteDraft(entry,values))}),
   onSave:async()=>{
    if(noteDraftSaving)return;
-   entry=completeInteraction(entry);
    noteDraftSaving=true;
    try{
+    entry=completeInteraction(await uploadNoteAttachments(entry));
     ui.showWorking("Guardando nota","Angeli está sincronizando la nota…","");
     if(!await saveConfirmed([entry,...notes])){ui.closeLayers();return}
     try{await sendEntry(entry,new Date());ui.notify("Nota registrada en Google")}catch(_){ui.notify("Nota sincronizada · Google Sheets no respondió")}
     ui.showEntryAction(entry,google);
-   }finally{noteDraftSaving=false}
+   }catch(error){ui.notify(error.message||"No se pudieron subir los adjuntos");reviewNoteDraft(entry)}finally{noteDraftSaving=false}
   }
  });
 }
@@ -221,12 +232,12 @@ function refreshLibrary(){ui.renderMediaLibrary(libraryItems(),libraryState)}
 function libraryItem(key){return libraryItems().find(item=>item.key===key)}
 function openLibrary(kind="all"){libraryState={kind,category:"all",query:""};$("librarySearch").value="";document.querySelectorAll("[data-library-kind]").forEach(button=>button.classList.toggle("active",button.dataset.libraryKind===kind));ui.openMediaLibrary(libraryItems(),libraryState)}
 function reopenLibrary(){ui.openMediaLibrary(libraryItems(),libraryState)}
-function openLibraryEntry(item){const entry=notes.find(note=>note.id===item.entryId);if(!entry)return;ui.closeMediaViewer();ui.closeMediaLibrary();const show=()=>ui.showMediaEntryDetail(entry,item,{onBack:()=>{ui.closeLayers();reopenLibrary()},onEdit:()=>ui.showMediaContextEditor({files:[item.name],context:entry.mediaContext,settings:noteSettings,onCancel:show,onSave:async values=>{const updated={...entry,mediaContext:normalizeMediaContext(values,noteSettings),updatedAt:new Date().toISOString()};if(await saveConfirmed(notes.map(note=>note.id===entry.id?updated:note))){entry.mediaContext=updated.mediaContext;entry.updatedAt=updated.updatedAt;ui.notify("Clasificación guardada");show()}}})});show()}
+function openLibraryEntry(item){let entry=notes.find(note=>note.id===item.entryId);if(!entry)return;ui.closeMediaViewer();ui.closeMediaLibrary();const show=()=>ui.showMediaEntryDetail(entry,item,{onBack:()=>{ui.closeLayers();reopenLibrary()},onEdit:()=>ui.showMediaContextEditor({files:[item.name],context:entry.mediaContext,settings:noteSettings,onCancel:show,onSave:async values=>{const updated={...entry,mediaContext:normalizeMediaContext(values,noteSettings),updatedAt:new Date().toISOString()};if(await saveConfirmed(notes.map(note=>note.id===entry.id?updated:note))){entry=updated;ui.notify("Clasificación guardada");show()}}}),onNote:()=>{if(entry.type==="note"){openNoteLibraryDetail(entry);return}const context=entry.mediaContext||{},draft=updateNoteDraft({...entry,type:"note",status:entry.status||"pending",aiIntent:{...(entry.aiIntent||{}),intent:"note",title:item.name,notes:context.purpose||entry.text||""}},{title:item.name,text:context.purpose||entry.text||"",scope:context.scope||"general",categoryLabel:context.categoryLabel,relationType:context.relationType||"none",relationTypeLabel:context.relationTypeLabel,relationName:context.relationName,purpose:context.purpose,tags:[]});ui.showNoteEditor(draft,{settings:noteSettings,onCancel:show,onSave:async values=>{try{const updated=await uploadNoteAttachments(stageNoteDraft(draft,values));if(await saveConfirmed(notes.map(note=>note.id===entry.id?updated:note))){entry=updated;ui.notify("Nota añadida al adjunto");openNoteLibraryDetail(entry)}}catch(error){ui.notify(error.message||"No se pudieron subir los adjuntos")}})}});show()}
 function noteLibraryItems(){return notes.filter(note=>note.type==="note")}
 function refreshNoteLibrary(){ui.renderNoteLibrary(noteLibraryItems(),noteLibraryState)}
 function openNoteLibrary(){noteLibraryState={status:"pending",category:"all",query:""};$("noteLibrarySearch").value="";document.querySelectorAll("[data-note-status]").forEach(button=>button.classList.toggle("active",button.dataset.noteStatus==="pending"));ui.openNoteLibrary(noteLibraryItems(),noteLibraryState)}
 function noteLibraryEntry(id){return notes.find(note=>note.id===id&&note.type==="note")}
-function editNoteFromLibrary(entry,onCancel){ui.showNoteEditor(entry,{settings:noteSettings,onCancel,onSave:async values=>{const updated=updateNoteDraft(entry,values);if(await saveConfirmed(notes.map(note=>note.id===entry.id?updated:note))){ui.notify("Nota actualizada");ui.closeLayers();refreshNoteLibrary()}}})}
+function editNoteFromLibrary(entry,onCancel){ui.showNoteEditor(entry,{settings:noteSettings,onCancel,onSave:async values=>{try{const updated=await uploadNoteAttachments(stageNoteDraft(entry,values));if(await saveConfirmed(notes.map(note=>note.id===entry.id?updated:note))){ui.notify("Nota y adjuntos actualizados");ui.closeLayers();refreshNoteLibrary()}}catch(error){ui.notify(error.message||"No se pudieron subir los adjuntos")}}})}
 function openNoteLibraryDetail(entry){ui.closeNoteLibrary();const show=()=>ui.showNoteDetail(entry,{onBack:()=>{ui.closeLayers();ui.openNoteLibrary(noteLibraryItems(),noteLibraryState)},onEdit:()=>editNoteFromLibrary(entry,show),onToggle:async()=>{const updated=updateNoteStatus(entry,entry.status==="done"?"pending":"done");if(await saveConfirmed(notes.map(note=>note.id===entry.id?updated:note))){entry=updated;ui.notify(updated.status==="done"?"Nota marcada como hecha":"Nota reabierta");show()}},onDelete:()=>ui.showNoteDeleteConfirmation(entry,{onCancel:show,onConfirm:async()=>{if(await saveConfirmed(removeNoteEntry(notes,entry.id))){ui.notify("Nota borrada");ui.closeLayers();ui.openNoteLibrary(noteLibraryItems(),noteLibraryState)}}})});show()}
 async function downloadLibraryItem(item,{share=false}={}){
  try{
@@ -401,7 +412,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.58",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.59",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}
