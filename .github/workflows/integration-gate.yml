@@ -73,6 +73,9 @@ jobs:
       - name: Verificar la biblioteca de notas
         run: node tests/note-library.test.mjs
 
+      - name: Verificar el dietario
+        run: node tests/dietario.test.mjs
+
       - name: Ejecutar arnés real aislado
         run: python backend/test_harness.py
 

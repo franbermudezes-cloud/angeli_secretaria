@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.21.61 · Dietario: agenda unificada por día
+
+- Nuevo icono «Dietario» en la cabecera, independiente del icono «Calendario» (antes «Agenda»): agrupa por día los eventos de Calendar, avisos, notas y adjuntos ya guardados en Firestore, con una sección final «Sin fecha» para lo que no tiene fecha asignada.
+- Filtros por periodo (Hoy, Esta semana, Todo) y por tipo de elemento (Eventos, Avisos, Notas, Adjuntos). Cada línea abre la ficha real ya existente de esa entrada: el Dietario no crea datos nuevos ni duplica los modales existentes, solo los agrupa por fecha.
+- El icono «Calendario» (🗓️) conserva exactamente su comportamiento anterior (consulta directa de Calendar); solo cambia su etiqueta para no confundirse con el nuevo Dietario.
+- Vive por completo en el cliente: nuevo módulo `js/dietario.js` con la lógica de agrupación, cubierto por `tests/dietario.test.mjs` e incluido en `integration-gate`.
+
 ## V0.21.60 · Corrección del arranque
 
 - Se corrige el cierre de la acción «Añadir nota» en la ficha de Galería y Archivos, cuyo error de sintaxis impedía retirar la pantalla de carga en ordenador y móvil.
