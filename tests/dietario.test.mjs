@@ -57,18 +57,41 @@ const onlyCalendar = groupDietarioByDay(notes, { now, range: "all", type: "calen
 assert.ok(onlyCalendar.days.every(day => day.items.every(item => item.rail === "calendar")));
 assert.equal(onlyCalendar.undated.length, 0, "el filtro por tipo también se aplica a la sección sin fecha");
 
-const [html, app, serviceWorker, ui] = await Promise.all([
+const [html, app, serviceWorker, ui, css] = await Promise.all([
   readFile(new URL("../index.html", import.meta.url), "utf8"),
   readFile(new URL("../js/app.js", import.meta.url), "utf8"),
   readFile(new URL("../sw.js", import.meta.url), "utf8"),
-  readFile(new URL("../js/ui.js", import.meta.url), "utf8")
+  readFile(new URL("../js/ui.js", import.meta.url), "utf8"),
+  readFile(new URL("../styles.css", import.meta.url), "utf8")
 ]);
 assert.match(html, /id="dietarioOpen"/);
 assert.match(html, /id="dietarioLibrary"/);
 assert.match(html, /id="dietarioList"/);
 assert.match(html, /title="Calendario"/);
+assert.match(html, /id="dietarioRangeFilters"/);
+assert.match(html, /id="dietarioTypeFilters"/);
 assert.match(app, /openDietario/);
 assert.match(serviceWorker, /js\/dietario\.js/);
 assert.match(ui, /groupDietarioByDay/);
+
+// Regresión: los chips del dietario deben delegar el clic en su propio
+// contenedor, no en un onclick por botón, porque el manejador genérico de
+// `.filter` se ejecuta después y sobrescribía ese onclick (los filtros no
+// hacían nada). Reutilizar la clase `.filter` tampoco vale: ese mismo
+// manejador global vacía el estado "active" de TODOS los chips `.filter`
+// del documento en cada clic.
+assert.match(app, /\$\("dietarioRangeFilters"\)\.onclick/);
+assert.match(app, /\$\("dietarioTypeFilters"\)\.onclick/);
+assert.doesNotMatch(app, /#dietarioLibrary \[data-dietario-range\]/);
+assert.doesNotMatch(app, /#dietarioLibrary \[data-dietario-type\]/);
+assert.match(html, /class="dietario-filter/);
+assert.doesNotMatch(html, /class="filter" data-dietario-(?:range|type)/);
+assert.match(css, /\.dietario-filter/);
+assert.match(css, /\.library-filters\{[^}]*overflow-x:auto/);
+
+// Pulsación larga sobre una línea del dietario: acceso rápido a marcar
+// como hecho o eliminar sin abrir la ficha completa.
+assert.match(app, /openDietarioQuickActions/);
+assert.match(app, /pointerdown/);
 
 console.log("dietario: ok");

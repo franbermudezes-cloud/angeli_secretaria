@@ -1,24 +1,24 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.61";
-import{classify,actionData}from"./classifier.js?v=0.21.61";
-import{sendEntry}from"./sheets.js?v=0.21.61";
-import{createUI}from"./ui.js?v=0.21.61";
-import{createGoogleIntegration}from"./google.js?v=0.21.61";
-import{interpret,remoteProvider,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,protectCalendarInterpretation,protectReadQuery}from"./ai.js?v=0.21.61";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.61";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.61";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.61";
-import{createCloudSync}from"./firebase.js?v=0.21.61";
-import{createMediaService}from"./media.js?v=0.21.61";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.61";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.61";
-import{createAgendaActions}from"./agenda.js?v=0.21.61";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.61";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.61";
-import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.61";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.61";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.61";
-import{mediaLibraryItems}from"./media-library.js?v=0.21.61";
-import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.61";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.62";
+import{classify,actionData}from"./classifier.js?v=0.21.62";
+import{sendEntry}from"./sheets.js?v=0.21.62";
+import{createUI}from"./ui.js?v=0.21.62";
+import{createGoogleIntegration}from"./google.js?v=0.21.62";
+import{interpret,remoteProvider,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,protectCalendarInterpretation,protectReadQuery}from"./ai.js?v=0.21.62";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.62";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.62";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.62";
+import{createCloudSync}from"./firebase.js?v=0.21.62";
+import{createMediaService}from"./media.js?v=0.21.62";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.62";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.62";
+import{createAgendaActions}from"./agenda.js?v=0.21.62";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.62";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.62";
+import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.62";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.62";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.62";
+import{mediaLibraryItems}from"./media-library.js?v=0.21.62";
+import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.62";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],pendingMediaContext=null,selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -263,6 +263,29 @@ function openDietarioEntry(id){
  if(entry.type==="note"){openNoteLibraryDetail(entry);return}
  ui.showEntryAction(entry,google);
 }
+function toggleEntryStatus(note){save(notes.map(item=>item.id===note.id?{...item,status:item.status==="done"?"pending":"done"}:item))}
+async function deleteEntry(note){
+ if(!save(notes.filter(item=>item.id!==note.id)))return false;
+ google.clearContactResult(note.id);
+ try{for(const image of note.images||[])await media.remove(typeof image==="string"?image:image.driveFileId||image.id);for(const file of note.files||[])if(file.id||file.driveFileId)await media.remove(file.driveFileId||file.id)}catch(e){ui.notify("La entrada se borró, pero quedó algún adjunto en Drive")}
+ return true;
+}
+// Pulsación larga sobre una línea del dietario: acceso rápido para marcar
+// como hecho o eliminar, sin tener que abrir la ficha completa primero.
+function openDietarioQuickActions(id){
+ const entry=notes.find(note=>note.id===id);
+ if(!entry)return;
+ const done=entry.status==="done",afterAction=()=>{ui.closeLayers();refreshDietario()};
+ ui.openModal({
+  title:entry.aiIntent?.title||entry.text||"Elemento",
+  lead:"¿Qué quieres hacer con este elemento del dietario?",
+  actions:[
+   {label:done?"↺ Reabrir":"✓ Marcar como hecho",kind:"secondary",onClick:()=>{toggleEntryStatus(entry);afterAction()}},
+   {label:"🗑️ Eliminar",kind:"danger",onClick:async()=>{await deleteEntry(entry);afterAction()}},
+   {label:"Cancelar",kind:"secondary",onClick:ui.closeLayers}
+  ]
+ });
+}
 async function downloadLibraryItem(item,{share=false}={}){
  try{
   ui.notify(share?"Preparando para compartir…":"Abriendo archivo…");
@@ -304,9 +327,13 @@ $("remindersOpen").onclick=()=>void resolveReminderQuery(localReminderQuery("Rec
 $("agendaOpen").onclick=()=>prepareShortcut({label:"Calendario",command:"Muéstrame mi agenda",action:"calendar.query",direct:true});
 $("dietarioOpen").onclick=openDietario;
 $("dietarioClose").onclick=ui.closeDietario;
-document.querySelectorAll("#dietarioLibrary [data-dietario-range]").forEach(button=>button.onclick=()=>{dietarioState.range=button.dataset.dietarioRange;document.querySelectorAll("[data-dietario-range]").forEach(item=>item.classList.toggle("active",item===button));refreshDietario()});
-document.querySelectorAll("#dietarioLibrary [data-dietario-type]").forEach(button=>button.onclick=()=>{dietarioState.type=button.dataset.dietarioType;document.querySelectorAll("[data-dietario-type]").forEach(item=>item.classList.toggle("active",item===button));refreshDietario()});
-$("dietarioList").onclick=event=>{const button=event.target.closest("[data-dietario-id]");if(button)openDietarioEntry(button.dataset.dietarioId)};
+$("dietarioRangeFilters").onclick=event=>{const button=event.target.closest("[data-dietario-range]");if(!button)return;dietarioState.range=button.dataset.dietarioRange;document.querySelectorAll("[data-dietario-range]").forEach(item=>item.classList.toggle("active",item===button));refreshDietario()};
+$("dietarioTypeFilters").onclick=event=>{const button=event.target.closest("[data-dietario-type]");if(!button)return;dietarioState.type=button.dataset.dietarioType;document.querySelectorAll("[data-dietario-type]").forEach(item=>item.classList.toggle("active",item===button));refreshDietario()};
+let dietarioPressTimer=null,dietarioLongPressed=false;
+function clearDietarioPress(){clearTimeout(dietarioPressTimer);dietarioPressTimer=null}
+$("dietarioList").addEventListener("pointerdown",event=>{const button=event.target.closest("[data-dietario-id]");if(!button)return;dietarioLongPressed=false;clearDietarioPress();dietarioPressTimer=setTimeout(()=>{dietarioLongPressed=true;openDietarioQuickActions(button.dataset.dietarioId)},550)});
+["pointerup","pointercancel","pointerleave"].forEach(type=>$("dietarioList").addEventListener(type,clearDietarioPress));
+$("dietarioList").onclick=event=>{if(dietarioLongPressed){dietarioLongPressed=false;return}const button=event.target.closest("[data-dietario-id]");if(button)openDietarioEntry(button.dataset.dietarioId)};
 $("libraryClose").onclick=ui.closeMediaLibrary;
 $("viewerClose").onclick=ui.closeMediaViewer;
 $("librarySearch").oninput=event=>{libraryState.query=event.target.value;refreshLibrary()};
@@ -432,16 +459,13 @@ async function handleEntryAction(event){
  if(action==="open-file"){
   try{const media=await mediaServiceGet(button.dataset.mediaId);if(!media)throw new Error();const url=URL.createObjectURL(media.blob);window.open(url,"_blank");setTimeout(()=>URL.revokeObjectURL(url),60000)}catch(e){ui.notify("No se pudo abrir el archivo")};return;
  }
- if(action==="toggle"){save(notes.map(item=>item.id===note.id?{...item,status:item.status==="done"?"pending":"done"}:item));return}
- if(action==="delete"){
-  if(!save(notes.filter(item=>item.id!==note.id)))return;google.clearContactResult(note.id);
-  try{for(const image of note.images||[])await media.remove(typeof image==="string"?image:image.driveFileId||image.id);for(const file of note.files||[])if(file.id||file.driveFileId)await media.remove(file.driveFileId||file.id)}catch(e){ui.notify("La entrada se borró, pero quedó algún adjunto en Drive")}
- }
+ if(action==="toggle"){toggleEntryStatus(note);return}
+ if(action==="delete"){await deleteEntry(note);return}
 }
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.61",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.62",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}

@@ -1,4 +1,4 @@
-import { completeInteraction, cancelInteraction } from "./conversation.js?v=0.21.61";
+import { completeInteraction, cancelInteraction } from "./conversation.js?v=0.21.62";
 
 // Solo tras confirmar el éxito del borrado que acaba de ejecutar Angeli.
 export function markCancelledReminder(entries, eventId) {
