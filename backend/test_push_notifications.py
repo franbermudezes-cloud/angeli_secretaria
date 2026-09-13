@@ -1,6 +1,7 @@
 import unittest
 from datetime import datetime, timezone
-from unittest.mock import MagicMock
+from types import ModuleType
+from unittest.mock import MagicMock, patch
 from zoneinfo import ZoneInfo
 
 from push_notifications import PushNotifications
@@ -59,6 +60,25 @@ class DeliveryReliabilityTests(unittest.TestCase):
 
         reminder.update.assert_not_called()
         reminder.delete.assert_not_called()
+
+    def test_web_push_is_high_urgency_for_sleeping_mobile(self):
+        service = object.__new__(PushNotifications)
+        document = MagicMock()
+        document.to_dict.return_value = {"token": "mobile-token"}
+        db = MagicMock()
+        db.collection.return_value.document.return_value.collection.return_value.stream.return_value = [document]
+        service._db = MagicMock(return_value=db)
+
+        messaging = MagicMock()
+        messaging.WebpushConfig.return_value = "urgent-webpush"
+        messaging.send_each.return_value = MagicMock(success_count=1, failure_count=0, responses=[MagicMock(success=True)])
+        firebase_admin = ModuleType("firebase_admin")
+        firebase_admin.messaging = messaging
+        with patch.dict("sys.modules", {"firebase_admin": firebase_admin, "firebase_admin.messaging": messaging}), patch("push_notifications._firebase_app", return_value="firebase-app"):
+            service._send("owner", "Aviso", "Es la hora", "entry-1", "./?reminder=entry-1")
+
+        messaging.WebpushConfig.assert_called_once_with(headers={"Urgency": "high", "TTL": "86400"})
+        self.assertEqual(messaging.Message.call_args.kwargs["webpush"], "urgent-webpush")
 
 
 if __name__ == "__main__":

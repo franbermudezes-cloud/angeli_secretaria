@@ -261,7 +261,11 @@ class PushNotifications:
             documents = [document for document in documents if document.to_dict().get("token") == only_token]
         if not documents:
             return {"delivered": 0, "devices": 0}
-        messages = [messaging.Message(data={"title": title, "body": body, "entryId": entry_id, "url": url}, token=doc.to_dict()["token"]) for doc in documents]
+        # Los tokens de la PWA son Web Push incluso cuando Chrome corre en
+        # Android. Sin urgencia explícita FCM puede conservar el mensaje
+        # durante Doze y entregarlo solo al despertar la PWA.
+        webpush = messaging.WebpushConfig(headers={"Urgency": "high", "TTL": "86400"})
+        messages = [messaging.Message(data={"title": title, "body": body, "entryId": entry_id, "url": url}, token=doc.to_dict()["token"], webpush=webpush) for doc in documents]
         response = messaging.send_each(messages, app=_firebase_app())
         for document, result in zip(documents, response.responses):
             if not result.success and type(result.exception).__name__ in {"UnregisteredError", "SenderIdMismatchError"}:
