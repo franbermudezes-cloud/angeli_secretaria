@@ -1,5 +1,5 @@
-import { contactQuery } from "./classifier.js?v=0.21.65";
-import { calendarQueryRange, temporalData } from "./temporal.js?v=0.21.65";
+import { contactQuery } from "./classifier.js?v=0.21.66";
+import { calendarQueryRange, temporalData } from "./temporal.js?v=0.21.66";
 
 export const DEFAULT_SHORTCUTS = [
   { label: "🗓️ Hoy", command: "¿Qué tengo hoy?", action: "calendar.query", direct: true },

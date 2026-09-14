@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.21.66 · Botón "⋮" del Dietario, tamaño táctil corregido
+
+- El botón "⋮" de cada línea del Dietario medía 26×26px, por debajo del tamaño táctil mínimo recomendado (44px iOS / 48px Android). En un dispositivo real el dedo fallaba el botón y abría la ficha normal de la entrada en su lugar. Ahora mide 40×40px.
+
 ## V0.21.65 · Corrección: adjuntar una foto o archivo suelto se quedaba bloqueado
 
 - Adjuntar una foto o un archivo directamente desde el compositor (sin pasar por una nota) rompía en silencio: el modal para elegir motivo, categoría y relación nunca llegaba a abrirse, dejando a la persona sin ninguna forma de continuar salvo descartar el adjunto. Causa: `normalizeMediaContext` recibía `null` (el valor inicial antes de la primera clasificación) y un `= {}` en la firma de la función no cubre `null`, solo `undefined`. Encontrado probando la aplicación real de punta a punta.
