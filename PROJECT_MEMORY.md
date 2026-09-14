@@ -1,5 +1,11 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-14 — Botón "⋮" del Dietario, tamaño táctil corregido V0.21.66
+
+Reporte real del propietario en dispositivo: "el botón de los tres puntos no funciona, al final me abre lo que tenga ahí" (la ficha normal en vez del menú rápido). Causa: `.dietario-quick` medía 26×26px — por debajo del tamaño táctil mínimo recomendado (44px iOS Human Interface Guidelines / 48dp Android Material). En pantalla de ratón el clic siempre acierta porque el puntero es un punto exacto; en un dedo real el toque cae fuera del botón con facilidad y el clic bubblea hasta el `.dietario-item` padre, abriendo la ficha en su lugar. Aumentado a 40×40px y añadido `touch-action:manipulation`.
+
+Lección repetida en esta área: cualquier control pensado para tocarse con el dedo necesita verificarse contra el tamaño táctil mínimo, no solo contra un clic de ratón en las pruebas — exactamente el mismo tipo de fallo que ya afectó a la pulsación larga que este botón sustituyó.
+
 ## 2026-09-14 — Corrección crítica: adjuntar una foto o archivo suelto se quedaba bloqueado V0.21.65
 
 Encontrado probando la app real de punta a punta (con autorización del propietario, subiendo un archivo de prueba real desde el compositor): tocar "+ → Archivo" o "+ → Fotos" y seleccionar un fichero sin pasar por el editor de una nota lanzaba una excepción no capturada (`TypeError: Cannot read properties of null (reading 'scope')` en `media-context.js`) que impedía que se abriera el modal de clasificación (motivo/categoría/relación). La persona se quedaba con el archivo "preparado" pero sin ninguna pantalla para continuar, y cada intento de reenviar volvía a lanzar el mismo error.

@@ -98,6 +98,17 @@ assert.match(app, /data-dietario-quick/);
 assert.doesNotMatch(app, /pointerdown/);
 assert.match(ui, /data-dietario-quick/);
 
+// Regresión real en dispositivo: el botón "⋮" medía 26x26px, por debajo del
+// tamaño táctil mínimo recomendado (44px iOS / 48px Android), así que el
+// dedo fallaba el botón y abría la ficha normal en su lugar. Ahora es de
+// al menos 40x40px.
+const quickButtonCss = css.match(/\.dietario-quick\{[^}]*\}/)?.[0] || "";
+assert.ok(quickButtonCss, "debe existir la regla .dietario-quick");
+const width = Number(quickButtonCss.match(/width:(\d+)px/)?.[1] || 0);
+const height = Number(quickButtonCss.match(/height:(\d+)px/)?.[1] || 0);
+assert.ok(width >= 40, `el botón "⋮" debe medir al menos 40px de ancho (mide ${width}px)`);
+assert.ok(height >= 40, `el botón "⋮" debe medir al menos 40px de alto (mide ${height}px)`);
+
 // Regresión: abrir "Avisos" desde el dietario cerraba el modal solo a los
 // 1.8s porque reutilizaba showEntryAction (pensado para una confirmación
 // justo tras crear algo, no para repasar algo ya existente). "Adjuntos"
