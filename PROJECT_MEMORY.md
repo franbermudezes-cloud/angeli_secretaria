@@ -1,5 +1,17 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-17 — Corrección crítica: el modo conversación duplicaba entradas reales V0.21.70
+
+Reportado por el propietario probando el modo conversación en real, con su cuenta real: dictó "llama a Vicente mañana", confirmó en pantalla, y al mirar el Dietario encontró DOS recordatorios idénticos de llamar a Vicente a las 18:00. Confirmado que ocurrió en producción antes del despliegue del backend de esta misma sesión (por los timestamps de los logs de Cloud Run), así que la causa es exclusivamente de frontend, sin relación con la caché de Vertex AI.
+
+Causa raíz: `conversationRec.onresult` (en `js/app.js`, añadido en V0.21.67) marcaba `conversationTurnDispatched=true` DESPUÉS de decidir lanzar un turno, pero nunca comprobaba esa misma variable ANTES de decidir si lanzarlo. Con `continuous:false`, una frase con una pausa breve a mitad ("llama a Vicente" ‹pausa› "mañana") puede llegar como DOS resultados "finales" en eventos `onresult` separados, ambos dentro de la MISMA sesión de escucha, antes de que `onend` la cierre. El primer resultado lanzaba `conversationRunTurn` con la orden completa; el segundo, sin ningún guard, lanzaba OTRO `conversationRunTurn` en paralelo mientras el primero seguía en marcha (interpretando, guardando en Firestore) — dos llamadas a `add()` concurrentes, dos entradas guardadas.
+
+Corregido con `if(conversationTurnDispatched)return;` al ENTRAR en `onresult`, antes de procesar nada, y parando explícitamente el reconocedor (`conversationRec.stop()`) en cuanto se lanza el primer turno, para no dejarlo escuchando de fondo mientras `add()` está en marcha.
+
+Verificado reproduciendo el escenario exacto con un `SpeechRecognition` simulado (dos resultados finales en una sesión, sin depender del micrófono real ni de una cuenta con sesión iniciada): antes del arreglo el segundo resultado se procesaba igualmente; después, solo queda una burbuja en la conversación por sesión, aunque el reconocedor entregue un resultado final adicional. Test de regresión en `tests/conversation-mode.test.mjs`.
+
+**Lección**: cualquier flujo que dependa de eventos asíncronos del navegador (aquí, resultados de reconocimiento de voz) necesita comprobar su propio guard de "ya en marcha" en el punto de ENTRADA del handler, no solo marcarlo como efecto secundario de la decisión — marcarlo después de decidir deja una ventana en la que un segundo evento, llegado antes de que termine el primero, no ve todavía el guard activo.
+
 ## 2026-09-17 — Caché de contexto en Vertex AI para el intérprete (backend)
 
 Pendiente ya anotado en varias sesiones anteriores (revisión de coste del modo conversación): `SYSTEM_INSTRUCTION` en `backend/app.py` pesa ~48.500 caracteres y se manda completo en cada llamada a Gemini, idéntico siempre. El propietario reportó notar lentitud real ("desde que yo le hago la petición... hay que revisarlo") justo al usar el modo conversación, que multiplica las llamadas por minuto — motivo directo para abordarlo ahora.
