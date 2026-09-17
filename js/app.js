@@ -1,24 +1,24 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.72";
-import{classify,actionData}from"./classifier.js?v=0.21.72";
-import{sendEntry}from"./sheets.js?v=0.21.72";
-import{createUI}from"./ui.js?v=0.21.72";
-import{createGoogleIntegration}from"./google.js?v=0.21.72";
-import{interpret,remoteProvider,chatAside,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,protectCalendarInterpretation,protectReadQuery}from"./ai.js?v=0.21.72";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.72";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.72";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.72";
-import{createCloudSync}from"./firebase.js?v=0.21.72";
-import{createMediaService}from"./media.js?v=0.21.72";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.72";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.72";
-import{createAgendaActions}from"./agenda.js?v=0.21.72";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.72";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.72";
-import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.72";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.72";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.72";
-import{mediaLibraryItems}from"./media-library.js?v=0.21.72";
-import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.72";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.73";
+import{classify,actionData}from"./classifier.js?v=0.21.73";
+import{sendEntry}from"./sheets.js?v=0.21.73";
+import{createUI}from"./ui.js?v=0.21.73";
+import{createGoogleIntegration}from"./google.js?v=0.21.73";
+import{interpret,remoteProvider,chatAside,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,protectCalendarInterpretation,protectReadQuery}from"./ai.js?v=0.21.73";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.73";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.73";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.73";
+import{createCloudSync}from"./firebase.js?v=0.21.73";
+import{createMediaService}from"./media.js?v=0.21.73";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.73";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.73";
+import{createAgendaActions}from"./agenda.js?v=0.21.73";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.73";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.73";
+import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.73";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.73";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.73";
+import{mediaLibraryItems}from"./media-library.js?v=0.21.73";
+import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.73";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],pendingMediaContext=null,selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -354,10 +354,20 @@ async function conversationHandleOutcome(){
   return;
  }
  if(kind==="manual"){
-  const title=$("modalTitle").textContent||"Necesito que elijas una opción";
-  ui.addConversationTurn("angeli",title+" — toca en la pantalla para continuar");
-  ui.setConversationStatus("Toca en la pantalla para continuar");
-  await speakAloud("Necesito que elijas una opción en la pantalla para continuar.");
+  // Antes se decía siempre la misma frase genérica ("elige una opción en la
+  // pantalla"), sin relación con lo que realmente se estaba haciendo. El
+  // propio modal ya trae un título y una explicación concretos para cada
+  // caso (nota, recordatorio, evento con aviso...) — ahora se leen tal
+  // cual, y si hay una acción principal clara (el botón "confirm"/"danger"),
+  // se nombra para que sepa exactamente qué tocar.
+  const title=$("modalTitle").textContent||"";
+  const lead=$("modalLead").textContent||"";
+  const primaryButton=$("modalActions").querySelector("button.confirm, button.danger");
+  const primaryLabel=primaryButton?.textContent?.trim();
+  const spoken=[title,lead].filter(Boolean).join(". ")+(primaryLabel?` Toca «${primaryLabel}» para continuar.`:" Toca en la pantalla para continuar.");
+  ui.addConversationTurn("angeli",spoken);
+  ui.setConversationStatus(primaryLabel?`Toca «${primaryLabel}» para continuar`:"Toca en la pantalla para continuar");
+  await speakAloud(spoken);
   watchForModalClose(()=>{if(conversationOn)resumeConversationListening()});
   return;
  }
@@ -689,7 +699,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.72",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.73",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}

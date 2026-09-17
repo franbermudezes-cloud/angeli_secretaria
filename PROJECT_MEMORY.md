@@ -1,5 +1,15 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-17 — Modo conversación: petición de tocar la pantalla, específica de cada caso V0.21.73
+
+El propietario, probando el modo conversación con distintos tipos de órdenes, notó que la rama "manual" de `conversationHandleOutcome` (crear un evento con aviso, completar una nota, elegir entre varias notas/recordatorios...) sonaba "muy aburrido": decía siempre la misma frase fija, "sin relación con las cosas que vayamos a poner" — igual para una nota que para un recordatorio que para cualquier otra cosa.
+
+Causa encontrada leyendo el propio código: esa rama ya leía `$("modalTitle")` y `$("modalLead")` en variables (`title`, `lead`) — que SÍ son distintos para cada caso, porque cada llamada a `openModal`/`showNoteEditor`/`showEntryAction` ya trae su propio título y explicación concretos — pero nunca los usaba para hablar; solo los mostraba en el texto de la conversación, mientras que la voz decía literalmente "Necesito que elijas una opción en la pantalla para continuar." siempre, fuera cual fuera el caso.
+
+Corregido hablando `[title, lead]` (igual que ya hacían las ramas "completion" y "question"), y añadiendo el nombre del botón principal cuando existe (`button.confirm` o `button.danger`, ej. "Revisar cambios", "📅 Crear los dos"), para que además de la explicación sepa exactamente qué tocar. Verificado en vivo reproduciendo el mismo cálculo con dos casos reales distintos (nota vs. evento con aviso): cada uno habla algo propio y con el botón correcto, en vez de la frase fija de antes.
+
+**Lección repetida** (ya apuntada para el modo conversación en general): cuando ya existe información específica y correcta en pantalla (aquí, el título/explicación de cada modal), revisar primero si el código de voz la está leyendo de verdad antes de escribir un texto fijo nuevo — el dato específico ya estaba ahí, solo faltaba usarlo.
+
 ## 2026-09-17 — Módulo de charla aparte: coletillas generadas por IA V0.21.72
 
 El propietario, tras probar las coletillas fijas de V0.21.71, preguntó si subir de modelo Gemini permitiría algo más conversacional de verdad — "que no sea ni tan siquiera específico para las funciones actuales... incluso otro módulo aparte". Explorado y puesto en práctica en el mismo hilo, con la condición explícita del propietario: "sin romper lo que ahora tenemos".
