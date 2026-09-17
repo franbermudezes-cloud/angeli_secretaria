@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.21.71 · Modo conversación: Angeli contesta siempre, no solo al final
+
+- Antes, al hablar en modo conversación, Angeli se quedaba callada (solo el modal en texto) hasta tener la respuesta completa de Gemini — se notaba como si "hablaras contra una máquina". Ahora, nada más capturar la frase, dice una coletilla corta y variada ("¡Vale, voy!", "Mmm, a ver…", "¡Marchando!"...) elegida al azar, con tono cercano de compañera, mientras Gemini procesa de fondo.
+
 ## V0.21.70 · Corrección crítica: el modo conversación duplicaba entradas reales
 
 - Al dictar una frase con una pausa breve a mitad ("llama a Vicente mañana"), el reconocedor de voz podía entregarla en dos resultados "finales" separados dentro de la misma sesión de escucha. El modo conversación procesaba ambos como turnos independientes en paralelo, duplicando la entrada guardada (por ejemplo, dos recordatorios idénticos). Detectado por el propietario probando la app en real, con datos reales. Corregido descartando cualquier resultado posterior al primer turno ya lanzado en esa sesión.

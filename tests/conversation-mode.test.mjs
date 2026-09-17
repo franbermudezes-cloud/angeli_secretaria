@@ -90,4 +90,20 @@ const onresultSource = app.match(/conversationRec\.onresult=event=>\{[\s\S]*?\n 
 assert.ok(onresultSource, "conversationRec.onresult debe existir");
 assert.match(onresultSource, /if\(conversationTurnDispatched\)return;/, "debe descartar cualquier resultado posterior al primer turno ya lanzado");
 
+// Petición del usuario: mientras Gemini responde, Angeli se quedaba callada
+// (solo el modal en texto) y eso sonaba a "hablar contra una máquina". Debe
+// decir SIEMPRE una coletilla nada más capturar la frase (no solo cuando
+// tarda: hablar solo a veces seguía sonando a máquina el resto de veces),
+// variada (varias frases, elegidas al azar) y con tono cercano, no robótico.
+assert.match(app, /const CONVERSATION_FILLERS=\[/);
+const fillersMatch = app.match(/const CONVERSATION_FILLERS=(\[[^\]]*\]);/);
+assert.ok(fillersMatch, "debe existir la lista de coletillas");
+const fillers = JSON.parse(fillersMatch[1].replace(/…/g, "..."));
+assert.ok(fillers.length >= 5, "debe haber variedad real de coletillas, no una o dos repetidas siempre");
+assert.ok(new Set(fillers).size === fillers.length, "las coletillas no deben repetirse entre sí");
+const conversationRunTurnSource = app.match(/async function conversationRunTurn\(text\)\{[\s\S]*?\n\}/)?.[0] || "";
+assert.ok(conversationRunTurnSource, "conversationRunTurn debe existir");
+assert.match(conversationRunTurnSource, /void speakAloud\(pickConversationFiller\(\)\);/, "la coletilla debe decirse siempre, sin condicionarla a que Gemini tarde");
+assert.doesNotMatch(conversationRunTurnSource, /setTimeout/, "no debe depender de un temporizador de retraso");
+
 console.log("conversation-mode: ok");

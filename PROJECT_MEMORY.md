@@ -1,5 +1,15 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-17 — Modo conversación: coletillas siempre, no solo si tarda V0.21.71
+
+El propietario notó que el modo conversación "iba lento": el modal de "Procesando…" aparecía en texto pero Angeli se quedaba muda hasta tener la respuesta completa de Gemini. Primera iteración: hablar una coletilla genérica solo si `add()` tardaba más de 700ms (para no parlotear en las respuestas rápidas que ya trae la caché de contexto de V0.21.70). El propietario pidió ir más allá en el mismo hilo: que conteste SIEMPRE, tarde poco o mucho, porque hablar solo a veces seguía sonando "a hablar contra una máquina" el resto de las veces — y que haya variedad real de frases (no siempre la misma) con un tono más cercano, "de compañera".
+
+Implementado quitando el `setTimeout`/umbral: `conversationRunTurn` dice una coletilla al azar (`pickConversationFiller()`, 10 frases en `CONVERSATION_FILLERS`, tono casual) nada más capturar la frase, en paralelo con `add()` (sin esperarla). `speakAloud()` ya cancela cualquier habla en curso antes de decir el resultado real (comportamiento de V0.21.67), así que si la respuesta llega rápido, la coletilla simplemente se corta a medias en vez de solaparse — efecto secundario aceptado y esperado, no un fallo.
+
+Verificado con un `SpeechRecognition` Y `SpeechSynthesisUtterance` simulados (interceptando el texto hablado, sin depender de audio real): cada turno dice primero una coletilla variada y después el resultado real, sin excepción.
+
+Pendiente anotado por el propietario en el mismo hilo, explícitamente como posible módulo aparte (no para meter dentro de esto): subir de `gemini-2.5-flash-lite` a un modelo Gemini más capaz permitiría coletillas generadas dinámicamente por el modelo (no solo una lista fija) e incluso una interacción conversacional más libre, no atada a las funciones actuales de la app (notas/recordatorios/agenda). Sin decidir ni implementar todavía.
+
 ## 2026-09-17 — Corrección crítica: el modo conversación duplicaba entradas reales V0.21.70
 
 Reportado por el propietario probando el modo conversación en real, con su cuenta real: dictó "llama a Vicente mañana", confirmó en pantalla, y al mirar el Dietario encontró DOS recordatorios idénticos de llamar a Vicente a las 18:00. Confirmado que ocurrió en producción antes del despliegue del backend de esta misma sesión (por los timestamps de los logs de Cloud Run), así que la causa es exclusivamente de frontend, sin relación con la caché de Vertex AI.
