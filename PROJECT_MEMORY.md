@@ -1,5 +1,15 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-17 — Corrección: menú rápido del Dietario oculto detrás del propio Dietario V0.21.68
+
+Reportado por el propietario probando el modo conversación en real: "he comprobado lo de eliminar del dietario y efectivamente sí que sale lo de eliminar, pero se queda debajo del dietario". Mismo tipo de fallo que ya se había corregido para el modo conversación en V0.21.67 (una capa a pantalla completa con más prioridad visual que `#actionModal`), pero aquí llevaba existiendo desde que se creó el menú rápido del Dietario, sin relación con el trabajo de esta sesión.
+
+Causa: `openDietarioQuickActions` (en `js/app.js`) abre `#actionModal` mediante `ui.openModal()` sin cerrar antes `#dietarioLibrary`, a diferencia de cómo se abre el resto de fichas en la app (por ejemplo `openLibraryEntry` sí cierra `#mediaLibrary` primero). `#dietarioLibrary` comparte la clase `.media-library` (z-index:8), por delante de `.action-modal` (z-index:6), así que el menú de "Eliminar"/"Marcar como hecho" quedaba pintado detrás del propio Dietario.
+
+Corregido con un selector por id, más específico que la clase compartida, que baja solo `#dietarioLibrary` a z-index:4 (por detrás de `.action-modal`, igual que ya se hizo con `.conversation-mode` en V0.21.67) sin tocar `.media-library` ni afectar a Galería o Notas, que sí cierran su panel antes de abrir una ficha y no tienen este problema.
+
+Verificado visualmente forzando ambas capas abiertas a la vez (sin necesitar datos ni sesión real): el menú aparece por delante, con el Dietario visible y atenuado detrás — exactamente lo que pidió el propietario para poder eliminar sin perder el sitio en la lista.
+
 ## 2026-09-17 — Modo conversación (escucha continua + respuesta hablada) V0.21.67
 
 El propietario pidió una experiencia conversacional real: hablar con naturalidad sin tener que pulsar entre frases, y que Angeli responda en voz para notas, recordatorios y agenda. Antes de programar nada se le mostró un mockup visual (botón + pantalla completa con guion de ejemplo fijo) para validar el diseño; solo tras su aprobación explícita ("adelante, hazlo todo... que ya sea funcional") se conectó la lógica real.
