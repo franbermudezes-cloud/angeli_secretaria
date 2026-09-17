@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.21.70 · Corrección crítica: el modo conversación duplicaba entradas reales
+
+- Al dictar una frase con una pausa breve a mitad ("llama a Vicente mañana"), el reconocedor de voz podía entregarla en dos resultados "finales" separados dentro de la misma sesión de escucha. El modo conversación procesaba ambos como turnos independientes en paralelo, duplicando la entrada guardada (por ejemplo, dos recordatorios idénticos). Detectado por el propietario probando la app en real, con datos reales. Corregido descartando cualquier resultado posterior al primer turno ya lanzado en esa sesión.
+
 ## Backend · Caché de contexto en Vertex AI para el intérprete
 
 - El prompt de sistema que se manda a Gemini en cada interpretación pesa ~48.000 caracteres (~12.000-13.000 tokens) y es idéntico siempre. Ahora se cachea en Vertex AI (`client.caches`) y se reutiliza por nombre en vez de reenviarlo entero en cada llamada — menos tokens facturados y menos tiempo de red por petición, sobre todo notable con el modo conversación (varias llamadas seguidas en poco tiempo).

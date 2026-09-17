@@ -79,4 +79,15 @@ assert.ok(closeConversationSource, "closeConversationModeReal debe existir");
 assert.match(closeConversationSource, /conversationActiveQuestionEntry\(\)/);
 assert.match(closeConversationSource, /cancelActive\(active\)/);
 
+// Regresión real en dispositivo: con continuous:false, una frase algo larga
+// ("llama a Vicente mañana") puede llegar en dos resultados "finales"
+// separados por una pausa breve, antes de que la sesión termine. Sin
+// comprobar conversationTurnDispatched al ENTRAR en onresult (no solo al
+// marcarlo), el segundo resultado final disparaba un segundo
+// conversationRunTurn en paralelo con el primero, duplicando la entrada
+// guardada (dos recordatorios para la misma orden, con datos reales).
+const onresultSource = app.match(/conversationRec\.onresult=event=>\{[\s\S]*?\n \};/)?.[0] || "";
+assert.ok(onresultSource, "conversationRec.onresult debe existir");
+assert.match(onresultSource, /if\(conversationTurnDispatched\)return;/, "debe descartar cualquier resultado posterior al primer turno ya lanzado");
+
 console.log("conversation-mode: ok");

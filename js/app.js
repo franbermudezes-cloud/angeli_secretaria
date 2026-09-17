@@ -1,24 +1,24 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.69";
-import{classify,actionData}from"./classifier.js?v=0.21.69";
-import{sendEntry}from"./sheets.js?v=0.21.69";
-import{createUI}from"./ui.js?v=0.21.69";
-import{createGoogleIntegration}from"./google.js?v=0.21.69";
-import{interpret,remoteProvider,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,protectCalendarInterpretation,protectReadQuery}from"./ai.js?v=0.21.69";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.69";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.69";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.69";
-import{createCloudSync}from"./firebase.js?v=0.21.69";
-import{createMediaService}from"./media.js?v=0.21.69";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.69";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.69";
-import{createAgendaActions}from"./agenda.js?v=0.21.69";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.69";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.69";
-import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.69";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.69";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.69";
-import{mediaLibraryItems}from"./media-library.js?v=0.21.69";
-import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.69";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.70";
+import{classify,actionData}from"./classifier.js?v=0.21.70";
+import{sendEntry}from"./sheets.js?v=0.21.70";
+import{createUI}from"./ui.js?v=0.21.70";
+import{createGoogleIntegration}from"./google.js?v=0.21.70";
+import{interpret,remoteProvider,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,protectCalendarInterpretation,protectReadQuery}from"./ai.js?v=0.21.70";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.70";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.70";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.70";
+import{createCloudSync}from"./firebase.js?v=0.21.70";
+import{createMediaService}from"./media.js?v=0.21.70";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.70";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.70";
+import{createAgendaActions}from"./agenda.js?v=0.21.70";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.70";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.70";
+import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.70";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.70";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.70";
+import{mediaLibraryItems}from"./media-library.js?v=0.21.70";
+import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.70";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],pendingMediaContext=null,selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -379,12 +379,19 @@ function startConversationRecognizer(){
  conversationRec.maxAlternatives=1;
  conversationRec.onstart=()=>{conversationListening=true;$("conversationModeMic").classList.add("listening");ui.setConversationStatus("Escuchándote…")};
  conversationRec.onresult=event=>{
+  // Regresión real detectada en dispositivo: con continuous:false, el
+  // reconocedor puede entregar una frase larga en varios resultados
+  // "finales" separados (una pausa breve a mitad de frase) antes de acabar
+  // la sesión. Sin este guard, cada resultado final disparaba su propio
+  // conversationRunTurn en paralelo con el anterior todavía en marcha,
+  // duplicando la entrada guardada (dos recordatorios para la misma orden).
+  if(conversationTurnDispatched)return;
   let finalPhrase="";
   for(let i=event.resultIndex;i<event.results.length;i++){
    const result=event.results[i],phrase=(result[0]?.transcript||"").trim();
    if(result.isFinal&&phrase)finalPhrase+=(finalPhrase?" ":"")+phrase;
   }
-  if(finalPhrase){conversationTurnDispatched=true;void conversationRunTurn(finalPhrase)}
+  if(finalPhrase){conversationTurnDispatched=true;try{conversationRec?.stop()}catch(e){}void conversationRunTurn(finalPhrase)}
  };
  conversationRec.onerror=event=>{
   conversationListening=false;
@@ -652,7 +659,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.69",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.70",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}
