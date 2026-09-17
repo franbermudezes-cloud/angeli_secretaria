@@ -1,5 +1,11 @@
 # Changelog
 
+## Backend · Caché de contexto en Vertex AI para el intérprete
+
+- El prompt de sistema que se manda a Gemini en cada interpretación pesa ~48.000 caracteres (~12.000-13.000 tokens) y es idéntico siempre. Ahora se cachea en Vertex AI (`client.caches`) y se reutiliza por nombre en vez de reenviarlo entero en cada llamada — menos tokens facturados y menos tiempo de red por petición, sobre todo notable con el modo conversación (varias llamadas seguidas en poco tiempo).
+- Si la caché no se puede crear o falla al usarse (caducó, se borró...), la interpretación sigue funcionando exactamente igual que antes, enviando el prompt completo en esa llamada — la caché nunca puede ser la causa de que una orden falle.
+- Cambio exclusivo de `backend/app.py` (servicio `angeli-ai-interpreter` en Cloud Run); no toca el frontend ni requiere una nueva versión de la PWA. **Requiere volver a desplegar el backend en Cloud Run para que surta efecto en producción.**
+
 ## V0.21.69 · Botón "⋮" del Dietario, tamaño táctil real (44px)
 
 - El botón "⋮" de acciones rápidas del Dietario medía 26px, luego se subió a 40px — ambos por debajo del mínimo táctil recomendado (44px iOS / 48px Android) que la propia corrección citaba. Detectado en revisión externa antes de fusionar. Ahora mide 44×44px de verdad, y el test de regresión exige ese mínimo en vez de aceptar un valor menor.

@@ -752,6 +752,51 @@ def validate_linked_reminder(value: Any) -> None:
     validate_temporal("time", value["time"])
 
 
+INTERPRETER_MODEL = "gemini-2.5-flash-lite"
+# El prompt de sistema pesa ~48.000 caracteres (~12.000-13.000 tokens) y es
+# idéntico en cada interpretación. Sin caché, ese texto entero se transmite y
+# se factura completo en cada llamada. Vertex AI permite cachearlo de forma
+# explícita (client.caches) y reutilizar esa caché por su nombre en vez de
+# reenviar el texto. Se refresca un margen antes de su vencimiento real para
+# no depender del reintento de emergencia en el caso normal.
+_INTERPRETER_CACHE_TTL_SECONDS = 3600
+_INTERPRETER_CACHE_REFRESH_MARGIN_SECONDS = 60
+_interpreter_cache_name: str | None = None
+_interpreter_cache_expires_at: float = 0.0
+
+
+def _cached_system_instruction(client: Any) -> str | None:
+    """Crea (o reutiliza) la caché de Vertex AI con SYSTEM_INSTRUCTION.
+
+    Devuelve None si la caché no se pudo crear; en ese caso la llamada debe
+    seguir funcionando enviando system_instruction inline, como antes de
+    tener caché — esta función nunca debe ser la causa de que falle una
+    interpretación.
+    """
+    global _interpreter_cache_name, _interpreter_cache_expires_at
+    now = time.monotonic()
+    if _interpreter_cache_name and now < _interpreter_cache_expires_at:
+        return _interpreter_cache_name
+    from google.genai import types
+
+    try:
+        cache = client.caches.create(
+            model=INTERPRETER_MODEL,
+            config=types.CreateCachedContentConfig(
+                system_instruction=SYSTEM_INSTRUCTION,
+                ttl=f"{_INTERPRETER_CACHE_TTL_SECONDS}s",
+                display_name="angeli-interpreter-system",
+            ),
+        )
+    except Exception as error:  # noqa: BLE001 - cualquier fallo aquí solo desactiva la caché
+        log_interpreter_error("cache_create_failed", error)
+        _interpreter_cache_name = None
+        return None
+    _interpreter_cache_name = cache.name
+    _interpreter_cache_expires_at = now + _INTERPRETER_CACHE_TTL_SECONDS - _INTERPRETER_CACHE_REFRESH_MARGIN_SECONDS
+    return _interpreter_cache_name
+
+
 def vertex_interpret(text: str, now: str, timezone: str, context: dict[str, Any] | None = None) -> dict[str, Any]:
     project = os.getenv("GOOGLE_CLOUD_PROJECT", "")
     if not project:
@@ -767,8 +812,31 @@ def vertex_interpret(text: str, now: str, timezone: str, context: dict[str, Any]
     )
     context_text = json.dumps(context, ensure_ascii=False) if context else "ninguno"
     prompt = f"Fecha/hora actual: {now}\nZona horaria: {timezone}\nCONTEXTO ACTIVO: {context_text}\nOrden actual: {text}"
+
+    cache_name = _cached_system_instruction(client)
+    if cache_name:
+        try:
+            response = client.models.generate_content(
+                model=INTERPRETER_MODEL,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    cached_content=cache_name,
+                    response_mime_type="application/json",
+                    response_json_schema=RESPONSE_SCHEMA,
+                    max_output_tokens=400,
+                ),
+            )
+            return response.parsed if response.parsed is not None else json.loads(response.text)
+        except Exception as error:  # noqa: BLE001 - la caché pudo caducar o borrarse entre medias
+            log_interpreter_error("cache_generate_failed", error)
+            global _interpreter_cache_name
+            _interpreter_cache_name = None
+
+    # Sin caché disponible (no se pudo crear, o falló justo al usarla):
+    # mismo comportamiento que antes de tener caché, enviando el prompt de
+    # sistema completo en la propia llamada.
     response = client.models.generate_content(
-        model="gemini-2.5-flash-lite",
+        model=INTERPRETER_MODEL,
         contents=prompt,
         config=types.GenerateContentConfig(
             system_instruction=SYSTEM_INSTRUCTION,
