@@ -1,24 +1,24 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.73";
-import{classify,actionData}from"./classifier.js?v=0.21.73";
-import{sendEntry}from"./sheets.js?v=0.21.73";
-import{createUI}from"./ui.js?v=0.21.73";
-import{createGoogleIntegration}from"./google.js?v=0.21.73";
-import{interpret,remoteProvider,chatAside,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,protectCalendarInterpretation,protectReadQuery}from"./ai.js?v=0.21.73";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.73";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.73";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.73";
-import{createCloudSync}from"./firebase.js?v=0.21.73";
-import{createMediaService}from"./media.js?v=0.21.73";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.73";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.73";
-import{createAgendaActions}from"./agenda.js?v=0.21.73";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.73";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.73";
-import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.73";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.73";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.73";
-import{mediaLibraryItems}from"./media-library.js?v=0.21.73";
-import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.73";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.74";
+import{classify,actionData}from"./classifier.js?v=0.21.74";
+import{sendEntry}from"./sheets.js?v=0.21.74";
+import{createUI}from"./ui.js?v=0.21.74";
+import{createGoogleIntegration}from"./google.js?v=0.21.74";
+import{interpret,remoteProvider,chatAside,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,protectCalendarInterpretation,protectReadQuery}from"./ai.js?v=0.21.74";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.74";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.74";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.74";
+import{createCloudSync}from"./firebase.js?v=0.21.74";
+import{createMediaService}from"./media.js?v=0.21.74";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.74";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.74";
+import{createAgendaActions}from"./agenda.js?v=0.21.74";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.74";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.74";
+import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.74";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.74";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.74";
+import{mediaLibraryItems}from"./media-library.js?v=0.21.74";
+import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.74";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],pendingMediaContext=null,selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -277,6 +277,40 @@ function conversationModalKind(){
  return"manual";
 }
 
+// Preferencia de voz: la app no puede instalar voces nuevas (eso solo lo
+// hace el sistema operativo), pero sí puede recordar cuál de las voces YA
+// instaladas en el teléfono prefiere el usuario, y a qué velocidad/tono.
+// Es una preferencia de este dispositivo, no un dato de Angeli: se guarda en
+// localStorage, no en Firestore.
+const VOICE_PREF_KEY="angeliVoicePrefs";
+function loadVoicePrefs(){try{return JSON.parse(localStorage.getItem(VOICE_PREF_KEY)||"{}")}catch(e){return{}}}
+function saveVoicePrefs(){try{localStorage.setItem(VOICE_PREF_KEY,JSON.stringify(voicePrefs))}catch(e){}}
+let voicePrefs=loadVoicePrefs();
+function availableVoices(){return("speechSynthesis"in window)?window.speechSynthesis.getVoices():[]}
+function selectedVoice(){
+ const voices=availableVoices();
+ if(!voices.length)return null;
+ const byUri=voicePrefs.voiceURI&&voices.find(v=>v.voiceURI===voicePrefs.voiceURI);
+ return byUri||voices.find(v=>(v.lang||"").toLowerCase().startsWith("es"))||voices[0];
+}
+function renderVoiceOptions(){
+ const select=$("voiceSelect");
+ if(!select)return;
+ const voices=availableVoices();
+ const current=selectedVoice();
+ select.innerHTML="";
+ voices.forEach(voice=>{
+  const option=document.createElement("option");
+  option.value=voice.voiceURI;
+  option.textContent=`${voice.name} (${voice.lang})`;
+  select.appendChild(option);
+ });
+ if(current)select.value=current.voiceURI;
+ const spanishVoices=voices.filter(v=>(v.lang||"").toLowerCase().startsWith("es")).length;
+ $("voiceSettingsHint").hidden=voices.length===0||spanishVoices>2;
+}
+if("speechSynthesis"in window){renderVoiceOptions();window.speechSynthesis.addEventListener?.("voiceschanged",renderVoiceOptions)}
+
 function speakAloud(text){
  return new Promise(resolve=>{
   if(!text||!("speechSynthesis"in window)){resolve();return}
@@ -284,6 +318,10 @@ function speakAloud(text){
    window.speechSynthesis.cancel();
    const utter=new SpeechSynthesisUtterance(text);
    utter.lang="es-ES";
+   const voice=selectedVoice();
+   if(voice)utter.voice=voice;
+   utter.rate=voicePrefs.rate||1;
+   utter.pitch=voicePrefs.pitch||1;
    utter.onend=()=>resolve();
    utter.onerror=()=>resolve();
    window.speechSynthesis.speak(utter);
@@ -585,6 +623,12 @@ $("shortcutManual").onclick=()=>createShortcut();
 $("shortcutVoice").onclick=()=>{shortcutCapture=true;$("text").value="";$("text").placeholder="Di la orden que ejecutará el acceso directo…";ui.closeLayers();start()};
 $("shortcutEdit").onclick=editShortcuts;
 $("noteSettingsOpen").onclick=()=>{ui.closeLayers();showNoteSettings()};
+$("voiceRate").value=voicePrefs.rate??1;
+$("voicePitch").value=voicePrefs.pitch??1;
+$("voiceSelect").onchange=()=>{voicePrefs.voiceURI=$("voiceSelect").value;saveVoicePrefs()};
+$("voiceRate").oninput=()=>{voicePrefs.rate=Number($("voiceRate").value);saveVoicePrefs()};
+$("voicePitch").oninput=()=>{voicePrefs.pitch=Number($("voicePitch").value);saveVoicePrefs()};
+$("voiceTest").onclick=()=>void speakAloud("Hola, soy Angeli. Así sonaré a partir de ahora.");
 $("cameraInput").onchange=e=>{if(e.target.files.length)readImages([...e.target.files],"Foto preparada")};
 $("photoInput").onchange=e=>{if(e.target.files.length)readImages([...e.target.files],"Imagen seleccionada")};
 $("fileInput").onchange=e=>{if(e.target.files.length)prepareMedia([...e.target.files],"file","Archivo preparado")};
@@ -699,7 +743,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.73",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.74",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}

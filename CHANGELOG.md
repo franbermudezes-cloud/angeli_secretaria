@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.21.74 · Ajustes → Voz de Angeli: elegir voz, velocidad y tono
+
+- Nueva sección en Ajustes, "Voz de Angeli": selector con las voces que ya tiene instaladas el teléfono, y deslizadores de velocidad y tono, con botón "Probar voz".
+- La app no puede instalar voces nuevas (eso es del sistema operativo); si detecta pocas voces en español, lo explica y dirige a Ajustes del sistema en vez de prometer algo que una web no puede hacer.
+- La preferencia se guarda en este dispositivo y se aplica a todo lo que Angeli dice por voz (modo conversación, coletillas, módulo de charla aparte).
+
 ## V0.21.73 · Modo conversación: la petición de tocar la pantalla ahora es específica de cada caso
 
 - Cuando hacía falta tocar la pantalla (crear un evento con aviso, completar una nota, elegir entre varias notas...), Angeli decía siempre la misma frase fija ("Necesito que elijas una opción en la pantalla para continuar"), sin relación con si era una nota, un recordatorio o cualquier otra cosa.

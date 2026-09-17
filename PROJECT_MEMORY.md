@@ -1,5 +1,15 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-17 — Ajustes → Voz de Angeli: elegir voz, velocidad y tono V0.21.74
+
+El propietario preguntó si la voz de Android se podía cambiar; navegando los ajustes del sistema no encontró dónde elegir voz (solo idioma y velocidad/tono genéricos del motor). Aclarado explícitamente antes de tocar código: una PWA **no puede instalar voces nuevas** en el dispositivo — eso es exclusivo del sistema operativo (Android/Google Play Services) — pero sí puede recordar cuál de las voces YA instaladas prefiere el usuario. Esa distinción se refleja también en la interfaz: si `speechSynthesis.getVoices()` devuelve pocas voces en español, la app lo explica y dirige a Ajustes del sistema, en vez de dar a entender que ella misma podría "descargar" algo.
+
+Nueva sección "Voz de Angeli" en Ajustes: `<select>` con las voces detectadas (`speechSynthesis.getVoices()`, con reintento vía el evento `voiceschanged` porque en algunos navegadores la lista carga de forma asíncrona), y dos `<input type="range">` para velocidad y tono. La preferencia (`voiceURI`, `rate`, `pitch`) se guarda en `localStorage` bajo `angeliVoicePrefs` — deliberadamente NO en Firestore/`cloud.syncNotes`, porque es una preferencia de este dispositivo concreto (la voz instalada en un Android no tiene por qué existir en otro dispositivo), no un dato de Angeli que deba viajar entre dispositivos.
+
+`selectedVoice()` cae a la primera voz en español si el usuario no ha elegido ninguna todavía (nunca a "la primera voz de cualquier idioma que devuelva el navegador", que en algunos casos es inglés). `speakAloud()` — ya usado por el modo conversación, las coletillas y el módulo de charla aparte — ahora aplica `utter.voice`/`utter.rate`/`utter.pitch` desde esa preferencia, así que el cambio se nota en todo lo que Angeli dice, sin tocar ninguna otra lógica.
+
+Verificado en vivo: la vista previa del sandbox tenía 180 voces del sistema (18 en español), el selector las listó correctamente, y cambiar voz + deslizadores + "Probar voz" aplicó y persistió los tres valores tal cual se esperaba.
+
 ## 2026-09-17 — Modo conversación: petición de tocar la pantalla, específica de cada caso V0.21.73
 
 El propietario, probando el modo conversación con distintos tipos de órdenes, notó que la rama "manual" de `conversationHandleOutcome` (crear un evento con aviso, completar una nota, elegir entre varias notas/recordatorios...) sonaba "muy aburrido": decía siempre la misma frase fija, "sin relación con las cosas que vayamos a poner" — igual para una nota que para un recordatorio que para cualquier otra cosa.

@@ -85,6 +85,9 @@ jobs:
       - name: Verificar el cliente del módulo de charla aparte
         run: node tests/chat-aside.test.mjs
 
+      - name: Verificar los ajustes de voz
+        run: node tests/voice-settings.test.mjs
+
       - name: Ejecutar arnés real aislado
         run: python backend/test_harness.py
 
