@@ -1,6 +1,6 @@
-import { calendarDetails, scheduleTitle } from "./schedule.js?v=0.21.71";
-import { noteTitle } from "./notes.js?v=0.21.71";
-import { typeLabel } from "./classifier.js?v=0.21.71";
+import { calendarDetails, scheduleTitle } from "./schedule.js?v=0.21.72";
+import { noteTitle } from "./notes.js?v=0.21.72";
+import { typeLabel } from "./classifier.js?v=0.21.72";
 
 /** Tipo visual (color/rail) usado en el Dietario para agrupar entradas afines. */
 const RAIL_BY_TYPE = { calendar: "calendar", reminder: "reminder", task: "reminder", contact: "reminder", note: "note", photo: "attach", file: "attach" };

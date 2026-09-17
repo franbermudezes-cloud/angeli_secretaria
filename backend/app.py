@@ -291,6 +291,7 @@ RESPONSE_SCHEMA: dict[str, Any] = {
 
 _rate_windows: dict[str, deque[float]] = defaultdict(deque)
 _interpreter: Callable[[str, str, str], dict[str, Any]] | None = None
+_chat_aside: Callable[[str], str] | None = None
 _identity_verifier: Callable[[str], dict[str, Any]] | None = None
 _sessions_factory: Callable[[], GoogleSessions] | None = None
 _push_factory: Callable[[], PushNotifications] | None = None
@@ -848,12 +849,57 @@ def vertex_interpret(text: str, now: str, timezone: str, context: dict[str, Any]
     return response.parsed if response.parsed is not None else json.loads(response.text)
 
 
+# Módulo aparte, deliberadamente desacoplado de vertex_interpret: no comparte
+# prompt, esquema de respuesta ni caché. Sirve solo una frase corta y variada
+# de reacción ("aparte conversacional") mientras la orden real se procesa; no
+# decide ni ejecuta ninguna acción, así que un fallo o una respuesta rara aquí
+# nunca puede alterar una nota, recordatorio o evento. Si esta función falla
+# por cualquier motivo, el llamador (endpoint /chat/aside) simplemente
+# devuelve error y el frontend cae a su propia lista de frases fijas.
+ASIDE_SYSTEM_INSTRUCTION = (
+    "Eres Angeli, una secretaria personal cercana y con sentido del humor, "
+    "en español de España. Te acaban de pedir algo por voz y todavía lo "
+    "estás procesando. Responde SOLO con una reacción muy breve (máximo 6 "
+    "palabras), natural y variada, tipo compañera de trabajo simpática. "
+    "Nunca dos veces la misma. No repitas ni resumas la petición, no la "
+    "cumplas todavía, no hagas preguntas, no uses comillas ni emoji."
+)
+ASIDE_MAX_OUTPUT_TOKENS = 20
+
+
+def vertex_chat_aside(text: str) -> str:
+    project = os.getenv("GOOGLE_CLOUD_PROJECT", "")
+    if not project:
+        raise RuntimeError("Falta GOOGLE_CLOUD_PROJECT")
+    from google import genai
+    from google.genai import types
+
+    client = genai.Client(
+        vertexai=True,
+        project=project,
+        location=os.getenv("VERTEX_LOCATION", "global"),
+        http_options=types.HttpOptions(timeout=REQUEST_TIMEOUT_SECONDS * 1000),
+    )
+    response = client.models.generate_content(
+        model=INTERPRETER_MODEL,
+        contents=f"Orden que estás procesando: {text}",
+        config=types.GenerateContentConfig(
+            system_instruction=ASIDE_SYSTEM_INSTRUCTION,
+            max_output_tokens=ASIDE_MAX_OUTPUT_TOKENS,
+        ),
+    )
+    reply = (response.text or "").strip()
+    if not reply or len(reply) > 120:
+        raise ValueError("Respuesta de aside no válida")
+    return reply
+
+
 def app(environ: dict[str, Any], start_response: Callable):
     origin = allowed_origin(environ)
     if environ.get("REQUEST_METHOD") == "OPTIONS":
         return cors_preflight_response(start_response, origin)
     path = environ.get("PATH_INFO")
-    routes = {"/interpret", "/session/status", "/oauth/exchange", "/google", "/media/upload", "/media/download", "/media/delete", "/push/register", "/push/unregister", "/push/schedule", "/push/cancel", "/push/test", "/push/deliver", "/test/session/status", "/test/oauth/exchange"}
+    routes = {"/interpret", "/chat/aside", "/session/status", "/oauth/exchange", "/google", "/media/upload", "/media/download", "/media/delete", "/push/register", "/push/unregister", "/push/schedule", "/push/cancel", "/push/test", "/push/deliver", "/test/session/status", "/test/oauth/exchange"}
     if environ.get("REQUEST_METHOD") != "POST" or path not in routes:
         return json_response(start_response, "404 Not Found", {"error": "No encontrado"}, origin)
     if environ.get("HTTP_ORIGIN") and not origin:
@@ -956,6 +1002,17 @@ def app(environ: dict[str, Any], start_response: Callable):
                 status, payload = integration_error(error, DRIVE)
                 return json_response(start_response, status, payload, origin)
             return json_response(start_response, "200 OK", {"deleted": True}, origin)
+        if path == "/chat/aside":
+            aside_payload = parse_json_body(environ, {"text"})
+            aside_text = aside_payload.get("text")
+            if not isinstance(aside_text, str) or not aside_text.strip() or len(aside_text) > MAX_TEXT_LENGTH:
+                raise ValueError("El texto debe tener entre 1 y 500 caracteres")
+            aside = _chat_aside or vertex_chat_aside
+            try:
+                reply = aside(aside_text.strip())
+            except ValueError as error:
+                raise OutputValidationError(str(error)) from error
+            return json_response(start_response, "200 OK", {"reply": reply}, origin)
         text, now, timezone, context = parse_request(environ)
         interpreter = _interpreter or vertex_interpret
         try:
@@ -981,9 +1038,9 @@ def app(environ: dict[str, Any], start_response: Callable):
         return json_response(start_response, "503 Service Unavailable", {"error": "Interpretación no disponible"}, origin)
 
 
-def set_test_dependencies(interpreter: Callable[[str, str, str], dict[str, Any]] | None = None, verifier: Callable[[str], dict[str, Any]] | None = None, session_factory: Callable[[], GoogleSessions] | None = None, push_factory: Callable[[], PushNotifications] | None = None) -> None:
-    global _interpreter, _identity_verifier, _sessions_factory, _push_factory
-    _interpreter, _identity_verifier, _sessions_factory, _push_factory = interpreter, verifier, session_factory, push_factory
+def set_test_dependencies(interpreter: Callable[[str, str, str], dict[str, Any]] | None = None, verifier: Callable[[str], dict[str, Any]] | None = None, session_factory: Callable[[], GoogleSessions] | None = None, push_factory: Callable[[], PushNotifications] | None = None, chat_aside: Callable[[str], str] | None = None) -> None:
+    global _interpreter, _identity_verifier, _sessions_factory, _push_factory, _chat_aside
+    _interpreter, _identity_verifier, _sessions_factory, _push_factory, _chat_aside = interpreter, verifier, session_factory, push_factory, chat_aside
 
 
 def wsgi_request(payload: dict[str, Any], authorization: str = "") -> tuple[str, dict[str, Any]]:
