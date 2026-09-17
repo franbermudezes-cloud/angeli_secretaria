@@ -1,12 +1,12 @@
-import { typeLabel } from "./classifier.js?v=0.21.65";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.65";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.65";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.65";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.65";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.65";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.21.65";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.21.65";
-import { groupDietarioByDay } from "./dietario.js?v=0.21.65";
+import { typeLabel } from "./classifier.js?v=0.21.67";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.67";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.67";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.67";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.67";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.67";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.21.67";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.21.67";
+import { groupDietarioByDay } from "./dietario.js?v=0.21.67";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -184,7 +184,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.65";
+    image.src = "assets/angeli-welcome.gif?v=0.21.67";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -1072,7 +1072,36 @@ export function createUI({ getMedia }) {
     $("preview").innerHTML = files.map(file => '<img class="thumb" src="' + URL.createObjectURL(file) + '" alt="Imagen preparada">').join("");
   }
 
-  return { $, notify, setGoogleStatus, setPushStatus, setSyncStatus, showConnectionHealth, showNotificationSettings, render, openMediaLibrary, renderMediaLibrary, closeMediaLibrary, openNoteLibrary, renderNoteLibrary, closeNoteLibrary, openDietario, renderDietario, closeDietario, showDietarioDetail, showMediaViewer, closeMediaViewer, showMediaEntryDetail, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showMediaContextEditor, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome };
+  // Pantalla de escucha continua en primer plano; la lógica de qué decir y
+  // cuándo escuchar vive en app.js (reutiliza el mismo add() del compositor).
+  function openConversationMode() {
+    $("conversationModeTranscript").innerHTML = "";
+    setConversationStatus("Toca el micrófono para empezar");
+    $("conversationMode").classList.add("show");
+    $("conversationMode").setAttribute("aria-hidden", "false");
+  }
+
+  function closeConversationMode() {
+    $("conversationMode").classList.remove("show");
+    $("conversationMode").setAttribute("aria-hidden", "true");
+    $("conversationModeMic").classList.remove("listening");
+  }
+
+  function setConversationStatus(text) {
+    $("conversationModeStatus").textContent = text;
+  }
+
+  function addConversationTurn(role, text) {
+    const article = document.createElement("div");
+    article.className = "message " + (role === "me" ? "me" : "angeli");
+    article.innerHTML = role === "me"
+      ? '<div class="bubble">' + esc(text) + "</div>"
+      : '<div class="avatar">A</div><div class="bubble">' + esc(text) + "</div>";
+    $("conversationModeTranscript").appendChild(article);
+    $("conversationModeTranscript").scrollTop = $("conversationModeTranscript").scrollHeight;
+  }
+
+  return { $, notify, setGoogleStatus, setPushStatus, setSyncStatus, showConnectionHealth, showNotificationSettings, render, openMediaLibrary, renderMediaLibrary, closeMediaLibrary, openNoteLibrary, renderNoteLibrary, closeNoteLibrary, openDietario, renderDietario, closeDietario, showDietarioDetail, showMediaViewer, closeMediaViewer, showMediaEntryDetail, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showMediaContextEditor, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome, openConversationMode, closeConversationMode, setConversationStatus, addConversationTurn };
 }
 
 function esc(value) {

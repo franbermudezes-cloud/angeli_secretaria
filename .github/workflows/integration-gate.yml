@@ -79,6 +79,9 @@ jobs:
       - name: Verificar la relación de adjuntos con notas
         run: node tests/attachment-relation.test.mjs
 
+      - name: Verificar el modo conversación
+        run: node tests/conversation-mode.test.mjs
+
       - name: Ejecutar arnés real aislado
         run: python backend/test_harness.py
 
