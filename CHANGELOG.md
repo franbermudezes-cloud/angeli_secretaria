@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.21.68 · Corrección: el menú rápido del Dietario quedaba oculto detrás del propio Dietario
+
+- Al pulsar "⋮" en un elemento del Dietario para marcarlo como hecho o eliminarlo, el menú se abría correctamente pero quedaba tapado detrás del panel del Dietario — solo cerrando el Dietario (perdiendo el sitio en la lista) se podía volver a verlo y pulsarlo. Causa: ese menú abre la ficha de acción sin cerrar antes el Dietario, y el Dietario tenía una prioridad visual más alta que la ficha. Ahora la ficha aparece siempre por delante, con el Dietario visible (atenuado) detrás.
+
 ## V0.21.67 · Modo conversación (escucha continua con respuesta hablada)
 
 - Nuevo botón «💬 Modo conversación» (sustituye al saludo fijo «Hola, dime lo que necesites») que abre una pantalla de conversación a pantalla completa: se habla con naturalidad, sin tocar nada entre frases, y Angeli contesta en voz.

@@ -110,4 +110,16 @@ assert.doesNotMatch(openDietarioEntrySource, /showEntryAction\(entry,google\)/, 
 assert.match(openDietarioEntrySource, /ui\.showDietarioDetail\(entry\)/);
 assert.match(openDietarioEntrySource, /mediaLibraryItems\(\[entry\]\)/, "las entradas de tipo foto/archivo deben abrir su ficha real de adjunto, no la genérica");
 
+// Regresión real reportada por el usuario: openDietarioQuickActions abre el
+// menú de "eliminar/marcar como hecho" con ui.openModal() sin cerrar antes
+// #dietarioLibrary (a diferencia del resto de fichas, que sí lo cierran
+// primero). Como #dietarioLibrary comparte la clase .media-library
+// (z-index:8, por delante de .action-modal en z-index:6), el modal quedaba
+// tapado detrás del propio Dietario y era imposible pulsar "Eliminar" sin
+// cerrar antes el Dietario y perder el sitio en la lista.
+const dietarioLibraryZ = Number(css.match(/#dietarioLibrary\{[^}]*z-index:(\d+)/)?.[1] ?? css.match(/\.media-library\{[^}]*z-index:(\d+)/)?.[1] ?? -1);
+const actionModalZForDietario = Number(css.match(/\.action-modal\{[^}]*z-index:(\d+)/)?.[1] || -1);
+assert.ok(dietarioLibraryZ >= 0 && actionModalZForDietario >= 0, "deben existir ambas reglas de z-index");
+assert.ok(dietarioLibraryZ < actionModalZForDietario, `#dietarioLibrary (z-index ${dietarioLibraryZ}) debe quedar por detrás de .action-modal (z-index ${actionModalZForDietario}) para que el menú rápido sea visible y pulsable con el Dietario abierto`);
+
 console.log("dietario: ok");
