@@ -268,7 +268,7 @@ function openNoteLibraryDetail(entry){ui.closeNoteLibrary();const show=()=>ui.sh
 //    exigen un toque en pantalla incluso dictando por el compositor normal;
 //    en modo conversación pausamos el micrófono, lo anunciamos y reanudamos
 //    solos en cuanto ese modal se cierra.
-let conversationOn=false,conversationListening=false,conversationBusy=false,conversationRec=null,conversationTurnDispatched=false,conversationModalObserver=null;
+let conversationOn=false,conversationListening=false,conversationBusy=false,conversationRec=null,conversationTurnDispatched=false,conversationModalObserver=null,conversationManualStop=false;
 
 function conversationModalKind(){
  if(!$("actionModal").classList.contains("show"))return"closed";
@@ -359,6 +359,9 @@ async function conversationRunTurn(text){
 
 function stopConversationRecognizer(){
  conversationListening=false;
+ // .stop() también dispara onend: sin esta marca, onend no distingue una
+ // pausa manual de un final de frase natural y relanzaba la escucha sola.
+ conversationManualStop=true;
  if(conversationRec){try{conversationRec.stop()}catch(e){}}
  conversationRec=null;
  $("conversationModeMic").classList.remove("listening");
@@ -393,7 +396,9 @@ function startConversationRecognizer(){
  conversationRec.onend=()=>{
   conversationListening=false;
   $("conversationModeMic").classList.remove("listening");
-  if(!conversationTurnDispatched&&conversationOn&&!conversationBusy&&conversationModalKind()!=="manual")startConversationRecognizer();
+  const manualStop=conversationManualStop;
+  conversationManualStop=false;
+  if(!manualStop&&!conversationTurnDispatched&&conversationOn&&!conversationBusy&&conversationModalKind()!=="manual")startConversationRecognizer();
  };
  try{conversationRec.start()}catch(e){ui.setConversationStatus("No se pudo iniciar el micrófono")}
 }
@@ -418,7 +423,13 @@ function closeConversationModeReal(){
  stopConversationRecognizer();
  if("speechSynthesis"in window)window.speechSynthesis.cancel();
  if(conversationModalObserver){conversationModalObserver.disconnect();conversationModalObserver=null}
- if(conversationModalKind()!=="closed")ui.closeLayers();
+ // Cerrar la pantalla no debe dejar una pregunta a medias: si se limitara a
+ // ocultar el modal, la interacción seguiría "awaiting_input" en los datos y
+ // conversationActiveQuestionEntry() la recogería en la próxima sesión,
+ // colando una frase nueva y sin relación como respuesta a la pregunta vieja.
+ const active=conversationActiveQuestionEntry();
+ if(active)void cancelActive(active);
+ else if(conversationModalKind()!=="closed")ui.closeLayers();
  ui.closeConversationMode();
 }
 

@@ -54,4 +54,29 @@ assert.ok(conversationModeZ < actionModalZ, `.conversation-mode (z-index ${conve
 assert.match(app, /function conversationModalKind/);
 assert.match(app, /watchForModalClose/);
 
+// Regresión (hallada por revisión externa antes de fusionar): openModal()
+// limpiaba working-modal/conversation-modal/call-choice-modal pero no
+// completion-modal. Esa clase se quedaba pegada tras la primera confirmación
+// autocerrable, así que conversationModalKind() clasificaba CUALQUIER modal
+// posterior como una simple confirmación y lo hablaba/cerraba solo, sin
+// esperar la elección real que exigía (crear evento, elegir nota...).
+assert.match(ui, /classList\.remove\("working-modal", "conversation-modal", "call-choice-modal", "completion-modal"\)/);
+
+// Regresión: parar el micrófono a mano (stopConversationRecognizer) también
+// dispara el propio onend del reconocedor, que sin distinguir un stop manual
+// de un final de frase natural relanzaba la escucha, ignorando la pausa.
+assert.match(app, /conversationManualStop=true/);
+assert.match(app, /const manualStop=conversationManualStop/);
+assert.match(app, /if\(!manualStop&&!conversationTurnDispatched/);
+
+// Regresión: cerrar el modo conversación con una pregunta de aclaración
+// abierta solo ocultaba el modal, dejando la interacción "awaiting_input" en
+// los datos; al reabrir el modo, una frase nueva sin relación se colaba como
+// respuesta a esa pregunta vieja. Cerrar debe cancelar esa interacción, no
+// solo esconder el modal.
+const closeConversationSource = app.match(/function closeConversationModeReal\(\)\{[\s\S]*?\n\}/)?.[0] || "";
+assert.ok(closeConversationSource, "closeConversationModeReal debe existir");
+assert.match(closeConversationSource, /conversationActiveQuestionEntry\(\)/);
+assert.match(closeConversationSource, /cancelActive\(active\)/);
+
 console.log("conversation-mode: ok");

@@ -131,7 +131,7 @@ export function createUI({ getMedia }) {
 
   function openModal({ title, lead, body, actions = [] }) {
     clearTimeout(completionTimer);
-    $("actionModal").classList.remove("working-modal", "conversation-modal", "call-choice-modal");
+    $("actionModal").classList.remove("working-modal", "conversation-modal", "call-choice-modal", "completion-modal");
     $("modalTitle").textContent = title;
     $("modalLead").textContent = lead;
     const bodyElement = $("modalBody");
