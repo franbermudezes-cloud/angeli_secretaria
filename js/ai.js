@@ -1,9 +1,10 @@
-import{calendarQueryRange,cleanTemporalText,naturalQueryRange,temporalData}from"./temporal.js?v=0.21.71";
+import{calendarQueryRange,cleanTemporalText,naturalQueryRange,temporalData}from"./temporal.js?v=0.21.72";
 
 export const VALID_INTENTS=["note","note.query","task.create","task.complete","reminder.create","reminder.query","calendar.create","calendar.query","calendar.update","calendar.delete","contact.call","whatsapp.compose","file.store","photo.store"];
 const SENSITIVE_INTENTS=new Set(["calendar.update","calendar.delete","contact.call","whatsapp.compose"]);
 const MAX_TEXT_LENGTH=500,MIN_CONFIDENCE=0.75;
 const INTERPRETER_URL="https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app/interpret";
+const CHAT_ASIDE_URL="https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app/chat/aside";
 const EMPTY={title:null,date:null,time:null,rangeStart:null,rangeEnd:null,location:null,contactName:null,phone:null,notes:null,noteQuery:null,noteStatus:null,noteClassification:null,target:null,changes:null,linkedReminder:null,missingFields:[],question:null};
 
 // Una orden explícita prepara una búsqueda, nunca ejecuta el borrado.
@@ -135,6 +136,22 @@ export function semanticCalendarTarget(value = "") {
     .replace(/^\s*(?:la\s+|el\s+)?(?:hora|fecha|d[ií]a|ubicaci[oó]n|lugar|t[ií]tulo)\s+(?:de|del|para|con)\s+/i, "")
     .replace(/^\s*de\s+(?:hora|fecha|d[ií]a|ubicaci[oó]n|lugar|t[ií]tulo)\s+(?:de|del|para|con)\s+/i, "")
     .trim();
+}
+
+// Módulo aparte, deliberadamente desacoplado del intérprete de órdenes: solo
+// pide una frase corta de reacción para el modo conversación, nunca decide
+// ni ejecuta ninguna acción. Un fallo aquí (red, timeout, respuesta rara)
+// nunca debe romper nada; el llamador decide el respaldo.
+export async function chatAside(text,idToken){
+ if(!idToken)throw new Error("IA sin conexión");
+ const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),2000);
+ try{
+  const response=await fetch(CHAT_ASIDE_URL,{method:"POST",headers:{Authorization:`Bearer ${idToken}`,"Content-Type":"application/json"},body:JSON.stringify({text}),signal:controller.signal});
+  if(!response.ok)throw new Error(`Aside no disponible (${response.status})`);
+  const data=await response.json();
+  if(typeof data.reply!=="string"||!data.reply.trim())throw new Error("Respuesta de aside vacía");
+  return data.reply.trim();
+ }finally{clearTimeout(timeout)}
 }
 
 export async function remoteProvider(text,idToken,context=null){if(!idToken)throw new Error("IA sin conexión");const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),8000);try{const response=await fetch(INTERPRETER_URL,{method:"POST",headers:{Authorization:`Bearer ${idToken}`,"Content-Type":"application/json"},body:JSON.stringify({text,now:new Date().toISOString(),timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone||"Europe/Madrid",context}),signal:controller.signal});if(!response.ok)throw new Error(`IA no disponible (${response.status})`);return await response.json()}finally{clearTimeout(timeout)}}

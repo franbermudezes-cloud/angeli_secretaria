@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.21.72 · Módulo de charla aparte: coletillas generadas por IA, no solo una lista fija
+
+- Nuevo endpoint de backend `/chat/aside`, completamente separado del intérprete de órdenes (prompt, modelo de respuesta y caché propios, sin esquema JSON): genera una reacción corta y variada de verdad en vez de elegir siempre entre las mismas 10 frases fijas.
+- El modo conversación lo usa primero; si tarda más de un margen corto (0,9s) o falla por cualquier motivo, cae automáticamente a la lista fija ya existente — la garantía de "Angeli siempre contesta algo" nunca depende de que este módulo nuevo funcione.
+- Es la base para, más adelante y como decisión aparte, una charla más libre no atada a notas/recordatorios/agenda.
+- **Requiere volver a desplegar el backend en Cloud Run** para que `/chat/aside` exista en producción (igual que la caché de contexto de V0.21.70).
+
 ## V0.21.71 · Modo conversación: Angeli contesta siempre, no solo al final
 
 - Antes, al hablar en modo conversación, Angeli se quedaba callada (solo el modal en texto) hasta tener la respuesta completa de Gemini — se notaba como si "hablaras contra una máquina". Ahora, nada más capturar la frase, dice una coletilla corta y variada ("¡Vale, voy!", "Mmm, a ver…", "¡Marchando!"...) elegida al azar, con tono cercano de compañera, mientras Gemini procesa de fondo.

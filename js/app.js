@@ -1,24 +1,24 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.71";
-import{classify,actionData}from"./classifier.js?v=0.21.71";
-import{sendEntry}from"./sheets.js?v=0.21.71";
-import{createUI}from"./ui.js?v=0.21.71";
-import{createGoogleIntegration}from"./google.js?v=0.21.71";
-import{interpret,remoteProvider,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,protectCalendarInterpretation,protectReadQuery}from"./ai.js?v=0.21.71";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.71";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.71";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.71";
-import{createCloudSync}from"./firebase.js?v=0.21.71";
-import{createMediaService}from"./media.js?v=0.21.71";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.71";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.71";
-import{createAgendaActions}from"./agenda.js?v=0.21.71";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.71";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.71";
-import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.71";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.71";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.71";
-import{mediaLibraryItems}from"./media-library.js?v=0.21.71";
-import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.71";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.72";
+import{classify,actionData}from"./classifier.js?v=0.21.72";
+import{sendEntry}from"./sheets.js?v=0.21.72";
+import{createUI}from"./ui.js?v=0.21.72";
+import{createGoogleIntegration}from"./google.js?v=0.21.72";
+import{interpret,remoteProvider,chatAside,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,protectCalendarInterpretation,protectReadQuery}from"./ai.js?v=0.21.72";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.72";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.72";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.72";
+import{createCloudSync}from"./firebase.js?v=0.21.72";
+import{createMediaService}from"./media.js?v=0.21.72";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.72";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.72";
+import{createAgendaActions}from"./agenda.js?v=0.21.72";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.72";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.72";
+import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.72";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.72";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.72";
+import{mediaLibraryItems}from"./media-library.js?v=0.21.72";
+import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.72";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],pendingMediaContext=null,selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -303,6 +303,25 @@ function conversationActiveQuestionEntry(){return notes.find(entry=>entry.intera
 const CONVERSATION_FILLERS=["¡Vale, voy!","Ok, dame un segundo…","Mmm, a ver…","¡Marchando!","Vale, lo miro…","Eh, sí, un momento…","Perfecto, dame un segundo…","A ver, a ver…","¡Ahora mismo!","Vale, va…"];
 function pickConversationFiller(){return CONVERSATION_FILLERS[Math.floor(Math.random()*CONVERSATION_FILLERS.length)]}
 
+// Módulo aparte (backend/app.py: /chat/aside), desacoplado del intérprete de
+// órdenes: solo genera una reacción corta y variada de verdad (no una lista
+// fija) mientras add() procesa. Si tarda más de este margen o falla por lo
+// que sea, se cae a pickConversationFiller() — la garantía de "responde
+// siempre" no depende nunca de que esta llamada funcione.
+const CONVERSATION_ASIDE_TIMEOUT_MS=900;
+async function speakConversationalAside(text){
+ try{
+  const idToken=await cloud.getAuthToken();
+  const reply=await Promise.race([
+   chatAside(text,idToken),
+   new Promise((_,reject)=>setTimeout(()=>reject(new Error("aside_timeout")),CONVERSATION_ASIDE_TIMEOUT_MS))
+  ]);
+  await speakAloud(reply);
+ }catch(e){
+  await speakAloud(pickConversationFiller());
+ }
+}
+
 function watchForModalClose(onClose){
  if(conversationModalObserver)conversationModalObserver.disconnect();
  conversationModalObserver=new MutationObserver(()=>{
@@ -357,7 +376,7 @@ async function conversationRunTurn(text){
  ui.setConversationStatus("Angeli está pensando…");
  const active=conversationActiveQuestionEntry();
  $("text").value=text;finalText=text;
- void speakAloud(pickConversationFiller());
+ void speakConversationalAside(text);
  try{active?await add({interactionId:active.id}):await add()}catch(e){}
  // conversationBusy se libera ANTES de leer/hablar el resultado: cada rama
  // de conversationHandleOutcome termina reanudando la escucha, y
@@ -670,7 +689,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.71",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.72",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}

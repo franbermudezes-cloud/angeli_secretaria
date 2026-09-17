@@ -103,7 +103,20 @@ assert.ok(fillers.length >= 5, "debe haber variedad real de coletillas, no una o
 assert.ok(new Set(fillers).size === fillers.length, "las coletillas no deben repetirse entre sí");
 const conversationRunTurnSource = app.match(/async function conversationRunTurn\(text\)\{[\s\S]*?\n\}/)?.[0] || "";
 assert.ok(conversationRunTurnSource, "conversationRunTurn debe existir");
-assert.match(conversationRunTurnSource, /void speakAloud\(pickConversationFiller\(\)\);/, "la coletilla debe decirse siempre, sin condicionarla a que Gemini tarde");
-assert.doesNotMatch(conversationRunTurnSource, /setTimeout/, "no debe depender de un temporizador de retraso");
+assert.match(conversationRunTurnSource, /void speakConversationalAside\(text\);/, "la coletilla debe decirse siempre, sin condicionarla a que Gemini tarde");
+assert.doesNotMatch(conversationRunTurnSource, /setTimeout/, "no debe depender directamente de un temporizador de retraso");
+
+// Módulo aparte y deliberadamente desacoplado del intérprete de órdenes
+// (backend/app.py: /chat/aside): genera una reacción corta real en vez de
+// una lista fija, pero nunca puede ser la causa de que Angeli se quede
+// callada — si tarda más de un margen corto o falla, cae a la lista fija de
+// siempre. Verificado también en el backend (test_chat_aside.py) que esta
+// ruta nunca ejecuta el intérprete de órdenes.
+assert.match(app, /import\{interpret,remoteProvider,chatAside,/, "chatAside debe importarse de ai.js junto al resto de la IA");
+const asideSource = app.match(/async function speakConversationalAside\(text\)\{[\s\S]*?\n\}/)?.[0] || "";
+assert.ok(asideSource, "speakConversationalAside debe existir");
+assert.match(asideSource, /Promise\.race\(/, "debe competir contra un margen de tiempo corto, no esperar indefinidamente a la red");
+assert.match(asideSource, /catch\(e\)\{/, "cualquier fallo de red o timeout debe capturarse");
+assert.match(asideSource, /pickConversationFiller\(\)/, "el respaldo ante un fallo debe seguir siendo la lista fija ya probada");
 
 console.log("conversation-mode: ok");

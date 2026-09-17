@@ -1,5 +1,19 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-17 — Módulo de charla aparte: coletillas generadas por IA V0.21.72
+
+El propietario, tras probar las coletillas fijas de V0.21.71, preguntó si subir de modelo Gemini permitiría algo más conversacional de verdad — "que no sea ni tan siquiera específico para las funciones actuales... incluso otro módulo aparte". Explorado y puesto en práctica en el mismo hilo, con la condición explícita del propietario: "sin romper lo que ahora tenemos".
+
+Decisión de diseño clave: NO se ha tocado `gemini-2.5-flash-lite` ni `SYSTEM_INSTRUCTION` del intérprete de órdenes para nada — subir de modelo ahí habría sido más caro y más lento (justo lo contrario de lo que se acababa de arreglar en V0.21.70) y arriesgaba que una "personalidad libre" se colara en la extracción de intenciones, que es exactamente lo que costó tanto ajustar. En su lugar, nuevo endpoint `/chat/aside` en `backend/app.py`, con su propia función (`vertex_chat_aside`), su propio prompt de sistema (mucho más corto, sin JSON), su propio límite de salida (20 tokens) y sin caché (no la necesita, el prompt ya es pequeño) — cero superficie compartida con `vertex_interpret`.
+
+Garantía explícita, y la razón de que esto sea seguro de probar: `/chat/aside` nunca decide ni ejecuta ninguna acción de negocio (no crea notas, recordatorios ni eventos), así que un fallo, un timeout o una respuesta rara de este módulo no puede tocar datos reales del usuario — como mucho, Angeli dice una frase fija en vez de una generada. En el frontend, `speakConversationalAside()` (en `js/app.js`) compite la llamada a `chatAside()` (en `js/ai.js`) contra un margen de 900ms con `Promise.race`; si no ha respondido a tiempo o falla por cualquier motivo, cae a `pickConversationFiller()` (la lista fija de V0.21.71, que se queda intacta como red de seguridad).
+
+Cubierto con tests en las tres capas, todos con dependencias simuladas (sin llamar a Vertex AI real): `backend/test_chat_aside.py` (incluye una prueba explícita de que `/chat/aside` nunca ejecuta el intérprete de órdenes, ni con dependencias compartidas), `tests/chat-aside.test.mjs` (cliente JS: forma de la petición, y que un token ausente, una respuesta no-200 o una respuesta vacía se convierten en un rechazo, nunca en una excepción sin capturar) y la ampliación de `tests/conversation-mode.test.mjs`.
+
+**Pendiente de acción manual, igual que V0.21.70**: requiere `gcloud run deploy --source backend` para que `/chat/aside` exista en producción; fusionar en `main` no lo despliega solo.
+
+Explícitamente fuera de alcance de este cambio, y anotado como decisión futura separada: enrutar charla genuinamente libre (preguntas no atadas a notas/recordatorios/agenda) a través de este mismo módulo. Tocar esa decisión de enrutamiento sí afecta al camino de interpretación de órdenes y merece su propio diseño cuidadoso, no colarse dentro de un cambio de "coletillas".
+
 ## 2026-09-17 — Modo conversación: coletillas siempre, no solo si tarda V0.21.71
 
 El propietario notó que el modo conversación "iba lento": el modal de "Procesando…" aparecía en texto pero Angeli se quedaba muda hasta tener la respuesta completa de Gemini. Primera iteración: hablar una coletilla genérica solo si `add()` tardaba más de 700ms (para no parlotear en las respuestas rápidas que ya trae la caché de contexto de V0.21.70). El propietario pidió ir más allá en el mismo hilo: que conteste SIEMPRE, tarde poco o mucho, porque hablar solo a veces seguía sonando "a hablar contra una máquina" el resto de las veces — y que haya variedad real de frases (no siempre la misma) con un tono más cercano, "de compañera".
