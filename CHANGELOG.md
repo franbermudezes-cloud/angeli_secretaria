@@ -1,5 +1,13 @@
 # Changelog
 
+## V0.21.67 · Modo conversación (escucha continua con respuesta hablada)
+
+- Nuevo botón «💬 Modo conversación» (sustituye al saludo fijo «Hola, dime lo que necesites») que abre una pantalla de conversación a pantalla completa: se habla con naturalidad, sin tocar nada entre frases, y Angeli contesta en voz.
+- Reutiliza sin modificarlo el mismo `add()` del compositor normal: cada frase reconocida se manda por el mismo camino que ya usa el dictado de toda la vida, así que el intérprete, las confirmaciones de calendario/recordatorios y todo lo que costó ajustar para que Angeli entendiera bien una orden queda intacto.
+- Cuando Angeli necesita un dato que falta («¿a qué hora?»), lo pregunta en voz y sigue escuchando la respuesta, encadenando turnos automáticamente.
+- Cuando la acción exige elegir entre varias opciones o confirmar algo con matices (crear un evento, elegir entre varias notas, revisar una nota antes de guardarla…), el modo conversación lo anuncia, pausa el micrófono y espera a que se resuelva en pantalla — no se ha forzado ninguna decisión de este tipo por voz, para no tocar ese flujo ya validado.
+- Usa reconocimiento de voz de una sola tanda encadenada automáticamente (el mismo modo que ya funciona de forma fiable en el dictado normal en dispositivos reales), no reconocimiento continuo, que es poco fiable en iOS/Safari.
+
 ## V0.21.65 · Corrección: adjuntar una foto o archivo suelto se quedaba bloqueado
 
 - Adjuntar una foto o un archivo directamente desde el compositor (sin pasar por una nota) rompía en silencio: el modal para elegir motivo, categoría y relación nunca llegaba a abrirse, dejando a la persona sin ninguna forma de continuar salvo descartar el adjunto. Causa: `normalizeMediaContext` recibía `null` (el valor inicial antes de la primera clasificación) y un `= {}` en la firma de la función no cubre `null`, solo `undefined`. Encontrado probando la aplicación real de punta a punta.
