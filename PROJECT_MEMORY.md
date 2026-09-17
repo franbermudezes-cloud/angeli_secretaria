@@ -1,5 +1,11 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-17 — Botón "⋮" del Dietario, tamaño táctil real V0.21.69
+
+El PR original de este arreglo (V0.21.66, "⋮" de 26px→40px) quedó bloqueado 3 días sin fusionarse; investigando por qué, se encontró que la app `chatgpt-codex-connector` (revisor automático de PRs, instalada desde que el proyecto se llevaba con ChatGPT) había dejado un comentario señalando, con razón, que 40px seguía por debajo de los 44/48px que el propio commit citaba como mínimo — y la rama `main` exige resolver todas las conversaciones antes de fusionar. El propietario desconectó esa app (ya no se usa ChatGPT/Codex en este proyecto) y pidió retomar el PR #66.
+
+Como main ya había avanzado con dos fusiones propias (V0.21.67 modo conversación, V0.21.68 capas del Dietario) mientras el PR #66 seguía anclado a la base antigua, en vez de reconciliar historiales se aplicó el mismo arreglo funcional (más la corrección a 44px que pedía el comentario) directamente sobre el `main` actual, evitando arrastrar conflictos de versión innecesarios. El PR #66 original se cierra sin fusionar; este es su reemplazo limpio.
+
 ## 2026-09-17 — Corrección: menú rápido del Dietario oculto detrás del propio Dietario V0.21.68
 
 Reportado por el propietario probando el modo conversación en real: "he comprobado lo de eliminar del dietario y efectivamente sí que sale lo de eliminar, pero se queda debajo del dietario". Mismo tipo de fallo que ya se había corregido para el modo conversación en V0.21.67 (una capa a pantalla completa con más prioridad visual que `#actionModal`), pero aquí llevaba existiendo desde que se creó el menú rápido del Dietario, sin relación con el trabajo de esta sesión.

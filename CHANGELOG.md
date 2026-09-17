@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.21.69 · Botón "⋮" del Dietario, tamaño táctil real (44px)
+
+- El botón "⋮" de acciones rápidas del Dietario medía 26px, luego se subió a 40px — ambos por debajo del mínimo táctil recomendado (44px iOS / 48px Android) que la propia corrección citaba. Detectado en revisión externa antes de fusionar. Ahora mide 44×44px de verdad, y el test de regresión exige ese mínimo en vez de aceptar un valor menor.
+
 ## V0.21.68 · Corrección: el menú rápido del Dietario quedaba oculto detrás del propio Dietario
 
 - Al pulsar "⋮" en un elemento del Dietario para marcarlo como hecho o eliminarlo, el menú se abría correctamente pero quedaba tapado detrás del panel del Dietario — solo cerrando el Dietario (perdiendo el sitio en la lista) se podía volver a verlo y pulsarlo. Causa: ese menú abre la ficha de acción sin cerrar antes el Dietario, y el Dietario tenía una prioridad visual más alta que la ficha. Ahora la ficha aparece siempre por delante, con el Dietario visible (atenuado) detrás.
