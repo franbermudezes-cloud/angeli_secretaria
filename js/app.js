@@ -1,24 +1,24 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.70";
-import{classify,actionData}from"./classifier.js?v=0.21.70";
-import{sendEntry}from"./sheets.js?v=0.21.70";
-import{createUI}from"./ui.js?v=0.21.70";
-import{createGoogleIntegration}from"./google.js?v=0.21.70";
-import{interpret,remoteProvider,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,protectCalendarInterpretation,protectReadQuery}from"./ai.js?v=0.21.70";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.70";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.70";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.70";
-import{createCloudSync}from"./firebase.js?v=0.21.70";
-import{createMediaService}from"./media.js?v=0.21.70";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.70";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.70";
-import{createAgendaActions}from"./agenda.js?v=0.21.70";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.70";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.70";
-import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.70";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.70";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.70";
-import{mediaLibraryItems}from"./media-library.js?v=0.21.70";
-import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.70";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.71";
+import{classify,actionData}from"./classifier.js?v=0.21.71";
+import{sendEntry}from"./sheets.js?v=0.21.71";
+import{createUI}from"./ui.js?v=0.21.71";
+import{createGoogleIntegration}from"./google.js?v=0.21.71";
+import{interpret,remoteProvider,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,protectCalendarInterpretation,protectReadQuery}from"./ai.js?v=0.21.71";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.71";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.71";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.71";
+import{createCloudSync}from"./firebase.js?v=0.21.71";
+import{createMediaService}from"./media.js?v=0.21.71";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.71";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.71";
+import{createAgendaActions}from"./agenda.js?v=0.21.71";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.71";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.71";
+import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.71";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.71";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.71";
+import{mediaLibraryItems}from"./media-library.js?v=0.21.71";
+import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.71";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],pendingMediaContext=null,selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -293,6 +293,16 @@ function speakAloud(text){
 
 function conversationActiveQuestionEntry(){return notes.find(entry=>entry.interaction?.status==="awaiting_input")||null}
 
+// Muletillas genéricas (no atadas a notas/recordatorios/agenda concretos), en
+// tono cercano de compañera, no de máquina. Se dicen SIEMPRE al capturar la
+// frase, tarde poco o mucho Gemini en responder — hablar solo cuando tarda
+// seguía sonando a "hablar contra una máquina" el resto de las veces.
+// speakAloud() cancela cualquier habla en curso antes de decir el resultado
+// real, así que como mucho se corta la muletilla a medias si la respuesta
+// llega enseguida, nunca se solapan. Se elige una al azar, distinta cada vez.
+const CONVERSATION_FILLERS=["¡Vale, voy!","Ok, dame un segundo…","Mmm, a ver…","¡Marchando!","Vale, lo miro…","Eh, sí, un momento…","Perfecto, dame un segundo…","A ver, a ver…","¡Ahora mismo!","Vale, va…"];
+function pickConversationFiller(){return CONVERSATION_FILLERS[Math.floor(Math.random()*CONVERSATION_FILLERS.length)]}
+
 function watchForModalClose(onClose){
  if(conversationModalObserver)conversationModalObserver.disconnect();
  conversationModalObserver=new MutationObserver(()=>{
@@ -347,6 +357,7 @@ async function conversationRunTurn(text){
  ui.setConversationStatus("Angeli está pensando…");
  const active=conversationActiveQuestionEntry();
  $("text").value=text;finalText=text;
+ void speakAloud(pickConversationFiller());
  try{active?await add({interactionId:active.id}):await add()}catch(e){}
  // conversationBusy se libera ANTES de leer/hablar el resultado: cada rama
  // de conversationHandleOutcome termina reanudando la escucha, y
@@ -659,7 +670,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.70",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.71",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}
