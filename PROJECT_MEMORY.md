@@ -1,5 +1,17 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-17 — Caché de contexto en Vertex AI para el intérprete (backend)
+
+Pendiente ya anotado en varias sesiones anteriores (revisión de coste del modo conversación): `SYSTEM_INSTRUCTION` en `backend/app.py` pesa ~48.500 caracteres y se manda completo en cada llamada a Gemini, idéntico siempre. El propietario reportó notar lentitud real ("desde que yo le hago la petición... hay que revisarlo") justo al usar el modo conversación, que multiplica las llamadas por minuto — motivo directo para abordarlo ahora.
+
+Implementado con `client.caches` de Vertex AI (`google-genai`): `_cached_system_instruction()` crea la caché una vez por proceso (TTL 1h, con margen de refresco de 60s) y devuelve su nombre; `vertex_interpret` la usa vía `cached_content` en `GenerateContentConfig` en vez de reenviar `system_instruction`. Verificado con un cliente Gemini simulado (`backend/test_vertex_cache.py`, sin credenciales reales) que la segunda llamada reutiliza la misma caché sin recrearla.
+
+Decisión de diseño explícita: la caché nunca puede ser la causa de que falle una interpretación. Si `caches.create` falla (cualquier excepción), se desactiva la caché para ese intento y se manda el prompt inline, como antes de tener caché. Si el `generate_content` con caché falla (p. ej. caducó o se borró entre la comprobación y la llamada — condición de carrera real en Cloud Run con varias instancias), se invalida la caché en memoria y se reintenta una vez en línea, sin propagar el error. Las tres ramas están cubiertas por test.
+
+Cloud Run con múltiples instancias: cada instancia crea su propia caché en memoria de proceso (sin coordinación entre instancias) — sencillo y suficiente para el volumen de uso real de esta app; una caché por instancia sigue ahorrando tokens en todas las llamadas posteriores de esa misma instancia dentro de la TTL.
+
+**Pendiente de acción manual**: este cambio no se despliega solo. `angeli-ai-interpreter` en Cloud Run se despliega manualmente (`gcloud run deploy --source backend`), no hay workflow de CI/CD que lo automatice — a diferencia del frontend, que publica solo vía GitHub Pages al fusionar en `main`.
+
 ## 2026-09-17 — Botón "⋮" del Dietario, tamaño táctil real V0.21.69
 
 El PR original de este arreglo (V0.21.66, "⋮" de 26px→40px) quedó bloqueado 3 días sin fusionarse; investigando por qué, se encontró que la app `chatgpt-codex-connector` (revisor automático de PRs, instalada desde que el proyecto se llevaba con ChatGPT) había dejado un comentario señalando, con razón, que 40px seguía por debajo de los 44/48px que el propio commit citaba como mínimo — y la rama `main` exige resolver todas las conversaciones antes de fusionar. El propietario desconectó esa app (ya no se usa ChatGPT/Codex en este proyecto) y pidió retomar el PR #66.
