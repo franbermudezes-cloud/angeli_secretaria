@@ -1,5 +1,10 @@
 # Changelog
 
+## V0.21.73 · Modo conversación: la petición de tocar la pantalla ahora es específica de cada caso
+
+- Cuando hacía falta tocar la pantalla (crear un evento con aviso, completar una nota, elegir entre varias notas...), Angeli decía siempre la misma frase fija ("Necesito que elijas una opción en la pantalla para continuar"), sin relación con si era una nota, un recordatorio o cualquier otra cosa.
+- Ahora lee el título y la explicación reales de esa pantalla (que ya eran distintos para cada caso) y, cuando hay una acción principal clara, nombra el botón exacto a pulsar — por ejemplo "Completar nota. ¿Qué título quieres ponerle a esta nota? Toca «Revisar cambios» para continuar" en vez de la frase genérica de siempre.
+
 ## V0.21.72 · Módulo de charla aparte: coletillas generadas por IA, no solo una lista fija
 
 - Nuevo endpoint de backend `/chat/aside`, completamente separado del intérprete de órdenes (prompt, modelo de respuesta y caché propios, sin esquema JSON): genera una reacción corta y variada de verdad en vez de elegir siempre entre las mismas 10 frases fijas.

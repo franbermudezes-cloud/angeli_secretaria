@@ -119,4 +119,19 @@ assert.match(asideSource, /Promise\.race\(/, "debe competir contra un margen de 
 assert.match(asideSource, /catch\(e\)\{/, "cualquier fallo de red o timeout debe capturarse");
 assert.match(asideSource, /pickConversationFiller\(\)/, "el respaldo ante un fallo debe seguir siendo la lista fija ya probada");
 
+// Petición del usuario: cuando hace falta tocar la pantalla (crear un
+// evento, completar una nota, elegir entre varias...), Angeli decía siempre
+// la misma frase genérica ("elige una opción en la pantalla"), sin relación
+// con si era una nota, un recordatorio o lo que fuera. El propio modal ya
+// trae un título y una explicación concretos para cada caso — ahora deben
+// leerse tal cual, y nombrar el botón principal ("confirm"/"danger") cuando
+// exista, para saber exactamente qué tocar.
+const manualBranchSource = app.match(/if\(kind==="manual"\)\{[\s\S]*?\n \}/)?.[0] || "";
+assert.ok(manualBranchSource, "la rama \"manual\" de conversationHandleOutcome debe existir");
+assert.doesNotMatch(manualBranchSource, /Necesito que elijas una opción en la pantalla para continuar\./, "ya no debe decir siempre la misma frase genérica sin relación con el caso");
+assert.match(manualBranchSource, /\$\("modalTitle"\)\.textContent/, "debe leer el título real del modal, específico de cada caso");
+assert.match(manualBranchSource, /\$\("modalLead"\)\.textContent/, "debe leer la explicación real del modal, específica de cada caso");
+assert.match(manualBranchSource, /button\.confirm, button\.danger/, "debe identificar el botón de acción principal para nombrarlo");
+assert.match(manualBranchSource, /await speakAloud\(spoken\);/, "debe hablar el título\\/explicación real, no una frase fija");
+
 console.log("conversation-mode: ok");
