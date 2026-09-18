@@ -1,4 +1,4 @@
-import{calendarQueryRange,cleanTemporalText,naturalQueryRange,temporalData}from"./temporal.js?v=0.21.74";
+import{calendarQueryRange,cleanTemporalText,naturalQueryRange,temporalData}from"./temporal.js?v=0.21.75";
 
 export const VALID_INTENTS=["note","note.query","task.create","task.complete","reminder.create","reminder.query","calendar.create","calendar.query","calendar.update","calendar.delete","contact.call","whatsapp.compose","file.store","photo.store"];
 const SENSITIVE_INTENTS=new Set(["calendar.update","calendar.delete","contact.call","whatsapp.compose"]);
@@ -92,6 +92,36 @@ export function protectReadQuery(remote,noteQuery=null,reminderQuery=null){
 }
 
 export async function interpret(text,{provider=mockProvider,fallback,context=null}={}){try{const intent=validateIntent(await provider(text,context));if(intent.confidence<MIN_CONFIDENCE)throw new Error("Baja confianza");return{...intent,source:"ai",fallbackReason:null}}catch(error){const local=typeof fallback==="function"?fallback(text,context):fallback;return{...validateIntent(local),source:"fallback",fallbackReason:failureReason(error)}}}
+
+// Reportado en real: «quiero llamar a Ana» se guardó como nota en vez de
+// iniciar la llamada. «Llama/llamar a X» sin fecha ni hora es inequívoco: es
+// una llamada ahora, nunca una nota ni una tarea. Exige «a»/«al» justo
+// después del verbo para no confundirse con «el proyecto se llama X»
+// (llamarse, no llamar a alguien), que no lleva esa preposición ahí.
+const IMMEDIATE_CALL_PATTERN=/\b(?:llama|llamar|llámame|telefonea|telefonear|contacta|contactar)\s+(?:a|al)\s+([A-Za-zÀ-ÿ][\wÀ-ÿ'.-]*(?:\s+[A-Za-zÀ-ÿ][\wÀ-ÿ'.-]*){0,3})/i;
+export function localImmediateCall(text="",now=new Date()){
+  const value=String(text||"").trim();
+  // «Recuérdame llamar a X» pide un recordatorio, no una llamada ahora
+  // mismo, aunque no lleve fecha ni hora explícitas: classify() ya prioriza
+  // ese verbo sobre «llamar» y esta protección debe respetar el mismo orden.
+  if(/\b(?:recu[eé]rdame|recuerda|acu[eé]rdate)\b/i.test(value))return null;
+  const match=IMMEDIATE_CALL_PATTERN.exec(value);
+  if(!match)return null;
+  const temporal=temporalData(value,now);
+  if(temporal.scheduledDate||temporal.scheduledTime)return null;
+  const name=match[1].replace(/\b(?:mañana|hoy|luego|ahora|por favor|ya)\b.*$/i,"").trim();
+  if(!name)return null;
+  return{...EMPTY,intent:"contact.call",confidence:1,contactName:name,requiresConfirmation:true};
+}
+
+// Si la IA ya identificó una llamada (puede traer teléfono, apellidos...) se
+// conserva tal cual. Solo corrige el caso reportado: una orden de llamada
+// clara que la IA clasificó como nota o tarea.
+export function protectContactCallInterpretation(remote,local){
+  if(!local||remote?.intent==="contact.call")return remote;
+  if(remote?.intent!=="note"&&remote?.intent!=="task.create")return remote;
+  return{...remote,...local,source:remote?.source,fallbackReason:remote?.fallbackReason};
+}
 
 // La detección local protege la clase de una acción sensible, pero no debe
 // borrar la comprensión semántica de Gemini. Si la IA reconoció la misma

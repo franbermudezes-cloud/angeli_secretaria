@@ -11,7 +11,7 @@ import {
 } from "../js/conversation.js";
 import { calendarDetails, linkedScheduleFor, normalizeFutureCall, normalizeReminderSchedule, scheduleFor, scheduleTitle, updateCalendarDetails, updateCalendarDateTime } from "../js/schedule.js";
 import { completionTarget, completePending, completePendingWithCalendar, findPendingMatches, findReminderMatches } from "../js/pending.js";
-import { mockProvider, interpret, localCalendarUpdate, localLinkedCalendarIntent, localReminderQuery, localNoteQuery, protectCalendarInterpretation, protectReadQuery, validateIntent } from "../js/ai.js";
+import { mockProvider, interpret, localCalendarUpdate, localLinkedCalendarIntent, localImmediateCall, localReminderQuery, localNoteQuery, protectCalendarInterpretation, protectContactCallInterpretation, protectReadQuery, validateIntent } from "../js/ai.js";
 import { fixtureTitle, reminderFixture } from './reminder-event-fixture.mjs';
 import { applyCalendarUpdateToEntries, buildCalendarSearch, calendarEvent, scheduledReminderEvent, listAllCalendarPages, reconcileReminderEntries, linkedReminderSearch, calendarEventsForIntent, normalizeConnectionReport, connectionProblems, connectionStatusText, integrationFailureMessage } from '../js/google.js';
 import { fromCloudEntry, toCloudEntry } from '../js/cloud-entry.js';
@@ -1178,4 +1178,36 @@ test('nota: conserva contenido libre, detalle largo y metadatos al preparar y mo
   assert.equal(edited.aiIntent.notes,'Consultar el plazo');
   assert.equal(edited.text,'Consultar el plazo');
   assert.deepEqual(missingNoteDraftFields(edited),[]);
+});
+
+// Reportado en real por el usuario: "quiero llamar a Ana" se guardó como
+// nota en lugar de iniciar la llamada. "Llama/llamar a X" sin fecha ni hora
+// es inequívoco (una llamada ahora), así que se protege igual que ya se
+// protegen las órdenes de calendario, sin sustituir a la IA cuando ya
+// acierta ni cuando la orden lleva fecha/hora futuras (eso sigue siendo
+// reminder.create, decisión de la IA).
+test('una llamada inmediata clara nunca debe guardarse como nota o tarea', () => {
+  const now = new Date(2026, 8, 18, 9, 0);
+  assert.equal(localImmediateCall('Anota que el proyecto se llama Fénix', now), null, 'llamarse no es llamar a alguien');
+  assert.equal(localImmediateCall('Llama a Ana mañana a las cinco', now), null, 'con fecha/hora futuras decide la IA (reminder.create)');
+  assert.equal(localImmediateCall('Recuérdame llamar a Ana', now), null, '"recuérdame" pide un recordatorio, no una llamada ahora, aunque no lleve hora');
+  const local = localImmediateCall('Quiero llamar a Ana', now);
+  assert.equal(local.intent, 'contact.call');
+  assert.equal(local.contactName, 'Ana');
+
+  const mistakenAsNote = { intent: 'note', confidence: 0.92, title: 'Llamar a Ana', source: 'ai', fallbackReason: null };
+  const corrected = protectContactCallInterpretation(mistakenAsNote, local);
+  assert.equal(corrected.intent, 'contact.call');
+  assert.equal(corrected.contactName, 'Ana');
+  assert.equal(corrected.source, 'ai');
+
+  const mistakenAsTask = { intent: 'task.create', confidence: 0.8, title: 'Llamar a Ana' };
+  assert.equal(protectContactCallInterpretation(mistakenAsTask, local).intent, 'contact.call');
+
+  // Si la IA ya acertó (y quizá trae más datos, como el teléfono), no se toca.
+  const correct = { intent: 'contact.call', confidence: 0.95, contactName: 'Ana Pérez', phone: '600111222' };
+  assert.deepEqual(protectContactCallInterpretation(correct, local), correct);
+
+  // Sin coincidencia local, no hay protección que aplicar.
+  assert.equal(protectContactCallInterpretation(mistakenAsNote, null), mistakenAsNote);
 });
