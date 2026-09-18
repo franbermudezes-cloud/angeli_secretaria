@@ -1,4 +1,4 @@
-import{calendarQueryRange,cleanTemporalText,naturalQueryRange,temporalData}from"./temporal.js?v=0.21.76";
+import{calendarQueryRange,cleanTemporalText,naturalQueryRange,temporalData}from"./temporal.js?v=0.21.77";
 
 export const VALID_INTENTS=["note","note.query","task.create","task.complete","reminder.create","reminder.query","calendar.create","calendar.query","calendar.update","calendar.delete","contact.call","whatsapp.compose","file.store","photo.store"];
 const SENSITIVE_INTENTS=new Set(["calendar.update","calendar.delete","contact.call","whatsapp.compose"]);
@@ -104,7 +104,7 @@ export function localImmediateCall(text="",now=new Date()){
   // «Recuérdame llamar a X» pide un recordatorio, no una llamada ahora
   // mismo, aunque no lleve fecha ni hora explícitas: classify() ya prioriza
   // ese verbo sobre «llamar» y esta protección debe respetar el mismo orden.
-  if(/\b(?:recu[eé]rdame|recuerda|acu[eé]rdate)\b/i.test(value))return null;
+  if(/\brecu[eé]rdame(?:l[oa]s?)?\b|\b(?:recuerda|acu[eé]rdate)\b/i.test(value))return null;
   const match=IMMEDIATE_CALL_PATTERN.exec(value);
   if(!match)return null;
   const temporal=temporalData(value,now);

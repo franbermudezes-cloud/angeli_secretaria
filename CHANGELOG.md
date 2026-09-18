@@ -1,5 +1,10 @@
 # Changelog
 
+## V0.21.77 · Seguimientos manuales: "recuérdamelo en 2 días" ya calcula la fecha sola
+
+- Base para los seguimientos de contacto que pediste ("si Ana no me contesta en dos días, recuérdamelo"): decidimos que sea Angeli quien lo diga explícitamente cuando toque (tú marcas manualmente que alguien no ha contestado), y ahora la fecha se calcula sola. Antes, "en/dentro de N días" (en dígitos o en palabras: "en 2 días", "dentro de tres días"...) no tenía ningún soporte local — dependía por completo de que la IA hiciera bien la aritmética de fechas, sin red de seguridad.
+- Corrección relacionada encontrada de paso: "recuérdame**lo**" (con el pronombre pegado, muy natural — "recuérdamelo", "recuérdamela") no se reconocía como orden de recordatorio ni en el clasificador local ni en la protección de llamadas de la versión anterior; ahora sí.
+
 ## V0.21.76 · Limpieza del Dietario: las consultas de agenda ya no se acumulan en "Sin fecha"
 
 - Cada vez que preguntabas por tu agenda (incluidos los accesos "Hoy"/"Próxima semana"), quedaba una entrada permanente sin fecha en "Sin fecha" — nunca se marca como hecha ni se reutiliza, así que se acumulaba cada vez que repetías la misma pregunta.

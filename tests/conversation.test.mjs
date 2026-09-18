@@ -360,13 +360,14 @@ test('agenda: reúne todas las páginas de Calendar sin duplicar acciones parcia
 test('agenda: un ciclo anómalo de páginas se muestra como error, no como lista incompleta',async()=>{
   await assert.rejects(()=>listAllCalendarPages(async()=>({items:[{id:'one'}],nextPageToken:'loop'}),new URLSearchParams(),2),/demasiadas páginas/);
 });
-import { temporalData, calendarQueryRange, naturalQueryRange } from '../js/temporal.js';
+import { temporalData, calendarQueryRange, naturalQueryRange, cleanTemporalText } from '../js/temporal.js';
 import { preserveCancellation } from '../js/conversation.js';
 import { localCalendarCancellation } from '../js/ai.js';
 import { createUI } from '../js/ui.js';
 import { readFileSync } from 'node:fs';
 import { createAgendaActions } from '../js/agenda.js';
 import { normalizeUndatedCall, deferredCallIntent } from '../js/schedule.js';
+import { classify } from '../js/classifier.js';
 
 test('llamar a Miguel sin fecha no hereda la programación inventada por IA',()=>{
   for(const source of ['ai','fallback'])for(const text of ['Llamar a Miguel','Llama a Miguel Ibiza','Quiero llamar a Miguel ahora']){
@@ -676,6 +677,20 @@ test('fechas relativas cruzan mes/año y de la mañana no es un día', () => {
   assert.equal(temporalData('pasado mañana',new Date(2026,11,31,12)).scheduledDate,'2027-01-02');
   assert.equal(temporalData('hoy a las diez de la mañana',new Date(2026,7,26,8)).scheduledDate,'2026-08-26');
   assert.equal(temporalData('a las once de la mañana',new Date(2026,7,26,8)).scheduledDate,undefined);
+});
+
+// Petición del usuario (seguimientos manuales de contacto, "si Ana no me
+// contesta en dos días, recuérdamelo"): "en/dentro de N días" no tenía
+// ningún soporte local, solo los casos fijos hoy/mañana/pasado mañana — sin
+// esto, ese tipo de aviso dependía por completo de que la IA hiciera bien la
+// aritmética de fechas, sin ninguna red de seguridad.
+test('"en/dentro de N días" calcula la fecha en dígitos y en palabras, sin confundirse con un uso no temporal', () => {
+  const now = new Date(2026, 8, 18, 9, 0);
+  assert.equal(temporalData('si Ana no me contesta en dos días, recuérdamelo', now).scheduledDate, '2026-09-20');
+  assert.equal(temporalData('recuérdame en 2 días si Ana me ha contestado', now).scheduledDate, '2026-09-20');
+  assert.equal(temporalData('avísame dentro de tres días', now).scheduledDate, '2026-09-21');
+  assert.equal(temporalData('he estado dos días sin dormir', now).scheduledDate, undefined, '"dos días" sin "en"/"dentro de" delante no es una fecha');
+  assert.equal(cleanTemporalText('Seguimiento en dos días de Ana'), 'Seguimiento de Ana');
 });
 
 test('P05 conserva Miguel Ibiza aunque la IA omita contactName', () => {
@@ -1191,6 +1206,7 @@ test('una llamada inmediata clara nunca debe guardarse como nota o tarea', () =>
   assert.equal(localImmediateCall('Anota que el proyecto se llama Fénix', now), null, 'llamarse no es llamar a alguien');
   assert.equal(localImmediateCall('Llama a Ana mañana a las cinco', now), null, 'con fecha/hora futuras decide la IA (reminder.create)');
   assert.equal(localImmediateCall('Recuérdame llamar a Ana', now), null, '"recuérdame" pide un recordatorio, no una llamada ahora, aunque no lleve hora');
+  assert.equal(localImmediateCall('Recuérdamelo llamar a Ana', now), null, '"recuérdamelo" (con el pronombre pegado) es la misma orden de recordatorio, no debe pasar por el límite de palabra "recuérdame"');
   const local = localImmediateCall('Quiero llamar a Ana', now);
   assert.equal(local.intent, 'contact.call');
   assert.equal(local.contactName, 'Ana');
@@ -1210,4 +1226,16 @@ test('una llamada inmediata clara nunca debe guardarse como nota o tarea', () =>
 
   // Sin coincidencia local, no hay protección que aplicar.
   assert.equal(protectContactCallInterpretation(mistakenAsNote, null), mistakenAsNote);
+});
+
+// classify() es el mismo límite de palabra "\brecuérdame\b" que ya falló
+// arriba: "recuérdamelo" (con el pronombre "lo" pegado, muy natural en
+// español — "si Ana no me contesta en dos días, recuérdamelo") no
+// coincidía y esa orden se clasificaba como nota en vez de recordatorio.
+test('classify() reconoce "recuérdame" con un pronombre pegado (recuérdamelo/-la/-las)', () => {
+  assert.equal(classify('si Ana no me contesta en dos días, recuérdamelo'), 'reminder');
+  assert.equal(classify('recuérdame llamar a Ana'), 'reminder');
+  assert.equal(classify('recuérdamela mañana'), 'reminder');
+  assert.equal(classify('comprar leche'), 'task');
+  assert.equal(classify('llama a Ana'), 'contact');
 });

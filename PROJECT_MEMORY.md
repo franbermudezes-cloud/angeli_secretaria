@@ -1,5 +1,17 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-18 — Seguimientos manuales: "en N días" calcula la fecha sola V0.21.77
+
+Del bloque "bandeja de trabajo y seguimiento" del roadmap (nunca empezado): el propietario pidió "seguimientos automáticos — si no contesta en dos días, recuérdamelo". Angeli no envía mensajes ni sabe si alguien ha respondido (WhatsApp lo prepara pero lo envía el propio usuario; las llamadas las hace él), así que antes de programar nada se preguntó explícitamente qué debía significar "no contesta". Tres opciones planteadas: (1) recordatorio automático a los N días siempre que se contacte a alguien, (2) el usuario marca manualmente "sin respuesta" y ahí se crea el seguimiento, (3) detectar la respuesta real (inviable: no hay acceso a WhatsApp ni a llamadas entrantes). El propietario eligió la opción 2.
+
+Con esa decisión, la implementación se reduce a una sola pieza que faltaba: que decir "si Ana no me contesta en dos días, recuérdamelo" (o cualquier variante con "en/dentro de N días") programe el aviso de verdad. Investigado `js/temporal.js`: `explicitRelativeDate` solo reconocía los casos fijos hoy/mañana/pasado mañana (0/1/2 días); "en N días" con cualquier otro número, en dígitos o en palabras, no tenía ningún soporte local — el cálculo de la fecha dependía por completo de que Gemini hiciera bien la aritmética, sin ninguna red de seguridad si se equivocaba (el mismo patrón de riesgo que causó el fallo de "llama a Ana" en V0.21.75).
+
+Añadido `relativeDaysOffset()` en `js/temporal.js`: reconoce "en/dentro de N días" con dígitos (1-99) o números escritos hasta veinte, e integrado en `explicitRelativeDate` (usado por `extractDate`, compartido por eventos y recordatorios) y en `cleanTemporalText` (para que "en dos días" no quede colgando en el título). Verificado que no se confunde con un uso no temporal de "N días" sin la preposición "en"/"dentro de" delante (p. ej. "he estado dos días sin dormir" no debe interpretarse como fecha).
+
+Con esto, "Ana no me ha contestado, recuérdamelo en 2 días" ya funciona de punta a punta a través del pipeline de `reminder.create` existente (avisos push, Calendar...), sin necesitar ningún intent ni módulo nuevo — es la misma infraestructura de recordatorios de siempre, solo que ahora puede calcular esa fecha concreta de forma determinista.
+
+Corrección relacionada, encontrada al revisar el mismo área: "recuérdame**lo**" (con el pronombre pegado — "recuérdamelo", "recuérdamela" — construcción muy natural en español, "recuérdamelo" es literalmente el ejemplo del propio hilo con el propietario) no coincidía con `\brecuérdame\b` en `classify()` (`js/classifier.js`) ni con la exclusión de `localImmediateCall()` (`js/ai.js`, V0.21.75): el límite de palabra `\b` justo después de "recuérdame" no admite un pronombre pegado sin espacio. Ambos se corrigieron a `\brecu[eé]rdame(?:l[oa]s?)?\b`. Sin este arreglo, la propia frase de ejemplo del seguimiento ("recuérdamelo") se habría clasificado mal.
+
 ## 2026-09-18 — Limpieza del Dietario: las consultas de agenda ya no se acumulan V0.21.76
 
 Retomando un hallazgo ya anotado hacía varias sesiones ("duplicados de ¿Qué tengo la semana que viene? cluttering el Sin fecha del Dietario"), el propietario pidió limpiarlo antes de seguir con nuevas funciones.

@@ -1,10 +1,22 @@
 const MONTHS={enero:0,febrero:1,marzo:2,abril:3,mayo:4,junio:5,julio:6,agosto:7,septiembre:8,octubre:9,noviembre:10,diciembre:11};
 const WEEKDAYS={domingo:0,lunes:1,martes:2,miércoles:3,jueves:4,viernes:5,sábado:6};
 const HOURS={una:1,uno:1,dos:2,tres:3,cuatro:4,cinco:5,seis:6,siete:7,ocho:8,nueve:9,diez:10,once:11,doce:12};
+const DAY_COUNT_WORDS={un:1,una:1,uno:1,dos:2,tres:3,cuatro:4,cinco:5,seis:6,siete:7,ocho:8,nueve:9,diez:10,once:11,doce:12,trece:13,catorce:14,quince:15,dieciséis:16,dieciseis:16,diecisiete:17,dieciocho:18,diecinueve:19,veinte:20};
+
+// «En/dentro de N días» sin más contexto (p. ej. un seguimiento: «si Ana no
+// me contesta en dos días, recuérdamelo») no tenía ningún soporte local: solo
+// existían los casos fijos hoy/mañana/pasado mañana. Acepta dígitos y
+// números escritos hasta veinte, que es el rango realista para un aviso.
+function relativeDaysOffset(value){
+  const match=value.match(/\b(?:en|dentro\s+de)\s+(\d{1,2}|un|una|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce|trece|catorce|quince|dieciséis|dieciseis|diecisiete|dieciocho|diecinueve|veinte)\s+d[ií]as?\b/);
+  if(!match)return null;
+  const raw=match[1],n=/^\d+$/.test(raw)?Number(raw):DAY_COUNT_WORDS[raw];
+  return Number.isInteger(n)&&n>0&&n<=60?n:null;
+}
 
 export function explicitRelativeDate(text,now=new Date()){
   const value=String(text||"").toLowerCase().replace(/\b(?:de|por)\s+la\s+mañana\b/g,"");
-  const days=/\bpasado\s+mañana\b/.test(value)?2:/\bmañana\b/.test(value)?1:/\bhoy\b/.test(value)?0:null;
+  const days=/\bpasado\s+mañana\b/.test(value)?2:/\bmañana\b/.test(value)?1:/\bhoy\b/.test(value)?0:relativeDaysOffset(value);
   if(days===null)return null;
   const date=new Date(now);date.setDate(date.getDate()+days);return toDateKey(date);
 }
@@ -33,4 +45,4 @@ function startOfToday(now){return new Date(now.getFullYear(),now.getMonth(),now.
 function startOfWeek(now){const date=startOfToday(now),offset=(date.getDay()+6)%7;date.setDate(date.getDate()-offset);return date}
 function toDateKey(date){return`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`}
 
-export function cleanTemporalText(text){return(text||"").replace(/^\s*(?:apunta(?:\s+en\s+el\s+calendario)?|añade(?:\s+al\s+calendario)?|agrega(?:\s+al\s+calendario)?)\b\s*/i,"").replace(/\b(?:para\s+(?:el\s+)?)?(?:hoy|mañana|domingo|lunes|martes|miércoles|jueves|viernes|sábado|\d{1,2}\/\d{1,2}\/\d{4}|\d{1,2}\s+de\s+(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)(?:\s+de\s+\d{4})?)\b/gi,"").replace(/\ba\s+las\s+(?:(?:2[0-3]|[01]?\d)(?:(?::|\s+y\s+)[0-5]?\d(?:\s+minutos?)?)?|una|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce)(?:\s+(?:y\s+media|y\s+cuarto|menos\s+cuarto))?(?:\s+de\s+la\s+(?:mañana|tarde|noche))?\b/gi,"").replace(/\b(?:2[0-3]|[01]?\d):[0-5]\d\b/g,"").replace(/\s{2,}/g," ").replace(/\s+([,.:;-])/g,"$1").replace(/^[\s,.:;-]+|[\s,.:;-]+$/g,"").trim()||"Evento de Angeli Secretaria"}
+export function cleanTemporalText(text){return(text||"").replace(/^\s*(?:apunta(?:\s+en\s+el\s+calendario)?|añade(?:\s+al\s+calendario)?|agrega(?:\s+al\s+calendario)?)\b\s*/i,"").replace(/\b(?:en|dentro\s+de)\s+(?:\d{1,2}|un|una|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce|trece|catorce|quince|dieciséis|dieciseis|diecisiete|dieciocho|diecinueve|veinte)\s+d[ií]as?\b/gi,"").replace(/\b(?:para\s+(?:el\s+)?)?(?:hoy|mañana|domingo|lunes|martes|miércoles|jueves|viernes|sábado|\d{1,2}\/\d{1,2}\/\d{4}|\d{1,2}\s+de\s+(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)(?:\s+de\s+\d{4})?)\b/gi,"").replace(/\ba\s+las\s+(?:(?:2[0-3]|[01]?\d)(?:(?::|\s+y\s+)[0-5]?\d(?:\s+minutos?)?)?|una|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce)(?:\s+(?:y\s+media|y\s+cuarto|menos\s+cuarto))?(?:\s+de\s+la\s+(?:mañana|tarde|noche))?\b/gi,"").replace(/\b(?:2[0-3]|[01]?\d):[0-5]\d\b/g,"").replace(/\s{2,}/g," ").replace(/\s+([,.:;-])/g,"$1").replace(/^[\s,.:;-]+|[\s,.:;-]+$/g,"").trim()||"Evento de Angeli Secretaria"}
