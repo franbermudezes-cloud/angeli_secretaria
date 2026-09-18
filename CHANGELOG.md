@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.21.78 · Corrección: borrar una entrada no retiraba su evento o aviso de Calendar
+
+- Reportado por el usuario al preguntar si borrar del Dietario también borraba de Calendar: no lo hacía. Borrar una entrada (desde el Dietario o desde "Borrar" en la conversación) solo la quitaba de Angeli; si tenía un evento sincronizado o un aviso programado, se quedaban huérfanos en tu Calendar real.
+- Corregido: borrar una entrada ahora también cancela su evento y/o aviso en Calendar, igual que ya hacía "Anular" desde la agenda. Si Calendar no responde, la entrada se borra igualmente en Angeli y se avisa para revisarlo a mano.
+- Sin cambios en el backend; no requiere redespliegue.
+
 ## V0.21.77 · Seguimientos manuales: "recuérdamelo en 2 días" ya calcula la fecha sola
 
 - Base para los seguimientos de contacto que pediste ("si Ana no me contesta en dos días, recuérdamelo"): decidimos que sea Angeli quien lo diga explícitamente cuando toque (tú marcas manualmente que alguien no ha contestado), y ahora la fecha se calcula sola. Antes, "en/dentro de N días" (en dígitos o en palabras: "en 2 días", "dentro de tres días"...) no tenía ningún soporte local — dependía por completo de que la IA hiciera bien la aritmética de fechas, sin red de seguridad.

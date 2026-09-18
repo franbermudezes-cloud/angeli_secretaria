@@ -1,6 +1,6 @@
-import { cleanTemporalText } from "./temporal.js?v=0.21.77";
-import { calendarDetails } from "./schedule.js?v=0.21.77";
-import { semanticCalendarTarget } from "./ai.js?v=0.21.77";
+import { cleanTemporalText } from "./temporal.js?v=0.21.78";
+import { calendarDetails } from "./schedule.js?v=0.21.78";
+import { semanticCalendarTarget } from "./ai.js?v=0.21.78";
 
 const CLIENT_ID = "172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
@@ -397,6 +397,27 @@ export function createGoogleIntegration({ notify, refresh, setStatus, showConnec
     await removeAngeliNotification(note);
   }
 
+  // Borrar una entrada de Angeli (desde el Dietario o la conversación) no
+  // debe dejar un evento o aviso huérfano en el Calendar real: antes solo se
+  // retiraba de Firestore, así que un evento sincronizado o un aviso
+  // programado seguían vivos en Calendar después de "eliminar" la entrada en
+  // Angeli. No lanza si falla: la entrada ya se ha borrado en Angeli para
+  // cuando se llama a esto, y el llamador decide cómo avisar de un fallo
+  // parcial sin deshacer ese borrado.
+  async function deleteCalendarTracesFor(note) {
+    let ok = true;
+    if (note.calendarEventId && note.calendarStatus === "synced") {
+      try { await calendarRequest("DELETE", `/${encodeURIComponent(note.calendarEventId)}`); }
+      catch (error) { ok = false; }
+    }
+    const reminderEventId = note.schedule?.calendarEventId;
+    if (reminderEventId && note.schedule?.status === "scheduled") {
+      try { await calendarRequest("DELETE", `/${encodeURIComponent(reminderEventId)}`); await removeAngeliNotification(note); }
+      catch (error) { ok = false; }
+    }
+    return ok;
+  }
+
   async function updateScheduledReminder(note){
     const eventId=note.schedule?.calendarEventId;if(!eventId)return true;
     try{const payload=scheduledReminderEvent(note);delete payload.id;await calendarRequest("PATCH",`/${encodeURIComponent(eventId)}`,payload);await programAngeliNotification(note);notify("Recordatorio actualizado en Calendar");return true}catch(error){applyFailure("calendar",error,"No se pudo actualizar el recordatorio en Calendar");return false}
@@ -490,6 +511,7 @@ export function createGoogleIntegration({ notify, refresh, setStatus, showConnec
     createScheduledReminder,
     cancelScheduledReminder,
     completeScheduledReminder,
+    deleteCalendarTracesFor,
     updateScheduledReminder,
     reconcileScheduledReminders,
     searchCalendar,
