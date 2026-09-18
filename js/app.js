@@ -1,24 +1,24 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.78";
-import{classify,actionData}from"./classifier.js?v=0.21.78";
-import{sendEntry}from"./sheets.js?v=0.21.78";
-import{createUI}from"./ui.js?v=0.21.78";
-import{createGoogleIntegration}from"./google.js?v=0.21.78";
-import{interpret,remoteProvider,chatAside,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.21.78";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.78";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.78";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.78";
-import{createCloudSync}from"./firebase.js?v=0.21.78";
-import{createMediaService}from"./media.js?v=0.21.78";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.78";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.78";
-import{createAgendaActions}from"./agenda.js?v=0.21.78";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.78";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.78";
-import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.78";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.78";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.78";
-import{mediaLibraryItems}from"./media-library.js?v=0.21.78";
-import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.78";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.79";
+import{classify,actionData}from"./classifier.js?v=0.21.79";
+import{sendEntry}from"./sheets.js?v=0.21.79";
+import{createUI}from"./ui.js?v=0.21.79";
+import{createGoogleIntegration}from"./google.js?v=0.21.79";
+import{interpret,remoteProvider,chatAside,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.21.79";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.79";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.79";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.79";
+import{createCloudSync}from"./firebase.js?v=0.21.79";
+import{createMediaService}from"./media.js?v=0.21.79";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.79";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.79";
+import{createAgendaActions}from"./agenda.js?v=0.21.79";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.79";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.79";
+import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.79";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.79";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.79";
+import{mediaLibraryItems}from"./media-library.js?v=0.21.79";
+import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.79";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],pendingMediaContext=null,selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -29,7 +29,32 @@ let libraryState={kind:"all",category:"all",query:""};
 let noteLibraryState={status:"pending",category:"all",query:""};
 let dietarioState={range:"week",type:"all"};
 let shortcuts=normalizeShortcuts(readShortcuts()||DEFAULT_SHORTCUTS);
-function render(){ui.render({notes,selectedFilter,selectedType,google,noteSettings})}
+// Los avisos push llegan con "?reminder=<id>" (backend/push_notifications.py),
+// pero hasta ahora nadie leía ese parámetro: tocar la notificación abría la
+// app en la pantalla de siempre sin llevar a la entrada que la originó.
+let pendingReminderFocus=new URLSearchParams(location.search).get("reminder")||null;
+function render(){ui.render({notes,selectedFilter,selectedType,google,noteSettings});focusPendingReminder()}
+function focusPendingReminder(){
+ if(!pendingReminderFocus)return;
+ const target=notes.find(item=>item.id===pendingReminderFocus);
+ if(!target)return;
+ if(selectedFilter!=="all"||selectedType!=="all"||$("search").value){
+  selectedFilter="all";selectedType="all";$("search").value="";
+  document.querySelectorAll(".filter").forEach(item=>item.classList.toggle("active",item.dataset.filter==="all"));
+  $("typeFilter").value="all";
+  render();
+  return;
+ }
+ const id=pendingReminderFocus;pendingReminderFocus=null;
+ history.replaceState(null,"",location.pathname);
+ requestAnimationFrame(()=>{
+  const article=document.querySelector('[data-entry-id="'+CSS.escape(id)+'"]');
+  if(!article)return;
+  article.scrollIntoView({behavior:"smooth",block:"center"});
+  article.classList.add("entry-highlight");
+  setTimeout(()=>article.classList.remove("entry-highlight"),2600);
+ });
+}
 function autosize(){const text=$("text");text.style.height="auto";text.style.height=Math.min(text.scrollHeight,78)+"px"}
 function renderShortcuts(){$("shortcuts").innerHTML=shortcuts.map((shortcut,index)=>`<button class="shortcut" data-shortcut="${index}">${esc(shortcut.label)}</button>`).join("")+`<button class="shortcut add" id="shortcutAdd" aria-label="Crear acceso directo">＋</button>`}
 function saveShortcuts(){shortcuts=normalizeShortcuts(shortcuts);writeShortcuts(shortcuts);renderShortcuts()}
@@ -749,7 +774,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.78",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.79",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}

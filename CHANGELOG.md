@@ -1,5 +1,13 @@
 # Changelog
 
+## V0.21.79 · Corrección: tocar un aviso push ahora lleva a la entrada, no a la pantalla en blanco
+
+- Reportado por el usuario: al tocar la notificación de un recordatorio, la app se abría pero no llevaba a lo que había provocado el aviso. El backend (`backend/push_notifications.py`) ya mandaba la URL `./?reminder=<id>` en cada push, pero el frontend nunca leía ese parámetro.
+- Corregido: al abrir la app desde un aviso, Angeli ahora reajusta los filtros si hacía falta, busca esa entrada en la conversación, hace scroll hasta ella y la resalta un momento. La URL se limpia después para no repetir el resaltado si se recarga la página.
+- Comprobado también el otro punto que preguntó el usuario, si el aviso llega con la app completamente cerrada: el service worker (`sw.js`) ya mostraba la notificación en segundo plano vía `onBackgroundMessage`, y el envío ya usa `Urgency: high` para que Android la entregue aunque el móvil esté en reposo (V0.21.x anterior). Este mecanismo depende de que el navegador siga vivo en segundo plano (normal en Android con la PWA instalada); si el navegador se cierra del todo en el ordenador, ningún sitio web puede recibir push — es una limitación del propio sistema operativo/navegador, no de Angeli. Pendiente de que el usuario confirme con una prueba real en cada dispositivo.
+- Sin cambios en el backend; no requiere redespliegue.
+- Sin test automatizado nuevo: la lógica vive dentro de `render()` en `js/app.js`, acoplada al DOM y al estado de notas ya cargadas (mismo patrón que las funciones de red real de `google.js`, que tampoco tienen test automatizado en este proyecto). Verificado manualmente con la suite completa en verde (sin regresiones) y revisando el flujo a mano.
+
 ## V0.21.78 · Corrección: borrar una entrada no retiraba su evento o aviso de Calendar
 
 - Reportado por el usuario al preguntar si borrar del Dietario también borraba de Calendar: no lo hacía. Borrar una entrada (desde el Dietario o desde "Borrar" en la conversación) solo la quitaba de Angeli; si tenía un evento sincronizado o un aviso programado, se quedaban huérfanos en tu Calendar real.
