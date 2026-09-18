@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.21.75 · Corrección: "llama a X" podía guardarse como nota en vez de llamar
+
+- Reportado por el usuario en real: pidió llamar a Ana y la app la guardó como nota. Causa: la interpretación final depende de lo que devuelve la IA, y para frases en primera persona ("quiero llamar a X") a veces clasifica mal la intención.
+- Corregido con una protección local (igual que ya existía para cambiar o cancelar eventos de calendario): una orden de llamada clara sin fecha ni hora ("llama/llamar a X") ahora fuerza `contact.call` aunque la IA responda nota o tarea, sin tocar los casos en los que la IA ya acierta ni las llamadas con fecha/hora futuras (que siguen siendo recordatorio, como hasta ahora).
+- No afecta a "recuérdame llamar a X" (sigue siendo un recordatorio) ni a frases como "el proyecto se llama X" (llamarse, no llamar a alguien).
+
 ## V0.21.74 · Ajustes → Voz de Angeli: elegir voz, velocidad y tono
 
 - Nueva sección en Ajustes, "Voz de Angeli": selector con las voces que ya tiene instaladas el teléfono, y deslizadores de velocidad y tono, con botón "Probar voz".
