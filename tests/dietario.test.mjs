@@ -12,12 +12,19 @@ const notes = [
   { id: "note2", type: "note", status: "pending", date: "2026-09-01T08:00:00", text: "Comprar regalo cumpleaños Ana" },
   { id: "note3", type: "note", status: "done", date: "2026-09-01T08:00:00", text: "Nota ya resuelta" },
   { id: "remCancelled", type: "reminder", status: "pending", schedule: { dueAt: "2026-09-15T08:00:00", status: "cancelled", action: { kind: "reminder" }, title: "Aviso cancelado" } },
-  { id: "calFuture", type: "calendar", scheduledDate: "2026-09-30", scheduledTime: "09:00", calendarTitle: "Fuera de la semana", calendarStatus: "synced" }
+  { id: "calFuture", type: "calendar", scheduledDate: "2026-09-30", scheduledTime: "09:00", calendarTitle: "Fuera de la semana", calendarStatus: "synced" },
+  { id: "calQuery1", type: "calendar", status: "pending", date: "2026-09-14T08:00:00", text: "¿Qué tengo la semana que viene?", aiIntent: { intent: "calendar.query" }, proposal: { intent: "calendar.query" } }
 ];
 
 const entries = dietarioEntries(notes);
-assert.equal(entries.length, 6, "una nota hecha y un aviso cancelado no deben considerarse activos");
+assert.equal(entries.length, 6, "una nota hecha, un aviso cancelado y una consulta de calendario no deben considerarse activos");
 assert.ok(!entries.some(item => item.id === "remCancelled"));
+// Regresión real reportada por el usuario: preguntar por la agenda (incluidos
+// los accesos "Hoy"/"Próxima semana") deja una entrada permanente sin fecha
+// que se acumulaba en "Sin fecha" cada vez que se repetía la misma consulta,
+// porque nunca se marca como hecha ni lleva calendarStatus. No es un evento
+// real y no debe ocupar un hueco en el Dietario.
+assert.ok(!entries.some(item => item.id === "calQuery1"), "una consulta de calendario (aiIntent.intent==='calendar.query') no debe aparecer en el Dietario");
 assert.ok(!entries.some(item => item.id === "note3"), "una nota hecha no debe aparecer en el dietario");
 
 const cal1 = entries.find(item => item.id === "cal1");

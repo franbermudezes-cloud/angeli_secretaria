@@ -1,5 +1,17 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-18 — Limpieza del Dietario: las consultas de agenda ya no se acumulan V0.21.76
+
+Retomando un hallazgo ya anotado hacía varias sesiones ("duplicados de ¿Qué tengo la semana que viene? cluttering el Sin fecha del Dietario"), el propietario pidió limpiarlo antes de seguir con nuevas funciones.
+
+Causa raíz encontrada: en `add()` (`js/app.js`), `calendar.query` es el ÚNICO de los tres intents de consulta (junto a `note.query` y `reminder.query`) que NO se intercepta pronto para resolverse sin guardar nada — `note.query`/`reminder.query` devuelven pronto (líneas 160-161) y nunca tocan `notes`/Firestore. `calendar.query` en cambio recorre el camino normal de creación de entradas y se guarda como una entrada permanente de `type:"calendar"`, sin `scheduledDate` (es una pregunta, no un evento) y sin `calendarStatus` (ese campo solo lo pone `calendar.create`). Como `entryActive()` en `js/dietario.js` solo excluye por `calendarStatus==="error"` o por estado de aviso, estas entradas pasaban el filtro indefinidamente y se acumulaban en "Sin fecha" cada vez que se repetía la misma pregunta — y los accesos por defecto "Hoy"/"Próxima semana" (`js/shortcuts.js`) ejecutan exactamente esa consulta en cada toque.
+
+Se evaluó arreglarlo de raíz (que `calendar.query` no persista nada, igual que `note.query`/`reminder.query`, o al menos reutilizar/sustituir la entrada anterior en vez de crear una nueva) pero se descartó por ahora: el id de la entrada (`id=active?.id||crypto.randomUUID()`) se calcula ANTES de conocer la intención final (se usa ya para subir adjuntos), y las acciones "Ver evento"/"Anular evento" de un resultado de `calendar.query` dependen de que esa entrada exista en el array `notes` (`handleEntryAction` hace `notes.find(id)`) — retocar esa secuencia con prisa es exactamente el tipo de riesgo que el propietario ha pedido evitar en esta app.
+
+Corregido con el mínimo cambio seguro: `entryActive()` en `js/dietario.js` excluye explícitamente `type==="calendar" && aiIntent?.intent==="calendar.query"`. Es un cambio aislado a un módulo puro y ya bien testeado (`tests/dietario.test.mjs`), sin tocar `add()`, `google.js` ni la lógica de subida de adjuntos. Las entradas de consulta que ya existen en producción no se borran solas (siguen siendo accesibles y borrables desde la conversación normal), pero dejan de ocupar hueco en el Dietario, y las nuevas seguirán sin verse ahí tampoco.
+
+**Explícitamente pendiente, comunicado al propietario**: esto no evita que se sigan creando entradas nuevas en Firestore cada vez que se pregunta por la agenda — solo evita que ensucien el Dietario. Resolverlo de raíz (deduplicar o dejar de persistir del todo) queda como tarea aparte que requiere tocar con cuidado la secuencia id/adjuntos de `add()`.
+
 ## 2026-09-18 — Corrección: "llama a X" podía guardarse como nota en vez de llamar V0.21.75
 
 Reportado por el propietario en real: dijo "quiero llamar a Ana" y la app la guardó como nota; al repetir "llamar Ana" volvió a fallar. Pidió una revisión completa de todo lo relativo a llamar/agendar/notas/recordatorios, y preguntó explícitamente si el problema era el prompt que se manda a la IA o si convenía resolverlo de forma programada (determinista) en vez de depender solo del modelo.

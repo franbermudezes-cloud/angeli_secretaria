@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.21.76 · Limpieza del Dietario: las consultas de agenda ya no se acumulan en "Sin fecha"
+
+- Cada vez que preguntabas por tu agenda (incluidos los accesos "Hoy"/"Próxima semana"), quedaba una entrada permanente sin fecha en "Sin fecha" — nunca se marca como hecha ni se reutiliza, así que se acumulaba cada vez que repetías la misma pregunta.
+- Esas entradas ya no ocupan hueco en el Dietario. Las que ya existían en tus datos siguen ahí (puedes borrarlas desde la conversación normal si quieres), pero ya no aparecerán en el Dietario.
+- Pendiente, señalado pero no abordado aún porque toca una parte más sensible del código: evitar que cada consulta siga creando una entrada nueva. De momento solo se ha resuelto que no se vean en el Dietario.
+
 ## V0.21.75 · Corrección: "llama a X" podía guardarse como nota en vez de llamar
 
 - Reportado por el usuario en real: pidió llamar a Ana y la app la guardó como nota. Causa: la interpretación final depende de lo que devuelve la IA, y para frases en primera persona ("quiero llamar a X") a veces clasifica mal la intención.
