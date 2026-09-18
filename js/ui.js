@@ -1,12 +1,12 @@
-import { typeLabel } from "./classifier.js?v=0.21.75";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.75";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.75";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.75";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.75";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.75";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.21.75";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.21.75";
-import { groupDietarioByDay } from "./dietario.js?v=0.21.75";
+import { typeLabel } from "./classifier.js?v=0.21.76";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.76";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.76";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.76";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.76";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.76";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.21.76";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.21.76";
+import { groupDietarioByDay } from "./dietario.js?v=0.21.76";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -184,7 +184,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.75";
+    image.src = "assets/angeli-welcome.gif?v=0.21.76";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";

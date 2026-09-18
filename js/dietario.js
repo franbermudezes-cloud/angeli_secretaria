@@ -1,6 +1,6 @@
-import { calendarDetails, scheduleTitle } from "./schedule.js?v=0.21.75";
-import { noteTitle } from "./notes.js?v=0.21.75";
-import { typeLabel } from "./classifier.js?v=0.21.75";
+import { calendarDetails, scheduleTitle } from "./schedule.js?v=0.21.76";
+import { noteTitle } from "./notes.js?v=0.21.76";
+import { typeLabel } from "./classifier.js?v=0.21.76";
 
 /** Tipo visual (color/rail) usado en el Dietario para agrupar entradas afines. */
 const RAIL_BY_TYPE = { calendar: "calendar", reminder: "reminder", task: "reminder", contact: "reminder", note: "note", photo: "attach", file: "attach" };
@@ -26,7 +26,16 @@ function entryTitle(entry) {
 // Una entrada activa es la que aún merece un hueco en el Dietario: una nota o
 // tarea sin marcar como hecha, un aviso no cancelado ni completado, o un
 // evento de Calendar que no haya fallado al crearse.
+//
+// Consultar la agenda ("¿Qué tengo la semana que viene?", incluidos los
+// accesos "Hoy"/"Próxima semana") no es un evento: es una pregunta que deja
+// una entrada permanente sin fecha, sin calendarStatus (ese campo solo lo
+// lleva calendar.create) y que nunca se marca como hecha, así que sin este
+// filtro se acumulaba sin límite en "Sin fecha" cada vez que se repetía la
+// misma pregunta. No es lo mismo que note.query/reminder.query, que nunca
+// llegan a guardarse como entrada.
 function entryActive(entry) {
+  if (entry.type === "calendar" && entry.aiIntent?.intent === "calendar.query") return false;
   if (entry.schedule) return !["cancelled", "completed"].includes(entry.schedule.status);
   if (entry.type === "calendar") return entry.calendarStatus !== "error";
   return entry.status !== "done";
