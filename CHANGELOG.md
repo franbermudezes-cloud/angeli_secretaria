@@ -1,5 +1,17 @@
 # Changelog
 
+## V0.21.81 · Lista de la compra: 4 fallos reales corregidos tras la primera prueba
+
+Reportados todos por el usuario probando la V0.21.80 en real:
+
+- **No sincronizaba entre dispositivos** (añadido en el móvil, no aparecía en el ordenador). Causa real: el documento de la lista se guardaba en `users/{uid}/lists/shopping`, una ruta que `firestore.rules` no autoriza (solo permite `entries` y `settings`). Firestore rechazaba en el servidor tanto la escritura como la lectura sin avisar de forma visible; el dispositivo que la creó la veía igual porque la actualización local es optimista, pero nunca llegaba a guardarse de verdad ni a otros dispositivos. Corregido moviendo el documento a `users/{uid}/settings/shopping`, ruta ya autorizada — sin tocar `firestore.rules` ni necesitar otro despliegue.
+- **El modal de dictado se quedaba fijo en pantalla** al añadir un artículo por voz desde el botón normal de dictar (no el modo conversación). Causa: `openDraft()` ya había abierto el modal antes de procesar el texto; el atajo de la lista de la compra limpiaba el campo pero nunca cerraba ese modal, a diferencia del resto de instrucciones, que lo actualizan con la confirmación. Corregido cerrando también el modal en ese caso.
+- **Desde el modo conversación, un comando de la lista se coló como si fuera una nota** ("añade colacao a la lista de la compra" acabó pidiendo un título de nota). Causa: `conversationActiveQuestionEntry()` busca en *todas* las entradas cualquier interacción pendiente sin resolver ("awaiting_input"), sin relación con la instrucción actual — y el atajo de la lista de la compra exigía que no hubiera ninguna interacción activa para dispararse, así que una pregunta pendiente de otra nota (probablemente la de "patatas" del fallo anterior) absorbió la orden nueva como si fuera su respuesta. Corregido: un comando inequívoco de la lista de la compra ya no exige que no haya ninguna interacción pendiente — se reconoce siempre, no se cuela en otra conversación sin relación.
+- **El buscador de Mercadona no ofrecía nada para elegir** — solo dejaba añadir el texto tal cual, sin mostrar coincidencias reales, y la pantalla no tenía micrófono para dictar directamente ahí. Añadida búsqueda en vivo (con un pequeño retraso al escribir) que muestra hasta 6 coincidencias reales del catálogo de Mercadona con su precio para elegir con un toque, y un botón de micrófono en la propia pantalla de la lista.
+- Extra pedido de paso: ahora se puede indicar cantidad ("añade 2 leches y tres yogures a la lista de la compra"); si el artículo ya estaba pendiente, la cantidad se suma en vez de duplicar la fila.
+- Sin cambios en el backend ni en `firestore.rules`; no requiere redespliegue.
+- Tests: `tests/shopping.test.mjs` ampliado a 19 pruebas (cantidades, "una leche" como artículo y no como número). Los fallos de sincronización, modal e interacción cruzada se verificaron a mano en el navegador (no automatizables sin una sesión real firmada), comprobando en cada caso el estado exacto del DOM antes/después.
+
 ## V0.21.80 · Nueva función: Lista de la compra, con búsqueda real en el catálogo de Mercadona
 
 - Pedido por el usuario: poder decir "añade leche a la lista de la compra" y, cuando se dice "de mercadona", que se busque el artículo de verdad en Mercadona. Es una función nueva y separada de las notas — necesita marcar artículos uno a uno, así que tiene su propia pantalla (botón 🛒 en la cabecera), no es otra entrada de la conversación.

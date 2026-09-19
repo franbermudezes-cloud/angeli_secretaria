@@ -27,8 +27,8 @@ import {
   waitForPendingWrites
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 import { deleteToken, getMessaging, getToken, isSupported, onMessage } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging.js";
-import { fromCloudEntry, sameEntry, toCloudEntry } from "./cloud-entry.js?v=0.21.80";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.80";
+import { fromCloudEntry, sameEntry, toCloudEntry } from "./cloud-entry.js?v=0.21.81";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.81";
 
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
 const VAPID_KEY = "BHyc8Ne9wyaAFoju-9FNG5_qCXPOLSQhHhsfye9bdFlAv3zdLfAvjcvb29Cyrtj80kSq7gJ3qGJ9k3Mb_EqYt_o";
@@ -290,7 +290,13 @@ export function createCloudSync({ notify }) {
 
   function shoppingListDocument() {
     if (!user || !db) throw new Error("Sesión de Angeli no disponible");
-    return doc(db, "users", user.uid, "lists", "shopping");
+    // Reaprovecha la colección "settings", ya autorizada en firestore.rules
+    // (solo "entries" y "settings" están permitidas bajo users/{uid}). Un
+    // documento nuevo bajo "lists" quedaba fuera de esas reglas: se escribía
+    // y se leía en local sin avisar de forma clara, pero Firestore lo
+    // rechazaba en el servidor — por eso no llegaba a sincronizar entre
+    // dispositivos aunque pareciera guardado en el que lo creó.
+    return doc(db, "users", user.uid, "settings", "shopping");
   }
 
   return { initialize, session, isSignedIn, getAuthToken, connect, disconnect, syncNotes, saveNoteSettings, saveNotificationSettings, saveShoppingList, pushStatus, enablePush, disablePush, schedulePush, cancelPush, testPush };

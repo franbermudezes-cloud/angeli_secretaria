@@ -1,25 +1,25 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.80";
-import{classify,actionData}from"./classifier.js?v=0.21.80";
-import{sendEntry}from"./sheets.js?v=0.21.80";
-import{createUI}from"./ui.js?v=0.21.80";
-import{createGoogleIntegration}from"./google.js?v=0.21.80";
-import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.21.80";
-import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,describeShoppingItems}from"./shopping.js?v=0.21.80";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.80";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.80";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.80";
-import{createCloudSync}from"./firebase.js?v=0.21.80";
-import{createMediaService}from"./media.js?v=0.21.80";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.80";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.80";
-import{createAgendaActions}from"./agenda.js?v=0.21.80";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.80";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.80";
-import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.80";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.80";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.80";
-import{mediaLibraryItems}from"./media-library.js?v=0.21.80";
-import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.80";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.81";
+import{classify,actionData}from"./classifier.js?v=0.21.81";
+import{sendEntry}from"./sheets.js?v=0.21.81";
+import{createUI}from"./ui.js?v=0.21.81";
+import{createGoogleIntegration}from"./google.js?v=0.21.81";
+import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.21.81";
+import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,describeShoppingItems}from"./shopping.js?v=0.21.81";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.81";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.81";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.81";
+import{createCloudSync}from"./firebase.js?v=0.21.81";
+import{createMediaService}from"./media.js?v=0.21.81";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.81";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.81";
+import{createAgendaActions}from"./agenda.js?v=0.21.81";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.81";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.81";
+import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.81";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.81";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.81";
+import{mediaLibraryItems}from"./media-library.js?v=0.21.81";
+import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.81";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],pendingMediaContext=null,selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -157,9 +157,20 @@ async function add({interactionId=null,shortcut=null}={}){
  // es una entrada más de la conversación, es una lista propia que se puede
  // ir marcando. Se resuelve aquí, antes de tocar nada del intérprete/notas,
  // para no arriesgar el resto del pipeline ("no romper lo que ya tenemos").
- if(!active&&!shortcutContext&&!pendingImages.length&&!pendingFiles.length){
+ // No se exige "!active": si hay una pregunta pendiente sin resolver de
+ // otra instrucción (nota/recordatorio a medias), un comando inequívoco de
+ // la lista de la compra debe reconocerse igual, no absorberse en silencio
+ // como si fuera la respuesta a esa otra pregunta. Reportado en real: desde
+ // el modo conversación, "añade colacao a la lista de la compra" se coló
+ // como respuesta a una nota pendiente sin relación, y acabó pidiendo un
+ // título de nota en vez de añadir el artículo.
+ if(!shortcutContext&&!pendingImages.length&&!pendingFiles.length){
   const shoppingCommand=parseShoppingCommand(text);
-  if(shoppingCommand){clearComposer();await runShoppingCommand(shoppingCommand);return}
+  // Reportado: al dictar desde el botón normal, openDraft() ya había abierto
+  // el modal antes de llegar aquí; si no se cierra, se queda fijo en pantalla
+  // aunque la orden se procese bien (el aviso de "añadido" es un toast, no
+  // sustituye el contenido del modal como sí hace showEntryAction para una nota).
+  if(shoppingCommand){clearComposer();ui.closeLayers();await runShoppingCommand(shoppingCommand);return}
  }
  if(!text&&!pendingImages.length&&!pendingFiles.length){ui.notify("No hay nada que enviar");return}
  if((pendingImages.length||pendingFiles.length)&&!mediaContextComplete(pendingMediaContext)){askMediaContext();return}
@@ -259,7 +270,7 @@ async function resolveReminderQuery(interpretation){
 }
 async function cancelActive(entry){await saveConfirmed(notes.map(item=>item.id===entry.id?cancelInteraction(item):item));ui.closeLayers();ui.notify("Operación cancelada")}
 function localInterpretation(text,type,active=null){const query=localReminderQuery(text);if(query&&!active)return query;const reminder=type==="reminder"&&!active,data={...actionData(text,type),...temporalData(text,new Date(),{inferDateFromTime:reminder})},isCompletion=/\b(?:ya\s+)?he\s+(?:llamado|terminado|completado|hecho)\b/i.test(text),isCalendarQuery=/\b(?:qué|que)\s+(?:tengo|hay)|\b(?:muéstrame|muestrame|consulta)\s+(?:mi\s+)?(?:agenda|calendario)\b/i.test(text),futureCall=type==="contact"&&Boolean(data.scheduledDate||data.scheduledTime),intent=isCompletion?"task.complete":isCalendarQuery?"calendar.query":futureCall?"reminder.create":{note:"note",task:"task.create",reminder:"reminder.create",calendar:"calendar.create",contact:"contact.call",file:"file.store",photo:"photo.store"}[type]||"note";return{intent,confidence:.5,title:text||null,date:data.scheduledDate||null,time:data.scheduledTime||null,...(isCalendarQuery?(calendarQueryRange(text)||{}):{}),location:null,contactName:data.contactQuery||null,phone:data.phone||null,notes:null,target:isCompletion?{title:completionTarget(text)||text,date:null,time:null}:null,changes:null,missingFields:[],question:null,requiresConfirmation:Boolean(data.scheduledDate&&data.scheduledTime)}}
-function setMicState(active){$("mic").classList.toggle("listening",active);$("micMini").classList.toggle("listening",active);document.querySelectorAll(".conversation-mic,.modal-actions .voice").forEach(button=>{button.classList.toggle("listening",active);button.textContent=active?"🎙️ Escuchando…":"🎙️ Hablar"});$("micLabel").textContent=active?"Escuchando… toca otra vez para parar":"Toca para hablar"}
+function setMicState(active){$("mic").classList.toggle("listening",active);$("micMini").classList.toggle("listening",active);$("shoppingMic")?.classList.toggle("listening",active);document.querySelectorAll(".conversation-mic,.modal-actions .voice").forEach(button=>{button.classList.toggle("listening",active);button.textContent=active?"🎙️ Escuchando…":"🎙️ Hablar"});$("micLabel").textContent=active?"Escuchando… toca otra vez para parar":"Toca para hablar"}
 function stop(){listening=false;if(rec){try{rec.stop()}catch(e){}}rec=null;setMicState(false);$("hint").textContent="Dictado terminado. Puedes continuar o pulsar Enviar cuando acabes.";autosize()}
 function start({inConversation=false,draftId=null}={}){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){ui.notify("Este navegador no admite dictado");return}if(listening){stop();return}if(!inConversation)openDraft();const target=draftId?$(draftId):$("text");finalText=target?.value.trim()||"";rec=new SR();rec.lang="es-ES";rec.continuous=false;rec.interimResults=true;rec.maxAlternatives=1;let sessionFinal=finalText||"",lastInterim="";const paint=value=>{if(target)target.value=value;if(!draftId){$("text").value=value;autosize()}ui.updateDraft(value)};rec.onstart=()=>{listening=true;setMicState(true);$("hint").textContent="Escuchando. Pulsa Enviar cuando la instrucción esté completa."};rec.onresult=e=>{let finalPart="",interimPart="";for(let i=e.resultIndex;i<e.results.length;i++){const result=e.results[i],phrase=(result[0]?.transcript||"").trim();if(!phrase)continue;if(result.isFinal)finalPart+=(finalPart?" ":"")+phrase;else interimPart+=(interimPart?" ":"")+phrase}if(finalPart){sessionFinal+=(sessionFinal?" ":"")+finalPart;lastInterim=""}else lastInterim=interimPart;finalText=sessionFinal;paint((sessionFinal+(lastInterim?" "+lastInterim:"")).trim())};rec.onerror=e=>{listening=false;setMicState(false);$("hint").textContent="Dictado detenido.";ui.notify(e.error==="not-allowed"?"Permiso de micrófono denegado":"Error de dictado: "+e.error)};rec.onend=()=>{finalText=sessionFinal;paint(finalText);listening=false;setMicState(false);$("hint").textContent="Dictado terminado. Puedes continuar o pulsar Enviar cuando acabes.";if(shortcutCapture&&finalText){shortcutCapture=false;createShortcut(finalText);$("text").value="";finalText=""}if(!draftId)autosize()};try{rec.start()}catch(e){listening=false;setMicState(false);ui.notify("No se pudo iniciar el dictado")}}
 function readImages(files,msg){prepareMedia(files,"image",msg)}
@@ -605,7 +616,47 @@ function addShoppingItemManually(){
  const items=parseItemList(value);
  if(!items.length){ui.notify("No he entendido ese artículo");return}
  input.value="";
+ hideShoppingSuggestions();
  void runShoppingCommand({action:"add",items});
+}
+// Reportado: al escribir "leche" en el buscador no aparecía ninguna opción
+// de Mercadona para elegir, solo se podía añadir el texto tal cual. Ahora
+// busca en vivo (con un pequeño retraso para no lanzar una petición por
+// cada tecla) y, si hay resultados, dejan elegir el producto exacto.
+let shoppingSearchTimer=null,shoppingSearchSeq=0,shoppingSearchResults=[];
+function hideShoppingSuggestions(){shoppingSearchResults=[];$("shoppingSuggestions").hidden=true;$("shoppingSuggestions").innerHTML=""}
+function renderShoppingSuggestions(results){
+ shoppingSearchResults=results;
+ if(!results.length){hideShoppingSuggestions();return}
+ $("shoppingSuggestions").hidden=false;
+ $("shoppingSuggestions").innerHTML=results.map((product,index)=>'<button type="button" class="shopping-suggestion" data-suggestion="'+index+'"><span>'+esc(product.name)+(product.packaging?" · "+esc(product.packaging):"")+'</span>'+(product.price!=null?'<span class="shopping-suggestion-price">'+Number(product.price).toFixed(2)+" €</span>":"")+"</button>").join("");
+}
+async function runShoppingSearch(query){
+ const seq=++shoppingSearchSeq;
+ if(!cloud.isSignedIn())return;
+ let idToken;
+ try{idToken=await cloud.getAuthToken()}catch(_){return}
+ let results=[];
+ try{results=await searchMercadonaProduct(query,idToken)}catch(_){results=[]}
+ if(seq!==shoppingSearchSeq)return; // ya se pidió otra búsqueda mientras esta estaba en curso
+ renderShoppingSuggestions(results);
+}
+function scheduleShoppingSearch(){
+ clearTimeout(shoppingSearchTimer);
+ const value=$("shoppingInput").value.trim(),query=(parseItemList(value)[0]?.name||value).trim();
+ if(query.length<2){hideShoppingSuggestions();return}
+ shoppingSearchTimer=setTimeout(()=>void runShoppingSearch(query),350);
+}
+function selectShoppingSuggestion(index){
+ const product=shoppingSearchResults[index];
+ if(!product)return;
+ $("shoppingInput").value="";
+ hideShoppingSuggestions();
+ let next=addShoppingItems(shoppingList,[{name:product.name,store:"mercadona"}]);
+ const target=next.find(item=>!item.checked&&!item.product&&item.store==="mercadona"&&item.name.toLowerCase()===product.name.toLowerCase());
+ if(target)next=setShoppingItemProduct(next,target.id,product);
+ void persistShoppingList(next);
+ ui.notify("Añadido a la lista de la compra: "+product.name+" (mercadona)");
 }
 
 function openDietario(){ui.openDietario(notes,dietarioState)}
@@ -690,10 +741,13 @@ $("remindersOpen").onclick=()=>void resolveReminderQuery(localReminderQuery("Rec
 $("agendaOpen").onclick=()=>prepareShortcut({label:"Calendario",command:"Muéstrame mi agenda",action:"calendar.query",direct:true});
 $("dietarioOpen").onclick=openDietario;
 $("shoppingOpen").onclick=openShoppingList;
-$("shoppingClose").onclick=ui.closeShoppingList;
+$("shoppingClose").onclick=()=>{ui.closeShoppingList();hideShoppingSuggestions()};
 $("shoppingList").onclick=shoppingItemClick;
 $("shoppingAdd").onclick=addShoppingItemManually;
+$("shoppingMic").onclick=()=>start({inConversation:true,draftId:"shoppingInput"});
 $("shoppingInput").onkeydown=event=>{if(event.key==="Enter"){event.preventDefault();addShoppingItemManually()}};
+$("shoppingInput").oninput=scheduleShoppingSearch;
+$("shoppingSuggestions").onclick=event=>{const button=event.target.closest("[data-suggestion]");if(button)selectShoppingSuggestion(Number(button.dataset.suggestion))};
 $("shoppingClearChecked").onclick=()=>void persistShoppingList(clearShoppingList(shoppingList,{onlyChecked:true}));
 $("shoppingClearAll").onclick=()=>{if(shoppingList.length&&!confirm("¿Vaciar toda la lista de la compra?"))return;void persistShoppingList(clearShoppingList(shoppingList))};
 $("conversationModeOpen").onclick=openConversationModeReal;
@@ -845,7 +899,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.80",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.81",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}
