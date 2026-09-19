@@ -16,6 +16,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime
 from io import BytesIO
 from typing import Any, Callable
+from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlencode
 from zoneinfo import ZoneInfo
 
@@ -29,6 +30,7 @@ from google_sessions import (
     GoogleSessions,
 )
 from push_notifications import PushNotifications, verify_delivery_identity
+import mercadona_catalog
 
 MAX_TEXT_LENGTH = 500
 MAX_BODY_BYTES = 2_048
@@ -295,6 +297,8 @@ _chat_aside: Callable[[str], str] | None = None
 _identity_verifier: Callable[[str], dict[str, Any]] | None = None
 _sessions_factory: Callable[[], GoogleSessions] | None = None
 _push_factory: Callable[[], PushNotifications] | None = None
+_mercadona_search: Callable[[str], list] | None = None
+MERCADONA_SEARCH_LIMIT = 6
 
 
 class OutputValidationError(ValueError):
@@ -899,7 +903,7 @@ def app(environ: dict[str, Any], start_response: Callable):
     if environ.get("REQUEST_METHOD") == "OPTIONS":
         return cors_preflight_response(start_response, origin)
     path = environ.get("PATH_INFO")
-    routes = {"/interpret", "/chat/aside", "/session/status", "/oauth/exchange", "/google", "/media/upload", "/media/download", "/media/delete", "/push/register", "/push/unregister", "/push/schedule", "/push/cancel", "/push/test", "/push/deliver", "/test/session/status", "/test/oauth/exchange"}
+    routes = {"/interpret", "/chat/aside", "/shopping/mercadona/search", "/session/status", "/oauth/exchange", "/google", "/media/upload", "/media/download", "/media/delete", "/push/register", "/push/unregister", "/push/schedule", "/push/cancel", "/push/test", "/push/deliver", "/test/session/status", "/test/oauth/exchange"}
     if environ.get("REQUEST_METHOD") != "POST" or path not in routes:
         return json_response(start_response, "404 Not Found", {"error": "No encontrado"}, origin)
     if environ.get("HTTP_ORIGIN") and not origin:
@@ -1013,6 +1017,17 @@ def app(environ: dict[str, Any], start_response: Callable):
             except ValueError as error:
                 raise OutputValidationError(str(error)) from error
             return json_response(start_response, "200 OK", {"reply": reply}, origin)
+        if path == "/shopping/mercadona/search":
+            search_payload = parse_json_body(environ, {"query"})
+            search_query = search_payload.get("query")
+            if not isinstance(search_query, str) or not search_query.strip() or len(search_query) > MAX_TEXT_LENGTH:
+                raise ValueError("La búsqueda debe tener entre 1 y 500 caracteres")
+            search = _mercadona_search or mercadona_catalog.search
+            try:
+                results = search(search_query.strip(), MERCADONA_SEARCH_LIMIT)
+            except (HTTPError, URLError, TimeoutError, RuntimeError) as error:
+                raise RuntimeError("El catálogo de Mercadona no está disponible ahora mismo") from error
+            return json_response(start_response, "200 OK", {"results": results}, origin)
         text, now, timezone, context = parse_request(environ)
         interpreter = _interpreter or vertex_interpret
         try:
@@ -1038,9 +1053,9 @@ def app(environ: dict[str, Any], start_response: Callable):
         return json_response(start_response, "503 Service Unavailable", {"error": "Interpretación no disponible"}, origin)
 
 
-def set_test_dependencies(interpreter: Callable[[str, str, str], dict[str, Any]] | None = None, verifier: Callable[[str], dict[str, Any]] | None = None, session_factory: Callable[[], GoogleSessions] | None = None, push_factory: Callable[[], PushNotifications] | None = None, chat_aside: Callable[[str], str] | None = None) -> None:
-    global _interpreter, _identity_verifier, _sessions_factory, _push_factory, _chat_aside
-    _interpreter, _identity_verifier, _sessions_factory, _push_factory, _chat_aside = interpreter, verifier, session_factory, push_factory, chat_aside
+def set_test_dependencies(interpreter: Callable[[str, str, str], dict[str, Any]] | None = None, verifier: Callable[[str], dict[str, Any]] | None = None, session_factory: Callable[[], GoogleSessions] | None = None, push_factory: Callable[[], PushNotifications] | None = None, chat_aside: Callable[[str], str] | None = None, mercadona_search: Callable[[str, int], list] | None = None) -> None:
+    global _interpreter, _identity_verifier, _sessions_factory, _push_factory, _chat_aside, _mercadona_search
+    _interpreter, _identity_verifier, _sessions_factory, _push_factory, _chat_aside, _mercadona_search = interpreter, verifier, session_factory, push_factory, chat_aside, mercadona_search
 
 
 def wsgi_request(payload: dict[str, Any], authorization: str = "") -> tuple[str, dict[str, Any]]:

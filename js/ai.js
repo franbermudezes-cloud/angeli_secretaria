@@ -1,10 +1,11 @@
-import{calendarQueryRange,cleanTemporalText,naturalQueryRange,temporalData}from"./temporal.js?v=0.21.79";
+import{calendarQueryRange,cleanTemporalText,naturalQueryRange,temporalData}from"./temporal.js?v=0.21.80";
 
 export const VALID_INTENTS=["note","note.query","task.create","task.complete","reminder.create","reminder.query","calendar.create","calendar.query","calendar.update","calendar.delete","contact.call","whatsapp.compose","file.store","photo.store"];
 const SENSITIVE_INTENTS=new Set(["calendar.update","calendar.delete","contact.call","whatsapp.compose"]);
 const MAX_TEXT_LENGTH=500,MIN_CONFIDENCE=0.75;
 const INTERPRETER_URL="https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app/interpret";
 const CHAT_ASIDE_URL="https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app/chat/aside";
+const MERCADONA_SEARCH_URL="https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app/shopping/mercadona/search";
 const EMPTY={title:null,date:null,time:null,rangeStart:null,rangeEnd:null,location:null,contactName:null,phone:null,notes:null,noteQuery:null,noteStatus:null,noteClassification:null,target:null,changes:null,linkedReminder:null,missingFields:[],question:null};
 
 // Una orden explícita prepara una búsqueda, nunca ejecuta el borrado.
@@ -181,6 +182,21 @@ export async function chatAside(text,idToken){
   const data=await response.json();
   if(typeof data.reply!=="string"||!data.reply.trim())throw new Error("Respuesta de aside vacía");
   return data.reply.trim();
+ }finally{clearTimeout(timeout)}
+}
+
+// Catálogo público de Mercadona (sin API oficial de terceros), consultado a
+// través del backend para no exponer aquí el recorrido de categorías. Un
+// fallo (red, timeout, catálogo caído) nunca debe romper añadir el artículo
+// a mano: el llamador simplemente lo guarda sin producto vinculado.
+export async function searchMercadonaProduct(query,idToken){
+ if(!idToken)throw new Error("IA sin conexión");
+ const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),6000);
+ try{
+  const response=await fetch(MERCADONA_SEARCH_URL,{method:"POST",headers:{Authorization:`Bearer ${idToken}`,"Content-Type":"application/json"},body:JSON.stringify({query}),signal:controller.signal});
+  if(!response.ok)throw new Error(`Mercadona no disponible (${response.status})`);
+  const data=await response.json();
+  return Array.isArray(data.results)?data.results:[];
  }finally{clearTimeout(timeout)}
 }
 

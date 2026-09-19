@@ -1,24 +1,25 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.79";
-import{classify,actionData}from"./classifier.js?v=0.21.79";
-import{sendEntry}from"./sheets.js?v=0.21.79";
-import{createUI}from"./ui.js?v=0.21.79";
-import{createGoogleIntegration}from"./google.js?v=0.21.79";
-import{interpret,remoteProvider,chatAside,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.21.79";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.79";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.79";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.79";
-import{createCloudSync}from"./firebase.js?v=0.21.79";
-import{createMediaService}from"./media.js?v=0.21.79";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.79";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.79";
-import{createAgendaActions}from"./agenda.js?v=0.21.79";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.79";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.79";
-import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.79";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.79";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.79";
-import{mediaLibraryItems}from"./media-library.js?v=0.21.79";
-import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.79";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.80";
+import{classify,actionData}from"./classifier.js?v=0.21.80";
+import{sendEntry}from"./sheets.js?v=0.21.80";
+import{createUI}from"./ui.js?v=0.21.80";
+import{createGoogleIntegration}from"./google.js?v=0.21.80";
+import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.21.80";
+import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,describeShoppingItems}from"./shopping.js?v=0.21.80";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.80";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.80";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.80";
+import{createCloudSync}from"./firebase.js?v=0.21.80";
+import{createMediaService}from"./media.js?v=0.21.80";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.80";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.80";
+import{createAgendaActions}from"./agenda.js?v=0.21.80";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.80";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.80";
+import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.80";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.80";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.80";
+import{mediaLibraryItems}from"./media-library.js?v=0.21.80";
+import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.80";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],pendingMediaContext=null,selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -28,6 +29,7 @@ let notificationSettings=normalizeNotificationSettings(DEFAULT_NOTIFICATION_SETT
 let libraryState={kind:"all",category:"all",query:""};
 let noteLibraryState={status:"pending",category:"all",query:""};
 let dietarioState={range:"week",type:"all"};
+let shoppingList=[];
 let shortcuts=normalizeShortcuts(readShortcuts()||DEFAULT_SHORTCUTS);
 // Los avisos push llegan con "?reminder=<id>" (backend/push_notifications.py),
 // pero hasta ahora nadie leía ese parámetro: tocar la notificación abría la
@@ -147,10 +149,18 @@ function showNoteSettings(){
  });
 }
 async function verifyConnections(announce=true){lastConnectionCheck=Date.now();await google.syncLinks({announce});render()}
-async function load(){notes=[];renderShortcuts();google.updateStatus();ui.setPushStatus(cloud.pushStatus());ui.setSyncStatus({state:"connecting"});render();await cloud.initialize({onRemoteNotes:remote=>{notes=remote;render()},onNoteSettings:remote=>{noteSettings=normalizeNoteSettings(remote||DEFAULT_NOTE_SETTINGS);render()},onNotificationSettings:remote=>{notificationSettings=normalizeNotificationSettings(remote||DEFAULT_NOTIFICATION_SETTINGS)},onNoteSettingsError:()=>ui.notify("No se pudieron cargar los ajustes de notas"),onNotificationSettingsError:()=>ui.notify("No se pudieron cargar los ajustes de avisos"),onSyncStatus:ui.setSyncStatus,onPushStatus:ui.setPushStatus,onAuthChange:async()=>{google.updateStatus();ui.setPushStatus(cloud.pushStatus());await verifyConnections(true)}});render();ui.dismissWelcome()}
+async function load(){notes=[];renderShortcuts();google.updateStatus();ui.setPushStatus(cloud.pushStatus());ui.setSyncStatus({state:"connecting"});render();await cloud.initialize({onRemoteNotes:remote=>{notes=remote;render()},onNoteSettings:remote=>{noteSettings=normalizeNoteSettings(remote||DEFAULT_NOTE_SETTINGS);render()},onNotificationSettings:remote=>{notificationSettings=normalizeNotificationSettings(remote||DEFAULT_NOTIFICATION_SETTINGS)},onNoteSettingsError:()=>ui.notify("No se pudieron cargar los ajustes de notas"),onNotificationSettingsError:()=>ui.notify("No se pudieron cargar los ajustes de avisos"),onShoppingList:remote=>{shoppingList=remote;if($("shoppingLibrary").classList.contains("show"))ui.renderShoppingList(shoppingList)},onShoppingListError:()=>ui.notify("No se pudo cargar la lista de la compra"),onSyncStatus:ui.setSyncStatus,onPushStatus:ui.setPushStatus,onAuthChange:async()=>{google.updateStatus();ui.setPushStatus(cloud.pushStatus());await verifyConnections(true)}});render();ui.dismissWelcome()}
 async function add({interactionId=null,shortcut=null}={}){
  if(saving)return;
  const shortcutContext=shortcut||pendingShortcut,text=$("text").value.trim(),active=interactionId?notes.find(item=>item.id===interactionId&&item.interaction?.status==="awaiting_input")||null:null;
+ // La lista de la compra es una función nueva y separada de las notas — no
+ // es una entrada más de la conversación, es una lista propia que se puede
+ // ir marcando. Se resuelve aquí, antes de tocar nada del intérprete/notas,
+ // para no arriesgar el resto del pipeline ("no romper lo que ya tenemos").
+ if(!active&&!shortcutContext&&!pendingImages.length&&!pendingFiles.length){
+  const shoppingCommand=parseShoppingCommand(text);
+  if(shoppingCommand){clearComposer();await runShoppingCommand(shoppingCommand);return}
+ }
  if(!text&&!pendingImages.length&&!pendingFiles.length){ui.notify("No hay nada que enviar");return}
  if((pendingImages.length||pendingFiles.length)&&!mediaContextComplete(pendingMediaContext)){askMediaContext();return}
  if(!cloud.isSignedIn()){ui.notify("Inicia sesión en Angeli antes de guardar");return}
@@ -544,6 +554,60 @@ function closeConversationModeReal(){
  ui.closeConversationMode();
 }
 
+async function persistShoppingList(next){
+ shoppingList=next;
+ if($("shoppingLibrary").classList.contains("show"))ui.renderShoppingList(shoppingList);
+ try{await cloud.saveShoppingList(shoppingList)}catch(_){ui.notify("La lista de la compra sigue pendiente de sincronizar")}
+}
+// Cuando se dice "de mercadona", buscamos el producto de verdad para que
+// quede su precio y su enlace — pero es un extra: si falla (red, catálogo
+// caído) el artículo se queda igualmente en la lista, solo que sin producto
+// vinculado. Nunca debe bloquear ni deshacer el añadido.
+async function linkMercadonaMatches(mercadonaItems){
+ if(!mercadonaItems.length)return;
+ let idToken;
+ try{idToken=await cloud.getAuthToken()}catch(_){return}
+ for(const addition of mercadonaItems){
+  try{
+   const results=await searchMercadonaProduct(addition.name,idToken);
+   if(!results.length)continue;
+   const target=shoppingList.find(item=>!item.checked&&!item.product&&item.store==="mercadona"&&item.name.toLowerCase()===addition.name.toLowerCase());
+   if(!target)continue;
+   await persistShoppingList(setShoppingItemProduct(shoppingList,target.id,results[0]));
+  }catch(_){/* el artículo se queda en la lista sin producto vinculado */}
+ }
+}
+async function runShoppingCommand(command){
+ if(!cloud.isSignedIn()){ui.notify("Inicia sesión en Angeli antes de guardar");return}
+ if(command.action==="query"){openShoppingList();return}
+ if(command.action==="clear"){await persistShoppingList(clearShoppingList(shoppingList));ui.notify("Lista de la compra vaciada");return}
+ if(command.action==="add"){
+  await persistShoppingList(addShoppingItems(shoppingList,command.items));
+  ui.notify("Añadido a la lista de la compra: "+describeShoppingItems(command.items));
+  void linkMercadonaMatches(command.items.filter(item=>item.store==="mercadona"));
+  return;
+ }
+ if(command.action==="remove"){await persistShoppingList(removeShoppingItems(shoppingList,command.items));ui.notify("Quitado de la lista de la compra: "+describeShoppingItems(command.items));return}
+ if(command.action==="check"){await persistShoppingList(checkShoppingItems(shoppingList,command.items,true));ui.notify("Marcado como comprado: "+describeShoppingItems(command.items));return}
+}
+function openShoppingList(){ui.openShoppingList(shoppingList)}
+function shoppingItemClick(event){
+ const button=event.target.closest("[data-a]");
+ if(!button)return;
+ const id=button.closest("[data-shopping-id]")?.dataset.shoppingId;
+ if(!id)return;
+ if(button.dataset.a==="toggle")void persistShoppingList(toggleShoppingItem(shoppingList,id));
+ else if(button.dataset.a==="remove")void persistShoppingList(removeShoppingItemById(shoppingList,id));
+}
+function addShoppingItemManually(){
+ const input=$("shoppingInput"),value=input.value.trim();
+ if(!value){ui.notify("Escribe algo para añadir");return}
+ const items=parseItemList(value);
+ if(!items.length){ui.notify("No he entendido ese artículo");return}
+ input.value="";
+ void runShoppingCommand({action:"add",items});
+}
+
 function openDietario(){ui.openDietario(notes,dietarioState)}
 function refreshDietario(){ui.renderDietario(notes,dietarioState)}
 function openDietarioEntry(id){
@@ -625,6 +689,13 @@ $("notesOpen").onclick=openNoteLibrary;
 $("remindersOpen").onclick=()=>void resolveReminderQuery(localReminderQuery("Recordatorios pendientes"));
 $("agendaOpen").onclick=()=>prepareShortcut({label:"Calendario",command:"Muéstrame mi agenda",action:"calendar.query",direct:true});
 $("dietarioOpen").onclick=openDietario;
+$("shoppingOpen").onclick=openShoppingList;
+$("shoppingClose").onclick=ui.closeShoppingList;
+$("shoppingList").onclick=shoppingItemClick;
+$("shoppingAdd").onclick=addShoppingItemManually;
+$("shoppingInput").onkeydown=event=>{if(event.key==="Enter"){event.preventDefault();addShoppingItemManually()}};
+$("shoppingClearChecked").onclick=()=>void persistShoppingList(clearShoppingList(shoppingList,{onlyChecked:true}));
+$("shoppingClearAll").onclick=()=>{if(shoppingList.length&&!confirm("¿Vaciar toda la lista de la compra?"))return;void persistShoppingList(clearShoppingList(shoppingList))};
 $("conversationModeOpen").onclick=openConversationModeReal;
 $("conversationModeClose").onclick=closeConversationModeReal;
 $("conversationModeMic").onclick=toggleConversationMic;
@@ -774,7 +845,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.79",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.80",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}

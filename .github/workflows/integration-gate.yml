@@ -56,7 +56,7 @@ jobs:
 
       - name: Ejecutar pruebas unitarias del backend
         working-directory: backend
-        run: python -m unittest test_app.py test_push_notifications.py test_test_harness.py test_vertex_cache.py test_chat_aside.py
+        run: python -m unittest test_app.py test_push_notifications.py test_test_harness.py test_vertex_cache.py test_chat_aside.py test_shopping_mercadona.py
 
       - name: Ejecutar pruebas del coordinador conversacional
         run: node --test tests/conversation.test.mjs
@@ -87,6 +87,9 @@ jobs:
 
       - name: Verificar los ajustes de voz
         run: node tests/voice-settings.test.mjs
+
+      - name: Verificar la lista de la compra
+        run: node --test tests/shopping.test.mjs
 
       - name: Ejecutar arnés real aislado
         run: python backend/test_harness.py
