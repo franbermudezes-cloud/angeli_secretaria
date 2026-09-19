@@ -299,6 +299,7 @@ _sessions_factory: Callable[[], GoogleSessions] | None = None
 _push_factory: Callable[[], PushNotifications] | None = None
 _mercadona_search: Callable[[str], list] | None = None
 MERCADONA_SEARCH_LIMIT = 6
+MERCADONA_SEARCH_MAX_LIMIT = 30
 
 
 class OutputValidationError(ValueError):
@@ -1018,13 +1019,17 @@ def app(environ: dict[str, Any], start_response: Callable):
                 raise OutputValidationError(str(error)) from error
             return json_response(start_response, "200 OK", {"reply": reply}, origin)
         if path == "/shopping/mercadona/search":
-            search_payload = parse_json_body(environ, {"query"})
+            search_payload = parse_json_body(environ, {"query", "limit"})
             search_query = search_payload.get("query")
             if not isinstance(search_query, str) or not search_query.strip() or len(search_query) > MAX_TEXT_LENGTH:
                 raise ValueError("La búsqueda debe tener entre 1 y 500 caracteres")
+            requested_limit = search_payload.get("limit", MERCADONA_SEARCH_LIMIT)
+            if not isinstance(requested_limit, int) or isinstance(requested_limit, bool):
+                raise ValueError("El límite de resultados no es válido")
+            search_limit = max(1, min(requested_limit, MERCADONA_SEARCH_MAX_LIMIT))
             search = _mercadona_search or mercadona_catalog.search
             try:
-                results = search(search_query.strip(), MERCADONA_SEARCH_LIMIT)
+                results = search(search_query.strip(), search_limit)
             except (HTTPError, URLError, TimeoutError, RuntimeError) as error:
                 raise RuntimeError("El catálogo de Mercadona no está disponible ahora mismo") from error
             return json_response(start_response, "200 OK", {"results": results}, origin)

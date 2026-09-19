@@ -1,4 +1,4 @@
-import{calendarQueryRange,cleanTemporalText,naturalQueryRange,temporalData}from"./temporal.js?v=0.21.81";
+import{calendarQueryRange,cleanTemporalText,naturalQueryRange,temporalData}from"./temporal.js?v=0.21.82";
 
 export const VALID_INTENTS=["note","note.query","task.create","task.complete","reminder.create","reminder.query","calendar.create","calendar.query","calendar.update","calendar.delete","contact.call","whatsapp.compose","file.store","photo.store"];
 const SENSITIVE_INTENTS=new Set(["calendar.update","calendar.delete","contact.call","whatsapp.compose"]);
@@ -189,11 +189,11 @@ export async function chatAside(text,idToken){
 // través del backend para no exponer aquí el recorrido de categorías. Un
 // fallo (red, timeout, catálogo caído) nunca debe romper añadir el artículo
 // a mano: el llamador simplemente lo guarda sin producto vinculado.
-export async function searchMercadonaProduct(query,idToken){
+export async function searchMercadonaProduct(query,idToken,limit=6){
  if(!idToken)throw new Error("IA sin conexión");
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),6000);
  try{
-  const response=await fetch(MERCADONA_SEARCH_URL,{method:"POST",headers:{Authorization:`Bearer ${idToken}`,"Content-Type":"application/json"},body:JSON.stringify({query}),signal:controller.signal});
+  const response=await fetch(MERCADONA_SEARCH_URL,{method:"POST",headers:{Authorization:`Bearer ${idToken}`,"Content-Type":"application/json"},body:JSON.stringify({query,limit}),signal:controller.signal});
   if(!response.ok)throw new Error(`Mercadona no disponible (${response.status})`);
   const data=await response.json();
   return Array.isArray(data.results)?data.results:[];

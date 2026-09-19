@@ -1,12 +1,12 @@
-import { typeLabel } from "./classifier.js?v=0.21.81";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.81";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.81";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.81";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.81";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.81";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.21.81";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.21.81";
-import { groupDietarioByDay } from "./dietario.js?v=0.21.81";
+import { typeLabel } from "./classifier.js?v=0.21.82";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.82";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.82";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.82";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.82";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.82";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.21.82";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.21.82";
+import { groupDietarioByDay } from "./dietario.js?v=0.21.82";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -184,7 +184,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.81";
+    image.src = "assets/angeli-welcome.gif?v=0.21.82";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -958,10 +958,12 @@ export function createUI({ getMedia }) {
     const storeBadge = storeLabel ? `<span class="store-badge store-${esc(item.store)}">${esc(storeLabel)}</span>` : "";
     const price = item.product?.price != null ? `<span class="shopping-price">${Number(item.product.price).toFixed(2)} €</span>` : "";
     const link = item.product?.url ? `<a href="${esc(item.product.url)}" target="_blank" rel="noopener" class="shopping-product-link">Ver en Mercadona</a>` : "";
-    const quantity = item.quantity > 1 ? `<span class="shopping-quantity">${item.quantity}×</span> ` : "";
+    const quantity = item.quantity || 1;
+    const stepper = `<div class="shopping-qty-stepper"><button type="button" class="shopping-qty-btn" data-a="qty-dec" aria-label="Quitar una unidad de ${esc(item.name)}">−</button><span class="shopping-qty-value">${quantity}</span><button type="button" class="shopping-qty-btn" data-a="qty-inc" aria-label="Añadir una unidad de ${esc(item.name)}">+</button></div>`;
     return `<div class="shopping-item${item.checked ? " done" : ""}" data-shopping-id="${esc(item.id)}">` +
       `<button class="shopping-check" data-a="toggle" aria-label="${item.checked ? "Marcar como pendiente" : "Marcar como comprado"}">${item.checked ? "☑" : "☐"}</button>` +
-      `<div class="shopping-item-body"><strong>${quantity}${esc(item.name)}</strong><span class="shopping-meta">${storeBadge}${price}${link}</span></div>` +
+      `<div class="shopping-item-body"><strong>${esc(item.name)}</strong><span class="shopping-meta">${storeBadge}${price}${link}</span></div>` +
+      stepper +
       `<button class="small-btn danger" data-a="remove" aria-label="Quitar ${esc(item.name)}">✕</button></div>`;
   }
 

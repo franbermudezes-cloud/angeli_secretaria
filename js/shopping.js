@@ -14,6 +14,12 @@ const CHECK_VERB = /^(?:ya\s+(?:tengo|compr[eé])|he\s+comprado|marca(?:me)?)\s+
 const ADD_VERB = /^(?:a[ñn]ade(?:me)?|apunta(?:me)?|pon(?:me)?|agrega(?:me)?|mete(?:me)?)\s+/i;
 const LEADING_ARTICLE = /^(?:la|el|los|las|un|una|unos|unas)\s+/i;
 const STORE_SUFFIX = /^(.*?)\s+(?:de|del)\s+(mercadona|consum)\s*$/i;
+// "busca leche en mercadona", "busca leche en la lista de mercadona", "busca
+// leche de mercadona": pedido para poder consultar el catálogo sin usar la
+// palabra "compra". Deliberadamente independiente de TRIGGER — no exige
+// "lista de la compra" — pero exige un verbo de búsqueda explícito para no
+// confundirse con "añade la leche de mercadona a la lista de la compra".
+const SEARCH_TRIGGER = /^\s*(?:busca(?:r)?|mira|ens[eé]ñame|dime)\s+(.+?)\s+(?:en|de)\s+(?:la\s+lista\s+de\s+|el\s+cat[aá]logo\s+de\s+)?(mercadona|consum)\b.*$/i;
 const QUANTITY_WORDS = { un: 1, una: 1, uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10 };
 const LEADING_QUANTITY = /^(\d{1,2}|un|una|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez)\s+/i;
 
@@ -75,6 +81,12 @@ export function parseShoppingCommand(text) {
   if (!value) return null;
   if (CLEAR.test(value)) return { action: "clear" };
   if (QUERY_ONLY.test(value)) return { action: "query" };
+  const searchMatch = SEARCH_TRIGGER.exec(value);
+  if (searchMatch) {
+    const query = searchMatch[1].trim().replace(LEADING_ARTICLE, "").trim();
+    const store = searchMatch[2].toLowerCase();
+    if (query) return { action: "search", query, store };
+  }
   if (!TRIGGER.test(value)) return null;
   // El verbo siempre abre la frase en el habla natural ("quita...",
   // "ya tengo...", "añade..."), así que se detecta y se quita del principio
@@ -95,12 +107,30 @@ export function parseShoppingCommand(text) {
 const normalizeName = name => String(name || "").toLowerCase().trim();
 const makeShoppingId = () => `sh-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
+// Real detectado: decir "leche" y luego "2 leches" creaba una fila aparte en
+// vez de sumarse a la que ya existía, porque la comparación era por igualdad
+// exacta. El plural en español se forma añadiendo "s" (leche→leches) o "es"
+// (yogur→yogures) según cómo acabe la palabra; sin diccionario no se puede
+// saber cuál aplica, así que se prueban ambas reducciones como candidatas y
+// se consideran el mismo artículo si alguna coincide.
+function nameStems(name) {
+  const value = normalizeName(name);
+  const stems = new Set([value]);
+  if (value.length > 2 && value.endsWith("s")) stems.add(value.slice(0, -1));
+  if (value.length > 3 && value.endsWith("es")) stems.add(value.slice(0, -2));
+  return stems;
+}
+function sameItemName(a, b) {
+  const stemsB = nameStems(b);
+  for (const stem of nameStems(a)) if (stemsB.has(stem)) return true;
+  return false;
+}
+
 export function addShoppingItems(items, additions) {
   let next = [...items];
   for (const addition of additions) {
-    const key = normalizeName(addition.name);
     const quantity = Number.isInteger(addition.quantity) && addition.quantity > 0 ? addition.quantity : 1;
-    const index = next.findIndex(item => !item.checked && normalizeName(item.name) === key);
+    const index = next.findIndex(item => !item.checked && sameItemName(item.name, addition.name));
     if (index >= 0) {
       // Ya está pendiente: se suma la cantidad en vez de duplicar la fila
       // ("añade dos leches" después de ya tener una leche pendiente = 3).
@@ -113,13 +143,16 @@ export function addShoppingItems(items, additions) {
 }
 
 export function removeShoppingItems(items, targets) {
-  const keys = new Set(targets.map(item => normalizeName(item.name)));
-  return items.filter(item => !keys.has(normalizeName(item.name)));
+  return items.filter(item => !targets.some(target => sameItemName(item.name, target.name)));
 }
 
 export function checkShoppingItems(items, targets, checked = true) {
-  const keys = new Set(targets.map(item => normalizeName(item.name)));
-  return items.map(item => keys.has(normalizeName(item.name)) ? { ...item, checked } : item);
+  return items.map(item => targets.some(target => sameItemName(item.name, target.name)) ? { ...item, checked } : item);
+}
+
+export function setShoppingItemQuantity(items, itemId, quantity) {
+  const clamped = Math.max(1, Math.min(99, Math.round(quantity) || 1));
+  return items.map(item => item.id === itemId ? { ...item, quantity: clamped } : item);
 }
 
 export function clearShoppingList(items, { onlyChecked = false } = {}) {

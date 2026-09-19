@@ -54,6 +54,81 @@ class MercadonaCatalogSearchTests(unittest.TestCase):
     def test_blank_query_returns_an_empty_list(self):
         self.assertEqual(mercadona_catalog.search("   "), [])
 
+    def test_word_boundary_avoids_substring_false_positives(self):
+        # Real detectado: "leche entera" emparejaba con "Chocolate ... almendras
+        # enteras" porque "entera" es subcadena de "enteras". No debe pasar.
+        mercadona_catalog._catalog.append({"id": "4", "name": "Chocolate con leche Hacendado almendras enteras", "packaging": "Tableta", "price": 2.1, "thumbnail": None, "url": ""})
+        results = mercadona_catalog.search("leche entera")
+        self.assertEqual([item["id"] for item in results], ["1"])
+
+
+class MercadonaCatalogBuildTests(unittest.TestCase):
+    """Cubre la construcción del catálogo (reintentos, umbral mínimo) contra
+    una red simulada — nunca contra tienda.mercadona.es real."""
+
+    def setUp(self):
+        mercadona_catalog._catalog = []
+        mercadona_catalog._catalog_expires_at = 0.0
+
+    def tearDown(self):
+        mercadona_catalog._catalog = []
+        mercadona_catalog._catalog_expires_at = 0.0
+
+    def _fake_tree(self, category_ids, products_per_category=600):
+        categories = {
+            "/categories/": {"results": [{"categories": [{"id": cid} for cid in category_ids]}]},
+        }
+        for cid in category_ids:
+            categories[f"/categories/{cid}/"] = {"products": [
+                {"id": f"{cid}-{i}", "display_name": f"Producto {cid}-{i}", "price_instructions": {"unit_price": "1.00"}}
+                for i in range(products_per_category)
+            ]}
+        return categories
+
+    def test_a_transient_failure_is_retried_and_recovers(self):
+        tree = self._fake_tree([1, 2])
+        calls = {"count": 0}
+
+        def flaky_get(path):
+            if path == "/categories/1/" and calls["count"] == 0:
+                calls["count"] += 1
+                raise TimeoutError("blip")
+            return tree[path]
+
+        original_get, original_sleep = mercadona_catalog._get, mercadona_catalog.time.sleep
+        mercadona_catalog._get, mercadona_catalog.time.sleep = flaky_get, lambda _seconds: None
+        try:
+            catalog = mercadona_catalog._catalog_data()
+        finally:
+            mercadona_catalog._get, mercadona_catalog.time.sleep = original_get, original_sleep
+        self.assertEqual(len(catalog), 1200, "el reintento debe recuperar la categoría que falló la primera vez")
+
+    def test_a_build_far_below_the_minimum_is_used_but_retried_soon_not_cached_12h(self):
+        tree = self._fake_tree([1], products_per_category=10)  # muy por debajo de CATALOG_MIN_PRODUCTS
+
+        original_get = mercadona_catalog._get
+        mercadona_catalog._get = lambda path: tree[path]
+        try:
+            catalog = mercadona_catalog._catalog_data()
+            expires_in = mercadona_catalog._catalog_expires_at - mercadona_catalog.time.monotonic()
+        finally:
+            mercadona_catalog._get = original_get
+        self.assertEqual(len(catalog), 10, "una construcción incompleta se usa igual si no hay nada mejor")
+        self.assertLessEqual(expires_in, mercadona_catalog.CATALOG_RETRY_COOLDOWN_SECONDS + 1, "debe reintentarse pronto, no esperar las 12h completas")
+
+    def test_a_small_rebuild_never_discards_a_better_previous_catalog(self):
+        mercadona_catalog._catalog = [{"id": "old", "name": "x"}] * 2000
+        mercadona_catalog._catalog_expires_at = 0.0  # forzar reconstrucción
+        tree = self._fake_tree([1], products_per_category=5)
+
+        original_get = mercadona_catalog._get
+        mercadona_catalog._get = lambda path: tree[path]
+        try:
+            catalog = mercadona_catalog._catalog_data()
+        finally:
+            mercadona_catalog._get = original_get
+        self.assertEqual(len(catalog), 2000, "un catálogo previo más completo no debe perderse por una reconstrucción peor")
+
 
 class ShoppingMercadonaSearchRouteTests(unittest.TestCase):
     def setUp(self):
