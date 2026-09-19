@@ -1,5 +1,18 @@
 # Changelog
 
+## V0.21.82 · Lista de la compra: catálogo de Mercadona más fiable, cantidades con +/- y búsqueda ampliada
+
+Todo probado directamente en la app real (producción) con la sesión del propietario, siguiendo su petición explícita de dejar primero el buscador/añadir/lista perfectamente pulidos antes de tocar la voz.
+
+- **El catálogo de Mercadona perdía categorías enteras en silencio**: "leche" no encontraba ninguna leche de verdad (solo café con leche, chocolate con leche...), y "leche Hacendado" tampoco. Comprobado con la API real de Mercadona que sí existen ("Leche semidesnatada Hacendado" y variantes están ahí). Causa: si una subcategoría fallaba al construir el catálogo (~150 peticiones concurrentes, cualquier fallo transitorio), se descartaba sin reintento y sin dejar rastro, y el catálogo incompleto se cacheaba igualmente 12 horas. Corregido: cada categoría se reintenta hasta 3 veces; si la construcción sale con muchos menos productos de los esperados (por debajo de 1500, el catálogo completo tiene ~4600), se usa igual si no hay nada mejor pero se reintenta a los 5 minutos en vez de esperar 12h, y nunca se descarta un catálogo previo más completo por uno peor.
+- **Falso positivo por subcadena**: "leche entera" encontraba "Chocolate ... almendras enteras" porque "entera" es subcadena de "enteras". Corregido: coincidencia por palabra completa.
+- **El buscador solo mostraba 6 resultados** — pedido explícitamente ampliarlo para explorar de verdad (p. ej. ver varias marcas de cerveza). El buscador manual de la lista ahora pide hasta 20; el backend admite hasta 30 si se solicitan.
+- **"leche" y "2 leches" creaban dos filas separadas** en vez de sumarse, por comparar el nombre en plural/singular como si fueran distintos. Corregido con un emparejado que reconoce singular y plural (leche/leches, yogur/yogures).
+- **No había forma de cambiar la cantidad de un artículo ya en la lista** — pedido explícitamente un "+" y un "−" en la misma línea del artículo, sin campo de texto ni scroll. Añadido.
+- **"busca leche en la lista de mercadona" se enviaba como nota** — reconocido ahora como una búsqueda ("busca/mira/enséñame/dime X en/de mercadona o consum"), independiente de la frase "lista de la compra": abre la lista y lanza la búsqueda directamente.
+- Deploy: backend redesplegado en Cloud Run (recorrido del catálogo con reintentos y umbral mínimo).
+- Tests: `tests/shopping.test.mjs` ampliado a 24 pruebas; `backend/test_shopping_mercadona.py` ampliado con la construcción del catálogo contra red simulada (reintento, umbral mínimo, no perder un catálogo mejor) y el falso positivo de subcadena.
+
 ## V0.21.81 · Lista de la compra: 4 fallos reales corregidos tras la primera prueba
 
 Reportados todos por el usuario probando la V0.21.80 en real:

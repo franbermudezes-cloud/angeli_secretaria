@@ -8,13 +8,15 @@ y `/api/categories/<id>/` son públicos, no requieren sesión ni pasan por el
 Akamai que protege las operaciones autenticadas, y devuelven el árbol
 completo de categorías con sus productos (nombre, precio, foto, enlace) tal
 cual lo usa cualquier visitante anónimo de la web. Es más lento — hay que
-recorrer todas las subcategorías — pero es la vía estable, así que el
+recorrer todas las subcategorías (~150) — pero es la vía estable, así que el
 catálogo se construye una vez y se cachea en memoria con un TTL.
 """
 
 from __future__ import annotations
 
 import json
+import re
+import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
@@ -23,8 +25,17 @@ from urllib.request import Request, urlopen
 
 BASE_URL = "https://tienda.mercadona.es/api"
 CATALOG_TTL_SECONDS = 12 * 3600
+# Si una construcción sale con muchos menos productos de los esperados
+# (varias subcategorías fallaron a la vez, p. ej. por límite de conexiones
+# concurrentes), no se cachea 12h enteras como si fuera un catálogo bueno:
+# se reintenta pronto. Detectado en real: la categoría de lácteos completa
+# desapareció una vez así, y durante 12h "leche" no encontraba ni una sola
+# leche de verdad, solo cafés y chocolates que también llevan la palabra.
+CATALOG_MIN_PRODUCTS = 1500
+CATALOG_RETRY_COOLDOWN_SECONDS = 5 * 60
 REQUEST_TIMEOUT_SECONDS = 8
-MAX_WORKERS = 12
+REQUEST_ATTEMPTS = 3
+MAX_WORKERS = 8
 USER_AGENT = "Mozilla/5.0 (compatible; AngeliSecretaria/1.0; +https://franbermudezes-cloud.github.io/angeli_secretaria/)"
 
 _catalog: list[dict[str, Any]] = []
@@ -35,6 +46,18 @@ def _get(path: str) -> dict[str, Any]:
     request = Request(BASE_URL + path, headers={"User-Agent": USER_AGENT, "Accept": "application/json"})
     with urlopen(request, timeout=REQUEST_TIMEOUT_SECONDS) as response:
         return json.loads(response.read().decode("utf-8"))
+
+
+def _get_with_retry(path: str, attempts: int = REQUEST_ATTEMPTS) -> dict[str, Any]:
+    last_error: Exception | None = None
+    for attempt in range(attempts):
+        try:
+            return _get(path)
+        except (HTTPError, URLError, TimeoutError, ValueError) as error:
+            last_error = error
+            if attempt < attempts - 1:
+                time.sleep(0.3 * (attempt + 1))
+    raise last_error  # type: ignore[misc]
 
 
 def _flatten_products(node: dict[str, Any], out: list[dict[str, Any]]) -> None:
@@ -57,28 +80,39 @@ def _flatten_products(node: dict[str, Any], out: list[dict[str, Any]]) -> None:
 
 
 def _build_catalog() -> list[dict[str, Any]]:
-    sections = _get("/categories/").get("results", [])
+    sections = _get_with_retry("/categories/").get("results", [])
     subcategory_ids = [category["id"] for section in sections for category in section.get("categories", []) if category.get("id")]
     products: list[dict[str, Any]] = []
+    failed = 0
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
-        futures = {pool.submit(_get, f"/categories/{category_id}/"): category_id for category_id in subcategory_ids}
+        futures = {pool.submit(_get_with_retry, f"/categories/{category_id}/"): category_id for category_id in subcategory_ids}
         for future in as_completed(futures):
             try:
                 _flatten_products(future.result(), products)
             except (HTTPError, URLError, TimeoutError, ValueError):
-                continue  # una subcategoría caída no debe tirar todo el catálogo
+                failed += 1  # una subcategoría caída no debe tirar todo el catálogo
+    if failed:
+        print(f"mercadona_catalog_partial_build failed={failed} of={len(subcategory_ids)} products={len(products)}", file=sys.stderr, flush=True)
     return products
 
 
-def _catalog_data(force: bool = False) -> list[dict[str, Any]]:
+def _catalog_data() -> list[dict[str, Any]]:
     global _catalog, _catalog_expires_at
     now = time.monotonic()
-    if force or not _catalog or now >= _catalog_expires_at:
-        fresh = _build_catalog()
-        if fresh:
-            _catalog, _catalog_expires_at = fresh, now + CATALOG_TTL_SECONDS
-        elif not _catalog:
-            raise RuntimeError("No se pudo cargar el catálogo de Mercadona")
+    if _catalog and now < _catalog_expires_at:
+        return _catalog
+    fresh = _build_catalog()
+    if not fresh and not _catalog:
+        raise RuntimeError("No se pudo cargar el catálogo de Mercadona")
+    if len(fresh) >= CATALOG_MIN_PRODUCTS:
+        _catalog, _catalog_expires_at = fresh, now + CATALOG_TTL_SECONDS
+    elif fresh:
+        # Construcción incompleta: se usa si es mejor que lo que había (o si
+        # no había nada), pero se reintenta pronto en vez de esperar 12h.
+        if len(fresh) > len(_catalog):
+            _catalog = fresh
+        _catalog_expires_at = now + CATALOG_RETRY_COOLDOWN_SECONDS
+        print(f"mercadona_catalog_too_small products={len(fresh)} threshold={CATALOG_MIN_PRODUCTS}", file=sys.stderr, flush=True)
     return _catalog
 
 
@@ -86,13 +120,17 @@ def search(query: str, limit: int = 6) -> list[dict[str, Any]]:
     terms = [word for word in str(query or "").lower().split() if word]
     if not terms:
         return []
+    # Coincidencia por palabra completa, no por subcadena: "leche entera"
+    # emparejaba antes con "almendras enteras" (chocolate) porque "entera"
+    # es subcadena de "enteras". \b evita ese falso positivo.
+    patterns = [re.compile(r"\b" + re.escape(term) + r"\b") for term in terms]
     catalog = _catalog_data()
     scored = []
     for product in catalog:
         name = product["name"].lower()
-        if not all(term in name for term in terms):
+        if not all(pattern.search(name) for pattern in patterns):
             continue
         rank = 0 if name.startswith(terms[0]) else 1
         scored.append((rank, len(name), product))
     scored.sort(key=lambda item: (item[0], item[1]))
-    return [product for _, _, product in scored[:max(1, min(limit, 20))]]
+    return [product for _, _, product in scored[:max(1, min(limit, 30))]]

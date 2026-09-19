@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,setShoppingItemProduct,describeShoppingItems} from '../js/shopping.js';
+import {parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems} from '../js/shopping.js';
 
 test('reconoce añadir un solo artículo a la lista de la compra',()=>{
  const command=parseShoppingCommand('añade leche a la lista de la compra');
@@ -59,6 +59,18 @@ test('un texto sin mención a la lista de la compra no se reconoce (no debe toca
  assert.equal(parseShoppingCommand('apunta que compre pan'),null);
 });
 
+test('reconoce "busca X en/de mercadona" como búsqueda, sin exigir "lista de la compra"',()=>{
+ assert.deepEqual(parseShoppingCommand('busca leche en la lista de mercadona'),{action:'search',query:'leche',store:'mercadona'});
+ assert.deepEqual(parseShoppingCommand('busca leche en mercadona'),{action:'search',query:'leche',store:'mercadona'});
+ assert.deepEqual(parseShoppingCommand('busca la cerveza de mercadona'),{action:'search',query:'cerveza',store:'mercadona'});
+ assert.deepEqual(parseShoppingCommand('mira el chorizo en consum'),{action:'search',query:'chorizo',store:'consum'});
+});
+
+test('"añade la leche de mercadona a la lista de la compra" sigue siendo un "add", no una búsqueda',()=>{
+ const command=parseShoppingCommand('añade la leche de mercadona a la lista de la compra');
+ assert.equal(command.action,'add');
+});
+
 test('parseItemList separa por comas y por "y", quitando artículos iniciales',()=>{
  assert.deepEqual(parseItemList('la leche, el pan y unos huevos'),[
   {name:'leche',store:null,quantity:1},{name:'pan',store:null,quantity:1},{name:'huevos',store:null,quantity:1}
@@ -78,6 +90,33 @@ test('addShoppingItems suma la cantidad si el artículo ya estaba pendiente',()=
  items=addShoppingItems(items,[{name:'leche',store:null,quantity:2}]);
  assert.equal(items.length,1);
  assert.equal(items[0].quantity,3);
+});
+
+test('addShoppingItems reconoce singular y plural como el mismo artículo (no duplica "leche" con "leches")',()=>{
+ let items=addShoppingItems([],[{name:'leche',store:null,quantity:1}]);
+ items=addShoppingItems(items,[{name:'leches',store:null,quantity:2}]);
+ assert.equal(items.length,1,'"leche" y "leches" deben sumarse en la misma fila, real detectado en producción');
+ assert.equal(items[0].quantity,3);
+ items=addShoppingItems([],[{name:'yogur',store:null,quantity:1}]);
+ items=addShoppingItems(items,[{name:'yogures',store:null,quantity:2}]);
+ assert.equal(items.length,1,'"yogur" y "yogures" (plural en -es) deben reconocerse igual');
+ assert.equal(items[0].quantity,3);
+});
+
+test('removeShoppingItems y checkShoppingItems también reconocen singular/plural',()=>{
+ let items=addShoppingItems([],[{name:'yogures',store:null,quantity:3}]);
+ items=checkShoppingItems(items,[{name:'yogur'}]);
+ assert.equal(items[0].checked,true);
+ items=removeShoppingItems(items,[{name:'yogur'}]);
+ assert.equal(items.length,0);
+});
+
+test('setShoppingItemQuantity no baja de 1 ni sube de 99',()=>{
+ const items=addShoppingItems([],[{name:'leche',store:null,quantity:1}]);
+ assert.equal(setShoppingItemQuantity(items,items[0].id,0)[0].quantity,1);
+ assert.equal(setShoppingItemQuantity(items,items[0].id,-5)[0].quantity,1);
+ assert.equal(setShoppingItemQuantity(items,items[0].id,500)[0].quantity,99);
+ assert.equal(setShoppingItemQuantity(items,items[0].id,4)[0].quantity,4);
 });
 
 test('addShoppingItems completa la tienda si el artículo pendiente no tenía una',()=>{
