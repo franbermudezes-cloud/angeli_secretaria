@@ -14,6 +14,8 @@ const CHECK_VERB = /^(?:ya\s+(?:tengo|compr[eé])|he\s+comprado|marca(?:me)?)\s+
 const ADD_VERB = /^(?:a[ñn]ade(?:me)?|apunta(?:me)?|pon(?:me)?|agrega(?:me)?|mete(?:me)?)\s+/i;
 const LEADING_ARTICLE = /^(?:la|el|los|las|un|una|unos|unas)\s+/i;
 const STORE_SUFFIX = /^(.*?)\s+(?:de|del)\s+(mercadona|consum)\s*$/i;
+const QUANTITY_WORDS = { un: 1, una: 1, uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10 };
+const LEADING_QUANTITY = /^(\d{1,2}|un|una|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez)\s+/i;
 
 const TRAILING_STOPWORDS = new Set(["a", "al", "de", "del", "en", "la", "el", "las", "los", "para", "con"]);
 const LEADING_STOPWORDS = new Set(["de", "en", "a", "con"]);
@@ -33,12 +35,26 @@ function stripLeadingConnector(text) {
   return tokens.join(" ");
 }
 
+// "2 leches", "quiero dos barras de pan": un número (en dígitos o en
+// palabras) delante del artículo indica cuántas unidades hacen falta.
+// Solapa a propósito con el artículo indefinido ("una leche" = 1 leche de
+// cualquier forma), así que se comprueba primero y se retira antes de
+// tratar el resto como artículo.
+function extractQuantity(text) {
+  const match = LEADING_QUANTITY.exec(text);
+  if (!match) return { quantity: 1, rest: text };
+  const raw = match[1].toLowerCase();
+  const quantity = /^\d+$/.test(raw) ? Number(raw) : QUANTITY_WORDS[raw];
+  return Number.isInteger(quantity) && quantity > 0 ? { quantity, rest: text.slice(match[0].length) } : { quantity: 1, rest: text };
+}
+
 function parseItemSegment(segment) {
-  const match = STORE_SUFFIX.exec(segment.trim());
-  const rawName = match ? match[1] : segment;
+  const { quantity, rest } = extractQuantity(segment.trim());
+  const match = STORE_SUFFIX.exec(rest.trim());
+  const rawName = match ? match[1] : rest;
   const store = match ? match[2].toLowerCase() : null;
   const name = rawName.trim().replace(LEADING_ARTICLE, "").trim();
-  return { name, store };
+  return { name, store, quantity };
 }
 
 export function parseItemList(body) {
@@ -83,12 +99,15 @@ export function addShoppingItems(items, additions) {
   let next = [...items];
   for (const addition of additions) {
     const key = normalizeName(addition.name);
+    const quantity = Number.isInteger(addition.quantity) && addition.quantity > 0 ? addition.quantity : 1;
     const index = next.findIndex(item => !item.checked && normalizeName(item.name) === key);
     if (index >= 0) {
-      if (addition.store && !next[index].store) next = next.map((item, i) => i === index ? { ...item, store: addition.store } : item);
+      // Ya está pendiente: se suma la cantidad en vez de duplicar la fila
+      // ("añade dos leches" después de ya tener una leche pendiente = 3).
+      next = next.map((item, i) => i === index ? { ...item, quantity: (item.quantity || 1) + quantity, store: item.store || addition.store || null } : item);
       continue;
     }
-    next = [...next, { id: makeShoppingId(), name: addition.name, store: addition.store || null, checked: false, addedAt: new Date().toISOString(), product: null }];
+    next = [...next, { id: makeShoppingId(), name: addition.name, store: addition.store || null, quantity, checked: false, addedAt: new Date().toISOString(), product: null }];
   }
   return next;
 }
@@ -124,5 +143,8 @@ export function setShoppingItemStore(items, itemId, store) {
 }
 
 export function describeShoppingItems(items) {
-  return items.map(item => item.store ? `${item.name} (${item.store})` : item.name).join(", ");
+  return items.map(item => {
+    const label = item.quantity > 1 ? `${item.quantity}× ${item.name}` : item.name;
+    return item.store ? `${label} (${item.store})` : label;
+  }).join(", ");
 }
