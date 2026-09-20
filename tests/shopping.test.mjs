@@ -344,6 +344,28 @@ test('añadir al carrito dos veces el mismo artículo suma la cantidad en vez de
  assert.equal(cart[0].quantity,4);
 });
 
+// Hallazgo de la auditoría completa: fusionar con una línea ya existente del
+// carrito solo sumaba la cantidad, sin actualizar el producto vinculado — si
+// el artículo de la lista se vinculaba a un producto de Mercadona DESPUÉS de
+// la primera vez que se añadía al carrito, esa línea se quedaba sin precio
+// ni foto para siempre.
+test('añadir al carrito un artículo que se vincula a un producto de Mercadona después de la primera vez actualiza el producto de esa línea',()=>{
+ let state=normalizeShoppingState(null);
+ const listId=getActiveList(state).id;
+ state=updateListItems(state,listId,items=>addShoppingItems(items,[{name:'leche',quantity:1,store:'mercadona'}]));
+ state=updateListItems(state,listId,items=>checkShoppingItems(items,[{name:'leche'}],true));
+ state=addCheckedToCart(state,listId);
+ assert.equal(getActiveList(state).cart[0].product,null,"la primera vez no había producto vinculado");
+ const product={id:'1',name:'Leche entera Hacendado',price:0.95};
+ state=updateListItems(state,listId,items=>setShoppingItemProduct(items,getActiveList(state).items[0].id,product));
+ state=updateListItems(state,listId,items=>checkShoppingItems(items,[{name:'leche'}],true));
+ state=addCheckedToCart(state,listId);
+ const cart=getActiveList(state).cart;
+ assert.equal(cart.length,1,"sigue siendo la misma línea, no una duplicada");
+ assert.equal(cart[0].quantity,2);
+ assert.deepEqual(cart[0].product,product,"la línea del carrito ya refleja el producto vinculado después");
+});
+
 test('toggleCartItem y setCartItemQuantity operan sobre el carrito sin tocar la lista',()=>{
  let state=normalizeShoppingState(null);
  const listId=getActiveList(state).id;

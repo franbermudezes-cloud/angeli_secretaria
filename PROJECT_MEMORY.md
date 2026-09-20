@@ -1,5 +1,15 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-20 — Añadir de nuevo al carrito un artículo recién vinculado a Mercadona no actualizaba esa línea V0.22.11
+
+Sexto hallazgo de prioridad media de la auditoría completa que se corrige. Nota: distinto del hallazgo de "mezclar tienda en un mismo pedido fusiona ambas en una sola línea" que el propietario pidió dejar aparte (ver la entrada de V0.22.1 para el contexto de la auditoría) — este es un bug de fusión de PRODUCTO, no de tienda.
+
+**Causa raíz**: `mergeIntoCart` (`js/shopping.js`) busca en el carrito una línea sin marcar con el mismo nombre y la misma tienda (`item.store===addition.store`); si la encuentra, antes solo hacía `{...next[index], quantity: next[index].quantity+addition.quantity}` — sumaba la cantidad pero nunca tocaba `product`. Como el precio, el enlace y la foto de una línea del carrito se leen de `item.product` (`js/ui.js`, varias vistas del carrito), cualquier vez que un artículo se añadía al carrito ANTES de vincularlo a un producto de Mercadona (o se vinculaba a uno distinto más tarde) y luego se volvía a marcar y añadir al carrito, la línea ya existente se quedaba con el `product` antiguo (o `null`) para siempre — la cantidad subía bien, pero el precio y la foto nunca aparecían, aunque el artículo de la lista ya estuviera correctamente vinculado.
+
+**Corrección**: al fusionar, `product` también se actualiza: `addition.product || next[index].product || null` — prioriza el producto más reciente que traiga la fusión, y si no trae ninguno, conserva el que ya tenía la línea (para no borrar un vínculo bueno solo porque una fusión posterior no lo incluyera).
+
+**Cobertura de test**: `tests/shopping.test.mjs` ampliado — añade "leche" sin vincular, la añade al carrito (`product:null`), luego la vincula a un producto de Mercadona con `setShoppingItemProduct`, la marca y la añade al carrito de nuevo, y comprueba que sigue siendo una sola línea (cantidad sumada) pero ya con el producto vinculado.
+
 ## 2026-09-20 — Un móvil de contacto en formato no reconocido se daba por no encontrado V0.22.10
 
 Quinto hallazgo de prioridad media de la auditoría completa que se corrige.

@@ -339,7 +339,13 @@ function mergeIntoCart(cart, addition) {
   const index = cart.findIndex(item => !item.checked && sameItemName(item.name, addition.name) && item.store === addition.store);
   if (index === -1) return [...cart, { id: makeId("ct"), name: addition.name, store: addition.store || null, quantity: addition.quantity || 1, checked: false, product: addition.product || null }];
   const next = [...cart];
-  next[index] = { ...next[index], quantity: (next[index].quantity || 1) + (addition.quantity || 1) };
+  // Hallazgo de la auditoría completa: al fusionar con una línea ya
+  // existente del carrito solo se sumaba la cantidad — si el artículo de la
+  // lista se había vinculado a un producto de Mercadona DESPUÉS de la
+  // primera vez que se añadió al carrito (o el vínculo había cambiado), esa
+  // línea del carrito se quedaba para siempre sin precio ni foto, aunque el
+  // artículo de la lista ya estuviera bien vinculado.
+  next[index] = { ...next[index], quantity: (next[index].quantity || 1) + (addition.quantity || 1), product: addition.product || next[index].product || null };
   return next;
 }
 
