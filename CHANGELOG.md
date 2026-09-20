@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.22.14 · Editar los accesos directos en dos móviles a la vez ya no borra en silencio el cambio del otro (auditoría, prioridad media)
+
+- **Causa raíz**: guardar los accesos directos hacía un `setDoc({items,hidden})` que sobrescribía el documento entero en Firestore — si dos dispositivos editaban los accesos (añadir, borrar, reordenar) casi a la vez, el segundo guardado en llegar pisaba sin avisar el cambio del primero. En el fondo, los accesos no tenían ningún `id` estable, así que no había forma de saber si dos accesos "parecidos" eran el mismo editado o dos distintos.
+- **Corregido**: cada acceso lleva ahora un `id` estable, y el guardado calcula qué cambió de verdad en este dispositivo desde la última sincronización y lo aplica — dentro de una transacción de Firestore — sobre la copia más reciente de la nube, en vez de sobrescribirla entera. Un acceso añadido o borrado en el otro dispositivo mientras tanto ya no se pierde.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: 4 pruebas nuevas en `tests/shortcuts.test.mjs`.
+
 ## V0.22.13 · Cada lista de la compra se asocia ahora a una tienda concreta
 
 - **Novedad**: al crear una lista de la compra se elige su tienda entre un conjunto de presets (Mercadona, Consum, Leroy Merlin, Carrefour, Family Cash, Plaza Mayor) — también se puede cambiar después desde el "⋮" de la lista, sin tener que recrearla.
