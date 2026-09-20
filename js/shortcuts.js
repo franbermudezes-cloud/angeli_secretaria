@@ -1,5 +1,6 @@
-import { contactQuery } from "./classifier.js?v=0.22.20";
-import { calendarQueryRange, temporalData } from "./temporal.js?v=0.22.20";
+import { contactQuery } from "./classifier.js?v=0.22.21";
+import { calendarQueryRange, temporalData } from "./temporal.js?v=0.22.21";
+import { REMINDER_SHORTCUT_TRIGGER } from "./keywords.js?v=0.22.21";
 
 // Los accesos por defecto llevan un `id` fijo (no generado al vuelo) para
 // que dos dispositivos que arrancan sin nada guardado todavía — y por tanto
@@ -83,7 +84,7 @@ export function shortcutSemantics(shortcut = {}) {
   if (shortcut.action) return { action: shortcut.action, direct: Boolean(shortcut.direct) };
   const value = `${shortcut.label || ""} ${shortcut.command || ""}`.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   if (/\b(?:cancelar|cancela|anular|anula|borrar evento)\b/.test(value)) return { action: "calendar.delete", direct: true };
-  if (/\b(?:recordatorio|recuerdame|avisame)\b/.test(value)) return { action: "reminder.create", direct: false };
+  if (REMINDER_SHORTCUT_TRIGGER.test(value)) return { action: "reminder.create", direct: false };
   if (/\bwhats?app\b/.test(value)) return { action: "whatsapp.compose", direct: false };
   if (/\b(?:llamar|llama|telefono|contacto)\b/.test(value)) return { action: "contact.call", direct: true };
   if (/\b(?:que tengo|agenda|calendario|citas?)\b/.test(value)) return { action: "calendar.query", direct: true };

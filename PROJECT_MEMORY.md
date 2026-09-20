@@ -1,5 +1,19 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-20 — Palabras clave de "recordatorio" centralizadas en js/keywords.js V0.22.21
+
+Primer hallazgo de "calidad de código" de la auditoría completa que se corrige (ver la entrada de V0.22.1 para el contexto de la auditoría).
+
+**Causa raíz**: el patrón que detecta "esta frase habla de un recordatorio" vivía repetido, no en un único sitio: dentro de `js/ai.js` había 4 copias del MISMO regex `/\brecu[eé]rdame(?:l[oa]s?)?\b|\b(?:recuerda|acu[eé]rdate)\b/i` — en `localReminderQuery`, `localNoteQuery`, `localImmediateCall` y la constante `EXPLICIT_REMINDER_TRIGGER` usada por `explicitNewCommandDomain` — dos de ellas incluso escritas de formas distintas (`[eé]` con la letra literal frente a `[eé]` con el escape unicode), señal clara de copy-paste-y-reescribe en vez de reutilización. `js/classifier.js` (`classify()`) y `js/shortcuts.js` (`shortcutSemantics()`) tenían cada uno su propia variante, ligeramente distinta (con "recordar" en un caso, con "recordatorio"/"avisame" en el otro). Esto ya causó una regresión real y documentada: el guard de "recuérdame" (V0.22.4) tuvo que parchearse por separado en `localReminderQuery` Y `localNoteQuery`, cada una con su propia copia pegada del mismo patrón, porque no había ningún sitio único que las conectara — quien arregló una no tenía forma fácil de saber que la otra necesitaba el mismo arreglo.
+
+**Corrección**: `js/keywords.js` (nuevo, sin ninguna dependencia) centraliza tres constantes — `REMINDER_TRIGGER` (la usada en ai.js, ahora una sola vez), `REMINDER_CLASSIFY_TRIGGER` (la de `classify()`, que añade "recordar") y `REMINDER_SHORTCUT_TRIGGER` (la de `shortcutSemantics()`, que añade "recordatorio"/"avisame") — cada una documentada explicando en qué se diferencia de las demás y por qué. `js/ai.js` importa `REMINDER_TRIGGER` y lo reutiliza en las 4 posiciones donde antes tenía su propia copia; `js/classifier.js` y `js/shortcuts.js` importan su variante correspondiente. Es un refactor puro: ninguna constante cambia las palabras que reconocía en su sitio original, así que no hay ningún cambio de comportamiento observable — solo dejan de estar dispersas y sin conexión entre ellas.
+
+**Fuera de alcance, a propósito**: el prefijo de `cleanInstruction` en `js/shortcuts.js` (`/^\s*(?:(?:recu[eé]rdame|recordar|av[ií]same)\s+)+/i`) tiene un propósito distinto — recortar la frase verbal inicial de un texto, no comprobar si el texto MENCIONA un recordatorio — así que se deja como está; forzarlo a la misma abstracción habría añadido una cuarta variante a un módulo cuyo objetivo es precisamente reducir la dispersión, no añadirle una más.
+
+**De paso**: se corrigieron dos comentarios de `js/ai.js` que tenían caracteres mal codificados (secuencias `é`/`—` como texto literal en vez de "é"/"—" de verdad) — cosmético, sin ningún efecto en el comportamiento, pero se limpiaron porque las líneas ya se estaban tocando para el refactor.
+
+**Cobertura de test**: `tests/keywords.test.mjs` (nuevo) — comprueba que las tres constantes reconocen exactamente las mismas palabras que reconocían sus regexes originales, que `classify()`/`shortcutSemantics()`/los guards de `ai.js` siguen comportándose igual tras el cambio, y que ya no queda ninguna copia suelta del patrón de `REMINDER_TRIGGER` fuera de `js/keywords.js`.
+
 ## 2026-09-20 — Crear/renombrar/borrar/vaciar una lista de la compra sin prompt()/confirm() V0.22.20
 
 Quinto hallazgo de "fricción" de la auditoría completa que se corrige (ver la entrada de V0.22.1 para el contexto de la auditoría) — el último de esta ronda; siguen los de "calidad de código".
