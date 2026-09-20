@@ -1,6 +1,6 @@
-import { cleanTemporalText } from "./temporal.js?v=0.22.15";
-import { calendarDetails } from "./schedule.js?v=0.22.15";
-import { semanticCalendarTarget } from "./ai.js?v=0.22.15";
+import { cleanTemporalText } from "./temporal.js?v=0.22.16";
+import { calendarDetails } from "./schedule.js?v=0.22.16";
+import { semanticCalendarTarget } from "./ai.js?v=0.22.16";
 
 const CLIENT_ID = "172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
@@ -423,6 +423,42 @@ export function createGoogleIntegration({ notify, refresh, setStatus, showConnec
     try{const payload=scheduledReminderEvent(note);delete payload.id;await calendarRequest("PATCH",`/${encodeURIComponent(eventId)}`,payload);await programAngeliNotification(note);notify("Recordatorio actualizado en Calendar");return true}catch(error){applyFailure("calendar",error,"No se pudo actualizar el recordatorio en Calendar");return false}
   }
 
+  // Fricción reportada por el propietario: el Dietario solo dejaba "Cerrar"
+  // al abrir un evento o aviso ya confirmado — para editarlo o cancelarlo
+  // había que ir a Recordatorios/Calendario aparte y volver a buscarlo. Esta
+  // función actualiza directamente por el id ya guardado en la propia
+  // entrada (calendarEventId/schedule.calendarEventId), sin depender de
+  // ningún resultado de búsqueda en caché. Sirve para los tres casos con el
+  // mismo código: un evento suelto (solo el primer bloque hace algo, no hay
+  // `schedule`), un recordatorio suelto (solo el segundo, no hay
+  // `calendarStatus`) y un evento+aviso combinados (los dos).
+  async function updateSyncedCalendarEntry(note){
+    let ok=true;
+    if(note.calendarStatus==="synced"&&note.calendarEventId){
+      try{const payload=calendarEvent(note);delete payload.id;await calendarRequest("PATCH",`/${encodeURIComponent(note.calendarEventId)}`,payload)}
+      catch(error){ok=false;applyFailure("calendar",error,"No se pudo actualizar el evento en Calendar")}
+    }
+    if(ok&&note.schedule?.status==="scheduled"&&note.schedule?.calendarEventId){
+      try{const payload=scheduledReminderEvent(note);delete payload.id;await calendarRequest("PATCH",`/${encodeURIComponent(note.schedule.calendarEventId)}`,payload);await programAngeliNotification(note)}
+      catch(error){ok=false;applyFailure("calendar",error,"No se pudo actualizar el aviso en Calendar")}
+    }
+    if(ok)notify("Cambios guardados en Calendar");
+    return ok;
+  }
+
+  // Mismo motivo que updateSyncedCalendarEntry: cancelar SOLO el evento de
+  // una entrada ya confirmada (a diferencia de cancelScheduledReminder, que
+  // ya existía para el aviso) sin tener que borrar la entrada entera de
+  // Angeli. `calendarStatus:"cancelled"` es el mismo estado que ya reconoce
+  // calendarActions() en ui.js para mostrar "✓ Evento cancelado".
+  async function cancelSyncedCalendarEvent(note){
+    try{
+      if(note.calendarEventId)await calendarRequest("DELETE",`/${encodeURIComponent(note.calendarEventId)}`);
+      saveNotes(getNotes().map(item=>item.id===note.id?{...item,calendarStatus:"cancelled"}:item));
+      notify("Evento cancelado");
+    }catch(error){applyFailure("calendar",error,"No se pudo cancelar el evento")}
+  }
+
   async function searchCalendar(note) {
     if (!CALENDAR_SEARCH_INTENTS.has(note.proposal?.intent)) return;
     try {
@@ -513,6 +549,8 @@ export function createGoogleIntegration({ notify, refresh, setStatus, showConnec
     completeScheduledReminder,
     deleteCalendarTracesFor,
     updateScheduledReminder,
+    updateSyncedCalendarEntry,
+    cancelSyncedCalendarEvent,
     reconcileScheduledReminders,
     searchCalendar,
     deleteCalendarEvent,
