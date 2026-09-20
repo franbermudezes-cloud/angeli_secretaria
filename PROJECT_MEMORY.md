@@ -1,5 +1,15 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-20 — Auditoría completa del código: aviso atascado si el evento de Calendar ya no existe V0.22.3
+
+Tercer hallazgo de prioridad alta de la auditoría completa (ver la entrada de V0.22.1 para el contexto de la auditoría en sí). Este arreglo lo implementó un agente en un worktree aislado en paralelo mientras se trabajaba en otros hallazgos — la sesión principal revisó su diff, lo aplicó sobre el `main` actualizado (renumerando la versión, que el agente había calculado sobre una base ya adelantada por otros arreglos en paralelo) y lo verificó antes de enviarlo.
+
+**Causa raíz**: `completeScheduledReminder`, `cancelScheduledReminder` y `deleteCalendarTracesFor` (`js/google.js`) comparten la misma ruta de backend — `persistent_google_action`'s rama `action=="delete"` (`backend/app.py`) — para borrar un evento de Calendar. Si ese evento ya no existe (el propietario lo borró a mano en Calendar, o ya se había borrado en un intento anterior), la API de Google devuelve 404/410, que `GoogleSessions.api()` convierte en `GoogleResourceNotFound`. Esa excepción no se capturaba en la rama de borrado — se propagaba como un fallo real hasta `finishPending` (`js/app.js`), que mostraba el mensaje "El aviso sigue activo en Calendar. Inténtalo de nuevo" (falso: el evento no existe, no está "activo") y nunca marcaba la entrada como hecha. Cada reintento repetía exactamente el mismo 404, así que el aviso quedaba atascado para siempre sin ninguna salida desde la interfaz. La rama de CONSULTA ("get") del mismo evento, justo al lado en el mismo archivo, ya tenía el patrón correcto (`except GoogleResourceNotFound: return {...,"exists":False}`) — el borrado nunca lo replicó.
+
+**Corrección**: la rama `action=="delete"` de `persistent_google_action` ahora captura `GoogleResourceNotFound` y devuelve éxito (`{"alreadyDeleted": True}`) en vez de dejar que la excepción se propague — un borrado que ya no encuentra el recurso ES un éxito, porque el estado deseado (evento fuera de Calendar) ya se cumple. Al vivir los tres métodos de `js/google.js` en la misma ruta de backend, arreglarlo ahí los corrige a los tres de una vez sin tocar el frontend.
+
+**Cobertura de test**: `backend/test_app.py::test_calendar_delete_of_already_gone_event_succeeds` — comprueba que borrar un evento inexistente devuelve 200 con `alreadyDeleted:true`, y que borrar uno que sí existe sigue funcionando igual que antes (sin ese campo). 45/45 tests de `backend/test_app.py` en verde.
+
 ## 2026-09-20 — Auditoría completa del código: badge "en vivo" mal oculto V0.22.2
 
 Segundo hallazgo de prioridad alta de la auditoría completa (ver la entrada de V0.22.1 para el contexto de la auditoría en sí).

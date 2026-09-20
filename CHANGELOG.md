@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.22.3 · Completar un aviso ya borrado en Calendar ya no lo deja atascado para siempre (auditoría, hallazgo 3/6)
+
+- **Causa raíz**: borrar en el backend un evento de Calendar que ya no existe (borrado a mano por el propietario, o en un intento anterior) devolvía 404/410, y tanto completar como cancelar un aviso/recordatorio lo trataban como un fallo real — con un mensaje falso ("el aviso sigue activo en Calendar") y sin marcar nunca la entrada como hecha. Cada reintento chocaba con el mismo evento inexistente, sin salida posible desde la interfaz.
+- **Corregido**: un borrado que ya no encuentra el recurso en Calendar se trata como éxito (el estado que se buscaba — evento fuera de Calendar — ya se cumple), igual que ya hacía la consulta ("get") de un evento junto a la que vive este código.
+- Sin cambios en el frontend; sí requiere redespliegue del backend (`gcloud run deploy`).
+- Tests: 1 prueba nueva en `backend/test_app.py`.
+
 ## V0.22.2 · El badge "Mercadona · en vivo" y el buscador se ocultaban solo a medias (auditoría, hallazgo 2/6)
 
 - **Causa raíz**: `#shoppingLiveBadge`, `#shoppingFallbackAdd` y `#shoppingSuggestions` se ocultan con el atributo `hidden`, pero sus propias clases fijan su `display` — con la misma especificidad que la regla `[hidden]` del navegador, gana la de la clase, así que ocultarlos con `hidden=true` no los ocultaba de verdad. Mismo patrón de bug ya corregido antes para otras pantallas de esta app, colado en tres elementos añadidos después.

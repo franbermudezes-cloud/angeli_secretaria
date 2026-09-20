@@ -563,7 +563,16 @@ def persistent_google_action(payload: dict[str, Any]) -> dict[str, Any]:
         return {"calendarId": calendar_id, "eventId": event_id,
                 "exists": event.get("status") != "cancelled", "event": event}
     if action == "delete":
-        return {"calendarId": calendar_id, **service.api(CALENDAR, "DELETE", url)}
+        # Borrar un evento que el usuario ya quitó a mano en Calendar (o que ya
+        # se había borrado antes desde Angeli) devolvía 404/410 y el cliente lo
+        # trataba como fallo real, dejando el aviso/recordatorio atascado para
+        # siempre (completar o cancelar volvía a chocar con el mismo evento ya
+        # inexistente). Un delete que ya no encuentra el recurso es éxito: el
+        # estado deseado (evento fuera de Calendar) ya se cumple.
+        try:
+            return {"calendarId": calendar_id, **service.api(CALENDAR, "DELETE", url)}
+        except GoogleResourceNotFound:
+            return {"calendarId": calendar_id, "eventId": event_id, "alreadyDeleted": True}
     if action == "patch" and isinstance(payload.get("event"), dict):
         return {"calendarId": calendar_id, **service.api(CALENDAR, "PATCH", url, payload["event"])}
     raise ValueError("Acción no válida")
