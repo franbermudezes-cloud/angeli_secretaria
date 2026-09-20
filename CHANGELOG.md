@@ -1,5 +1,16 @@
 # Changelog
 
+## V0.21.87 · Rediseño de la pantalla principal
+
+Pedido explícitamente por el propietario, con un boceto visual aprobado antes de tocar código.
+
+- **Mic central + dos laterales**: a la izquierda, un botón nuevo "🛒 añadir rápido" — se dice solo el producto y va directo al buscador de Mercadona (con el modal de confirmación ya existente), preguntando a qué lista añadirlo si hay más de una. A la derecha, el modo conversación pasa de botón de texto a círculo, a juego con el resto.
+- **Se quita el feed de "Conversación" de la vista principal** — sigue guardándose todo igual por dentro (Firestore), solo deja de ocupar la pantalla.
+- **Accesos rápidos nuevos** debajo de los atajos: Notas, Recordatorios y Calendario — cada uno abre el mismo compositor de siempre para crear uno nuevo, solo cambia el camino para llegar.
+- **Footer nuevo**: fuera el cuadro de texto con micrófono y flecha de enviar. Se quedan Cámara, Fotos y Archivo como iconos directos (antes escondidos tras el "+"), y un botón destacado en medio para crear un evento de Calendar directamente.
+- Todas las funciones son las mismas de siempre — solo cambian los accesos para llegar a ellas.
+- Sin cambios en el backend; no requiere redespliegue.
+
 ## V0.21.86 · Correcciones: dictado no disparaba la búsqueda, y la búsqueda no ignoraba acentos
 
 - Al tocar el micrófono del buscador de una lista y decir "café", no salía ningún resultado. Causa real: `target.value=...` asignado desde JavaScript durante el dictado nunca dispara un evento `input` nativo, así que el buscador (que reacciona a ese evento para lanzar la búsqueda en vivo) nunca se enteraba de que el texto había cambiado. Corregido despachando el evento `input` manualmente tras cada actualización del dictado — beneficia a cualquier campo dictado con `oninput` propio, no solo al buscador de la compra.
