@@ -1,5 +1,14 @@
 # Changelog
 
+## V0.21.96 · Cursor listo para escribir en todos los modales con su propio cuadro de texto
+
+El propietario avisó, tras la corrección de la V0.21.95, de que el mismo fallo (cuadro de texto sin el cursor puesto al abrirse) podía repetirse en cualquier otro modal con su propio campo de escritura.
+
+- **Auditados todos los modales con cuadro de texto propio** — el borrador general ("Te escucho"), cambiar título/ubicación/descripción de un evento, cambiar fecha y hora, editar el mensaje de WhatsApp, e indicar otro número de teléfono. Todos dejan ahora el cursor puesto en cuanto se abren, sin tener que tocarlos antes para poder escribir o dictar.
+- Revisado también que ninguno de ellos reanuda el micrófono de fondo del modo conversación mientras sigue abierto (el fallo de la V0.21.95) — solo el modal de "solo me falta un dato" tenía ese problema concreto; el resto ya esperaba correctamente a cerrarse.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: `tests/conversation-mode.test.mjs` ampliado a los cinco modales; `tests/conversation.test.mjs` actualizado para reflejar el nuevo comportamiento.
+
 ## V0.21.95 · Modo conversación: arreglado el modal de "solo me falta un dato"
 
 Reportado por el propietario: al pedir algo en modo conversación que necesitaba un dato más, aparecía el modal de pregunta pero no podía terminar la instrucción — ni hablando ni escribiendo.

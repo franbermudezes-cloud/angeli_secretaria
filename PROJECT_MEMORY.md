@@ -1,5 +1,21 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-20 — Cursor listo para escribir en todos los modales con su propio cuadro de texto V0.21.96
+
+Tras la corrección de la V0.21.95 (el modal de "solo me falta un dato" no dejaba terminar la instrucción), el propietario avisó: "este error vamos a tenerlo en todas las modales" — su preocupación era que el mismo patrón de fallo pudiera repetirse en cualquier otro modal parecido.
+
+**Auditoría realizada**: se repasaron los dos aspectos del fallo original por separado en cada modal de la app con su propio cuadro de texto o campo de dictado:
+
+1. **Conflicto de micrófono** (dos `SpeechRecognition` compitiendo): solo ocurría porque `conversationModalKind()` clasificaba el modal de `showInteractionQuestion` como un caso especial ("question", detectado por buscar literalmente el id `#conversationDraft` en el DOM) que SÍ reanudaba el micrófono de fondo del modo conversación de forma inmediata. El resto de modales con su propio micrófono (`showCalendarFieldEditor`, `showWhatsAppEditor`) caen en la rama genérica "manual" de `conversationHandleOutcome`, que YA esperaba correctamente a que el modal se cerrase antes de reanudar — no tenían este problema. Confirmado leyendo el código de cada uno, sin necesidad de más cambios ahí.
+
+2. **Cuadro de texto sin el cursor puesto** (pedido explícito de que "si vamos a tener que escribir ahí, no tiene por qué salirse [el foco]"): este sí afectaba a TODOS los modales con su propio campo, no solo al de la pregunta de aclaración. Se añadió `.focus()` justo después de `openModal()` en cada uno: `showDraft` (el borrador general, "Te escucho"), `showCalendarFieldEditor` (título/ubicación/descripción de un evento), `showCalendarDateTimeEditor` (fecha y hora — se enfoca el campo de fecha), `showWhatsAppEditor` (mensaje de WhatsApp) y `showWhatsAppPhoneEditor` (número de teléfono). `showInteractionQuestion` ya lo tenía desde la V0.21.95.
+
+**Deliberadamente fuera de este cambio**: los editores de formulario más largos y menos ligados al flujo de dictado por voz (`showNoteEditor`, `showReminderEditor`, con varios campos cada uno) no se tocaron — no comparten el patrón de "un solo campo de dictado con micrófono propio" que motivó el reporte original, y forzar el foco en el primero de varios campos de un formulario largo no es claramente deseable (podría hacer saltar el teclado antes de que la persona haya visto el resto del formulario).
+
+**Regresión encontrada al actualizar los tests**: `tests/conversation.test.mjs` ya tenía una prueba que afirmaba explícitamente `assert.equal(draft.focusCount,0)` tras abrir `showDraft` — alguien había dejado constancia deliberada de que ese modal NO se enfocaba antes. Actualizada a `focusCount,1` con un comentario explicando que es un cambio de comportamiento intencional de esta versión, no un descuido.
+
+**Cobertura de test**: `tests/conversation-mode.test.mjs` ampliado con un bucle que comprueba los cinco modales (`showDraft`, `showCalendarFieldEditor`, `showCalendarDateTimeEditor`, `showWhatsAppEditor`, `showWhatsAppPhoneEditor`) enfocan su campo correspondiente. Verificado también en el navegador sandbox llamando a `ui.showWhatsAppPhoneEditor` directamente: el `<input type="tel">` queda como `document.activeElement` nada más abrirse.
+
 ## 2026-09-20 — Modo conversación: arreglado el modal de "solo me falta un dato" V0.21.95
 
 El propietario reportó que, en modo conversación, cuando Angeli necesitaba un dato más para completar una orden (el modal "Solo me falta un dato" / `showInteractionQuestion`), no podía terminar la instrucción de ninguna manera: "si toco cualquier cosa, ya no puedo escribir nada... y al mismo tiempo también me da acceso para abrir el micrófono del modal. Y al final da error."
