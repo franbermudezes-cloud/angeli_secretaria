@@ -1,5 +1,14 @@
 # Changelog
 
+## V0.21.95 · Modo conversación: arreglado el modal de "solo me falta un dato"
+
+Reportado por el propietario: al pedir algo en modo conversación que necesitaba un dato más, aparecía el modal de pregunta pero no podía terminar la instrucción — ni hablando ni escribiendo.
+
+- **Causa raíz**: ese modal trae su propio cuadro de texto y su propio botón "🎙️ Hablar", pero a la vez se reanudaba el micrófono de fondo del modo conversación — dos reconocedores de voz compitiendo por el mismo micrófono. Tocar el micro del modal fallaba en silencio porque el de fondo ya lo tenía ocupado, así que hablar no escribía nada y la instrucción se quedaba colgada. Corregido para que, igual que ya pasaba con el otro tipo de modal ("toca en la pantalla para continuar"), se espere a que este se cierre antes de reanudar la escucha de fondo.
+- **Además**: el cuadro de texto se abría sin el cursor puesto — había que tocarlo primero para poder escribir. Ahora queda enfocado en cuanto se abre el modal.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: 2 pruebas nuevas en `tests/conversation-mode.test.mjs`.
+
 ## V0.21.94 · Ocultar del todo los accesos directos, y elegirlos ya preparados
 
 Aclaración del propietario justo después de la V0.21.93: "Gestionar accesos directos" permite borrar uno a uno, pero pedía además dejar la pantalla principal completamente limpia (ni la fila ni el "＋"), y poder elegir accesos ya preparados en vez de escribirlos a mano.

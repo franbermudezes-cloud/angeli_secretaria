@@ -134,4 +134,27 @@ assert.match(manualBranchSource, /\$\("modalLead"\)\.textContent/, "debe leer la
 assert.match(manualBranchSource, /button\.confirm, button\.danger/, "debe identificar el botón de acción principal para nombrarlo");
 assert.match(manualBranchSource, /await speakAloud\(spoken\);/, "debe hablar el título\\/explicación real, no una frase fija");
 
+// Real reportado por el propietario: al pedir algo en modo conversación que
+// necesitaba un dato más, el modal de pregunta (showInteractionQuestion, que
+// trae su propio cuadro de texto y su propio botón "🎙️ Hablar") se abría a
+// la vez que se reanudaba el micrófono de FONDO del modo conversación
+// (resumeConversationListening()) — dos SpeechRecognition compitiendo por
+// el mismo micrófono. Tocar el micro del modal fallaba en silencio (el
+// reconocedor de fondo ya tenía el micrófono ocupado), así que hablar no
+// escribía nada y la instrucción se quedaba sin poder terminarse. La rama
+// "question" debe esperar a que ESE modal se cierre antes de reanudar la
+// escucha de fondo, igual que ya hace la rama "manual".
+const questionBranchSource = app.match(/if\(kind==="question"\)\{[\s\S]*?\n \}/)?.[0] || "";
+assert.ok(questionBranchSource, 'la rama "question" de conversationHandleOutcome debe existir');
+assert.doesNotMatch(questionBranchSource, /^\s*resumeConversationListening\(\);/m, "no debe reanudar el micrófono de fondo mientras el modal con su propio micro sigue abierto");
+assert.match(questionBranchSource, /watchForModalClose\(\(\)=>\{if\(conversationOn\)resumeConversationListening\(\)\}\)/, "debe esperar a que el modal se cierre, igual que la rama \"manual\"");
+
+// Segundo real reportado en el mismo mensaje: el cuadro de texto del modal
+// se abría sin el cursor puesto — escribir a mano exigía tocar el cuadro
+// primero, y ni siquiera dictar por voz se notaba a simple vista si no se
+// había mirado el cuadro antes de hablar.
+const showInteractionQuestionSource = ui.match(/function showInteractionQuestion\([\s\S]*?\n  \}/)?.[0] || "";
+assert.ok(showInteractionQuestionSource, "showInteractionQuestion debe existir");
+assert.match(showInteractionQuestionSource, /draft\.focus\(\);/, "el cuadro de texto debe quedar enfocado en cuanto se abre el modal");
+
 console.log("conversation-mode: ok");
