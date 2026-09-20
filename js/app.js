@@ -1,25 +1,25 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.82";
-import{classify,actionData}from"./classifier.js?v=0.21.82";
-import{sendEntry}from"./sheets.js?v=0.21.82";
-import{createUI}from"./ui.js?v=0.21.82";
-import{createGoogleIntegration}from"./google.js?v=0.21.82";
-import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.21.82";
-import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems}from"./shopping.js?v=0.21.82";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.82";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.82";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.82";
-import{createCloudSync}from"./firebase.js?v=0.21.82";
-import{createMediaService}from"./media.js?v=0.21.82";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.82";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.82";
-import{createAgendaActions}from"./agenda.js?v=0.21.82";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.82";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.82";
-import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.82";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.82";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.82";
-import{mediaLibraryItems}from"./media-library.js?v=0.21.82";
-import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.82";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.83";
+import{classify,actionData}from"./classifier.js?v=0.21.83";
+import{sendEntry}from"./sheets.js?v=0.21.83";
+import{createUI}from"./ui.js?v=0.21.83";
+import{createGoogleIntegration}from"./google.js?v=0.21.83";
+import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.21.83";
+import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems}from"./shopping.js?v=0.21.83";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.83";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.83";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.83";
+import{createCloudSync}from"./firebase.js?v=0.21.83";
+import{createMediaService}from"./media.js?v=0.21.83";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.83";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.83";
+import{createAgendaActions}from"./agenda.js?v=0.21.83";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.83";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.83";
+import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.83";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.83";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.83";
+import{mediaLibraryItems}from"./media-library.js?v=0.21.83";
+import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.83";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],pendingMediaContext=null,selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -609,7 +609,7 @@ function runShoppingSearchCommand(command){
  openShoppingList();
  if(command.store==="consum"){ui.notify("Consum no tiene catálogo de productos disponible todavía; puedes añadirlo indicando la tienda igualmente");return}
  $("shoppingInput").value=command.query;
- scheduleShoppingSearch();
+ void runShoppingSearch(command.query);
 }
 function openShoppingList(){ui.openShoppingList(shoppingList)}
 function shoppingItemClick(event){
@@ -635,23 +635,32 @@ function addShoppingItemManually(){
  hideShoppingSuggestions();
  void runShoppingCommand({action:"add",items});
 }
-// Reportado: al escribir "leche" en el buscador no aparecía ninguna opción
-// de Mercadona para elegir, solo se podía añadir el texto tal cual. Ahora
-// busca en vivo (con un pequeño retraso para no lanzar una petición por
-// cada tecla) y, si hay resultados, dejan elegir el producto exacto.
+// Reportado: no había ningún botón de buscar — solo micrófono y "+", que
+// añade el texto tal cual — así que la búsqueda en vivo al escribir pasaba
+// desapercibida (y en el móvil ni se notaba que existía). Ahora hay un botón
+// "🔍" explícito que siempre busca al momento, además de la búsqueda en vivo
+// al escribir; y se ve claramente "Buscando…" / "Sin resultados", nunca un
+// silencio que parece que no ha pasado nada.
 let shoppingSearchTimer=null,shoppingSearchSeq=0,shoppingSearchResults=[];
+function extractSearchQuery(value){return(parseItemList(value)[0]?.name||value).trim()}
 function hideShoppingSuggestions(){shoppingSearchResults=[];$("shoppingSuggestions").hidden=true;$("shoppingSuggestions").innerHTML=""}
+function showShoppingSuggestionsMessage(message){
+ shoppingSearchResults=[];
+ $("shoppingSuggestions").hidden=false;
+ $("shoppingSuggestions").innerHTML='<div class="shopping-suggestions-empty">'+esc(message)+"</div>";
+}
 function renderShoppingSuggestions(results){
  shoppingSearchResults=results;
- if(!results.length){hideShoppingSuggestions();return}
+ if(!results.length){showShoppingSuggestionsMessage("Sin resultados en Mercadona");return}
  $("shoppingSuggestions").hidden=false;
  $("shoppingSuggestions").innerHTML=results.map((product,index)=>'<button type="button" class="shopping-suggestion" data-suggestion="'+index+'"><span>'+esc(product.name)+(product.packaging?" · "+esc(product.packaging):"")+'</span>'+(product.price!=null?'<span class="shopping-suggestion-price">'+Number(product.price).toFixed(2)+" €</span>":"")+"</button>").join("");
 }
 async function runShoppingSearch(query){
  const seq=++shoppingSearchSeq;
- if(!cloud.isSignedIn())return;
+ showShoppingSuggestionsMessage("Buscando en Mercadona…");
+ if(!cloud.isSignedIn()){if(seq===shoppingSearchSeq)showShoppingSuggestionsMessage("Inicia sesión en Angeli para buscar");return}
  let idToken;
- try{idToken=await cloud.getAuthToken()}catch(_){return}
+ try{idToken=await cloud.getAuthToken()}catch(_){if(seq===shoppingSearchSeq)showShoppingSuggestionsMessage("No se pudo buscar ahora mismo");return}
  let results=[];
  // El buscador manual es para explorar de verdad ("¿cuántas marcas de
  // cerveza hay?"), no solo para el primer emparejado automático por voz —
@@ -662,9 +671,15 @@ async function runShoppingSearch(query){
 }
 function scheduleShoppingSearch(){
  clearTimeout(shoppingSearchTimer);
- const value=$("shoppingInput").value.trim(),query=(parseItemList(value)[0]?.name||value).trim();
+ const query=extractSearchQuery($("shoppingInput").value.trim());
  if(query.length<2){hideShoppingSuggestions();return}
  shoppingSearchTimer=setTimeout(()=>void runShoppingSearch(query),350);
+}
+function searchShoppingNow(){
+ clearTimeout(shoppingSearchTimer);
+ const query=extractSearchQuery($("shoppingInput").value.trim());
+ if(!query){ui.notify("Escribe algo para buscar");return}
+ void runShoppingSearch(query);
 }
 function selectShoppingSuggestion(index){
  const product=shoppingSearchResults[index];
@@ -763,6 +778,7 @@ $("shoppingOpen").onclick=openShoppingList;
 $("shoppingClose").onclick=()=>{ui.closeShoppingList();hideShoppingSuggestions()};
 $("shoppingList").onclick=shoppingItemClick;
 $("shoppingAdd").onclick=addShoppingItemManually;
+$("shoppingSearchBtn").onclick=searchShoppingNow;
 $("shoppingMic").onclick=()=>start({inConversation:true,draftId:"shoppingInput"});
 $("shoppingInput").onkeydown=event=>{if(event.key==="Enter"){event.preventDefault();addShoppingItemManually()}};
 $("shoppingInput").oninput=scheduleShoppingSearch;
@@ -918,7 +934,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.82",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.83",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}

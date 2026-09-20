@@ -20,6 +20,12 @@ const STORE_SUFFIX = /^(.*?)\s+(?:de|del)\s+(mercadona|consum)\s*$/i;
 // "lista de la compra" — pero exige un verbo de búsqueda explícito para no
 // confundirse con "añade la leche de mercadona a la lista de la compra".
 const SEARCH_TRIGGER = /^\s*(?:busca(?:r)?|mira|ens[eé]ñame|dime)\s+(.+?)\s+(?:en|de)\s+(?:la\s+lista\s+de\s+|el\s+cat[aá]logo\s+de\s+)?(mercadona|consum)\b.*$/i;
+// Real detectado: "busca leche en la lista de la compra" (sin mencionar
+// Mercadona) no coincidía con SEARCH_TRIGGER y caía en el "add" genérico,
+// guardando "busca leche" como texto literal del artículo. Si se pide
+// buscar mencionando la lista mismo (no una tienda), se entiende que es en
+// Mercadona — es el único catálogo con búsqueda real por ahora.
+const SEARCH_TRIGGER_GENERIC = /^\s*(?:busca(?:r)?|mira|ens[eé]ñame|dime)\s+(.+?)\s+en\s+(?:la\s+)?(?:lista\s+de\s+la\s+compra|lista\s+de\s+compra|lista\s+del\s+s[uú]per)\b.*$/i;
 const QUANTITY_WORDS = { un: 1, una: 1, uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10 };
 const LEADING_QUANTITY = /^(\d{1,2}|un|una|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez)\s+/i;
 
@@ -86,6 +92,11 @@ export function parseShoppingCommand(text) {
     const query = searchMatch[1].trim().replace(LEADING_ARTICLE, "").trim();
     const store = searchMatch[2].toLowerCase();
     if (query) return { action: "search", query, store };
+  }
+  const genericSearchMatch = SEARCH_TRIGGER_GENERIC.exec(value);
+  if (genericSearchMatch) {
+    const query = genericSearchMatch[1].trim().replace(LEADING_ARTICLE, "").trim();
+    if (query) return { action: "search", query, store: "mercadona" };
   }
   if (!TRIGGER.test(value)) return null;
   // El verbo siempre abre la frase en el habla natural ("quita...",

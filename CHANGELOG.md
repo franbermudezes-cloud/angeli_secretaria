@@ -1,5 +1,15 @@
 # Changelog
 
+## V0.21.83 · Lista de la compra: botón de búsqueda explícito
+
+Reportado probando en el móvil: no había ningún botón para buscar — solo micrófono y "+" (que añade el texto tal cual) — así que la búsqueda en vivo al escribir pasaba completamente desapercibida. Además, decir exactamente "busca leche en la lista de la compra" (sin mencionar Mercadona) no se reconocía como búsqueda y se guardaba "busca leche" como artículo literal.
+
+- Añadido un botón "🔍" explícito junto al campo de la lista de la compra: busca al momento, sin esperar a dejar de escribir. Se ve claramente "Buscando en Mercadona…" mientras tarda y "Sin resultados en Mercadona" si no encuentra nada — antes, sin resultados simplemente no pasaba nada visible.
+- "busca X en la lista de la compra" (o "en la lista del súper"), sin nombrar una tienda, ahora se entiende como búsqueda en Mercadona — el único catálogo con búsqueda real por ahora.
+- Añadida una pista bajo el campo ("🔍 busca en Mercadona · ＋ añade el texto tal cual") para que la diferencia entre buscar y añadir sea explícita, no algo que haya que descubrir.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: `tests/shopping.test.mjs` ampliado a 25 pruebas (la frase exacta reportada).
+
 ## V0.21.82 · Lista de la compra: catálogo de Mercadona más fiable, cantidades con +/- y búsqueda ampliada
 
 Todo probado directamente en la app real (producción) con la sesión del propietario, siguiendo su petición explícita de dejar primero el buscador/añadir/lista perfectamente pulidos antes de tocar la voz.
