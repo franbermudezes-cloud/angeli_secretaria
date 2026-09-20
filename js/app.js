@@ -1,25 +1,25 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.92";
-import{classify,actionData}from"./classifier.js?v=0.21.92";
-import{sendEntry}from"./sheets.js?v=0.21.92";
-import{createUI}from"./ui.js?v=0.21.92";
-import{createGoogleIntegration}from"./google.js?v=0.21.92";
-import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.21.92";
-import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.21.92";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.92";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.92";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.92";
-import{createCloudSync}from"./firebase.js?v=0.21.92";
-import{createMediaService}from"./media.js?v=0.21.92";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.92";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.92";
-import{createAgendaActions}from"./agenda.js?v=0.21.92";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.92";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.92";
-import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.92";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.92";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.92";
-import{mediaLibraryItems}from"./media-library.js?v=0.21.92";
-import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.92";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.93";
+import{classify,actionData}from"./classifier.js?v=0.21.93";
+import{sendEntry}from"./sheets.js?v=0.21.93";
+import{createUI}from"./ui.js?v=0.21.93";
+import{createGoogleIntegration}from"./google.js?v=0.21.93";
+import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.21.93";
+import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.21.93";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.93";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.93";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.93";
+import{createCloudSync}from"./firebase.js?v=0.21.93";
+import{createMediaService}from"./media.js?v=0.21.93";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.93";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.93";
+import{createAgendaActions}from"./agenda.js?v=0.21.93";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.93";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.93";
+import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.93";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.93";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.93";
+import{mediaLibraryItems}from"./media-library.js?v=0.21.93";
+import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.93";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],pendingMediaContext=null,selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -66,7 +66,21 @@ function renderShortcuts(){$("shortcuts").innerHTML=shortcuts.map((shortcut,inde
 function saveShortcuts(){shortcuts=normalizeShortcuts(shortcuts);writeShortcuts(shortcuts);renderShortcuts();if(cloud.isSignedIn())void cloud.saveShortcuts(shortcuts).catch(()=>ui.notify("Los accesos directos siguen pendientes de sincronizar"))}
 function prepareShortcut(shortcut){pendingShortcut=shortcut;if(shortcut.command){$("text").value=shortcut.command;autosize();add({shortcut});return}const prefix=shortcutPrefix(shortcut);$("text").value=prefix;$("text").placeholder=shortcut.prompt||"Escribe o dicta tu instrucción…";autosize();openDraft();if(shortcut.dictate||shortcut.action==="contact.call")setTimeout(start,120);else ui.notify(shortcut.prompt||"Completa la instrucción y pulsa Enviar")}
 function createShortcut(initial=""){const command=prompt("Escribe la orden que ejecutará Angeli.",initial);if(!command?.trim())return;const label=prompt("Nombre corto para el acceso directo.",command.trim().slice(0,24));if(!label?.trim())return;shortcuts.push({label:label.trim(),command:command.trim()});saveShortcuts();ui.notify("Acceso directo creado")}
-function editShortcuts(){if(!shortcuts.length){ui.notify("No hay accesos para editar");return}const choices=shortcuts.map((shortcut,index)=>`${index+1}. ${shortcut.label}`).join("\n"),value=prompt(`Indica el número del acceso que quieres eliminar:\n${choices}`);const index=Number(value)-1;if(!Number.isInteger(index)||!shortcuts[index])return;shortcuts.splice(index,1);saveShortcuts();ui.notify("Acceso directo eliminado")}
+// Pedido explícito: poder quitar de verdad un acceso directo de la
+// pantalla principal desde Ajustes (no solo dejarlo fuera de la vista).
+// Sustituye al viejo flujo con prompt() por un modal real, en línea con el
+// resto de listas con "quitar" de esta app (listas de la compra, etc.).
+function manageShortcuts(){
+ ui.openModal({
+  title:"Accesos directos",
+  lead:shortcuts.length?"Toca uno para quitarlo de la pantalla principal.":"No tienes ningún acceso directo ahora mismo.",
+  actions:[
+   ...shortcuts.map((shortcut,index)=>({label:`🗑️ ${shortcut.label}`,kind:"danger",onClick:()=>{shortcuts.splice(index,1);saveShortcuts();ui.notify("Acceso directo eliminado");manageShortcuts()}})),
+   {label:"＋ Crear acceso nuevo",kind:"secondary",onClick:()=>{ui.closeLayers();createShortcut()}},
+   {label:"Cerrar",kind:"secondary",onClick:ui.closeLayers}
+  ]
+ });
+}
 function scrollConversation(){requestAnimationFrame(()=>$("mainContent").scrollTo({top:$("mainContent").scrollHeight,behavior:"smooth"}))}
 function setSending(active){$("add").disabled=active}
 function clearPendingMedia(){pendingImages=[];pendingFiles=[];pendingMediaContext=null;$("cameraInput").value="";$("photoInput").value="";$("fileInput").value="";$("preview").innerHTML="";}
@@ -284,7 +298,17 @@ function start({inConversation=false,draftId=null}={}){const SR=window.SpeechRec
  // que siempre se pueda escribir a mano.
  if(!inConversation)openDraft();
  if(!SR){ui.notify("Este navegador no admite dictado; puedes escribir aquí");return}
- const target=draftId?$(draftId):$("text");finalText=target?.value.trim()||"";rec=new SR();rec.lang="es-ES";rec.continuous=false;rec.interimResults=true;rec.maxAlternatives=1;let sessionFinal=finalText||"",lastInterim="";// Real detectado: dictar en el buscador de la lista de la compra ("café")
+ // Real reportado por el propietario: con continuous:false el
+ // reconocedor cortaba el dictado general a los 1-3 segundos, no por una
+ // pausa suya sino porque continuous:false da la sesión por terminada nada
+ // más entregar un primer resultado "final" — obligaba a hablar muy rápido
+ // y sin pausas, o a volver a tocar el micro para seguir. A diferencia del
+ // modo conversación y del micro rápido de la compra (ahí continuous:false
+ // SÍ es lo correcto: cada sesión es una sola orden de una vez), aquí se
+ // dicta una instrucción/nota que puede necesitar pensar a mitad de frase,
+ // así que debe seguir escuchando hasta que la persona toque el micro para
+ // parar o pulse Enviar.
+ const target=draftId?$(draftId):$("text");finalText=target?.value.trim()||"";rec=new SR();rec.lang="es-ES";rec.continuous=true;rec.interimResults=true;rec.maxAlternatives=1;let sessionFinal=finalText||"",lastInterim="";// Real detectado: dictar en el buscador de la lista de la compra ("café")
 // no disparaba ninguna búsqueda. target.value=... asignado desde JS nunca
 // emite un evento "input" nativo, así que el oninput del buscador (que es
 // justamente lo que lanza la búsqueda en vivo) nunca se enteraba de que el
@@ -969,6 +993,8 @@ $("shoppingQuickMic").onclick=shoppingQuickMic;
 $("quickNotesBtn").onclick=()=>prepareShortcut({label:"Nota",prompt:"Escribe o dicta la nota.",prefix:"",action:"note"});
 $("quickRemindersBtn").onclick=()=>prepareShortcut({label:"Recordatorio",prompt:"¿Qué quieres que te recuerde y cuándo?",prefix:"Recuérdame ",action:"reminder.create"});
 $("quickCalendarBtn").onclick=openNewEventDraft;
+$("quickCallBtn").onclick=()=>prepareShortcut(DEFAULT_SHORTCUTS[2]);
+$("quickWhatsappBtn").onclick=()=>prepareShortcut(DEFAULT_SHORTCUTS[3]);
 $("quickEventBtn").onclick=openNewEventDraft;
 $("clear").onclick=()=>{$("text").value="";finalText="";pendingShortcut=null;autosize();ui.notify("Borrador limpiado")};
 $("contactsConnect").onclick=google.connectContacts;
@@ -1039,7 +1065,7 @@ $("menuOpen").onclick=ui.openMenu;$("menuClose").onclick=ui.closeLayers;$("scrim
 $("clearView").onclick=()=>{if(confirm("Esto limpia solo la conversación visible. Tus entradas, fotos y archivos seguirán guardados. ¿Continuar?")){$("list").innerHTML='<div class="empty">Vista limpia. Tus datos siguen guardados.</div>';ui.notify("Vista limpiada")}};
 $("shortcutManual").onclick=()=>createShortcut();
 $("shortcutVoice").onclick=()=>{shortcutCapture=true;$("text").value="";$("text").placeholder="Di la orden que ejecutará el acceso directo…";ui.closeLayers();start()};
-$("shortcutEdit").onclick=editShortcuts;
+$("shortcutEdit").onclick=()=>{ui.closeLayers();manageShortcuts()};
 $("noteSettingsOpen").onclick=()=>{ui.closeLayers();showNoteSettings()};
 $("voiceRate").value=voicePrefs.rate??1;
 $("voicePitch").value=voicePrefs.pitch??1;
@@ -1161,7 +1187,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.92",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.93",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}

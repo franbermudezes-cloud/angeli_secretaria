@@ -95,3 +95,35 @@ test("accesos directos: la fila envuelve en vez de desplazarse horizontalmente",
   assert.match(shortcutsCss, /flex-wrap:wrap/);
   assert.doesNotMatch(shortcutsCss, /overflow-x:auto/);
 });
+
+// Pedido explícito del propietario: poder quitar de verdad un acceso
+// directo desde Ajustes, no solo dejarlo fuera de la vista. Sustituye al
+// viejo flujo con prompt() por un modal real (mismo patrón que el resto de
+// "quitar algo de una lista" de esta app).
+test("accesos directos: se pueden quitar de verdad desde un modal en Ajustes, no con prompt()", () => {
+  const app = readFileSync(new URL("../js/app.js", import.meta.url), "utf8");
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  assert.match(app, /function manageShortcuts\(\)/);
+  const manageSource = app.match(/function manageShortcuts\(\)\{[\s\S]*?\n\}/)?.[0] || "";
+  assert.ok(manageSource, "manageShortcuts debe existir");
+  assert.match(manageSource, /shortcuts\.splice\(index,1\)/);
+  assert.match(manageSource, /saveShortcuts\(\)/);
+  assert.doesNotMatch(manageSource, /\bprompt\(/, "ya no debe depender de prompt() para elegir qué borrar");
+  assert.match(app, /\$\("shortcutEdit"\)\.onclick=\(\)=>\{ui\.closeLayers\(\);manageShortcuts\(\)\}/, 'debe cerrar el menú de Ajustes antes de abrir el modal, igual que "Ajustes de notas" — si no, el modal queda tapado detrás del propio menú (settings-menu, z-index más alto)');
+  assert.match(html, /id="shortcutEdit"/);
+});
+
+// Pedido explícito: los mismos accesos rápidos que ya existen para
+// Notas/Recordatorios/Calendario, ahora también para Llamar contacto y
+// WhatsApp — reutilizando los mismos objetos de DEFAULT_SHORTCUTS ya usados
+// en la fila de accesos directos, sin duplicar su definición.
+test("accesos rápidos nuevos para llamar y WhatsApp reutilizan los mismos DEFAULT_SHORTCUTS de siempre", () => {
+  const app = readFileSync(new URL("../js/app.js", import.meta.url), "utf8");
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  assert.match(html, /id="quickCallBtn"/);
+  assert.match(html, /id="quickWhatsappBtn"/);
+  assert.match(app, /\$\("quickCallBtn"\)\.onclick=\(\)=>prepareShortcut\(DEFAULT_SHORTCUTS\[2\]\)/);
+  assert.match(app, /\$\("quickWhatsappBtn"\)\.onclick=\(\)=>prepareShortcut\(DEFAULT_SHORTCUTS\[3\]\)/);
+  assert.equal(DEFAULT_SHORTCUTS[2].action, "contact.call");
+  assert.equal(DEFAULT_SHORTCUTS[3].action, "whatsapp.compose");
+});
