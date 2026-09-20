@@ -1,5 +1,15 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-20 — Bajar la cantidad a 0 en la compra quita el artículo directamente V0.22.19
+
+Cuarto hallazgo de "fricción" de la auditoría completa que se corrige (ver la entrada de V0.22.1 para el contexto de la auditoría).
+
+**Causa raíz**: `setShoppingItemQuantity`/`setCartItemQuantity` (`js/shopping.js`) clampan la cantidad entre 1 y 99 (`Math.max(1, Math.min(99, ...))`) — un límite correcto para esas funciones en sí (nunca deben producir una cantidad inválida), pero `shoppingItemClick`/`shoppingCartItemClick` (`js/app.js`), que manejan el toque en el botón "−" del stepper, siempre llamaban a esa función sin más, así que tocar "−" estando ya en 1 no hacía nada visible — la cantidad se quedaba clavada, y quitar el artículo del todo exigía encontrar el botón "✕" aparte.
+
+**Corrección**: en los manejadores de clic (no en las funciones puras de `shopping.js`, que se dejan igual), si la acción es `qty-dec`/`cart-qty-dec` y la cantidad actual ya es 1, se quita el artículo directamente (`removeShoppingItemById`/`removeCartItem`) en vez de intentar bajarla más — igual que el gesto habitual en cualquier carrito de la compra.
+
+**Cobertura de test**: `tests/shopping.test.mjs` ampliado — comprueba, por código fuente, que ambos manejadores quitan el artículo al bajar de 1 en vez de quedarse clavados.
+
 ## 2026-09-20 — Añadir un artículo exacto a la compra ya no exige confirmar V0.22.18
 
 Tercer hallazgo de "fricción" de la auditoría completa que se corrige (ver la entrada de V0.22.1 para el contexto de la auditoría).

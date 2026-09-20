@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.22.19 · Bajar la cantidad a 0 en la compra ya quita el artículo directamente (auditoría, fricción)
+
+- **Antes**: bajar la cantidad de un artículo (en la lista o en el carrito) se quedaba clavada en 1 — había que buscar la ✕ aparte para quitarlo del todo.
+- **Ahora**: bajar de 1 quita el artículo directamente, igual que en cualquier carrito normal.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: 1 prueba nueva en `tests/shopping.test.mjs`.
+
 ## V0.22.18 · Añadir un artículo exacto a la compra ya no pide confirmar si no hay ninguna ambigüedad (auditoría, fricción)
 
 - **Antes**: añadir un artículo a la lista siempre abría el modal de confirmación y esperaba a la búsqueda en Mercadona antes de mostrar nada, aunque solo hubiera un resultado — un toque de más ("Usar este") cuando no había nada que elegir.
