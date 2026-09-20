@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.22.17 · "Historial de compras" ya es un acceso directo, junto a "Ver carrito" (auditoría, fricción)
+
+- **Antes**: para ver el historial de compras de una lista había que abrir el "⋮" primero.
+- **Ahora**: "🧾 Historial" aparece como acceso directo en la misma fila que "Quitar comprados"/"Vaciar lista"/"Ver carrito" — mismo tratamiento que ya se le dio a "Ver carrito".
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: 1 prueba nueva en `tests/shopping.test.mjs`.
+
 ## V0.22.16 · Abrir un evento o aviso desde el Dietario ya deja modificarlo o cancelarlo ahí mismo (auditoría, fricción)
 
 - **Antes**: la ficha de un evento/aviso ya confirmado en el Dietario solo dejaba "Cerrar" — para editarlo o cancelarlo había que ir a Recordatorios o Calendario aparte y volver a buscarlo.
