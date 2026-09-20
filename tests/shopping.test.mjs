@@ -464,3 +464,19 @@ test('pulsar una compra del historial enseña cada artículo con su precio y el 
  assert.match(ui,/function showPurchaseDetail\(purchase\)/);
  assert.match(ui,/data-shopping-purchase-id="\$\{esc\(purchase\.id\)\}"/,'cada tarjeta del historial debe poder identificarse para abrir su ficha al pulsarla');
 });
+
+// Hallazgo de la auditoría completa del código: #shoppingLiveBadge,
+// #shoppingFallbackAdd y #shoppingSuggestions se ocultan con el atributo
+// hidden (ver ui.js: hideShoppingSuggestions, setShoppingFallback), pero sus
+// clases (.live-badge, .shopping-fallback-add, .shopping-suggestions) fijan
+// su propio "display" — con la misma especificidad que la regla [hidden]
+// del navegador, gana la última en el CSS (la de la clase), así que
+// ocultarlos con hidden=true no los ocultaba de verdad. Mismo patrón de
+// bug ya corregido antes para #shoppingOverview/#shoppingDetail y para
+// #dietarioLibrary — aquí se coló en tres elementos añadidos después.
+test('el badge "en vivo", el enlace de añadir tal cual y las sugerencias de Mercadona sí se ocultan de verdad con hidden',async()=>{
+ const css=await readFile(new URL('../styles.css',import.meta.url),'utf8');
+ assert.match(css,/#shoppingLiveBadge\[hidden\][^{]*\{display:none\}|#shoppingLiveBadge\[hidden\]\{[^}]*display:none/);
+ assert.match(css,/#shoppingFallbackAdd\[hidden\]/);
+ assert.match(css,/#shoppingSuggestions\[hidden\]/);
+});

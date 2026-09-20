@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.22.2 · El badge "Mercadona · en vivo" y el buscador se ocultaban solo a medias (auditoría, hallazgo 2/6)
+
+- **Causa raíz**: `#shoppingLiveBadge`, `#shoppingFallbackAdd` y `#shoppingSuggestions` se ocultan con el atributo `hidden`, pero sus propias clases fijan su `display` — con la misma especificidad que la regla `[hidden]` del navegador, gana la de la clase, así que ocultarlos con `hidden=true` no los ocultaba de verdad. Mismo patrón de bug ya corregido antes para otras pantallas de esta app, colado en tres elementos añadidos después.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: 1 prueba nueva en `tests/shopping.test.mjs`.
+
 ## V0.22.1 · Cerrar sesión ya no dejaba la app "pegada" (auditoría completa, hallazgo 1/6)
 
 Primer arreglo de la auditoría completa del código pedida por el propietario. Bug encontrado por revisión, no reportado por el propietario — nadie había notado que cerrar sesión no funcionaba de verdad.
