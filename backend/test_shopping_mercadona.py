@@ -61,6 +61,14 @@ class MercadonaCatalogSearchTests(unittest.TestCase):
         results = mercadona_catalog.search("leche entera")
         self.assertEqual([item["id"] for item in results], ["1"])
 
+    def test_search_ignores_accents_in_both_directions(self):
+        # Real detectado: escribir "cafe" (sin tilde) no encontraba "Café" en
+        # el catálogo — muy fácil de escribir así sin querer, sobre todo
+        # dictando. Debe dar igual el acento en cualquiera de los dos lados.
+        mercadona_catalog._catalog.append({"id": "5", "name": "Café soluble Hacendado", "packaging": "Bote", "price": 3.2, "thumbnail": None, "url": ""})
+        self.assertEqual([item["id"] for item in mercadona_catalog.search("cafe")], ["5"])
+        self.assertEqual([item["id"] for item in mercadona_catalog.search("café")], ["5"])
+
 
 class MercadonaCatalogBuildTests(unittest.TestCase):
     """Cubre la construcción del catálogo (reintentos, umbral mínimo) contra
