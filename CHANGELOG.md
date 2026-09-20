@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.22.15 · Una pregunta pendiente de otra orden ya no se comía un recordatorio, WhatsApp, evento o llamada nuevos (auditoría, prioridad media)
+
+- **Causa raíz**: solo la lista de la compra tenía un carve-out explícito para que un comando inequívoco y sin relación no se confundiera con la respuesta a una pregunta pendiente de otra orden. Reminders, WhatsApp, calendario y llamadas no lo tenían: un WhatsApp a medias esperando el nombre del contacto, por ejemplo, se comía un "Recuérdame llamar al médico mañana" completamente nuevo como si fuera su respuesta.
+- **Corregido**: se generaliza el mismo carve-out a los cuatro dominios. Si el texto trae un disparador inequívoco de orden nueva de un dominio distinto al de la pregunta pendiente ("Recuérdame...", "envía/manda un whatsapp a...", "nuevo evento"/"añade... al calendario", "llama a..."), se descarta la pregunta pendiente para ese turno. Una respuesta real y corta ("a las nueve", "Juan Pérez", "sí, cámbialo a las nueve") sigue completando la interacción activa igual que antes.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: 8 pruebas nuevas en `tests/conversation.test.mjs`.
+
 ## V0.22.14 · Editar los accesos directos en dos móviles a la vez ya no borra en silencio el cambio del otro (auditoría, prioridad media)
 
 - **Causa raíz**: guardar los accesos directos hacía un `setDoc({items,hidden})` que sobrescribía el documento entero en Firestore — si dos dispositivos editaban los accesos (añadir, borrar, reordenar) casi a la vez, el segundo guardado en llegar pisaba sin avisar el cambio del primero. En el fondo, los accesos no tenían ningún `id` estable, así que no había forma de saber si dos accesos "parecidos" eran el mismo editado o dos distintos.

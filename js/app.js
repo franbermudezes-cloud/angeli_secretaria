@@ -1,25 +1,25 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts,readShortcutsHidden,writeShortcutsHidden}from"./storage.js?v=0.22.14";
-import{classify,actionData}from"./classifier.js?v=0.22.14";
-import{sendEntry}from"./sheets.js?v=0.22.14";
-import{createUI}from"./ui.js?v=0.22.14";
-import{createGoogleIntegration}from"./google.js?v=0.22.14";
-import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.22.14";
-import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,setShoppingListStore,isMercadonaList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.22.14";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.22.14";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.22.14";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.22.14";
-import{createCloudSync}from"./firebase.js?v=0.22.14";
-import{createMediaService}from"./media.js?v=0.22.14";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.22.14";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.22.14";
-import{createAgendaActions}from"./agenda.js?v=0.22.14";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.22.14";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.22.14";
-import{DEFAULT_SHORTCUTS,SHORTCUT_PRESETS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.22.14";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.22.14";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.22.14";
-import{mediaLibraryItems}from"./media-library.js?v=0.22.14";
-import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.22.14";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts,readShortcutsHidden,writeShortcutsHidden}from"./storage.js?v=0.22.15";
+import{classify,actionData}from"./classifier.js?v=0.22.15";
+import{sendEntry}from"./sheets.js?v=0.22.15";
+import{createUI}from"./ui.js?v=0.22.15";
+import{createGoogleIntegration}from"./google.js?v=0.22.15";
+import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,activeIntentDomain,explicitNewCommandDomain,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.22.15";
+import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,setShoppingListStore,isMercadonaList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.22.15";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.22.15";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.22.15";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.22.15";
+import{createCloudSync}from"./firebase.js?v=0.22.15";
+import{createMediaService}from"./media.js?v=0.22.15";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.22.15";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.22.15";
+import{createAgendaActions}from"./agenda.js?v=0.22.15";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.22.15";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.22.15";
+import{DEFAULT_SHORTCUTS,SHORTCUT_PRESETS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.22.15";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.22.15";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.22.15";
+import{mediaLibraryItems}from"./media-library.js?v=0.22.15";
+import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.22.15";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],pendingMediaContext=null,selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -231,7 +231,27 @@ async function verifyConnections(announce=true){lastConnectionCheck=Date.now();a
 async function load(){notes=[];renderShortcuts();google.updateStatus();ui.setPushStatus(cloud.pushStatus());ui.setSyncStatus({state:"connecting"});render();await cloud.initialize({onRemoteNotes:remote=>{notes=remote;render()},onNoteSettings:remote=>{noteSettings=normalizeNoteSettings(remote||DEFAULT_NOTE_SETTINGS);render()},onNotificationSettings:remote=>{notificationSettings=normalizeNotificationSettings(remote||DEFAULT_NOTIFICATION_SETTINGS)},onNoteSettingsError:()=>ui.notify("No se pudieron cargar los ajustes de notas"),onNotificationSettingsError:()=>ui.notify("No se pudieron cargar los ajustes de avisos"),onShoppingState:remote=>{shoppingState=normalizeShoppingState(remote);if($("shoppingLibrary").classList.contains("show"))renderShoppingScreen()},onShoppingListError:()=>ui.notify("No se pudo cargar la lista de la compra"),onShortcuts:remote=>{if(remote&&Array.isArray(remote.items)){shortcuts=normalizeShortcuts(remote.items);shortcutsBaseline=shortcuts;writeShortcuts(shortcuts);shortcutsHidden=Boolean(remote.hidden);writeShortcutsHidden(shortcutsHidden);renderShortcuts()}else void cloud.saveShortcuts([],shortcuts,shortcutsHidden).then(merged=>{shortcuts=merged;shortcutsBaseline=merged;writeShortcuts(merged);renderShortcuts()}).catch(()=>{})},onShortcutsError:()=>ui.notify("No se pudieron cargar los accesos directos"),onSyncStatus:ui.setSyncStatus,onPushStatus:ui.setPushStatus,onAuthChange:async()=>{google.updateStatus();ui.setPushStatus(cloud.pushStatus());await verifyConnections(true)}});render();ui.dismissWelcome()}
 async function add({interactionId=null,shortcut=null}={}){
  if(saving)return;
- const shortcutContext=shortcut||pendingShortcut,text=$("text").value.trim(),active=interactionId?notes.find(item=>item.id===interactionId&&item.interaction?.status==="awaiting_input")||null:null;
+ const shortcutContext=shortcut||pendingShortcut,text=$("text").value.trim();
+ let active=interactionId?notes.find(item=>item.id===interactionId&&item.interaction?.status==="awaiting_input")||null:null;
+ // Generalización del carve-out de la lista de la compra (justo abajo) a
+ // recordatorios, WhatsApp, calendario y llamadas: reportado en la auditoría
+ // completa del código como el mismo fallo de raíz. Una pregunta pendiente de
+ // OTRA orden (p. ej. un WhatsApp a medias esperando el nombre del contacto)
+ // se comía cualquier frase nueva como si fuera su respuesta — incluido un
+ // "Recuérdame llamar al médico mañana" sin relación alguna, porque
+ // localWhatsApp() daba por buena cualquier texto para sus campos pendientes
+ // (contactName/notes) sin comprobar si en realidad era una orden nueva de
+ // otro dominio, y porque el contexto de `active` se le pasaba igualmente a
+ // la IA remota (noteInterpretationContext) aunque no aplicase ninguno de los
+ // respaldos locales. Si el texto trae un disparador inequívoco de orden
+ // nueva de un dominio distinto al de la pregunta pendiente, se descarta
+ // `active` para este turno — se procesa como si no hubiera nada a medias,
+ // igual que ya hace el carve-out de la compra — en vez de arriesgarse a que
+ // el pipeline (local o remoto) lo confunda con una continuación.
+ if(active?.interaction?.status==="awaiting_input"){
+  const overrideDomain=explicitNewCommandDomain(text);
+  if(overrideDomain&&overrideDomain!==activeIntentDomain(active))active=null;
+ }
  // La lista de la compra es una función nueva y separada de las notas — no
  // es una entrada más de la conversación, es una lista propia que se puede
  // ir marcando. Se resuelve aquí, antes de tocar nada del intérprete/notas,
@@ -1323,7 +1343,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.22.14",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.22.15",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}

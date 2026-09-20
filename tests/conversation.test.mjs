@@ -11,7 +11,7 @@ import {
 } from "../js/conversation.js";
 import { calendarDetails, linkedScheduleFor, normalizeFutureCall, normalizeReminderSchedule, scheduleFor, scheduleTitle, updateCalendarDetails, updateCalendarDateTime } from "../js/schedule.js";
 import { completionTarget, completePending, completePendingWithCalendar, findPendingMatches, findReminderMatches } from "../js/pending.js";
-import { mockProvider, interpret, localCalendarUpdate, localLinkedCalendarIntent, localImmediateCall, localReminderQuery, localNoteQuery, protectCalendarInterpretation, protectContactCallInterpretation, protectReadQuery, validateIntent } from "../js/ai.js";
+import { mockProvider, interpret, localCalendarUpdate, localLinkedCalendarIntent, localImmediateCall, localReminderQuery, localNoteQuery, activeIntentDomain, explicitNewCommandDomain, protectCalendarInterpretation, protectContactCallInterpretation, protectReadQuery, validateIntent } from "../js/ai.js";
 import { fixtureTitle, reminderFixture } from './reminder-event-fixture.mjs';
 import { applyCalendarUpdateToEntries, buildCalendarSearch, calendarEvent, scheduledReminderEvent, listAllCalendarPages, reconcileReminderEntries, linkedReminderSearch, calendarEventsForIntent, normalizeConnectionReport, connectionProblems, connectionStatusText, integrationFailureMessage } from '../js/google.js';
 import { fromCloudEntry, toCloudEntry } from '../js/cloud-entry.js';
@@ -1304,4 +1304,138 @@ test('classify() reconoce "recuérdame" con un pronombre pegado (recuérdamelo/-
   assert.equal(classify('recuérdamela mañana'), 'reminder');
   assert.equal(classify('comprar leche'), 'task');
   assert.equal(classify('llama a Ana'), 'contact');
+});
+
+// Generalización del carve-out de la lista de la compra (ver comentario en
+// app.js, add()) a recordatorios, WhatsApp, calendario y llamadas: reportado
+// en la auditoría completa del código como el mismo fallo de raíz — una
+// pregunta pendiente de OTRA orden se comía cualquier frase nueva como si
+// fuera su respuesta. explicitNewCommandDomain() detecta disparadores
+// inequívocos de orden nueva; activeIntentDomain() da el dominio de la
+// interacción a medias. app.js descarta `active` cuando difieren.
+test('explicitNewCommandDomain(): reconoce disparadores inequívocos de orden nueva por dominio', () => {
+  assert.equal(explicitNewCommandDomain('Recuérdame llamar al médico mañana'), 'reminder');
+  assert.equal(explicitNewCommandDomain('Recuérdame que revise el banco el viernes'), 'reminder');
+  assert.equal(explicitNewCommandDomain('Envía un whatsapp a Juan diciendo que llego tarde'), 'whatsapp');
+  assert.equal(explicitNewCommandDomain('Manda un whatsapp a María'), 'whatsapp');
+  assert.equal(explicitNewCommandDomain('Añade esto al calendario'), 'calendar');
+  assert.equal(explicitNewCommandDomain('Nuevo evento el jueves a las diez'), 'calendar');
+  assert.equal(explicitNewCommandDomain('Llama a Pedro'), 'call');
+});
+
+test('explicitNewCommandDomain(): una respuesta breve real a una pregunta pendiente no dispara ningún dominio', () => {
+  // Estas frases son justo el tipo de respuesta corta que SÍ debe seguir
+  // tratándose como continuación de la interacción activa.
+  assert.equal(explicitNewCommandDomain('sí, cámbialo a las nueve'), null);
+  assert.equal(explicitNewCommandDomain('a las nueve'), null);
+  assert.equal(explicitNewCommandDomain('Juan Pérez'), null);
+  assert.equal(explicitNewCommandDomain('diciendo que llego tarde'), null);
+  assert.equal(explicitNewCommandDomain('mañana a las diez'), null);
+  assert.equal(explicitNewCommandDomain(''), null);
+});
+
+test('activeIntentDomain(): asigna el dominio de la interacción a medias por intención', () => {
+  const withIntent = intent => ({ aiIntent: { intent } });
+  assert.equal(activeIntentDomain(withIntent('reminder.create')), 'reminder');
+  assert.equal(activeIntentDomain(withIntent('whatsapp.compose')), 'whatsapp');
+  assert.equal(activeIntentDomain(withIntent('calendar.create')), 'calendar');
+  assert.equal(activeIntentDomain(withIntent('calendar.update')), 'calendar');
+  assert.equal(activeIntentDomain(withIntent('calendar.delete')), 'calendar');
+  assert.equal(activeIntentDomain(withIntent('contact.call')), 'call');
+  assert.equal(activeIntentDomain(withIntent('note')), null);
+  assert.equal(activeIntentDomain(null), null);
+});
+
+test('carve-out generalizado (a): un WhatsApp a medias no se come un recordatorio, evento o llamada nuevos y sin relación', () => {
+  const staleWhatsApp = {
+    id: 'w1',
+    interaction: { status: 'awaiting_input', missingFields: ['contactName'] },
+    aiIntent: { intent: 'whatsapp.compose', contactName: null, notes: null }
+  };
+  for (const [text, expectedDomain] of [
+    ['Recuérdame llamar al médico mañana', 'reminder'],
+    ['Añade esto al calendario', 'calendar'],
+    ['Llama a Pedro', 'call']
+  ]) {
+    const overrideDomain = explicitNewCommandDomain(text);
+    assert.equal(overrideDomain, expectedDomain, `"${text}" debería detectarse como orden nueva de ${expectedDomain}`);
+    assert.notEqual(overrideDomain, activeIntentDomain(staleWhatsApp), `"${text}" debe diferir del dominio de la interacción a medias (whatsapp)`);
+  }
+  // Esta es la misma comprobación que hace app.js justo antes de invocar el
+  // intérprete: si difieren, `active` se pone a null para este turno.
+  const app = readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
+  assert.match(app, /const overrideDomain=explicitNewCommandDomain\(text\);/);
+  assert.match(app, /if\(overrideDomain&&overrideDomain!==activeIntentDomain\(active\)\)active=null;/);
+});
+
+test('carve-out generalizado (a): una nota pendiente sin relación tampoco se come un WhatsApp nuevo', () => {
+  const staleReminder = {
+    id: 'r1',
+    interaction: { status: 'awaiting_input', missingFields: ['date', 'time'] },
+    aiIntent: { intent: 'reminder.create', title: 'Llamar al médico' }
+  };
+  const overrideDomain = explicitNewCommandDomain('Envía un whatsapp a Juan diciendo que llego tarde');
+  assert.equal(overrideDomain, 'whatsapp');
+  assert.notEqual(overrideDomain, activeIntentDomain(staleReminder));
+});
+
+test('carve-out generalizado (b): una continuación real de calendar.update sigue completando la interacción activa', () => {
+  const active = {
+    id: 'c1',
+    text: 'Cambia la cena con Miguel',
+    interaction: { status: 'awaiting_input', missingFields: ['date', 'time'], turns: [] },
+    aiIntent: { intent: 'calendar.update', target: { title: 'cena con Miguel', date: null, time: null }, changes: null, requiresConfirmation: true, missingFields: ['date', 'time'], question: null }
+  };
+  const answer = 'sí, cámbialo a las nueve';
+  assert.equal(explicitNewCommandDomain(answer), null, 'una respuesta real no debe leerse como orden nueva de otro dominio');
+  const localUpdate = localCalendarUpdate(answer, new Date('2026-09-20T10:00:00'), active);
+  assert.equal(localUpdate.intent, 'calendar.update');
+  assert.equal(localUpdate.changes.time, '09:00');
+  const turn = resolveConversationTurn({ active, text: answer, interpretation: { ...localUpdate, source: 'fallback', fallbackReason: 'timeout' } });
+  assert.equal(turn.continuing, true);
+  assert.equal(turn.interpretation.intent, 'calendar.update');
+  assert.equal(turn.interpretation.target.title, 'cena con Miguel');
+  assert.equal(turn.interpretation.changes.time, '09:00');
+  assert.equal(turn.interaction.status, 'pending_confirmation');
+});
+
+test('carve-out generalizado (b): una continuación real de reminder.create sigue completando la interacción activa', () => {
+  const active = {
+    id: 'rem1',
+    text: 'Recuérdame llamar al médico',
+    interaction: { status: 'awaiting_input', missingFields: ['date', 'time'], turns: [] },
+    aiIntent: { intent: 'reminder.create', title: 'Llamar al médico', date: null, time: null, contactName: null, requiresConfirmation: false, missingFields: ['date', 'time'], question: null }
+  };
+  const answer = 'mañana a las diez';
+  assert.equal(explicitNewCommandDomain(answer), null);
+  const turn = resolveConversationTurn({
+    active, text: answer,
+    interpretation: { ...active.aiIntent, date: '2026-09-21', time: '10:00', requiresConfirmation: true, missingFields: [], question: null, source: 'ai', fallbackReason: null }
+  });
+  assert.equal(turn.continuing, true);
+  assert.equal(turn.interpretation.intent, 'reminder.create');
+  assert.equal(turn.interpretation.title, 'Llamar al médico');
+  assert.equal(turn.interpretation.date, '2026-09-21');
+  assert.equal(turn.interpretation.time, '10:00');
+  assert.equal(turn.interaction.status, 'pending_confirmation');
+});
+
+test('carve-out generalizado (b): una continuación real de whatsapp.compose sigue completando la interacción activa', () => {
+  const active = {
+    id: 'wa1',
+    text: 'Envía un whatsapp a Juan',
+    interaction: { status: 'awaiting_input', missingFields: ['notes'], turns: [] },
+    aiIntent: { intent: 'whatsapp.compose', contactName: 'Juan', phone: null, notes: null, requiresConfirmation: true, missingFields: ['notes'], question: null }
+  };
+  const answer = 'diciendo que llego tarde';
+  assert.equal(explicitNewCommandDomain(answer), null);
+  const local = localWhatsApp(answer, active);
+  assert.equal(local.intent, 'whatsapp.compose');
+  assert.equal(local.notes, answer);
+  const turn = resolveConversationTurn({ active, text: answer, interpretation: { ...local, source: 'fallback', fallbackReason: 'timeout' } });
+  assert.equal(turn.continuing, true);
+  assert.equal(turn.interpretation.intent, 'whatsapp.compose');
+  assert.equal(turn.interpretation.contactName, 'Juan');
+  assert.equal(turn.interpretation.notes, answer);
+  assert.equal(turn.interaction.status, 'pending_confirmation');
 });
