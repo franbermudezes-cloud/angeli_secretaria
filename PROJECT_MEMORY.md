@@ -1,5 +1,23 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-20 — Pendiente anotado (sin arreglar todavía): el Dietario no refleja el Calendar real
+
+El propietario lo detectó comparando dos caminos que deberían decir lo mismo y no coinciden: el acceso "Calendario" de la cabecera (`agendaOpen`, atajo "Muéstrame mi agenda" → `calendar.query`) sí le mostró sus eventos reales de Google Calendar ("comprar mostaza", "disco duro portable"), pero el Dietario → filtro "Eventos" no mostró ninguno de esos — solo una entrada suelta para marzo de 2027 que había creado él mismo alguna vez a través de Angeli.
+
+**Causa raíz, confirmada leyendo el código**: `js/dietario.js` (`dietarioEntries`, `groupDietarioByDay`) es una vista puramente local — filtra y agrupa lo que ya hay en `notes` (Firestore), nunca llama a Google Calendar. Una entrada solo aparece en el Dietario si Angeli la creó y la guardó como entrada propia (`type==="calendar"`, de un `calendar.create`). Los eventos que existen de verdad en el Google Calendar del propietario pero que no pasaron por Angeli (creados directamente en la app de Calendar, o de antes de usar Angeli) no están en `notes` y por tanto nunca aparecen en el Dietario. En cambio, `calendar.query` (el acceso de la cabecera, y los atajos "Hoy"/"Próxima semana") sí golpea la API real de Calendar vía `google.searchCalendar`.
+
+**Lo que pidió el propietario, textualmente**: que el Dietario, al elegir "Eventos" (y por extensión "Avisos"/"Notas"), vaya a mirar de verdad qué hay — y que si hace un cambio en el Calendar real, se refleje ahí. Es decir: quiere que el Dietario sea una vista en vivo, no un registro de lo que Angeli recuerda haber hecho.
+
+**Por qué no se ha arreglado en el momento** (pidió explícitamente "anótatelo" y siguió con otra cosa, así que se documenta para abordarlo aparte): es un cambio de arquitectura, no un bug de una línea. Haría falta decidir: (a) cuándo disparar la consulta real a Calendar (¿al abrir el Dietario? ¿al elegir el filtro "Eventos"? ¿cachear cuánto tiempo?), (b) cómo fusionar eventos reales de Calendar (que no tienen `id` de Angeli) con las entradas locales que sí llevan aviso/nota asociada sin duplicar ni perder la relación con su entrada original, y (c) el coste de llamadas a la API de Calendar cada vez que se abre una pantalla que hasta ahora era gratis (sin red). Encaja con el patrón ya usado en `calendarQueryRange`/`google.searchCalendar`, así que la pieza base ya existe — el trabajo real es la fusión y el momento de disparo, no inventar el acceso a Calendar desde cero.
+
+**Relacionado**: la limpieza de `calendar.query` en el Dietario (V0.21.76, `entryActive` excluye `aiIntent.intent==="calendar.query"`) resolvió un síntoma parecido pero distinto — que las CONSULTAS en sí no se acumularan como entradas fantasma — no toca este problema de fondo (el Dietario nunca consulta Calendar para las entradas de verdad).
+
+## 2026-09-20 — Cabecera: quitado el icono de Calendario (se salía de la pantalla en el móvil) V0.21.84
+
+Reportado por el propietario: en el móvil, tras añadir el icono 🛒 de la lista de la compra, la cabecera ya no le cabía — el icono de Ajustes (☰) quedaba fuera de la pantalla, inalcanzable. Pidió quitar directamente el icono de Calendario (🗓️, `agendaOpen`) de la cabecera porque ya tiene el mismo acceso abajo, en los accesos directos ("🗓️ Hoy" / "🗓️ Próxima semana", ya existentes en `DEFAULT_SHORTCUTS` desde antes de esta sesión) — confirmado que son funcionalmente idénticos (mismo `command`/`action:"calendar.query"`/`direct:true`). Quitado el botón de `index.html` y su `onclick` en `js/app.js`; `prepareShortcut()` sigue usándose para los accesos directos normales.
+
+**Pendiente de la propia petición del propietario, no resuelto aquí**: dijo explícitamente "vamos a cambiar el aspecto de la aplicación, el frontend" como tema — este cambio es solo el ajuste puntual de la cabecera que pidió de forma concreta, no el rediseño visual más amplio que insinuó (dijo "tenemos cosas repetidas" sin más detalle todavía). Queda a la espera de que concrete qué quiere cambiar del aspecto general antes de tocar nada más de la interfaz.
+
 ## 2026-09-20 — Lista de la compra: botón de búsqueda explícito V0.21.83
 
 Reportado por el propietario probando en el móvil, tras la ronda anterior (V0.21.82) donde ya había verificado el catálogo/cantidades en el navegador de escritorio: "no hay ningún botón para poder buscar... lo único que me deja es a la derecha el micro y un más". La búsqueda en vivo al escribir (V0.21.82) funcionaba, pero era invisible como funcionalidad — nada en la interfaz decía que escribir ya buscaba, así que en el móvil, donde además el usuario probó pulsar "+" esperando que buscara, el "+" simplemente añadía el texto tal cual.

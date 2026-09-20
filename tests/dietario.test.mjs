@@ -74,7 +74,6 @@ const [html, app, serviceWorker, ui, css] = await Promise.all([
 assert.match(html, /id="dietarioOpen"/);
 assert.match(html, /id="dietarioLibrary"/);
 assert.match(html, /id="dietarioList"/);
-assert.match(html, /title="Calendario"/);
 assert.match(html, /id="dietarioRangeFilters"/);
 assert.match(html, /id="dietarioTypeFilters"/);
 assert.match(app, /openDietario/);
