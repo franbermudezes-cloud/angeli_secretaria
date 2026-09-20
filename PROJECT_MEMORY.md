@@ -1,5 +1,15 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-20 — Reprogramar un evento perdía otros cambios de la misma orden V0.22.9
+
+Cuarto hallazgo de prioridad media de la auditoría completa que se corrige.
+
+**Causa raíz**: `protectCalendarInterpretation` (`js/ai.js`) combina dos interpretaciones de una orden de "modificar evento": la local (`localCalendarUpdate`, basada en expresiones regulares, sin red) y la remota (la IA). Para el campo `changes`, usaba `local.changes || remote.changes || null`. El problema es que `localCalendarUpdate` SOLO sabe detectar fecha y hora explícitas — nunca ubicación, título ni descripción, porque no tiene esa lógica. En cuanto una orden mencionaba una fecha/hora (p. ej. "muévela a las nueve de la noche y ponla en el restaurante Cala Blava"), `local.changes` pasaba a ser `{time:'21:00'}` — un objeto con contenido — y el operador `||` descartaba entero `remote.changes`, aunque la IA remota sí hubiera entendido correctamente el resto de la orden (el restaurante). El cambio de hora se aplicaba bien; el cambio de ubicación se perdía en silencio, sin ningún aviso ni error visible.
+
+**Corrección**: `changes` ahora se calcula como una fusión real de objetos — `{...(remote.changes||{}), ...(local.changes||{})}` — cuando al menos uno de los dos tiene contenido, y `null` si ninguno lo tiene. Local sigue teniendo prioridad en los campos que sí sabe detectar (fecha/hora, más fiable por no depender de la IA), pero ya no borra lo que remote haya entendido en cualquier otro campo.
+
+**Cobertura de test**: `tests/conversation.test.mjs` ampliado — nueva prueba que combina un cambio de hora (detectado localmente) con un cambio de ubicación (solo detectable por la IA remota) en la misma orden, y comprueba que `changes` conserva ambos.
+
 ## 2026-09-20 — Editar una nota desde su biblioteca dejaba sin confirmación al guardar V0.22.8
 
 Tercer hallazgo de prioridad media de la auditoría completa que se corrige.

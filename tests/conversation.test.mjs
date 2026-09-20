@@ -356,6 +356,21 @@ test('modificar la hora con una persona elimina el campo del objetivo de búsque
   assert.equal(buildCalendarSearch(routed,'calendar.update').query,'María');
 });
 
+// Hallazgo de la auditoría completa del código: cuando localCalendarUpdate
+// detecta una fecha/hora (local.changes no vacío), "changes: local.changes
+// || remote.changes" descartaba ENTERO remote.changes, aunque la IA remota
+// hubiera entendido correctamente otro cambio distinto (p. ej. ubicación)
+// en la misma orden — «Cámbiame la hora de la cena con Ana a las nueve y
+// ponla en el restaurante Cala Blava» perdía el restaurante en silencio.
+test('un cambio de hora detectado localmente no borra otros cambios (ubicación, título...) que la IA sí entendió bien',()=>{
+  const text='Cámbiame la hora de la cena con Ana a las nueve de la noche y ponla en el restaurante Cala Blava';
+  const local=localCalendarUpdate(text,new Date(2026,7,26,12));
+  assert.deepEqual(local.changes,{time:'21:00'});
+  const remote={intent:'calendar.update',confidence:.95,target:{title:'Ana',date:null,time:null},changes:{location:'Cala Blava'},requiresConfirmation:true,source:'ai'};
+  const routed=protectCalendarInterpretation(remote,local);
+  assert.deepEqual(routed.changes,{location:'Cala Blava',time:'21:00'});
+});
+
 test('reprogramar busca por la persona y actualiza Calendar y el recordatorio local elegido',()=>{
   const search=buildCalendarSearch({target:{title:'Llamada de Miguel'}},'calendar.update');
   assert.equal(search.query,'Miguel');

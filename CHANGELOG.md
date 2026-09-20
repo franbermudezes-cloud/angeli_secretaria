@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.22.9 · Reprogramar un evento a la vez que se cambia el lugar ya no perdía el lugar (auditoría, prioridad media)
+
+- **Causa raíz**: `protectCalendarInterpretation` combinaba los cambios detectados localmente (fecha/hora) con los de la IA remota usando `local.changes || remote.changes || null` — en cuanto el detector local encontraba una fecha u hora en la misma frase, descartaba entero lo que la IA remota hubiera entendido, aunque fuera un cambio distinto (p. ej. la ubicación).
+- **Corregido**: ahora se fusionan ambos objetos (`{...remote.changes, ...local.changes}`), dando prioridad a lo detectado localmente solo en los campos que realmente puede detectar (fecha/hora), sin descartar el resto de lo que la IA haya entendido bien.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: 1 prueba nueva en `tests/conversation.test.mjs`.
+
 ## V0.22.8 · Editar una nota desde su biblioteca ya no deja sin confirmación al guardar (auditoría, prioridad media)
 
 - **Causa raíz**: al guardar los cambios, siempre volvía a la pantalla de inicio sin mostrar nada — no importaba si habías abierto el editor desde la ficha de la nota o desde la propia lista.
