@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.21.86 · Correcciones: dictado no disparaba la búsqueda, y la búsqueda no ignoraba acentos
+
+- Al tocar el micrófono del buscador de una lista y decir "café", no salía ningún resultado. Causa real: `target.value=...` asignado desde JavaScript durante el dictado nunca dispara un evento `input` nativo, así que el buscador (que reacciona a ese evento para lanzar la búsqueda en vivo) nunca se enteraba de que el texto había cambiado. Corregido despachando el evento `input` manualmente tras cada actualización del dictado — beneficia a cualquier campo dictado con `oninput` propio, no solo al buscador de la compra.
+- Investigando más a fondo con el propietario apareció el fallo real: escribir "cafe" (sin tilde) tampoco encontraba "Café" en el catálogo. Corregido en el backend comparando sin acentos en los dos lados (la búsqueda y los nombres del catálogo), para que dé igual cómo se haya escrito o dictado la tilde.
+- Deploy: backend redesplegado en Cloud Run (comparación de acentos en `mercadona_catalog.search`).
+- Tests: nueva prueba en `backend/test_shopping_mercadona.py` para el caso del acento.
+
 ## V0.21.85 · Listas de la compra con nombre propio, buscador como primer paso
 
 Pedido a partir de una captura real de la app de Mercadona ("así me va perfecto, haz lo mismo en la nuestra"), con un boceto visual aprobado antes de tocar código.

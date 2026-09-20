@@ -18,6 +18,7 @@ import json
 import re
 import sys
 import time
+import unicodedata
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 from urllib.error import HTTPError, URLError
@@ -116,8 +117,15 @@ def _catalog_data() -> list[dict[str, Any]]:
     return _catalog
 
 
+def _strip_accents(value: str) -> str:
+    return "".join(char for char in unicodedata.normalize("NFD", value) if unicodedata.category(char) != "Mn")
+
+
 def search(query: str, limit: int = 6) -> list[dict[str, Any]]:
-    terms = [word for word in str(query or "").lower().split() if word]
+    # Real detectado: "cafe" (sin tilde) no encontraba "café" — muy fácil de
+    # escribir así sin querer, sobre todo dictando. Se comparan sin acentos
+    # en los dos lados para que dé igual cómo se haya escrito la tilde.
+    terms = [_strip_accents(word) for word in str(query or "").lower().split() if word]
     if not terms:
         return []
     # Coincidencia por palabra completa, no por subcadena: "leche entera"
@@ -127,7 +135,7 @@ def search(query: str, limit: int = 6) -> list[dict[str, Any]]:
     catalog = _catalog_data()
     scored = []
     for product in catalog:
-        name = product["name"].lower()
+        name = _strip_accents(product["name"].lower())
         if not all(pattern.search(name) for pattern in patterns):
             continue
         rank = 0 if name.startswith(terms[0]) else 1
