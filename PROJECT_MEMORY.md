@@ -1,5 +1,17 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-20 — Auditoría completa del código: micrófonos huérfanos V0.22.5
+
+Sexto y último hallazgo de prioridad alta de la auditoría completa (ver la entrada de V0.22.1 para el contexto de la auditoría en sí).
+
+**Causa raíz**: `start()` (`js/app.js`) se autoapaga como un interruptor: si ya está `listening`, tocarlo de nuevo llama a `stop()` en vez de arrancar una sesión nueva — comportamiento correcto para "tocar el mismo micro dos veces". El problema es que ningún otro punto de la app garantizaba que `stop()` se hubiera llamado antes de que ese `listening` quedara huérfano: cancelar el modal "Te escucho" (`openDraft`'s `onCancel`), cancelar la pregunta de aclaración de una interacción activa (`continueConversation`'s `onCancel`), cancelar o guardar los editores de campo de Calendar/WhatsApp (`showCalendarFieldEditor`, `showCalendarDateTimeEditor`, `showWhatsAppEditor`, `showWhatsAppPhoneEditor`), y el propio `clearComposer()` tras un envío con éxito — ninguno de estos puntos paraba el reconocedor si seguía escuchando en ese momento. El reconocedor se quedaba vivo en segundo plano, y el PRIMER toque en cualquier OTRO micrófono de la app (un campo distinto, o el micro rápido "🛒" de la lista de la compra) entraba en `start()`'s guardia de autoapagado y solo apagaba ese fantasma — sin llegar a arrancar nada — obligando a un segundo toque para dictar de verdad. Es la misma familia de conflicto de `SpeechRecognition` ya diagnosticada y corregida una vez para el modal de "solo me falta un dato" (V0.21.95), pero recurrente en más sitios porque el arreglo de entonces fue puntual, no sistémico.
+
+**Corrección**: una única función, `stopStrayDictation()` (`if(listening)stop()`), llamada desde cada uno de los puntos identificados arriba: `openDraft`'s `onCancel`, `continueConversation`'s `onCancel`, el `onCancel` y el `onSave` de los 4 editores de campo, `clearComposer()` (con lo que `openConversationModeReal()` queda cubierto de forma transitiva, ya que siempre llama a `clearComposer()` al entrar), y `shoppingQuickMic()` antes de arrancar su propio reconocedor.
+
+**Verificado en el navegador sandbox** con un `SpeechRecognition` simulado que cuenta instancias activas: tocar el micro central, cancelar con "Ahora no", y comprobar que el número de reconocedores activos baja a 0 (antes de este arreglo se habría quedado en 1); tocar a continuación el micro rápido de la compra arranca al primer toque (antes habría hecho falta un segundo).
+
+**Cobertura de test**: `tests/dictation.test.mjs` ampliado — comprueba que `stopStrayDictation()` existe y que se llama desde los 4 editores de campo (comparten el mismo patrón `onCancel`) más `openDraft`, `continueConversation`, `clearComposer` y `shoppingQuickMic`.
+
 ## 2026-09-20 — Auditoría completa del código: dos falsos positivos del intérprete V0.22.4
 
 Hallazgos 4 y 5 de prioridad alta de la auditoría completa (ver la entrada de V0.22.1 para el contexto de la auditoría en sí). Los dos viven en `js/ai.js` y se arreglaron juntos por estar en el mismo archivo.

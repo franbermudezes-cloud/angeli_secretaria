@@ -1,5 +1,14 @@
 # Changelog
 
+## V0.22.5 · Micrófonos huérfanos: cancelar un dictado ya no exige un segundo toque en otro micro (auditoría, hallazgo 6/6)
+
+Último hallazgo de prioridad alta de la auditoría completa del código.
+
+- **Causa raíz**: cancelar o guardar un borrador (el modal "Te escucho", la pregunta de aclaración, o los editores de campo de Calendar/WhatsApp) nunca paraba el reconocedor de voz si seguía escuchando en ese momento — se quedaba huérfano en segundo plano. El primer toque en OTRO micrófono (de un campo distinto, o el micro rápido de la lista de la compra) solo apagaba ese fantasma sin llegar a arrancar nada — hacía falta un segundo toque para dictar de verdad.
+- **Corregido**: todos los puntos donde se cierra un borrador o se cambia de pantalla tras cancelar/guardar paran primero cualquier dictado huérfano.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: ampliados en `tests/dictation.test.mjs`.
+
 ## V0.22.4 · Dos falsos positivos del intérprete: frases cotidianas y "recuérdame que..." (auditoría, hallazgos 4 y 5/6)
 
 - **"Cámbiame el turno del trabajo, ponlo de tarde" ya no se confunde con modificar un evento**: el detector local de "modificar evento" solo exigía un verbo cotidiano (cambia/mueve/pasa...), sin ninguna señal de que la frase fuera realmente sobre Calendar. Ahora exige también una palabra de calendario, un campo modificable (hora/fecha/ubicación/título...) o una fecha/hora real detectada.
