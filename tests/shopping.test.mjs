@@ -5,7 +5,8 @@ import {
  parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,
  toggleShoppingItem,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,
  normalizeShoppingState,makeShoppingList,getActiveList,findListByName,createShoppingList,renameShoppingList,
- deleteShoppingList,setActiveShoppingList,updateListItems
+ deleteShoppingList,setActiveShoppingList,updateListItems,
+ addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase
 } from '../js/shopping.js';
 
 // Regresión real reportada por el usuario: openShoppingListQuickActions abre
@@ -300,4 +301,134 @@ test('updateListItems solo transforma la lista indicada, deja las demás intacta
  state=updateListItems(state,listA.id,items=>addShoppingItems(items,[{name:'leche',quantity:1}]));
  assert.equal(state.lists.find(list=>list.id===listA.id).items.length,1);
  assert.equal(state.lists.find(list=>list.id===listB.id).items.length,0);
+});
+
+// Pedido explícito del propietario, calcado de cómo funciona Mercadona: la
+// lista habitual no cambia en nada, solo cambia el significado del check de
+// siempre — marcar un artículo ya no es "comprado", es "lo quiero esta vez".
+// "Añadir al carrito" copia lo marcado al carrito y lo deja sin marcar en la
+// lista, pero SIN quitarlo de ahí.
+test('addCheckedToCart copia los artículos marcados al carrito y los deja sin marcar en la lista, sin quitarlos',()=>{
+ let state=normalizeShoppingState(null);
+ const listId=getActiveList(state).id;
+ state=updateListItems(state,listId,items=>addShoppingItems(items,[{name:'leche',quantity:2},{name:'café',quantity:1},{name:'pan',quantity:1}]));
+ state=updateListItems(state,listId,items=>checkShoppingItems(items,[{name:'leche'},{name:'café'}],true));
+ state=addCheckedToCart(state,listId);
+ const list=getActiveList(state);
+ assert.equal(list.items.length,3,'ningún artículo se quita de la lista');
+ assert.ok(list.items.every(item=>!item.checked),'los marcados vuelven a quedar sin marcar en la lista');
+ assert.equal(list.cart.length,2);
+ assert.deepEqual(list.cart.map(item=>[item.name,item.quantity,item.checked]).sort(),[['café',1,false],['leche',2,false]]);
+});
+
+test('addCheckedToCart sin nada marcado no toca el estado',()=>{
+ let state=normalizeShoppingState(null);
+ const listId=getActiveList(state).id;
+ state=updateListItems(state,listId,items=>addShoppingItems(items,[{name:'leche',quantity:1}]));
+ const before=state;
+ state=addCheckedToCart(state,listId);
+ assert.equal(state,before);
+});
+
+test('añadir al carrito dos veces el mismo artículo suma la cantidad en vez de duplicarlo',()=>{
+ let state=normalizeShoppingState(null);
+ const listId=getActiveList(state).id;
+ state=updateListItems(state,listId,items=>addShoppingItems(items,[{name:'leche',quantity:1}]));
+ state=updateListItems(state,listId,items=>checkShoppingItems(items,[{name:'leche'}],true));
+ state=addCheckedToCart(state,listId);
+ state=updateListItems(state,listId,items=>setShoppingItemQuantity(items,getActiveList(state).items[0].id,3));
+ state=updateListItems(state,listId,items=>checkShoppingItems(items,[{name:'leche'}],true));
+ state=addCheckedToCart(state,listId);
+ const cart=getActiveList(state).cart;
+ assert.equal(cart.length,1);
+ assert.equal(cart[0].quantity,4);
+});
+
+test('toggleCartItem y setCartItemQuantity operan sobre el carrito sin tocar la lista',()=>{
+ let state=normalizeShoppingState(null);
+ const listId=getActiveList(state).id;
+ state=updateListItems(state,listId,items=>addShoppingItems(items,[{name:'leche',quantity:1}]));
+ state=updateListItems(state,listId,items=>checkShoppingItems(items,[{name:'leche'}],true));
+ state=addCheckedToCart(state,listId);
+ const cartItemId=getActiveList(state).cart[0].id;
+ state=toggleCartItem(state,listId,cartItemId);
+ assert.equal(getActiveList(state).cart[0].checked,true);
+ state=setCartItemQuantity(state,listId,cartItemId,5);
+ assert.equal(getActiveList(state).cart[0].quantity,5);
+ assert.equal(getActiveList(state).items[0].checked,false,'la lista no se ve afectada por cambios en el carrito');
+});
+
+test('removeCartItem quita un artículo del carrito sin tocar la lista',()=>{
+ let state=normalizeShoppingState(null);
+ const listId=getActiveList(state).id;
+ state=updateListItems(state,listId,items=>addShoppingItems(items,[{name:'leche',quantity:1}]));
+ state=updateListItems(state,listId,items=>checkShoppingItems(items,[{name:'leche'}],true));
+ state=addCheckedToCart(state,listId);
+ const cartItemId=getActiveList(state).cart[0].id;
+ state=removeCartItem(state,listId,cartItemId);
+ assert.equal(getActiveList(state).cart.length,0);
+ assert.equal(getActiveList(state).items.length,1,'la lista conserva el artículo');
+});
+
+// "lo que haya en el carrito que no se haya comprado seguirá estando ahí":
+// solo se archiva lo marcado como comprado; el resto sigue en el carrito.
+test('finalizePurchase archiva solo lo marcado como comprado; lo demás sigue en el carrito para la próxima vez',()=>{
+ let state=normalizeShoppingState(null);
+ const listId=getActiveList(state).id;
+ state=updateListItems(state,listId,items=>addShoppingItems(items,[{name:'leche',quantity:2},{name:'café',quantity:1}]));
+ state=updateListItems(state,listId,items=>checkShoppingItems(items,[{name:'leche'},{name:'café'}],true));
+ state=addCheckedToCart(state,listId);
+ const [lecheId]=getActiveList(state).cart.filter(item=>item.name==='leche').map(item=>item.id);
+ state=toggleCartItem(state,listId,lecheId);
+ const now=new Date('2026-09-20T12:00:00');
+ state=finalizePurchase(state,listId,now);
+ const list=getActiveList(state);
+ assert.equal(list.cart.length,1);
+ assert.equal(list.cart[0].name,'café',"lo no comprado sigue en el carrito");
+ assert.equal(list.purchases.length,1);
+ assert.equal(list.purchases[0].date,now.toISOString());
+ assert.deepEqual(list.purchases[0].items.map(item=>[item.name,item.quantity]),[['leche',2]]);
+});
+
+test('finalizePurchase sin nada marcado como comprado no archiva nada',()=>{
+ let state=normalizeShoppingState(null);
+ const listId=getActiveList(state).id;
+ state=updateListItems(state,listId,items=>addShoppingItems(items,[{name:'leche',quantity:1}]));
+ state=updateListItems(state,listId,items=>checkShoppingItems(items,[{name:'leche'}],true));
+ state=addCheckedToCart(state,listId);
+ const before=state;
+ state=finalizePurchase(state,listId);
+ assert.equal(state,before);
+});
+
+test('normalizeShoppingState completa cart/purchases en listas guardadas antes de que existiera el carrito',()=>{
+ const legacyMultiList={lists:[{id:'sl-1',name:'Mi lista',items:[]}],activeListId:'sl-1'};
+ const state=normalizeShoppingState(legacyMultiList);
+ assert.deepEqual(state.lists[0].cart,[]);
+ assert.deepEqual(state.lists[0].purchases,[]);
+});
+
+// Regresión explícita del propietario: "la lista se queda exactamente como
+// estaba... no quites nada de ahí". El carrito se añade como algo aparte;
+// el buscador, "Quitar comprados" y "Vaciar lista" de la lista de siempre
+// no deben tocarse.
+test('el carrito se añade sin tocar nada de la lista de siempre',async()=>{
+ const [html,app,ui,css]=await Promise.all([
+  readFile(new URL('../index.html',import.meta.url),'utf8'),
+  readFile(new URL('../js/app.js',import.meta.url),'utf8'),
+  readFile(new URL('../js/ui.js',import.meta.url),'utf8'),
+  readFile(new URL('../styles.css',import.meta.url),'utf8')
+ ]);
+ assert.match(html,/id="shoppingInput"/);
+ assert.match(html,/id="shoppingClearChecked"/);
+ assert.match(html,/id="shoppingClearAll"/);
+ assert.match(html,/id="shoppingAddToCart"/);
+ assert.match(html,/id="shoppingCart" hidden/);
+ assert.match(html,/id="shoppingPurchases" hidden/);
+ assert.match(app,/function shoppingAddCheckedToCart\(\)/);
+ assert.match(app,/\$\("shoppingAddToCart"\)\.onclick=shoppingAddCheckedToCart/);
+ assert.match(app,/function shoppingFinishPurchase\(\)/);
+ assert.match(ui,/function renderShoppingCart\(list\)/);
+ assert.match(ui,/function renderShoppingPurchases\(list\)/);
+ assert.match(css,/\.shopping-cart-bar-btn/);
 });

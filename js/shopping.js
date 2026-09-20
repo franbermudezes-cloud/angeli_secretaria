@@ -252,15 +252,23 @@ export function shoppingListTotal(items) {
 // sincronización de la V0.21.80 fue justo por eso).
 
 export function makeShoppingList(name, items = []) {
-  return { id: makeId("sl"), name: String(name || "Mi lista").trim() || "Mi lista", items };
+  return { id: makeId("sl"), name: String(name || "Mi lista").trim() || "Mi lista", items, cart: [], purchases: [] };
 }
 
 // Antes de que existieran listas con nombre, el documento guardaba
 // directamente {items:[...]}. Se migra sola a una única lista "Mi lista" la
-// primera vez que se lee, sin pedir nada ni perder lo que ya hubiera.
+// primera vez que se lee, sin pedir nada ni perder lo que ya hubiera. Una
+// lista guardada antes del carrito tampoco lleva "cart"/"purchases" todavía
+// — se completan aquí con arrays vacíos, igual que con "lists"/"items".
 export function normalizeShoppingState(raw) {
   if (raw && Array.isArray(raw.lists) && raw.lists.length) {
-    const lists = raw.lists.map(list => ({ id: list.id || makeId("sl"), name: String(list.name || "Mi lista").trim() || "Mi lista", items: Array.isArray(list.items) ? list.items : [] }));
+    const lists = raw.lists.map(list => ({
+      id: list.id || makeId("sl"),
+      name: String(list.name || "Mi lista").trim() || "Mi lista",
+      items: Array.isArray(list.items) ? list.items : [],
+      cart: Array.isArray(list.cart) ? list.cart : [],
+      purchases: Array.isArray(list.purchases) ? list.purchases : []
+    }));
     const activeListId = lists.some(list => list.id === raw.activeListId) ? raw.activeListId : lists[0].id;
     return { lists, activeListId };
   }
@@ -310,4 +318,64 @@ export function setActiveShoppingList(state, listId) {
 // puede haber varias listas.
 export function updateListItems(state, listId, updater) {
   return { ...state, lists: state.lists.map(list => list.id === listId ? { ...list, items: updater(list.items) } : list) };
+}
+
+/**
+ * El carrito de la compra: pedido explícito del propietario para que
+ * funcione igual que en la app real de Mercadona. La lista habitual
+ * ("Mi lista") no cambia en nada — sigue siendo la lista de artículos de
+ * siempre, con su mismo buscador y su mismo check de toda la vida. Lo único
+ * que cambia es el SIGNIFICADO de ese check: antes de esto, marcarlo quería
+ * decir "ya comprado" (y "Quitar comprados" lo borraba de la lista); ahora
+ * significa "lo quiero esta vez" — un botón nuevo, "Añadir al carrito",
+ * copia los artículos marcados al carrito (con su cantidad) y los deja otra
+ * vez sin marcar en la lista, pero SIN quitarlos de ahí. El carrito es la
+ * compra concreta de hoy: se van marcando ahí según se echan al carro real,
+ * y "Finalizar compra" archiva lo comprado con la fecha en el historial —
+ * lo que quede sin marcar en el carrito se queda ahí para la próxima vez.
+ */
+
+function mergeIntoCart(cart, addition) {
+  const index = cart.findIndex(item => !item.checked && sameItemName(item.name, addition.name) && item.store === addition.store);
+  if (index === -1) return [...cart, { id: makeId("ct"), name: addition.name, store: addition.store || null, quantity: addition.quantity || 1, checked: false, product: addition.product || null }];
+  const next = [...cart];
+  next[index] = { ...next[index], quantity: (next[index].quantity || 1) + (addition.quantity || 1) };
+  return next;
+}
+
+export function addCheckedToCart(state, listId) {
+  const list = state.lists.find(item => item.id === listId);
+  if (!list) return state;
+  const checked = list.items.filter(item => item.checked);
+  if (!checked.length) return state;
+  let cart = list.cart || [];
+  for (const item of checked) cart = mergeIntoCart(cart, item);
+  const items = list.items.map(item => item.checked ? { ...item, checked: false } : item);
+  return { ...state, lists: state.lists.map(entry => entry.id === listId ? { ...entry, items, cart } : entry) };
+}
+
+export function toggleCartItem(state, listId, cartItemId) {
+  return { ...state, lists: state.lists.map(list => list.id === listId ? { ...list, cart: (list.cart || []).map(item => item.id === cartItemId ? { ...item, checked: !item.checked } : item) } : list) };
+}
+
+export function setCartItemQuantity(state, listId, cartItemId, quantity) {
+  const value = Math.max(1, Math.min(99, Math.round(Number(quantity)) || 1));
+  return { ...state, lists: state.lists.map(list => list.id === listId ? { ...list, cart: (list.cart || []).map(item => item.id === cartItemId ? { ...item, quantity: value } : item) } : list) };
+}
+
+export function removeCartItem(state, listId, cartItemId) {
+  return { ...state, lists: state.lists.map(list => list.id === listId ? { ...list, cart: (list.cart || []).filter(item => item.id !== cartItemId) } : list) };
+}
+
+// "lo que haya en el carrito que no se haya comprado seguirá estando ahí":
+// solo se archiva lo marcado; lo demás se queda en el carrito tal cual.
+export function finalizePurchase(state, listId, now = new Date()) {
+  const list = state.lists.find(item => item.id === listId);
+  if (!list) return state;
+  const bought = (list.cart || []).filter(item => item.checked);
+  if (!bought.length) return state;
+  const remaining = (list.cart || []).filter(item => !item.checked);
+  const purchase = { id: makeId("pu"), date: now.toISOString(), items: bought.map(item => ({ name: item.name, store: item.store, quantity: item.quantity, product: item.product || null })) };
+  const purchases = [purchase, ...(list.purchases || [])];
+  return { ...state, lists: state.lists.map(entry => entry.id === listId ? { ...entry, cart: remaining, purchases } : entry) };
 }
