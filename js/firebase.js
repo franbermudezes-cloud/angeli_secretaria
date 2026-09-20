@@ -27,8 +27,8 @@ import {
   waitForPendingWrites
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 import { deleteToken, getMessaging, getToken, isSupported, onMessage } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging.js";
-import { fromCloudEntry, sameEntry, toCloudEntry } from "./cloud-entry.js?v=0.21.84";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.84";
+import { fromCloudEntry, sameEntry, toCloudEntry } from "./cloud-entry.js?v=0.21.85";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.85";
 
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
 const VAPID_KEY = "BHyc8Ne9wyaAFoju-9FNG5_qCXPOLSQhHhsfye9bdFlAv3zdLfAvjcvb29Cyrtj80kSq7gJ3qGJ9k3Mb_EqYt_o";
@@ -252,12 +252,16 @@ export function createCloudSync({ notify }) {
     unsubscribeNotificationSettings?.();
     unsubscribeNotificationSettings = onSnapshot(notificationSettingsDocument(), snapshot => callbacks.onNotificationSettings?.(normalizeNotificationSettings(snapshot.exists() ? snapshot.data() : {})), error => callbacks.onNotificationSettingsError?.(error));
     unsubscribeShoppingList?.();
-    unsubscribeShoppingList = onSnapshot(shoppingListDocument(), snapshot => callbacks.onShoppingList?.(Array.isArray(snapshot.data()?.items) ? snapshot.data().items : []), error => callbacks.onShoppingListError?.(error));
+    // Se pasa el documento tal cual (sin normalizar aquí): puede venir en el
+    // formato antiguo (una sola lista sin nombre) o en el nuevo (varias
+    // listas con nombre) — normalizeShoppingState (js/shopping.js) decide
+    // cómo migrarlo, no este módulo de sincronización.
+    unsubscribeShoppingList = onSnapshot(shoppingListDocument(), snapshot => callbacks.onShoppingState?.(snapshot.exists() ? snapshot.data() : null), error => callbacks.onShoppingListError?.(error));
   }
 
-  async function saveShoppingList(items) {
+  async function saveShoppingState(state) {
     if (!user || !db) throw new Error("Inicia sesión en Angeli para guardar la lista de la compra");
-    await setDoc(shoppingListDocument(), { items: items || [] });
+    await setDoc(shoppingListDocument(), state);
     await waitForPendingWrites(db);
     return true;
   }
@@ -299,5 +303,5 @@ export function createCloudSync({ notify }) {
     return doc(db, "users", user.uid, "settings", "shopping");
   }
 
-  return { initialize, session, isSignedIn, getAuthToken, connect, disconnect, syncNotes, saveNoteSettings, saveNotificationSettings, saveShoppingList, pushStatus, enablePush, disablePush, schedulePush, cancelPush, testPush };
+  return { initialize, session, isSignedIn, getAuthToken, connect, disconnect, syncNotes, saveNoteSettings, saveNotificationSettings, saveShoppingState, pushStatus, enablePush, disablePush, schedulePush, cancelPush, testPush };
 }

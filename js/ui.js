@@ -1,12 +1,12 @@
-import { typeLabel } from "./classifier.js?v=0.21.84";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.84";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.84";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.84";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.84";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.84";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.21.84";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.21.84";
-import { groupDietarioByDay } from "./dietario.js?v=0.21.84";
+import { typeLabel } from "./classifier.js?v=0.21.85";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.85";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.85";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.85";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.85";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.85";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.21.85";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.21.85";
+import { groupDietarioByDay } from "./dietario.js?v=0.21.85";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -184,7 +184,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.84";
+    image.src = "assets/angeli-welcome.gif?v=0.21.85";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -956,27 +956,91 @@ export function createUI({ getMedia }) {
   function shoppingItemMarkup(item) {
     const storeLabel = item.store === "mercadona" ? "Mercadona" : item.store === "consum" ? "Consum" : "";
     const storeBadge = storeLabel ? `<span class="store-badge store-${esc(item.store)}">${esc(storeLabel)}</span>` : "";
-    const price = item.product?.price != null ? `<span class="shopping-price">${Number(item.product.price).toFixed(2)} €</span>` : "";
+    const price = item.product?.price != null ? `<span class="shopping-price">${Number(item.product.price).toFixed(2)} €</span>` : (item.store ? '<span class="shopping-price muted">sin vincular</span>' : "");
     const link = item.product?.url ? `<a href="${esc(item.product.url)}" target="_blank" rel="noopener" class="shopping-product-link">Ver en Mercadona</a>` : "";
     const quantity = item.quantity || 1;
+    const thumb = item.product?.thumbnail ? `<img class="shopping-thumb" src="${esc(item.product.thumbnail)}" alt="">` : '<div class="shopping-thumb placeholder">🛒</div>';
     const stepper = `<div class="shopping-qty-stepper"><button type="button" class="shopping-qty-btn" data-a="qty-dec" aria-label="Quitar una unidad de ${esc(item.name)}">−</button><span class="shopping-qty-value">${quantity}</span><button type="button" class="shopping-qty-btn" data-a="qty-inc" aria-label="Añadir una unidad de ${esc(item.name)}">+</button></div>`;
     return `<div class="shopping-item${item.checked ? " done" : ""}" data-shopping-id="${esc(item.id)}">` +
-      `<button class="shopping-check" data-a="toggle" aria-label="${item.checked ? "Marcar como pendiente" : "Marcar como comprado"}">${item.checked ? "☑" : "☐"}</button>` +
+      `<button class="shopping-check${item.checked ? " on" : ""}" data-a="toggle" aria-label="${item.checked ? "Marcar como pendiente" : "Marcar como comprado"}">${item.checked ? "✓" : ""}</button>` +
+      thumb +
       `<div class="shopping-item-body"><strong>${esc(item.name)}</strong><span class="shopping-meta">${storeBadge}${price}${link}</span></div>` +
       stepper +
       `<button class="small-btn danger" data-a="remove" aria-label="Quitar ${esc(item.name)}">✕</button></div>`;
   }
 
-  function renderShoppingList(items = []) {
-    const pending = items.filter(item => !item.checked), done = items.filter(item => item.checked);
-    $("shoppingCount").textContent = `${pending.length} pendiente${pending.length === 1 ? "" : "s"}${done.length ? ` · ${done.length} comprado${done.length === 1 ? "" : "s"}` : ""}`;
-    $("shoppingList").innerHTML = items.length
-      ? pending.map(shoppingItemMarkup).join("") + (done.length ? '<div class="day">Comprado</div>' + done.map(shoppingItemMarkup).join("") : "")
-      : '<div class="empty">La lista de la compra está vacía. Di, por ejemplo, «añade leche a la lista de la compra».</div>';
+  function shoppingListCardMarkup(list) {
+    const pending = list.items.filter(item => !item.checked).length, done = list.items.length - pending;
+    const thumbs = list.items.slice(0, 4).map(item => item.product?.thumbnail ? `<div style="background-image:url('${esc(item.product.thumbnail)}')"></div>` : '<div class="ph">🛒</div>');
+    while (thumbs.length < 4) thumbs.push('<div class="ph"></div>');
+    return `<article class="shopping-list-card" data-shopping-list-id="${esc(list.id)}">` +
+      `<div class="shopping-thumb-grid">${thumbs.join("")}</div>` +
+      `<div class="shopping-list-card-body"><strong>${esc(list.name)}</strong><span>${list.items.length} artículo${list.items.length === 1 ? "" : "s"}${done ? ` · ${done} comprado${done === 1 ? "" : "s"}` : ""}</span></div>` +
+      `<button class="shopping-list-quick" data-shopping-quick="${esc(list.id)}" aria-label="Opciones de ${esc(list.name)}">⋮</button></article>`;
   }
 
-  function openShoppingList(items) {
-    renderShoppingList(items);
+  // Se comparte entre la búsqueda en vivo dentro de una lista y el modal de
+  // confirmación al pedir un artículo por voz — mismo aspecto en los dos
+  // sitios donde aparecen resultados reales de Mercadona.
+  function shoppingSuggestionMarkup(product, index) {
+    const thumb = product.thumbnail ? `<img class="shopping-thumb sm" src="${esc(product.thumbnail)}" alt="">` : '<div class="shopping-thumb sm placeholder">🛒</div>';
+    const meta = [product.packaging, product.price != null ? `${Number(product.price).toFixed(2)} €` : ""].filter(Boolean).join(" · ");
+    return `<button type="button" class="shopping-suggestion" data-suggestion="${index}">${thumb}<span class="suggestion-body"><strong>${esc(product.name)}</strong><span>${esc(meta)}</span></span></button>`;
+  }
+
+  function renderShoppingOverview(state) {
+    $("shoppingBack").hidden = true;
+    $("shoppingDetailMenu").hidden = true;
+    $("shoppingLibraryTitle").textContent = "Mis listas";
+    $("shoppingLibrarySubtitle").textContent = `${state.lists.length} lista${state.lists.length === 1 ? "" : "s"}`;
+    $("shoppingOverview").hidden = false;
+    $("shoppingDetail").hidden = true;
+    $("shoppingOverviewList").innerHTML = state.lists.map(shoppingListCardMarkup).join("");
+  }
+
+  function renderShoppingDetail(list, total = 0) {
+    if (!list) return;
+    $("shoppingBack").hidden = false;
+    $("shoppingDetailMenu").hidden = false;
+    $("shoppingLibraryTitle").textContent = list.name;
+    const pending = list.items.filter(item => !item.checked), done = list.items.filter(item => item.checked);
+    $("shoppingLibrarySubtitle").textContent = `${pending.length} pendiente${pending.length === 1 ? "" : "s"}${done.length ? ` · ${done.length} comprado${done.length === 1 ? "" : "s"}` : ""}`;
+    $("shoppingOverview").hidden = true;
+    $("shoppingDetail").hidden = false;
+    $("shoppingList").innerHTML = list.items.length
+      ? pending.map(shoppingItemMarkup).join("") + (done.length ? '<div class="day">Comprado</div>' + done.map(shoppingItemMarkup).join("") : "")
+      : '<div class="empty">Esta lista está vacía. Escribe un artículo arriba para buscarlo o añadirlo.</div>';
+    $("shoppingTotalBar").hidden = !(total > 0);
+    if (total > 0) $("shoppingTotalValue").textContent = `Total aproximado ${total.toFixed(2)} €`;
+  }
+
+  function hideShoppingSuggestions() {
+    $("shoppingSuggestions").hidden = true;
+    $("shoppingSuggestions").innerHTML = "";
+    $("shoppingLiveBadge").hidden = true;
+  }
+  function showShoppingSuggestionsMessage(message) {
+    $("shoppingLiveBadge").hidden = false;
+    $("shoppingSuggestions").hidden = false;
+    $("shoppingSuggestions").innerHTML = `<div class="shopping-suggestions-empty">${esc(message)}</div>`;
+  }
+  function renderShoppingSuggestions(results) {
+    $("shoppingLiveBadge").hidden = false;
+    $("shoppingSuggestions").hidden = false;
+    $("shoppingSuggestions").innerHTML = results.length ? results.map(shoppingSuggestionMarkup).join("") : '<div class="shopping-suggestions-empty">Sin resultados en Mercadona</div>';
+  }
+  // Sustituye al antiguo botón "+": un enlace de última instancia, visible
+  // solo mientras hay algo escrito, para cuando ninguna coincidencia real
+  // vale y hace falta guardar el texto tal cual.
+  function setShoppingFallback(text, onClick) {
+    const button = $("shoppingFallbackAdd");
+    if (!text) { button.hidden = true; button.onclick = null; return; }
+    button.hidden = false;
+    button.textContent = `Ninguna es lo que busco → añadir «${text}» tal cual`;
+    button.onclick = onClick;
+  }
+
+  function openShoppingList() {
     $("shoppingLibrary").classList.add("show");
     $("shoppingLibrary").setAttribute("aria-hidden", "false");
   }
@@ -984,6 +1048,37 @@ export function createUI({ getMedia }) {
   function closeShoppingList() {
     $("shoppingLibrary").classList.remove("show");
     $("shoppingLibrary").setAttribute("aria-hidden", "true");
+  }
+
+  // Modal que se abre al pedir un solo artículo por voz/texto: la búsqueda
+  // de Mercadona ya sale lanzada con lo que se pidió, para elegir el
+  // producto exacto en el mismo paso en el que se pidió — en vez de
+  // vincularlo en silencio por detrás, sin preguntar.
+  function showShoppingAddConfirm({ name, onInput, onPick, onFallback }) {
+    const container = document.createElement("div");
+    container.className = "shopping-confirm";
+    container.innerHTML = `<div class="shopping-search-shell"><span class="ic">🔍</span><input id="shoppingConfirmInput" value="${esc(name)}" placeholder="Buscar en Mercadona…"></div>` +
+      '<div class="live-badge"><span class="live-dot"></span>Mercadona · en vivo</div>' +
+      '<div id="shoppingConfirmResults" class="shopping-suggestions shown"></div>' +
+      '<button type="button" id="shoppingConfirmFallback" class="shopping-fallback-add"></button>';
+    const input = container.querySelector("#shoppingConfirmInput");
+    const fallback = container.querySelector("#shoppingConfirmFallback");
+    const results = container.querySelector("#shoppingConfirmResults");
+    const setFallbackLabel = value => { fallback.textContent = `Ninguna es lo que busco → añadir «${value}» tal cual`; };
+    setFallbackLabel(name);
+    input.oninput = () => { const value = input.value.trim() || name; setFallbackLabel(value); onInput?.(value); };
+    fallback.onclick = () => onFallback?.(input.value.trim() || name);
+    results.onclick = event => { const button = event.target.closest("[data-suggestion]"); if (button) onPick?.(Number(button.dataset.suggestion)); };
+    openModal({ title: "¿Cuál añado?", lead: `Has pedido: «${esc(name)}»`, body: container, actions: [{ label: "Cancelar", kind: "secondary", onClick: closeLayers }] });
+  }
+  function renderShoppingConfirmResults(results) {
+    const box = $("shoppingConfirmResults");
+    if (!box) return; // el modal ya se cerró
+    box.innerHTML = results.length ? results.map(shoppingSuggestionMarkup).join("") : '<div class="shopping-suggestions-empty">Sin resultados en Mercadona</div>';
+  }
+  function setShoppingConfirmStatus(message) {
+    const box = $("shoppingConfirmResults");
+    if (box) box.innerHTML = `<div class="shopping-suggestions-empty">${esc(message)}</div>`;
   }
 
   // Ficha persistente para ver (no crear) una entrada del dietario. A
@@ -1134,7 +1229,7 @@ export function createUI({ getMedia }) {
     $("conversationModeTranscript").scrollTop = $("conversationModeTranscript").scrollHeight;
   }
 
-  return { $, notify, setGoogleStatus, setPushStatus, setSyncStatus, showConnectionHealth, showNotificationSettings, render, openMediaLibrary, renderMediaLibrary, closeMediaLibrary, openNoteLibrary, renderNoteLibrary, closeNoteLibrary, openDietario, renderDietario, closeDietario, showDietarioDetail, openShoppingList, renderShoppingList, closeShoppingList, showMediaViewer, closeMediaViewer, showMediaEntryDetail, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showMediaContextEditor, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome, openConversationMode, closeConversationMode, setConversationStatus, addConversationTurn };
+  return { $, notify, setGoogleStatus, setPushStatus, setSyncStatus, showConnectionHealth, showNotificationSettings, render, openMediaLibrary, renderMediaLibrary, closeMediaLibrary, openNoteLibrary, renderNoteLibrary, closeNoteLibrary, openDietario, renderDietario, closeDietario, showDietarioDetail, openShoppingList, closeShoppingList, renderShoppingOverview, renderShoppingDetail, hideShoppingSuggestions, showShoppingSuggestionsMessage, renderShoppingSuggestions, setShoppingFallback, showShoppingAddConfirm, renderShoppingConfirmResults, setShoppingConfirmStatus, showMediaViewer, closeMediaViewer, showMediaEntryDetail, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showMediaContextEditor, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome, openConversationMode, closeConversationMode, setConversationStatus, addConversationTurn };
 }
 
 function esc(value) {

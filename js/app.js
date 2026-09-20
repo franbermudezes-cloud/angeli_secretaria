@@ -1,25 +1,25 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.84";
-import{classify,actionData}from"./classifier.js?v=0.21.84";
-import{sendEntry}from"./sheets.js?v=0.21.84";
-import{createUI}from"./ui.js?v=0.21.84";
-import{createGoogleIntegration}from"./google.js?v=0.21.84";
-import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.21.84";
-import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems}from"./shopping.js?v=0.21.84";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.84";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.84";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.84";
-import{createCloudSync}from"./firebase.js?v=0.21.84";
-import{createMediaService}from"./media.js?v=0.21.84";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.84";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.84";
-import{createAgendaActions}from"./agenda.js?v=0.21.84";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.84";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.84";
-import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.84";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.84";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.84";
-import{mediaLibraryItems}from"./media-library.js?v=0.21.84";
-import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.84";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.85";
+import{classify,actionData}from"./classifier.js?v=0.21.85";
+import{sendEntry}from"./sheets.js?v=0.21.85";
+import{createUI}from"./ui.js?v=0.21.85";
+import{createGoogleIntegration}from"./google.js?v=0.21.85";
+import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.21.85";
+import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,updateListItems}from"./shopping.js?v=0.21.85";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.85";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.85";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.85";
+import{createCloudSync}from"./firebase.js?v=0.21.85";
+import{createMediaService}from"./media.js?v=0.21.85";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.85";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.85";
+import{createAgendaActions}from"./agenda.js?v=0.21.85";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.85";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.85";
+import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.85";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.85";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.85";
+import{mediaLibraryItems}from"./media-library.js?v=0.21.85";
+import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.85";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],pendingMediaContext=null,selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -29,7 +29,7 @@ let notificationSettings=normalizeNotificationSettings(DEFAULT_NOTIFICATION_SETT
 let libraryState={kind:"all",category:"all",query:""};
 let noteLibraryState={status:"pending",category:"all",query:""};
 let dietarioState={range:"week",type:"all"};
-let shoppingList=[];
+let shoppingState=normalizeShoppingState(null),shoppingView="overview",shoppingConfirmTimer=null,shoppingConfirmSeq=0,shoppingConfirmResults=[];
 let shortcuts=normalizeShortcuts(readShortcuts()||DEFAULT_SHORTCUTS);
 // Los avisos push llegan con "?reminder=<id>" (backend/push_notifications.py),
 // pero hasta ahora nadie leía ese parámetro: tocar la notificación abría la
@@ -149,7 +149,7 @@ function showNoteSettings(){
  });
 }
 async function verifyConnections(announce=true){lastConnectionCheck=Date.now();await google.syncLinks({announce});render()}
-async function load(){notes=[];renderShortcuts();google.updateStatus();ui.setPushStatus(cloud.pushStatus());ui.setSyncStatus({state:"connecting"});render();await cloud.initialize({onRemoteNotes:remote=>{notes=remote;render()},onNoteSettings:remote=>{noteSettings=normalizeNoteSettings(remote||DEFAULT_NOTE_SETTINGS);render()},onNotificationSettings:remote=>{notificationSettings=normalizeNotificationSettings(remote||DEFAULT_NOTIFICATION_SETTINGS)},onNoteSettingsError:()=>ui.notify("No se pudieron cargar los ajustes de notas"),onNotificationSettingsError:()=>ui.notify("No se pudieron cargar los ajustes de avisos"),onShoppingList:remote=>{shoppingList=remote;if($("shoppingLibrary").classList.contains("show"))ui.renderShoppingList(shoppingList)},onShoppingListError:()=>ui.notify("No se pudo cargar la lista de la compra"),onSyncStatus:ui.setSyncStatus,onPushStatus:ui.setPushStatus,onAuthChange:async()=>{google.updateStatus();ui.setPushStatus(cloud.pushStatus());await verifyConnections(true)}});render();ui.dismissWelcome()}
+async function load(){notes=[];renderShortcuts();google.updateStatus();ui.setPushStatus(cloud.pushStatus());ui.setSyncStatus({state:"connecting"});render();await cloud.initialize({onRemoteNotes:remote=>{notes=remote;render()},onNoteSettings:remote=>{noteSettings=normalizeNoteSettings(remote||DEFAULT_NOTE_SETTINGS);render()},onNotificationSettings:remote=>{notificationSettings=normalizeNotificationSettings(remote||DEFAULT_NOTIFICATION_SETTINGS)},onNoteSettingsError:()=>ui.notify("No se pudieron cargar los ajustes de notas"),onNotificationSettingsError:()=>ui.notify("No se pudieron cargar los ajustes de avisos"),onShoppingState:remote=>{shoppingState=normalizeShoppingState(remote);if($("shoppingLibrary").classList.contains("show"))renderShoppingScreen()},onShoppingListError:()=>ui.notify("No se pudo cargar la lista de la compra"),onSyncStatus:ui.setSyncStatus,onPushStatus:ui.setPushStatus,onAuthChange:async()=>{google.updateStatus();ui.setPushStatus(cloud.pushStatus());await verifyConnections(true)}});render();ui.dismissWelcome()}
 async function add({interactionId=null,shortcut=null}={}){
  if(saving)return;
  const shortcutContext=shortcut||pendingShortcut,text=$("text").value.trim(),active=interactionId?notes.find(item=>item.id===interactionId&&item.interaction?.status==="awaiting_input")||null:null;
@@ -165,7 +165,7 @@ async function add({interactionId=null,shortcut=null}={}){
  // como respuesta a una nota pendiente sin relación, y acabó pidiendo un
  // título de nota en vez de añadir el artículo.
  if(!shortcutContext&&!pendingImages.length&&!pendingFiles.length){
-  const shoppingCommand=parseShoppingCommand(text);
+  const shoppingCommand=parseShoppingCommand(text,shoppingState.lists.map(list=>list.name));
   // Reportado: al dictar desde el botón normal, openDraft() ya había abierto
   // el modal antes de llegar aquí; si no se cierra, se queda fijo en pantalla
   // aunque la orden se procese bien (el aviso de "añadido" es un toast, no
@@ -565,16 +565,33 @@ function closeConversationModeReal(){
  ui.closeConversationMode();
 }
 
-async function persistShoppingList(next){
- shoppingList=next;
- if($("shoppingLibrary").classList.contains("show"))ui.renderShoppingList(shoppingList);
- try{await cloud.saveShoppingList(shoppingList)}catch(_){ui.notify("La lista de la compra sigue pendiente de sincronizar")}
+async function persistShoppingState(next){
+ // Comprobado en real: el enlace de "añadir tal cual" y elegir un resultado
+ // de Mercadona no pasaban por runShoppingCommand (que sí exige sesión), así
+ // que sin sesión decían "Añadido" aunque nunca fuera a guardarse de verdad.
+ // El aviso ahora sale aquí, en el único punto por el que pasa cualquier
+ // cambio a una lista.
+ if(!cloud.isSignedIn()){ui.notify("Inicia sesión en Angeli antes de guardar");return false}
+ shoppingState=next;
+ if($("shoppingLibrary").classList.contains("show"))renderShoppingScreen();
+ try{await cloud.saveShoppingState(shoppingState)}catch(_){ui.notify("La lista de la compra sigue pendiente de sincronizar")}
+ return true;
+}
+function resolveShoppingListId(listName){
+ if(!listName)return shoppingState.activeListId;
+ const list=findListByName(shoppingState,listName);
+ return list?list.id:shoppingState.activeListId;
+}
+async function addItemsToList(listId,items){
+ if(!await persistShoppingState(updateListItems(shoppingState,listId,current=>addShoppingItems(current,items))))return;
+ ui.notify("Añadido a la lista: "+describeShoppingItems(items));
+ void linkMercadonaMatches(listId,items.filter(item=>item.store==="mercadona"));
 }
 // Cuando se dice "de mercadona", buscamos el producto de verdad para que
 // quede su precio y su enlace — pero es un extra: si falla (red, catálogo
 // caído) el artículo se queda igualmente en la lista, solo que sin producto
 // vinculado. Nunca debe bloquear ni deshacer el añadido.
-async function linkMercadonaMatches(mercadonaItems){
+async function linkMercadonaMatches(listId,mercadonaItems){
  if(!mercadonaItems.length)return;
  let idToken;
  try{idToken=await cloud.getAuthToken()}catch(_){return}
@@ -582,115 +599,191 @@ async function linkMercadonaMatches(mercadonaItems){
   try{
    const results=await searchMercadonaProduct(addition.name,idToken);
    if(!results.length)continue;
-   const target=shoppingList.find(item=>!item.checked&&!item.product&&item.store==="mercadona"&&item.name.toLowerCase()===addition.name.toLowerCase());
+   const list=shoppingState.lists.find(item=>item.id===listId);
+   const target=list?.items.find(item=>!item.checked&&!item.product&&item.store==="mercadona"&&item.name.toLowerCase()===addition.name.toLowerCase());
    if(!target)continue;
-   await persistShoppingList(setShoppingItemProduct(shoppingList,target.id,results[0]));
+   await persistShoppingState(updateListItems(shoppingState,listId,items=>setShoppingItemProduct(items,target.id,results[0])));
   }catch(_){/* el artículo se queda en la lista sin producto vinculado */}
  }
 }
+// Pedido explícitamente: como lo habitual es comprar en Mercadona, un solo
+// artículo por voz/texto abre primero un modal con la búsqueda real ya
+// lanzada, en vez de vincularlo en silencio por detrás. Con varios artículos
+// a la vez, o si la tienda es Consum (sin catálogo de búsqueda), se añaden
+// directamente, como antes.
 async function runShoppingCommand(command){
  if(!cloud.isSignedIn()){ui.notify("Inicia sesión en Angeli antes de guardar");return}
- if(command.action==="query"){openShoppingList();return}
- if(command.action==="clear"){await persistShoppingList(clearShoppingList(shoppingList));ui.notify("Lista de la compra vaciada");return}
+ const listId=resolveShoppingListId(command.listName);
+ if(command.action==="query"){openShoppingListDetail(listId);return}
+ if(command.action==="clear"){await persistShoppingState(updateListItems(shoppingState,listId,items=>clearShoppingList(items)));ui.notify("Lista vaciada");return}
  if(command.action==="add"){
-  await persistShoppingList(addShoppingItems(shoppingList,command.items));
-  ui.notify("Añadido a la lista de la compra: "+describeShoppingItems(command.items));
-  void linkMercadonaMatches(command.items.filter(item=>item.store==="mercadona"));
+  if(command.items.length===1&&command.items[0].store!=="consum"){
+   openShoppingListDetail(listId);
+   showShoppingAddConfirm(command.items[0],listId);
+   return;
+  }
+  await addItemsToList(listId,command.items);
   return;
  }
- if(command.action==="remove"){await persistShoppingList(removeShoppingItems(shoppingList,command.items));ui.notify("Quitado de la lista de la compra: "+describeShoppingItems(command.items));return}
- if(command.action==="check"){await persistShoppingList(checkShoppingItems(shoppingList,command.items,true));ui.notify("Marcado como comprado: "+describeShoppingItems(command.items));return}
+ if(command.action==="remove"){await persistShoppingState(updateListItems(shoppingState,listId,items=>removeShoppingItems(items,command.items)));ui.notify("Quitado de la lista: "+describeShoppingItems(command.items));return}
+ if(command.action==="check"){await persistShoppingState(updateListItems(shoppingState,listId,items=>checkShoppingItems(items,command.items,true)));ui.notify("Marcado como comprado: "+describeShoppingItems(command.items));return}
 }
-// "busca leche en mercadona": no exige mencionar la lista, así que se separa
-// de runShoppingCommand (que sí escribe la lista y por tanto exige sesión).
-// Consum no tiene catálogo de productos (visto al investigar la API), así
-// que se avisa en vez de intentar una búsqueda que nunca va a dar nada.
+// "busca leche en mercadona": no exige mencionar ninguna lista, así que se
+// separa de runShoppingCommand (que sí escribe la lista y por tanto exige
+// sesión). Consum no tiene catálogo de productos (visto al investigar la
+// API), así que se avisa en vez de intentar una búsqueda que nunca da nada.
 function runShoppingSearchCommand(command){
- openShoppingList();
+ const listId=resolveShoppingListId(command.listName);
+ openShoppingListDetail(listId);
  if(command.store==="consum"){ui.notify("Consum no tiene catálogo de productos disponible todavía; puedes añadirlo indicando la tienda igualmente");return}
  $("shoppingInput").value=command.query;
  void runShoppingSearch(command.query);
 }
-function openShoppingList(){ui.openShoppingList(shoppingList)}
+
+// ---- Varias listas con nombre (Fran, Mamá…), como en la app de Mercadona ----
+function renderShoppingScreen(){
+ if(shoppingView==="overview"){ui.renderShoppingOverview(shoppingState);return}
+ const list=getActiveList(shoppingState);
+ ui.renderShoppingDetail(list,shoppingListTotal(list?.items||[]));
+}
+function openShoppingOverview(){shoppingView="overview";ui.openShoppingList();renderShoppingScreen()}
+function openShoppingListDetail(listId){
+ const targetId=listId||shoppingState.activeListId;
+ if(targetId&&targetId!==shoppingState.activeListId){void persistShoppingState(setActiveShoppingList(shoppingState,targetId))}
+ shoppingView="detail";
+ ui.openShoppingList();
+ renderShoppingScreen();
+}
+function backToShoppingOverview(){hideShoppingSuggestions();shoppingView="overview";renderShoppingScreen()}
+// Comprobado en real: mutar shoppingView/shoppingState antes de llamar a
+// persistShoppingState dejaba la vista y el estado en memoria desincronizados
+// de lo que se veía en pantalla si el guardado se cortaba (p. ej. sin
+// sesión) — persistShoppingState corta antes de renderizar, pero la mutación
+// directa ya se había hecho igual. Ahora se calcula el estado nuevo, se
+// intenta guardar, y solo si sale bien se cambia de pantalla.
+async function createShoppingListPrompt(){
+ const name=prompt("Nombre de la nueva lista (ej. Fran, Mamá, Casa):");
+ if(!name||!name.trim())return;
+ if(!await persistShoppingState(createShoppingList(shoppingState,name.trim())))return;
+ shoppingView="detail";
+ renderShoppingScreen();
+}
+async function renameShoppingListPrompt(listId){
+ const list=shoppingState.lists.find(item=>item.id===listId);
+ if(!list)return;
+ const name=prompt("Nuevo nombre para la lista:",list.name);
+ if(!name||!name.trim())return;
+ await persistShoppingState(renameShoppingList(shoppingState,listId,name.trim()));
+}
+async function deleteShoppingListPrompt(listId){
+ const list=shoppingState.lists.find(item=>item.id===listId);
+ if(!list)return;
+ if(!confirm('¿Borrar la lista "'+list.name+'" y todos sus artículos?'))return;
+ if(!await persistShoppingState(deleteShoppingList(shoppingState,listId)))return;
+ shoppingView="overview";
+ renderShoppingScreen();
+}
+function openShoppingListQuickActions(listId){
+ const list=shoppingState.lists.find(item=>item.id===listId);
+ if(!list)return;
+ ui.openModal({title:list.name,lead:"¿Qué quieres hacer con esta lista?",actions:[
+  {label:"✎ Cambiar nombre",kind:"secondary",onClick:()=>{ui.closeLayers();renameShoppingListPrompt(listId)}},
+  {label:"🗑️ Eliminar lista",kind:"danger",onClick:()=>{ui.closeLayers();deleteShoppingListPrompt(listId)}},
+  {label:"Cancelar",kind:"secondary",onClick:ui.closeLayers}
+ ]});
+}
+function shoppingOverviewClick(event){
+ const quick=event.target.closest("[data-shopping-quick]");
+ if(quick){openShoppingListQuickActions(quick.dataset.shoppingQuick);return}
+ const card=event.target.closest("[data-shopping-list-id]");
+ if(card)openShoppingListDetail(card.dataset.shoppingListId);
+}
 function shoppingItemClick(event){
  const button=event.target.closest("[data-a]");
  if(!button)return;
  const id=button.closest("[data-shopping-id]")?.dataset.shoppingId;
  if(!id)return;
- const action=button.dataset.a;
- if(action==="toggle")void persistShoppingList(toggleShoppingItem(shoppingList,id));
- else if(action==="remove")void persistShoppingList(removeShoppingItemById(shoppingList,id));
+ const listId=shoppingState.activeListId,action=button.dataset.a;
+ if(action==="toggle")void persistShoppingState(updateListItems(shoppingState,listId,items=>toggleShoppingItem(items,id)));
+ else if(action==="remove")void persistShoppingState(updateListItems(shoppingState,listId,items=>removeShoppingItemById(items,id)));
  else if(action==="qty-inc"||action==="qty-dec"){
-  const item=shoppingList.find(entry=>entry.id===id);
+  const item=getActiveList(shoppingState)?.items.find(entry=>entry.id===id);
   if(!item)return;
-  void persistShoppingList(setShoppingItemQuantity(shoppingList,id,(item.quantity||1)+(action==="qty-inc"?1:-1)));
+  void persistShoppingState(updateListItems(shoppingState,listId,items=>setShoppingItemQuantity(items,id,(item.quantity||1)+(action==="qty-inc"?1:-1))));
  }
 }
-function addShoppingItemManually(){
- const input=$("shoppingInput"),value=input.value.trim();
- if(!value){ui.notify("Escribe algo para añadir");return}
- const items=parseItemList(value);
- if(!items.length){ui.notify("No he entendido ese artículo");return}
- input.value="";
- hideShoppingSuggestions();
- void runShoppingCommand({action:"add",items});
-}
-// Reportado: no había ningún botón de buscar — solo micrófono y "+", que
-// añade el texto tal cual — así que la búsqueda en vivo al escribir pasaba
-// desapercibida (y en el móvil ni se notaba que existía). Ahora hay un botón
-// "🔍" explícito que siempre busca al momento, además de la búsqueda en vivo
-// al escribir; y se ve claramente "Buscando…" / "Sin resultados", nunca un
-// silencio que parece que no ha pasado nada.
+// Pedido explícitamente: el buscador es lo primero (como en la app de
+// Mercadona) — escribir ya busca en vivo, sin botón aparte. El "+" de antes
+// se sustituye por un enlace de última instancia que solo aparece cuando hay
+// algo escrito, para añadir el texto tal cual si ninguna coincidencia vale.
 let shoppingSearchTimer=null,shoppingSearchSeq=0,shoppingSearchResults=[];
 function extractSearchQuery(value){return(parseItemList(value)[0]?.name||value).trim()}
-function hideShoppingSuggestions(){shoppingSearchResults=[];$("shoppingSuggestions").hidden=true;$("shoppingSuggestions").innerHTML=""}
-function showShoppingSuggestionsMessage(message){
- shoppingSearchResults=[];
- $("shoppingSuggestions").hidden=false;
- $("shoppingSuggestions").innerHTML='<div class="shopping-suggestions-empty">'+esc(message)+"</div>";
-}
-function renderShoppingSuggestions(results){
- shoppingSearchResults=results;
- if(!results.length){showShoppingSuggestionsMessage("Sin resultados en Mercadona");return}
- $("shoppingSuggestions").hidden=false;
- $("shoppingSuggestions").innerHTML=results.map((product,index)=>'<button type="button" class="shopping-suggestion" data-suggestion="'+index+'"><span>'+esc(product.name)+(product.packaging?" · "+esc(product.packaging):"")+'</span>'+(product.price!=null?'<span class="shopping-suggestion-price">'+Number(product.price).toFixed(2)+" €</span>":"")+"</button>").join("");
+function hideShoppingSuggestions(){shoppingSearchResults=[];ui.hideShoppingSuggestions()}
+function addShoppingItemAsIs(text){
+ const items=parseItemList(text);
+ if(!items.length){ui.notify("Escribe algo para añadir");return}
+ $("shoppingInput").value="";
+ hideShoppingSuggestions();
+ void addItemsToList(shoppingState.activeListId,items);
 }
 async function runShoppingSearch(query){
  const seq=++shoppingSearchSeq;
- showShoppingSuggestionsMessage("Buscando en Mercadona…");
- if(!cloud.isSignedIn()){if(seq===shoppingSearchSeq)showShoppingSuggestionsMessage("Inicia sesión en Angeli para buscar");return}
+ ui.showShoppingSuggestionsMessage("Buscando en Mercadona…");
+ if(!cloud.isSignedIn()){if(seq===shoppingSearchSeq)ui.showShoppingSuggestionsMessage("Inicia sesión en Angeli para buscar");return}
  let idToken;
- try{idToken=await cloud.getAuthToken()}catch(_){if(seq===shoppingSearchSeq)showShoppingSuggestionsMessage("No se pudo buscar ahora mismo");return}
+ try{idToken=await cloud.getAuthToken()}catch(_){if(seq===shoppingSearchSeq)ui.showShoppingSuggestionsMessage("No se pudo buscar ahora mismo");return}
  let results=[];
- // El buscador manual es para explorar de verdad ("¿cuántas marcas de
- // cerveza hay?"), no solo para el primer emparejado automático por voz —
+ // El buscador es la vía principal para explorar de verdad ("¿cuántas
+ // marcas de cerveza hay?"), no solo el primer emparejado automático —
  // pide más resultados que el límite por defecto del backend (6).
  try{results=await searchMercadonaProduct(query,idToken,20)}catch(_){results=[]}
  if(seq!==shoppingSearchSeq)return; // ya se pidió otra búsqueda mientras esta estaba en curso
- renderShoppingSuggestions(results);
+ shoppingSearchResults=results;
+ ui.renderShoppingSuggestions(results);
 }
 function scheduleShoppingSearch(){
  clearTimeout(shoppingSearchTimer);
- const query=extractSearchQuery($("shoppingInput").value.trim());
+ const raw=$("shoppingInput").value.trim(),query=extractSearchQuery(raw);
+ ui.setShoppingFallback(raw,()=>addShoppingItemAsIs(raw));
  if(query.length<2){hideShoppingSuggestions();return}
- shoppingSearchTimer=setTimeout(()=>void runShoppingSearch(query),350);
+ shoppingSearchTimer=setTimeout(()=>void runShoppingSearch(query),300);
 }
-function searchShoppingNow(){
- clearTimeout(shoppingSearchTimer);
- const query=extractSearchQuery($("shoppingInput").value.trim());
- if(!query){ui.notify("Escribe algo para buscar");return}
- void runShoppingSearch(query);
-}
-function selectShoppingSuggestion(index){
+async function selectShoppingSuggestion(index){
  const product=shoppingSearchResults[index];
  if(!product)return;
  $("shoppingInput").value="";
  hideShoppingSuggestions();
- let next=addShoppingItems(shoppingList,[{name:product.name,store:"mercadona"}]);
+ const listId=shoppingState.activeListId;
+ let next=addShoppingItems(getActiveList(shoppingState)?.items||[],[{name:product.name,store:"mercadona"}]);
  const target=next.find(item=>!item.checked&&!item.product&&item.store==="mercadona"&&item.name.toLowerCase()===product.name.toLowerCase());
  if(target)next=setShoppingItemProduct(next,target.id,product);
- void persistShoppingList(next);
- ui.notify("Añadido a la lista de la compra: "+product.name+" (mercadona)");
+ if(!await persistShoppingState(updateListItems(shoppingState,listId,()=>next)))return;
+ ui.notify("Añadido a la lista: "+product.name+" (mercadona)");
+}
+// Modal que se abre al pedir un solo artículo por voz/texto ("agrega leche a
+// la lista de Fran"): la búsqueda de Mercadona ya sale lanzada con lo que se
+// pidió, para elegir el producto exacto en el mismo paso en que se pidió.
+function showShoppingAddConfirm(addition,listId){
+ const finish=item=>{ui.closeLayers();void addItemsToList(listId,[item])};
+ const runConfirmSearch=async query=>{
+  const seq=++shoppingConfirmSeq;
+  ui.setShoppingConfirmStatus("Buscando en Mercadona…");
+  if(!cloud.isSignedIn())return;
+  let idToken;
+  try{idToken=await cloud.getAuthToken()}catch(_){if(seq===shoppingConfirmSeq)ui.setShoppingConfirmStatus("No se pudo buscar ahora mismo");return}
+  let results=[];
+  try{results=await searchMercadonaProduct(query,idToken,8)}catch(_){results=[]}
+  if(seq!==shoppingConfirmSeq)return;
+  shoppingConfirmResults=results;
+  ui.renderShoppingConfirmResults(results);
+ };
+ ui.showShoppingAddConfirm({
+  name:addition.name,
+  onInput:query=>{clearTimeout(shoppingConfirmTimer);shoppingConfirmTimer=setTimeout(()=>void runConfirmSearch(query),300)},
+  onPick:index=>{const product=shoppingConfirmResults[index];if(product)finish({name:product.name,store:"mercadona",quantity:addition.quantity,product})},
+  onFallback:text=>finish({name:text||addition.name,store:addition.store,quantity:addition.quantity})
+ });
+ void runConfirmSearch(addition.name);
 }
 
 function openDietario(){ui.openDietario(notes,dietarioState)}
@@ -773,17 +866,19 @@ $("filesOpen").onclick=()=>openLibrary("file");
 $("notesOpen").onclick=openNoteLibrary;
 $("remindersOpen").onclick=()=>void resolveReminderQuery(localReminderQuery("Recordatorios pendientes"));
 $("dietarioOpen").onclick=openDietario;
-$("shoppingOpen").onclick=openShoppingList;
+$("shoppingOpen").onclick=openShoppingOverview;
 $("shoppingClose").onclick=()=>{ui.closeShoppingList();hideShoppingSuggestions()};
+$("shoppingOverview").onclick=shoppingOverviewClick;
+$("shoppingCreateList").onclick=createShoppingListPrompt;
+$("shoppingBack").onclick=backToShoppingOverview;
+$("shoppingDetailMenu").onclick=()=>openShoppingListQuickActions(shoppingState.activeListId);
 $("shoppingList").onclick=shoppingItemClick;
-$("shoppingAdd").onclick=addShoppingItemManually;
-$("shoppingSearchBtn").onclick=searchShoppingNow;
 $("shoppingMic").onclick=()=>start({inConversation:true,draftId:"shoppingInput"});
-$("shoppingInput").onkeydown=event=>{if(event.key==="Enter"){event.preventDefault();addShoppingItemManually()}};
+$("shoppingInput").onkeydown=event=>{if(event.key==="Enter"){event.preventDefault();clearTimeout(shoppingSearchTimer);void runShoppingSearch(extractSearchQuery($("shoppingInput").value.trim()))}};
 $("shoppingInput").oninput=scheduleShoppingSearch;
 $("shoppingSuggestions").onclick=event=>{const button=event.target.closest("[data-suggestion]");if(button)selectShoppingSuggestion(Number(button.dataset.suggestion))};
-$("shoppingClearChecked").onclick=()=>void persistShoppingList(clearShoppingList(shoppingList,{onlyChecked:true}));
-$("shoppingClearAll").onclick=()=>{if(shoppingList.length&&!confirm("¿Vaciar toda la lista de la compra?"))return;void persistShoppingList(clearShoppingList(shoppingList))};
+$("shoppingClearChecked").onclick=()=>void persistShoppingState(updateListItems(shoppingState,shoppingState.activeListId,items=>clearShoppingList(items,{onlyChecked:true})));
+$("shoppingClearAll").onclick=()=>{const list=getActiveList(shoppingState);if(list?.items.length&&!confirm('¿Vaciar toda la lista "'+list.name+'"?'))return;void persistShoppingState(updateListItems(shoppingState,shoppingState.activeListId,items=>clearShoppingList(items)))};
 $("conversationModeOpen").onclick=openConversationModeReal;
 $("conversationModeClose").onclick=closeConversationModeReal;
 $("conversationModeMic").onclick=toggleConversationMic;
@@ -933,7 +1028,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.84",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.85",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}

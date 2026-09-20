@@ -1,41 +1,77 @@
 /**
- * Lista de la compra: pedida como función nueva y separada de las notas —
- * necesita marcar artículos uno a uno, no otra entrada de texto en la
- * conversación. Todo lo de aquí es lógica pura (parseo de texto, gestión de
- * la lista); el estado real vive en Firestore (un documento por usuario,
- * igual que los ajustes de notas/notificaciones) y se orquesta desde app.js.
+ * Listas de la compra: varias listas con nombre propio (como "Fran"/"Mamá"
+ * en la app de Mercadona), cada una con sus artículos. Pedida como función
+ * nueva y separada de las notas — necesita marcar artículos uno a uno, no
+ * otra entrada de texto en la conversación. Todo lo de aquí es lógica pura
+ * (parseo de texto, gestión de listas y artículos); el estado real vive en
+ * Firestore (un documento por usuario, igual que los ajustes de notas) y se
+ * orquesta desde app.js.
  */
 
-const TRIGGER = /\b(?:lista\s+de\s+la\s+compra|lista\s+de\s+compra|lista\s+del\s+s[uú]per)\b/i;
-const CLEAR = /\b(?:vac[ií]a|limpia|borra(?:\s+(?:toda|entera))?)\s+(?:la\s+)?(?:lista\s+de\s+la\s+compra|lista\s+de\s+compra|lista\s+del\s+s[uú]per)\b/i;
-const QUERY_ONLY = /^\s*(?:qu[eé]\s+(?:tengo|hay)\s+en\s+la\s+lista\s+de\s+la\s+compra|abre\s+la\s+lista\s+de\s+la\s+compra|ense[ñn]ame\s+la\s+lista\s+de\s+la\s+compra|lista\s+de\s+la\s+compra|lista\s+del\s+s[uú]per)\s*\??\s*$/i;
+const GENERIC_TRIGGERS = [
+  { re: /lista\s+de\s+la\s+compra/i, listName: null },
+  { re: /lista\s+de\s+compra/i, listName: null },
+  { re: /lista\s+del\s+s[uú]per/i, listName: null }
+];
+const CLEAR_BEFORE = /\b(?:vac[ií]a|limpia|borra(?:\s+(?:toda|entera))?)\s*$/i;
+const CLEAR_AFTER = /^(?:vac[ií]a|limpia|borra(?:\s+(?:toda|entera))?)\b/i;
 const REMOVE_VERB = /^(?:quita(?:me)?|borra(?:me)?|elimina(?:me)?|saca(?:me)?)\s+/i;
 const CHECK_VERB = /^(?:ya\s+(?:tengo|compr[eé])|he\s+comprado|marca(?:me)?)\s+/i;
 const ADD_VERB = /^(?:a[ñn]ade(?:me)?|apunta(?:me)?|pon(?:me)?|agrega(?:me)?|mete(?:me)?)\s+/i;
+const QUERY_VERB = /^(?:abre|ense[ñn]ame|mu[eé]strame|qu[eé]\s+(?:tengo|hay)\s+en)\s+/i;
 const LEADING_ARTICLE = /^(?:la|el|los|las|un|una|unos|unas)\s+/i;
 const STORE_SUFFIX = /^(.*?)\s+(?:de|del)\s+(mercadona|consum)\s*$/i;
 // "busca leche en mercadona", "busca leche en la lista de mercadona", "busca
 // leche de mercadona": pedido para poder consultar el catálogo sin usar la
-// palabra "compra". Deliberadamente independiente de TRIGGER — no exige
-// "lista de la compra" — pero exige un verbo de búsqueda explícito para no
-// confundirse con "añade la leche de mercadona a la lista de la compra".
+// palabra "compra". Deliberadamente independiente del disparador de listas —
+// no exige mencionar ninguna lista — pero exige un verbo de búsqueda
+// explícito para no confundirse con "añade la leche de mercadona a la lista".
 const SEARCH_TRIGGER = /^\s*(?:busca(?:r)?|mira|ens[eé]ñame|dime)\s+(.+?)\s+(?:en|de)\s+(?:la\s+lista\s+de\s+|el\s+cat[aá]logo\s+de\s+)?(mercadona|consum)\b.*$/i;
-// Real detectado: "busca leche en la lista de la compra" (sin mencionar
-// Mercadona) no coincidía con SEARCH_TRIGGER y caía en el "add" genérico,
-// guardando "busca leche" como texto literal del artículo. Si se pide
-// buscar mencionando la lista mismo (no una tienda), se entiende que es en
-// Mercadona — es el único catálogo con búsqueda real por ahora.
-const SEARCH_TRIGGER_GENERIC = /^\s*(?:busca(?:r)?|mira|ens[eé]ñame|dime)\s+(.+?)\s+en\s+(?:la\s+)?(?:lista\s+de\s+la\s+compra|lista\s+de\s+compra|lista\s+del\s+s[uú]per)\b.*$/i;
 const QUANTITY_WORDS = { un: 1, una: 1, uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10 };
 const LEADING_QUANTITY = /^(\d{1,2}|un|una|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez)\s+/i;
 
 const TRAILING_STOPWORDS = new Set(["a", "al", "de", "del", "en", "la", "el", "las", "los", "para", "con"]);
 const LEADING_STOPWORDS = new Set(["de", "en", "a", "con"]);
 
-// "apunta EN LA lista..." / "quita LA leche DE LA lista..." dejan colgando
-// una preposición o artículo suelto entre el artículo y la frase disparadora.
-// Es más fiable ir quitando palabras-vacías token a token que intentar
-// enumerar cada combinación posible de preposiciones en español.
+function escapeRegex(value) { return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+
+// Encuentra dónde cae la mención a "la lista" en la frase — con el nombre
+// real de una de las listas del usuario ("lista de Fran") si existe, o con
+// las frases genéricas ("lista de la compra"/"lista del súper") si no. Los
+// nombres reales van primero: son más específicos y deben ganar si alguno
+// coincidiera por casualidad con una palabra genérica.
+function findListTrigger(value, listNames = []) {
+  for (const name of listNames) {
+    if (!name) continue;
+    // No se usa \b tras el nombre: es ASCII-only en JS y falla justo después
+    // de una vocal con tilde ("Mamá\b" nunca casa, porque "á" ya cuenta como
+    // "no palabra" para \b, así que nunca hay un límite ahí). Se comprueba a
+    // mano que no continúe con otra letra/dígito.
+    const match = new RegExp("lista\\s+de\\s+" + escapeRegex(name) + "(?![a-zA-ZÀ-ÿ0-9])", "i").exec(value);
+    if (match) return { match, listName: name };
+  }
+  for (const variant of GENERIC_TRIGGERS) {
+    const match = variant.re.exec(value);
+    if (match) return { match, listName: null };
+  }
+  return null;
+}
+
+// "busca leche en la lista de la compra"/"...en la lista de Fran" (sin
+// nombrar una tienda) no coincidía con SEARCH_TRIGGER y caía en el "add"
+// genérico, guardando "busca leche" como texto literal del artículo. Si se
+// pide buscar mencionando la lista misma (no una tienda), se entiende que es
+// en Mercadona — es el único catálogo con búsqueda real por ahora.
+function findGenericSearch(value, listNames) {
+  const searchVerb = /^\s*(?:busca(?:r)?|mira|ens[eé]ñame|dime)\s+/i.exec(value);
+  if (!searchVerb) return null;
+  const rest = value.slice(searchVerb[0].length);
+  const trigger = findListTrigger(rest, listNames);
+  if (!trigger) return null;
+  const query = stripTrailingConnector(rest.slice(0, trigger.match.index)).replace(LEADING_ARTICLE, "").trim();
+  return query ? { query, listName: trigger.listName } : null;
+}
+
 function stripTrailingConnector(text) {
   const tokens = text.trim().split(/\s+/).filter(Boolean);
   while (tokens.length && TRAILING_STOPWORDS.has(tokens[tokens.length - 1].toLowerCase())) tokens.pop();
@@ -78,45 +114,57 @@ export function parseItemList(body) {
     .filter(item => item.name);
 }
 
-// Reconoce órdenes de la lista de la compra por voz o texto, siempre de
-// forma local y determinista: nunca pasa por la IA, así que un fallo aquí
-// nunca puede tocar notas, recordatorios ni eventos. Si no reconoce nada
-// devuelve null y la orden sigue su camino normal (nota, recordatorio…).
-export function parseShoppingCommand(text) {
+// Reconoce órdenes de listas de la compra por voz o texto, siempre de forma
+// local y determinista: nunca pasa por la IA, así que un fallo aquí nunca
+// puede tocar notas, recordatorios ni eventos. Si no reconoce nada devuelve
+// null y la orden sigue su camino normal (nota, recordatorio…).
+//
+// `listNames` son los nombres reales de las listas que ya existen ("Fran",
+// "Mamá"…) para poder reconocer "a la lista de Fran" y no solo la frase
+// genérica "a la lista de la compra". Cuando el comando no nombra ninguna
+// lista, `listName` sale `null` y el llamador decide (normalmente, la lista
+// que se tenía abierta).
+export function parseShoppingCommand(text, listNames = []) {
   const value = String(text || "").trim();
   if (!value) return null;
-  if (CLEAR.test(value)) return { action: "clear" };
-  if (QUERY_ONLY.test(value)) return { action: "query" };
+
   const searchMatch = SEARCH_TRIGGER.exec(value);
   if (searchMatch) {
     const query = searchMatch[1].trim().replace(LEADING_ARTICLE, "").trim();
     const store = searchMatch[2].toLowerCase();
-    if (query) return { action: "search", query, store };
+    if (query) return { action: "search", query, store, listName: null };
   }
-  const genericSearchMatch = SEARCH_TRIGGER_GENERIC.exec(value);
-  if (genericSearchMatch) {
-    const query = genericSearchMatch[1].trim().replace(LEADING_ARTICLE, "").trim();
-    if (query) return { action: "search", query, store: "mercadona" };
+  const genericSearch = findGenericSearch(value, listNames);
+  if (genericSearch) return { action: "search", query: genericSearch.query, store: "mercadona", listName: genericSearch.listName };
+
+  const trigger = findListTrigger(value, listNames);
+  if (!trigger) return null;
+  const listName = trigger.listName;
+  const before = stripTrailingConnector(value.slice(0, trigger.match.index));
+  const after = stripLeadingConnector(value.slice(trigger.match.index + trigger.match[0].length));
+
+  if (CLEAR_BEFORE.test(before) || CLEAR_AFTER.test(after)) {
+    return { action: "clear", listName };
   }
-  if (!TRIGGER.test(value)) return null;
+
   // El verbo siempre abre la frase en el habla natural ("quita...",
   // "ya tengo...", "añade..."), así que se detecta y se quita del principio
-  // antes de buscar dónde cae la frase disparadora, en vez de adivinar en
-  // qué lado (antes o después) quedaron los artículos.
+  // antes de mirar qué queda a cada lado del nombre de la lista, en vez de
+  // adivinar en qué lado quedaron los artículos.
   const action = REMOVE_VERB.test(value) ? "remove" : CHECK_VERB.test(value) ? "check" : "add";
-  const withoutVerb = value.replace(REMOVE_VERB, "").replace(CHECK_VERB, "").replace(ADD_VERB, "");
-  const match = TRIGGER.exec(withoutVerb);
-  if (!match) return null;
-  const before = stripTrailingConnector(withoutVerb.slice(0, match.index));
-  const after = stripLeadingConnector(withoutVerb.slice(match.index + match[0].length));
-  const body = before || after;
-  if (!body) return { action: "query" };
+  const withoutVerb = value.replace(REMOVE_VERB, "").replace(CHECK_VERB, "").replace(ADD_VERB, "").replace(QUERY_VERB, "");
+  const triggerAgain = findListTrigger(withoutVerb, listNames);
+  if (!triggerAgain) return { action: "query", listName };
+  const bodyBefore = stripTrailingConnector(withoutVerb.slice(0, triggerAgain.match.index));
+  const bodyAfter = stripLeadingConnector(withoutVerb.slice(triggerAgain.match.index + triggerAgain.match[0].length));
+  const body = bodyBefore || bodyAfter;
+  if (!body) return { action: "query", listName: triggerAgain.listName };
   const items = parseItemList(body);
-  return items.length ? { action, items } : null;
+  return items.length ? { action, items, listName: triggerAgain.listName } : null;
 }
 
 const normalizeName = name => String(name || "").toLowerCase().trim();
-const makeShoppingId = () => `sh-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+const makeId = prefix => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
 // Real detectado: decir "leche" y luego "2 leches" creaba una fila aparte en
 // vez de sumarse a la que ya existía, porque la comparación era por igualdad
@@ -148,7 +196,7 @@ export function addShoppingItems(items, additions) {
       next = next.map((item, i) => i === index ? { ...item, quantity: (item.quantity || 1) + quantity, store: item.store || addition.store || null } : item);
       continue;
     }
-    next = [...next, { id: makeShoppingId(), name: addition.name, store: addition.store || null, quantity, checked: false, addedAt: new Date().toISOString(), product: null }];
+    next = [...next, { id: makeId("sh"), name: addition.name, store: addition.store || null, quantity, checked: false, addedAt: new Date().toISOString(), product: addition.product || null }];
   }
   return next;
 }
@@ -191,4 +239,75 @@ export function describeShoppingItems(items) {
     const label = item.quantity > 1 ? `${item.quantity}× ${item.name}` : item.name;
     return item.store ? `${label} (${item.store})` : label;
   }).join(", ");
+}
+
+export function shoppingListTotal(items) {
+  return items.reduce((sum, item) => sum + (item.product?.price != null ? item.product.price * (item.quantity || 1) : 0), 0);
+}
+
+// ---- Varias listas con nombre (Fran, Mamá…) ----
+// Un documento por usuario en Firestore, con todas las listas dentro, igual
+// que ya se hacía con los ajustes de notas/notificaciones — evita depender
+// de una colección nueva que firestore.rules no autorice (el fallo real de
+// sincronización de la V0.21.80 fue justo por eso).
+
+export function makeShoppingList(name, items = []) {
+  return { id: makeId("sl"), name: String(name || "Mi lista").trim() || "Mi lista", items };
+}
+
+// Antes de que existieran listas con nombre, el documento guardaba
+// directamente {items:[...]}. Se migra sola a una única lista "Mi lista" la
+// primera vez que se lee, sin pedir nada ni perder lo que ya hubiera.
+export function normalizeShoppingState(raw) {
+  if (raw && Array.isArray(raw.lists) && raw.lists.length) {
+    const lists = raw.lists.map(list => ({ id: list.id || makeId("sl"), name: String(list.name || "Mi lista").trim() || "Mi lista", items: Array.isArray(list.items) ? list.items : [] }));
+    const activeListId = lists.some(list => list.id === raw.activeListId) ? raw.activeListId : lists[0].id;
+    return { lists, activeListId };
+  }
+  const legacyItems = Array.isArray(raw?.items) ? raw.items : [];
+  const list = makeShoppingList("Mi lista", legacyItems);
+  return { lists: [list], activeListId: list.id };
+}
+
+export function getActiveList(state) {
+  return state.lists.find(list => list.id === state.activeListId) || state.lists[0] || null;
+}
+
+export function findListByName(state, name) {
+  if (!name) return null;
+  const key = normalizeName(name);
+  return state.lists.find(list => normalizeName(list.name) === key) || null;
+}
+
+export function createShoppingList(state, name) {
+  const list = makeShoppingList(name);
+  return { lists: [...state.lists, list], activeListId: list.id };
+}
+
+export function renameShoppingList(state, listId, name) {
+  const trimmed = String(name || "").trim();
+  if (!trimmed) return state;
+  return { ...state, lists: state.lists.map(list => list.id === listId ? { ...list, name: trimmed } : list) };
+}
+
+// Siempre deja al menos una lista: borrar la última no vacía la app entera,
+// crea una lista en blanco para no dejar el estado sin ningún sitio donde
+// guardar el siguiente artículo.
+export function deleteShoppingList(state, listId) {
+  const remaining = state.lists.filter(list => list.id !== listId);
+  if (!remaining.length) return createShoppingList({ lists: [], activeListId: null }, "Mi lista");
+  const activeListId = state.activeListId === listId ? remaining[0].id : state.activeListId;
+  return { lists: remaining, activeListId };
+}
+
+export function setActiveShoppingList(state, listId) {
+  return state.lists.some(list => list.id === listId) ? { ...state, activeListId: listId } : state;
+}
+
+// Aplica una transformación de artículos (addShoppingItems, toggle…) a una
+// lista concreta, dejando las demás intactas — así toda la lógica de
+// artículos de arriba se reutiliza tal cual, sin saber nada de que ahora
+// puede haber varias listas.
+export function updateListItems(state, listId, updater) {
+  return { ...state, lists: state.lists.map(list => list.id === listId ? { ...list, items: updater(list.items) } : list) };
 }
