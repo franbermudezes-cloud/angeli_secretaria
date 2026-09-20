@@ -1,5 +1,14 @@
 # Changelog
 
+## V0.22.1 · Cerrar sesión ya no dejaba la app "pegada" (auditoría completa, hallazgo 1/6)
+
+Primer arreglo de la auditoría completa del código pedida por el propietario. Bug encontrado por revisión, no reportado por el propietario — nadie había notado que cerrar sesión no funcionaba de verdad.
+
+- **Causa raíz**: la comprobación "¿es la cuenta correcta?" (`nextUser?.email?.toLowerCase() !== OWNER_EMAIL`) también daba verdadero cuando no había ninguna cuenta (`nextUser` nulo, justo el caso de cerrar sesión o de cargar la app sin sesión previa), porque `undefined !== "franbermudez.es@gmail.com"` es cierto. Esa rama, al no tener ninguna cuenta que expulsar, no hacía nada y salía sin limpiar el estado interno, sin desuscribir ninguno de los 5 oyentes de Firestore ni avisar a la interfaz — la app se quedaba mostrando "conectado" indefinidamente tras pulsar "Cerrar sesión", y con el tiempo empezaba a fallar en silencio al intentar sincronizar con un token ya inválido.
+- **Corregido**: solo se trata como "cuenta equivocada" cuando de verdad hay una cuenta distinta a la propietaria; sin ninguna cuenta, el flujo sigue normal y limpia todo correctamente.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: 1 prueba nueva en `tests/firebase-auth.test.mjs`.
+
 ## V0.22.0 · Una foto clasificada ya no se queda huérfana sin forma de enviarse
 
 Reportado con captura de pantalla justo después de la V0.21.99: tras clasificar una foto (categoría, tipo de relación...), se quedaba como miniatura fija encima del footer — sin ningún botón visible para enviarla, y tocarla no hacía nada.

@@ -27,8 +27,8 @@ import {
   waitForPendingWrites
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 import { deleteToken, getMessaging, getToken, isSupported, onMessage } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging.js";
-import { fromCloudEntry, sameEntry, toCloudEntry } from "./cloud-entry.js?v=0.22.0";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.0";
+import { fromCloudEntry, sameEntry, toCloudEntry } from "./cloud-entry.js?v=0.22.1";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.1";
 
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
 const VAPID_KEY = "BHyc8Ne9wyaAFoju-9FNG5_qCXPOLSQhHhsfye9bdFlAv3zdLfAvjcvb29Cyrtj80kSq7gJ3qGJ9k3Mb_EqYt_o";
@@ -73,11 +73,19 @@ export function createCloudSync({ notify }) {
       notify("No se pudo completar el inicio de sesión");
     }
     onAuthStateChanged(auth, async nextUser => {
-      if (nextUser?.email?.toLowerCase() !== OWNER_EMAIL) {
-        if (nextUser) {
-          notify("Esta no es la cuenta principal de Angeli");
-          await signOut(auth);
-        }
+      // Real encontrado en auditoría: con "nextUser?.email?.toLowerCase() !==
+      // OWNER_EMAIL" como única condición, un nextUser NULO (cerrar sesión, o
+      // cargar la app sin ninguna sesión previa) también cumple la condición
+      // (undefined !== OWNER_EMAIL), así que cerrar sesión entraba en esta
+      // rama, no hacía nada (nextUser es falso) y salía con "return" sin
+      // llegar nunca a limpiar `user`, desuscribir los 5 listeners de
+      // Firestore ni avisar a la UI — la app se quedaba "pegada" como si
+      // siguiera conectada. Ahora solo se trata como "cuenta equivocada"
+      // cuando de verdad hay una cuenta (nextUser existe) y no es la
+      // propietaria; un nextUser nulo cae directo al flujo normal de abajo.
+      if (nextUser && nextUser.email?.toLowerCase() !== OWNER_EMAIL) {
+        notify("Esta no es la cuenta principal de Angeli");
+        await signOut(auth);
         return;
       }
       user = nextUser || null;
