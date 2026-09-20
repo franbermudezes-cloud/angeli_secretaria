@@ -432,3 +432,35 @@ test('el carrito se añade sin tocar nada de la lista de siempre',async()=>{
  assert.match(ui,/function renderShoppingPurchases\(list\)/);
  assert.match(css,/\.shopping-cart-bar-btn/);
 });
+
+// Regresión real reportada por el propietario: "Ver carrito" estaba
+// escondido detrás del "⋮" — pidió que fuera un acceso directo, junto a
+// "Quitar comprados"/"Vaciar lista".
+test('"Ver carrito" es un acceso directo junto a Quitar comprados/Vaciar lista, no solo desde el "⋮"',async()=>{
+ const [html,app]=await Promise.all([
+  readFile(new URL('../index.html',import.meta.url),'utf8'),
+  readFile(new URL('../js/app.js',import.meta.url),'utf8')
+ ]);
+ const filtersRow=html.match(/<div class="library-filters" role="group" aria-label="Acciones de la lista">[\s\S]*?<\/div>/)?.[0]||"";
+ assert.match(filtersRow,/id="shoppingClearChecked"/);
+ assert.match(filtersRow,/id="shoppingClearAll"/);
+ assert.match(filtersRow,/id="shoppingViewCart"/,'"Ver carrito" debe estar en la misma fila que Quitar comprados/Vaciar lista');
+ assert.match(app,/\$\("shoppingViewCart"\)\.onclick=\(\)=>openShoppingCart\(shoppingState\.activeListId\)/);
+});
+
+// Pedido explícito del propietario: pulsar una compra del historial debe
+// enseñar cada artículo con su precio y el total, no solo los nombres.
+test('pulsar una compra del historial enseña cada artículo con su precio y el total',async()=>{
+ const [html,app,ui]=await Promise.all([
+  readFile(new URL('../index.html',import.meta.url),'utf8'),
+  readFile(new URL('../js/app.js',import.meta.url),'utf8'),
+  readFile(new URL('../js/ui.js',import.meta.url),'utf8')
+ ]);
+ assert.match(html,/id="shoppingPurchasesList"/);
+ assert.match(app,/function openPurchaseDetail\(purchaseId\)/);
+ assert.match(app,/\$\("shoppingPurchasesList"\)\.onclick=/);
+ assert.match(app,/ui\.showPurchaseDetail\(purchase\)/);
+ assert.match(ui,/function purchaseTotal\(purchase\)/);
+ assert.match(ui,/function showPurchaseDetail\(purchase\)/);
+ assert.match(ui,/data-shopping-purchase-id="\$\{esc\(purchase\.id\)\}"/,'cada tarjeta del historial debe poder identificarse para abrir su ficha al pulsarla');
+});

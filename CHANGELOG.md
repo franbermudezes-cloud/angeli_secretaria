@@ -1,5 +1,14 @@
 # Changelog
 
+## V0.21.92 · Acceso directo al carrito y detalle de precios en el historial
+
+Dos ajustes pedidos por el propietario justo después de probar el carrito de la V0.21.91.
+
+- **"Ver carrito" pasa a ser un acceso directo**, junto a "Quitar comprados"/"Vaciar lista" — ya no hace falta pasar por el "⋮" para verlo.
+- **Pulsar una compra del historial ahora enseña su ficha completa**: cada artículo con su cantidad y precio (y el precio por unidad si son varias), más el total de esa compra — antes el historial solo mostraba los nombres.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: 3 pruebas nuevas en `tests/shopping.test.mjs`.
+
 ## V0.21.91 · Carrito de la compra e historial de compras
 
 Pedido explícito del propietario, calcado de cómo funciona la app real de Mercadona: la lista habitual y la compra concreta del día son cosas distintas.
