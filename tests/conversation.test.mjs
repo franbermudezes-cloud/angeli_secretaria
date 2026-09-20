@@ -1208,6 +1208,24 @@ test("WhatsApp: ofrece todos los teléfonos sin duplicarlos y permite corregir e
   assert.doesNotMatch(app,/Mensaje enviado/);
 });
 
+// Hallazgo de la auditoría completa: un número de contacto en un formato no
+// reconocido por whatsappPhone (sin "+"/"00" y sin encajar en el patrón
+// español de 9 cifras, p. ej. un móvil extranjero guardado tal cual) se
+// descartaba en silencio y la pantalla decía "No encuentro un móvil" como si
+// Contactos no tuviera ninguno, en vez de mostrar el número real.
+test("WhatsApp: un número en formato no reconocido se muestra para poder añadirle el prefijo, en vez de darlo por no encontrado", () => {
+  assert.equal(whatsappPhone("491711234567"),null,"sin + ni 00, y no encaja en el patrón español de 9 cifras: whatsappPhone lo rechaza");
+  const allPhones=whatsappChoices({id:"wa",contactQuery:"Klaus"},{contacts:[{name:"Klaus",phones:["491711234567"]}]});
+  assert.equal(allPhones.length,1);
+  assert.equal(whatsappPhone(allPhones[0].phone),null);
+  const ui=readFileSync(new URL('../js/ui.js',import.meta.url),'utf8');
+  assert.match(ui,/rawChoices\s*=\s*allPhones\.filter\(item\s*=>\s*!whatsappPhone\(item\.phone\)\)/,"la pantalla debe separar los teléfonos válidos de los que no se han podido validar");
+  assert.match(ui,/!choices\.length\s*&&\s*!rawChoices\.length[\s\S]{0,80}No encuentro un móvil/,"solo dice \"No encuentro un móvil\" cuando de verdad no hay ningún teléfono");
+  assert.match(ui,/!choices\.length\s*&&\s*rawChoices\.length[\s\S]{0,400}Revisa el número/,"si hay un teléfono sin formato reconocido, se muestra en vez de darlo por no encontrado");
+  const app=readFileSync(new URL('../js/app.js',import.meta.url),'utf8');
+  assert.match(app,/edit-whatsapp-phone[\s\S]{0,40}button\.dataset\.phone\?\{\.\.\.note,phone:button\.dataset\.phone\}:note/,"tocar ese número debe abrir el editor con ese número ya escrito, no en blanco");
+});
+
 const noteSettingsFixture = { categories: [{ id: 'personal', label: 'Personal' }, { id: 'company', label: 'Empresa' }] };
 test('nota: separa el detalle de la IA de la orden original y conserva la categoría', () => {
   const draft = prepareNoteDraft({text:'Añade una nota personal en la que tengo que enviar un correo a Marta sobre el presupuesto', aiIntent:{intent:'note',title:'Correo a Marta',notes:'Tengo que enviar un correo a Marta sobre el presupuesto',noteClassification:{scope:'personal'}}}, noteSettingsFixture);

@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.22.10 · Un móvil de contacto en formato no reconocido ya no se daba por "no encontrado" (auditoría, prioridad media)
+
+- **Causa raíz**: `whatsappPhone` solo acepta números que empiecen por "+"/"00" o que encajen en el patrón español de móvil de 9 cifras — cualquier otro formato (p. ej. un número extranjero guardado sin prefijo) se descartaba en silencio, y la pantalla de WhatsApp mostraba "No encuentro un móvil" como si el contacto no tuviera ninguno.
+- **Corregido**: cuando el contacto sí tiene un número pero no encaja en ningún formato reconocido, ahora se muestra igualmente (con aviso de que le falta el prefijo) y, al tocarlo, abre el editor de número ya con ese valor escrito, en vez de en blanco.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: 1 prueba nueva en `tests/conversation.test.mjs`.
+
 ## V0.22.9 · Reprogramar un evento a la vez que se cambia el lugar ya no perdía el lugar (auditoría, prioridad media)
 
 - **Causa raíz**: `protectCalendarInterpretation` combinaba los cambios detectados localmente (fecha/hora) con los de la IA remota usando `local.changes || remote.changes || null` — en cuanto el detector local encontraba una fecha u hora en la misma frase, descartaba entero lo que la IA remota hubiera entendido, aunque fuera un cambio distinto (p. ej. la ubicación).

@@ -1,12 +1,12 @@
-import { typeLabel } from "./classifier.js?v=0.22.9";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.22.9";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.22.9";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.9";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.22.9";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.9";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.22.9";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.22.9";
-import { groupDietarioByDay } from "./dietario.js?v=0.22.9";
+import { typeLabel } from "./classifier.js?v=0.22.10";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.22.10";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.22.10";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.10";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.22.10";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.10";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.22.10";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.22.10";
+import { groupDietarioByDay } from "./dietario.js?v=0.22.10";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -188,7 +188,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.22.9";
+    image.src = "assets/angeli-welcome.gif?v=0.22.10";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -579,14 +579,28 @@ export function createUI({ getMedia }) {
     }
     if (intent === "whatsapp.compose") {
       const result = !note.phone && google ? google.getContactResult(note.id) : null;
-      const choices = whatsappChoices(note, result).filter(item => whatsappPhone(item.phone));
+      const allPhones = whatsappChoices(note, result);
+      const choices = allPhones.filter(item => whatsappPhone(item.phone));
+      // Hallazgo de la auditoría completa: un contacto con un móvil en
+      // formato no reconocido (sin "+"/"00" y sin encajar en el patrón
+      // español de 9 cifras — p. ej. un número extranjero guardado tal cual)
+      // hacía que whatsappPhone lo descartara en silencio, y esta pantalla
+      // mostraba "No encuentro un móvil" como si Contactos no tuviera
+      // ninguno, en vez de mostrar el número real para que solo haga falta
+      // añadirle el prefijo.
+      const rawChoices = allPhones.filter(item => !whatsappPhone(item.phone));
       const message = '<div class="calendar-confirmation"><span class="calendar-field-label">Destinatario</span><strong>' + esc(note.contactQuery || note.aiIntent?.contactName || "Sin destinatario") + '</strong><span class="calendar-field-label">Mensaje preparado</span><b>' + esc(note.aiIntent?.notes || "Sin mensaje") + '</b></div>';
       if (result?.error) {
         openModal({ ...base, title: "No puedo consultar Contactos", lead: result.error, body: message, actions: [{ label: "Cerrar", kind: "secondary", onClick: closeLayers }] });
         return;
       }
-      if (result && !choices.length) {
+      if (result && !choices.length && !rawChoices.length) {
         openModal({ ...base, title: "No encuentro un móvil", lead: "Puedes indicar otro número con prefijo internacional.", body: message, actions: [{ label: "Cambiar mensaje", kind: "secondary", dataset:{a:"edit-whatsapp",id:note.id} }, { label: "Indicar número", kind: "confirm", dataset:{a:"edit-whatsapp-phone",id:note.id} }, { label: "Cerrar", kind: "secondary", onClick: closeLayers }] });
+        return;
+      }
+      if (result && !choices.length && rawChoices.length) {
+        const rawNumbers = rawChoices.map(item => '<button class="contact-choice" data-a="edit-whatsapp-phone" data-id="' + esc(note.id) + '" data-phone="' + esc(item.phone) + '"><strong>💬 ' + esc(item.name) + '</strong><span>' + esc(item.phone) + '</span></button>').join("");
+        openModal({ ...base, title: "Revisa el número", lead: "Encontré este número pero le falta el prefijo internacional.", body: message + '<div class="contact-options">' + rawNumbers + '</div>', actions: [{ label: "Cambiar mensaje", kind: "secondary", dataset:{a:"edit-whatsapp",id:note.id} }, { label: "Indicar número", kind: "confirm", dataset:{a:"edit-whatsapp-phone",id:note.id} }, { label: "Cerrar", kind: "secondary", onClick: closeLayers }] });
         return;
       }
       const numbers = choices.map(item => '<button class="contact-choice" data-a="open-whatsapp" data-id="' + esc(note.id) + '" data-phone="' + esc(item.phone) + '"><strong>💬 ' + esc(item.name) + '</strong><span>' + esc(item.phone) + '</span></button>').join("");

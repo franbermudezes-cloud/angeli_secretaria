@@ -1,5 +1,15 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-20 — Un móvil de contacto en formato no reconocido se daba por no encontrado V0.22.10
+
+Quinto hallazgo de prioridad media de la auditoría completa que se corrige.
+
+**Causa raíz**: `whatsappPhone` (`js/whatsapp.js`) valida un número en tres pasos: si empieza por "+" o "00", limpia y comprueba que quede un número de 8-15 cifras; si no, solo lo acepta cuando encaja exactamente en el patrón español de móvil de 9 cifras (`/^[6789]\d{8}$/`), anteponiéndole "34"; en cualquier otro caso devuelve `null`. Esto es correcto para el caso más común (un móvil español guardado sin prefijo), pero descarta sin distinción cualquier otro número real y válido que no lleve "+"/"00" explícito — por ejemplo un contacto extranjero guardado tal cual desde el móvil, o un fijo con un formato distinto. En `showEntryAction` (`js/ui.js`), la pantalla de "¿Abrimos WhatsApp?" filtra los teléfonos del contacto con `whatsappChoices(...).filter(item=>whatsappPhone(item.phone))` — si ninguno pasaba el filtro, se mostraba "No encuentro un móvil", dando a entender que Contactos no tenía ningún número, cuando en realidad sí lo tenía, solo que en un formato que la validación estricta no reconocía.
+
+**Corrección**: `showEntryAction` ahora calcula también `rawChoices` (los teléfonos del contacto que NO pasan `whatsappPhone`). Si hay teléfonos válidos (`choices`), el flujo no cambia. Si no hay ninguno válido pero sí hay alguno en `rawChoices`, ya no se dice "No encuentro un móvil": se muestra "Revisa el número" con el número real como botón, explicando que le falta el prefijo internacional. Tocar ese botón (acción `edit-whatsapp-phone` con `data-phone` con el número real) abre el editor de número ya con ese valor escrito — antes siempre se abría en blanco (`note.phone||""`, y `note.phone` es `null` en este escenario, porque el número viene de Contactos, no de la nota) — así que solo hace falta añadir el prefijo y confirmar, en vez de teclear el número entero de memoria. Solo cuando el contacto de verdad no tiene ningún teléfono (`!choices.length && !rawChoices.length`) se sigue mostrando "No encuentro un móvil".
+
+**Cobertura de test**: `tests/conversation.test.mjs` ampliado — comprueba que un número sin "+"/"00" y que no encaja en el patrón español (p. ej. uno alemán) sigue siendo rechazado por `whatsappPhone`, que la pantalla distingue `choices` de `rawChoices`, que solo dice "No encuentro un móvil" cuando ambos están vacíos, que muestra "Revisa el número" cuando hay algo en `rawChoices`, y que tocarlo prellena el editor con ese número real.
+
 ## 2026-09-20 — Reprogramar un evento perdía otros cambios de la misma orden V0.22.9
 
 Cuarto hallazgo de prioridad media de la auditoría completa que se corrige.
