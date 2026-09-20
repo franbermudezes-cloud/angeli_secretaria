@@ -1,5 +1,19 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-20 — Cuatro correcciones sobre el rediseño de la pantalla principal V0.21.88
+
+Tras enviar el rediseño de la pantalla principal (V0.21.87), `chatgpt-codex-connector` (bot de revisión automática que sigue activo en GitHub pese a que el propietario dijo antes en el proyecto haberlo desconectado) dejó tres comentarios en la PR bloqueando el merge por `required_conversation_resolution: true`, y el propietario reportó por su cuenta, probando la app ya en real, un cuarto fallo real en las listas de la compra.
+
+**Fallo 1 (bot) — sin voz, `start()` dejaba sin forma de escribir**: con el compositor de texto fijo ya oculto por el rediseño, `start()` salía inmediatamente si `SpeechRecognition` no existía en el navegador, sin abrir antes el modal de borrador — quien usa un navegador sin reconocimiento de voz se quedaba sin ninguna vía para escribir una instrucción a mano. Corregido llamando siempre a `openDraft()` primero (si no está en modo conversación) y omitiendo solo el arranque del dictado cuando no hay `SpeechRecognition`.
+
+**Fallo 2 (bot) — un aviso push de recordatorio abría la app sin enseñar nada**: `focusPendingReminder()` hacía scroll hasta la entrada dentro de `#list`, que el rediseño oculta para siempre (ver la decisión de V0.21.87 de ocultar en vez de borrar). Corregido para que enseñe la misma ficha (`ui.showEntryAction`) que ya usa el resto de la app para ver una entrada existente.
+
+**Fallo 3 (bot) — el modal de "¿a qué lista lo añado?" no se cerraba antes de añadir**: `ui.showShoppingListChoice` invocaba `onChoose(list.id)` sin llamar antes a `closeLayers()`, dejando la puerta abierta a un toque accidental de más que añadiera el artículo dos veces. Corregido cerrando el modal en cada opción antes de invocar el callback.
+
+**Fallo 4 (propietario, real) — el menú "⋮" de una lista de la compra salía oculto detrás de la propia pantalla**: al tocar "⋮" en una tarjeta de lista para cambiar el nombre o eliminarla, "parece que no ha salido nada" hasta cerrar la lista, momento en el que aparece el modal. Causa raíz idéntica a un problema ya resuelto antes para el Dietario: `openShoppingListQuickActions` abre `ui.openModal()` (`.action-modal`, z-index:6) sin cerrar antes `#shoppingLibrary`, que comparte la clase `.media-library` (z-index:8) — el panel de fondo queda por delante del modal en vez de detrás. Corregido con la misma técnica que `#dietarioLibrary`: una regla por id, más específica, que baja `#shoppingLibrary` a z-index:4 solo para este panel, sin tocar el resto de pantallas que sí cierran su modal antes de abrir otro.
+
+**Cobertura de test**: los fallos 1-3 son DOM/wiring en `js/app.js`/`js/ui.js`, acoplados a `SpeechRecognition`/notificaciones push/interacción real — sin test automatizado, mismo patrón que el resto de funciones de UI de este proyecto; verificados a mano en el navegador sandbox (mockeando la ausencia de `SpeechRecognition` y comprobando que el modal de borrador se abre igualmente). El fallo 4 sí tiene test nuevo, por ser una comprobación de CSS estática: `tests/shopping.test.mjs` ahora comprueba que `#shoppingLibrary` queda por detrás de `.action-modal` en `styles.css`, calcado del test ya existente para `#dietarioLibrary` en `tests/dietario.test.mjs`.
+
 ## 2026-09-20 — Rediseño de la pantalla principal V0.21.87
 
 El propietario pidió un rediseño concreto de la pantalla principal, con un boceto visual publicado y aprobado antes de tocar código (mismo patrón que las listas de la compra): mic central sin cambios, dos botones redondos laterales nuevos, quitar el feed de conversación de la vista, accesos rápidos a Notas/Recordatorios/Calendario, y un footer solo con adjuntos + un botón de evento.

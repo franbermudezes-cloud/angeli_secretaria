@@ -1,11 +1,27 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import {
  parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,
  toggleShoppingItem,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,
  normalizeShoppingState,makeShoppingList,getActiveList,findListByName,createShoppingList,renameShoppingList,
  deleteShoppingList,setActiveShoppingList,updateListItems
 } from '../js/shopping.js';
+
+// Regresión real reportada por el usuario: openShoppingListQuickActions abre
+// el menú de "cambiar nombre/eliminar lista" con ui.openModal() sin cerrar
+// antes #shoppingLibrary (igual que le pasaba al Dietario). Como
+// #shoppingLibrary comparte la clase .media-library (z-index:8, por delante
+// de .action-modal en z-index:6), el modal quedaba tapado detrás de la
+// propia pantalla de la lista y parecía que no había pasado nada hasta
+// cerrar la lista.
+test('el menú rápido de las listas de la compra queda por delante de #shoppingLibrary', async () => {
+ const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+ const shoppingLibraryZ = Number(css.match(/#shoppingLibrary\{[^}]*z-index:(\d+)/)?.[1] ?? css.match(/\.media-library\{[^}]*z-index:(\d+)/)?.[1] ?? -1);
+ const actionModalZ = Number(css.match(/\.action-modal\{[^}]*z-index:(\d+)/)?.[1] || -1);
+ assert.ok(shoppingLibraryZ >= 0 && actionModalZ >= 0, 'deben existir ambas reglas de z-index');
+ assert.ok(shoppingLibraryZ < actionModalZ, `#shoppingLibrary (z-index ${shoppingLibraryZ}) debe quedar por detrás de .action-modal (z-index ${actionModalZ}) para que el menú rápido sea visible y pulsable con la lista abierta`);
+});
 
 test('reconoce añadir un solo artículo a la lista de la compra (sin nombrar ninguna lista)',()=>{
  const command=parseShoppingCommand('añade leche a la lista de la compra');
