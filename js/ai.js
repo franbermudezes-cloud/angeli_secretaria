@@ -1,5 +1,6 @@
-import{calendarQueryRange,cleanTemporalText,naturalQueryRange,temporalData}from"./temporal.js?v=0.22.20";
-import{localWhatsApp}from"./whatsapp.js?v=0.22.20";
+import{calendarQueryRange,cleanTemporalText,naturalQueryRange,temporalData}from"./temporal.js?v=0.22.21";
+import{localWhatsApp}from"./whatsapp.js?v=0.22.21";
+import{REMINDER_TRIGGER}from"./keywords.js?v=0.22.21";
 
 export const VALID_INTENTS=["note","note.query","task.create","task.complete","reminder.create","reminder.query","calendar.create","calendar.query","calendar.update","calendar.delete","contact.call","whatsapp.compose","file.store","photo.store"];
 const SENSITIVE_INTENTS=new Set(["calendar.update","calendar.delete","contact.call","whatsapp.compose"]);
@@ -77,14 +78,14 @@ export function localCalendarUpdate(text = "", now = new Date(), active = null) 
 
 // Respaldo de lectura: la IA sigue siendo la primera opción en producción.
 export function localReminderQuery(text = "") {
-  // Hallazgo de la auditor\u00eda completa del c\u00f3digo: \u00abRecu\u00e9rdame que revise los
-  // recordatorios del banco el viernes\u00bb es una orden normal para CREAR un
-  // recordatorio nuevo \u2014 pero "que" es de las palabras m\u00e1s comunes del
-  // espa\u00f1ol, y el contenido del propio recordatorio menciona
-  // "recordatorios". Sin este guard, explicitQuery coincid\u00eda igual y
-  // protectReadQuery sustitu\u00eda la creaci\u00f3n por una consulta vac\u00eda. Mismo
+  // Hallazgo de la auditoría completa del código: «Recuérdame que revise los
+  // recordatorios del banco el viernes» es una orden normal para CREAR un
+  // recordatorio nuevo — pero "que" es de las palabras más comunes del
+  // español, y el contenido del propio recordatorio menciona
+  // "recordatorios". Sin este guard, explicitQuery coincidía igual y
+  // protectReadQuery sustituía la creación por una consulta vacía. Mismo
   // criterio ya usado en localImmediateCall para el mismo problema.
-  if (/\brecu[e\u00e9]rdame(?:l[oa]s?)?\b|\b(?:recuerda|acu[e\u00e9]rdate)\b/i.test(text)) return null;
+  if (REMINDER_TRIGGER.test(text)) return null;
   const normalized = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   const explicitQuery=/\b(?:que|cuales|dime|muestrame|ensename|ver|listar|lista|busca|buscar|consulta|consultar)\b.*\brecordatorios?\b/i.test(normalized);
   const bareQuery=/^(?:mis\s+|los\s+)?recordatorios?(?:\s+pendientes?)?[.!?]*$/i.test(normalized.trim());
@@ -99,12 +100,12 @@ export function localReminderQuery(text = "") {
 export function localNoteQuery(text = "") {
   const value=String(text||"").trim(),normalized=value.normalize("NFD").replace(/[\u0300-\u036f]/g,"");
   if(/^\s*(?:anota|apunta|guarda|guardar|crea|crear|haz)\b/i.test(normalized))return null;
-  // Hallazgo de la auditor\u00eda completa del c\u00f3digo: \u00abRecu\u00e9rdame que revise mis
-  // notas del banco el viernes\u00bb es una orden para CREAR un recordatorio, no
-  // una consulta de notas \u2014 pero contiene "que" y "notas", suficiente para
+  // Hallazgo de la auditoría completa del código: «Recuérdame que revise mis
+  // notas del banco el viernes» es una orden para CREAR un recordatorio, no
+  // una consulta de notas — pero contiene "que" y "notas", suficiente para
   // que explicitQuery coincidiera igual y perdiera la orden entera. Mismo
   // criterio ya usado en localImmediateCall/localReminderQuery.
-  if(/\brecu[e\u00e9]rdame(?:l[oa]s?)?\b|\b(?:recuerda|acu[e\u00e9]rdate)\b/i.test(normalized))return null;
+  if(REMINDER_TRIGGER.test(normalized))return null;
   const explicitQuery=/\b(?:que|cuales|dime|muestrame|busca|consulta|ensename|ver|listar)\b.*\bnotas?\b/i.test(normalized);
   const listCommand=/^\s*lista(?:me)?\b.*\bnotas?\b/i.test(normalized);
   if(!explicitQuery&&!listCommand)return null;
@@ -137,7 +138,7 @@ export function localImmediateCall(text="",now=new Date()){
   // «Recuérdame llamar a X» pide un recordatorio, no una llamada ahora
   // mismo, aunque no lleve fecha ni hora explícitas: classify() ya prioriza
   // ese verbo sobre «llamar» y esta protección debe respetar el mismo orden.
-  if(/\brecu[eé]rdame(?:l[oa]s?)?\b|\b(?:recuerda|acu[eé]rdate)\b/i.test(value))return null;
+  if(REMINDER_TRIGGER.test(value))return null;
   const match=IMMEDIATE_CALL_PATTERN.exec(value);
   if(!match)return null;
   const temporal=temporalData(value,now);
@@ -166,12 +167,11 @@ export function localImmediateCall(text="",now=new Date()){
 // usa para decidir si `active` debe descartarse ese turno — nunca para
 // generar la interpretación final, que sigue haciéndose con el pipeline
 // normal una vez `active` es null.
-const EXPLICIT_REMINDER_TRIGGER = /\brecu[eé]rdame(?:l[oa]s?)?\b|\b(?:recuerda|acu[eé]rdate)\b/i;
 const EXPLICIT_CALENDAR_CREATE_TRIGGER = /\bnuevo\s+evento\b|\ba[ñn]ade(?:lo)?\s+(?:esto\s+)?al\s+calendario\b/i;
 export function explicitNewCommandDomain(text = "", now = new Date()) {
   const value = String(text || "").trim();
   if (!value) return null;
-  if (EXPLICIT_REMINDER_TRIGGER.test(value)) return "reminder";
+  if (REMINDER_TRIGGER.test(value)) return "reminder";
   if (EXPLICIT_CALENDAR_CREATE_TRIGGER.test(value)) return "calendar";
   // Se llama con `active=null` a propósito: aquí solo interesa si el texto
   // por sí solo dispara una orden nueva de WhatsApp, no si continúa una

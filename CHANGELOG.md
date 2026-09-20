@@ -1,5 +1,13 @@
 # Changelog
 
+## V0.22.21 · Palabras clave de "recordatorio" centralizadas, ya no duplicadas en tres archivos (auditoría, calidad de código)
+
+- **Antes**: el disparador de "esto habla de un recordatorio" vivía repetido en `js/ai.js` (4 copias, algunas escritas de formas distintas), `js/classifier.js` y `js/shortcuts.js` — ya había causado una regresión real (el guard de "recuérdame" tuvo que parchearse por separado en dos funciones porque cada una tenía su propia copia pegada).
+- **Ahora**: `js/keywords.js` centraliza las tres variantes (`REMINDER_TRIGGER`, `REMINDER_CLASSIFY_TRIGGER`, `REMINDER_SHORTCUT_TRIGGER`) con la relación entre ellas documentada. Ningún comportamiento cambia — cada constante conserva exactamente las mismas palabras que tenía en su sitio original.
+- De paso, se corrige un texto con caracteres mal codificados (`é` literal en vez de "é") en dos comentarios de `js/ai.js`, sin ningún efecto en el comportamiento.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: `tests/keywords.test.mjs` (nuevo, 7 pruebas).
+
 ## V0.22.20 · Crear/renombrar/borrar/vaciar una lista de la compra ya usa el modal propio de la app (auditoría, fricción)
 
 - **Antes**: crear o renombrar una lista pedía el nombre con el `prompt()` del navegador, y borrarla o vaciarla confirmaba con `confirm()` — los últimos cuadros feos que quedaban, a diferencia del resto de la app.
