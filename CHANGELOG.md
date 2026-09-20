@@ -1,5 +1,13 @@
 # Changelog
 
+## V0.22.12 · Abrir la lista de la compra por voz en pleno modo conversación ya no la dejaba invisible detrás (auditoría, prioridad media)
+
+- **Causa raíz**: `#shoppingLibrary`/`#dietarioLibrary` y el fondo a pantalla completa del modo conversación compartían el mismo `z-index:4` — en el empate ganaba el modo conversación, por ir después en el HTML, y la lista se abría de verdad pero invisible detrás.
+- **Corregido**: la lista de la compra y el dietario suben a `z-index:5`, por delante del modo conversación pero sin tocar su posición respecto al menú rápido de acciones (`z-index:6`), que seguía siendo la razón original de tener un z-index más bajo que el resto de paneles a pantalla completa.
+- **Verificado en el navegador sandbox**: con ambos paneles abiertos a la vez, "Mis listas" se ve por delante del fondo oscuro del modo conversación.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: 1 prueba nueva en `tests/shopping.test.mjs`.
+
 ## V0.22.11 · Añadir de nuevo al carrito un artículo ya vinculado a Mercadona ya actualiza el producto de esa línea (auditoría, prioridad media)
 
 - **Causa raíz**: al fusionar con una línea ya existente del carrito, `mergeIntoCart` solo sumaba la cantidad — si el artículo de la lista se vinculaba a un producto de Mercadona (o cambiaba de vínculo) DESPUÉS de la primera vez que se añadía al carrito, esa línea se quedaba para siempre sin precio ni foto.

@@ -502,3 +502,20 @@ test('el badge "en vivo", el enlace de añadir tal cual y las sugerencias de Mer
  assert.match(css,/#shoppingFallbackAdd\[hidden\]/);
  assert.match(css,/#shoppingSuggestions\[hidden\]/);
 });
+
+// Hallazgo de la auditoría completa del código: pedir "abre la lista de la
+// compra" (o el dietario) por voz en pleno modo conversación abría el panel
+// de verdad, pero invisible detrás de la pantalla completa oscura del modo
+// conversación — #shoppingLibrary/#dietarioLibrary y .conversation-mode
+// compartían z-index:4, y en un empate gana quien va después en el DOM
+// (.conversation-mode, más abajo en index.html).
+test('la lista de la compra y el dietario quedan por delante del modo conversación, no empatados en z-index',async()=>{
+ const css=await readFile(new URL('../styles.css',import.meta.url),'utf8');
+ const shoppingZ=Number(css.match(/#shoppingLibrary\{z-index:(\d+)\}/)?.[1]);
+ const dietarioZ=Number(css.match(/#dietarioLibrary\{z-index:(\d+)\}/)?.[1]);
+ const conversationZ=Number(css.match(/\.conversation-mode\{[^}]*z-index:(\d+)/)?.[1]);
+ const actionModalZ=Number(css.match(/\.action-modal\{[^}]*z-index:(\d+)/)?.[1]);
+ assert.ok(shoppingZ>conversationZ,"la lista de la compra debe quedar por delante del modo conversación");
+ assert.ok(dietarioZ>conversationZ,"el dietario debe quedar por delante del modo conversación");
+ assert.ok(shoppingZ<actionModalZ&&dietarioZ<actionModalZ,"pero siguen por detrás del menú rápido de #actionModal, como antes");
+});

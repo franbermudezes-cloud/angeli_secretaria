@@ -1,5 +1,17 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-20 — Abrir la lista de la compra por voz en pleno modo conversación la dejaba invisible detrás V0.22.12
+
+Séptimo hallazgo de prioridad media de la auditoría completa que se corrige.
+
+**Causa raíz**: `#dietarioLibrary`/`#shoppingLibrary` tienen, desde una corrección anterior, un `z-index:4` deliberadamente más bajo que su clase `.media-library` (8) para poder quedar por DETRÁS de `#actionModal` (6) cuando el menú rápido del Dietario/lista de la compra abre ese modal sin cerrar antes su panel de fondo (ver el comentario en `styles.css` justo encima de esa regla). El problema es que `.conversation-mode` — el fondo oscuro a pantalla completa del modo conversación — tiene TAMBIÉN `z-index:4`. Cuando la persona pide "abre la lista de la compra" estando en modo conversación, `#shoppingLibrary` se abre con normalidad, pero al estar empatado en z-index con `.conversation-mode` y aparecer ANTES en el HTML (línea 47 frente a la 54 de `#conversationMode`), el navegador pinta `.conversation-mode` por delante: la lista está ahí, funcionando, pero completamente tapada por el fondo oscuro del modo conversación, sin ningún error ni aviso.
+
+**Corrección**: `#dietarioLibrary`/`#shoppingLibrary` suben a `z-index:5` — por delante de `.conversation-mode` (4), pero sin tocar su posición por detrás de `#actionModal` (6), que es la relación que de verdad importaba mantener.
+
+**Verificado en el navegador sandbox**: con `#conversationMode` y `#shoppingLibrary` abiertos a la vez (clases `.show` añadidas directamente para reproducir el escenario), la pantalla "Mis listas" se ve por delante del fondo oscuro del modo conversación — antes de la corrección hubiera quedado completamente oculta.
+
+**Cobertura de test**: `tests/shopping.test.mjs` ampliado — comprueba que el `z-index` de `#shoppingLibrary`/`#dietarioLibrary` es mayor que el de `.conversation-mode` pero menor que el de `.action-modal`.
+
 ## 2026-09-20 — Añadir de nuevo al carrito un artículo recién vinculado a Mercadona no actualizaba esa línea V0.22.11
 
 Sexto hallazgo de prioridad media de la auditoría completa que se corrige. Nota: distinto del hallazgo de "mezclar tienda en un mismo pedido fusiona ambas en una sola línea" que el propietario pidió dejar aparte (ver la entrada de V0.22.1 para el contexto de la auditoría) — este es un bug de fusión de PRODUCTO, no de tienda.
