@@ -1,5 +1,16 @@
 # Changelog
 
+## V0.21.91 · Carrito de la compra e historial de compras
+
+Pedido explícito del propietario, calcado de cómo funciona la app real de Mercadona: la lista habitual y la compra concreta del día son cosas distintas.
+
+- **La lista de la compra no cambia en nada**: mismo buscador, mismo check de siempre, "Quitar comprados" y "Vaciar lista" tal cual estaban. Solo se añade un botón nuevo, "🛒 Añadir al carrito".
+- **El check de la lista ahora sirve para elegir qué llevar hoy**: marca los artículos que necesitas, pulsa "🛒 Añadir al carrito" y se copian al carrito con su cantidad — el check de la lista vuelve a quedar vacío, pero el artículo sigue en la lista para la próxima vez (no se borra de ahí).
+- **Carrito nuevo** (desde el "⋮" de la lista): la compra de hoy. Cada artículo tiene su propio check ("ya está en el carro") y su propia cantidad, independientes de la lista. "Finalizar compra" archiva lo marcado con la fecha de hoy; lo que no llegaste a comprar se queda en el carrito para la próxima.
+- **Historial de compras nuevo** (también desde el "⋮"): un bloque por cada compra finalizada, con la fecha y lo que se compró esa vez.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: 9 pruebas nuevas en `tests/shopping.test.mjs` para el carrito y el historial (añadir/quitar, cantidades, finalizar compra dejando lo no comprado en el carrito), más una prueba explícita de que la lista de siempre no pierde ni cambia ninguno de sus elementos existentes.
+
 ## V0.21.90 · Accesos directos sincronizados entre dispositivos, sin scroll horizontal
 
 Reportado por el propietario: en el móvil tenía 7 accesos directos y en el ordenador (PWA) solo 3 — no eran los mismos en cada sitio.
