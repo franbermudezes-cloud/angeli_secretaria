@@ -1,5 +1,15 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-20 — Crear/renombrar/borrar/vaciar una lista de la compra sin prompt()/confirm() V0.22.20
+
+Quinto hallazgo de "fricción" de la auditoría completa que se corrige (ver la entrada de V0.22.1 para el contexto de la auditoría) — el último de esta ronda; siguen los de "calidad de código".
+
+**Causa raíz**: `createShoppingListPrompt`/`renameShoppingListPrompt` pedían el nombre con `prompt()` del navegador, y `deleteShoppingListPrompt`/el botón "Vaciar lista" confirmaban con `confirm()` — los cuadros nativos del navegador, que no se pueden estilar ni siguen el resto de la interfaz de Angeli, y que ya se habían sustituido en todos los demás sitios de la app (accesos directos, notas, etc.) en rondas anteriores de esta misma auditoría.
+
+**Corrección**: tres funciones nuevas en `js/ui.js` — `showShoppingNamePrompt({title,lead,placeholder,value,confirmLabel,onSave,onCancel})` (un `<input>` dentro del modal propio, reutilizable tanto para crear como para renombrar), `showShoppingDeleteConfirm(list,{onConfirm,onCancel})` y `showShoppingClearConfirm(list,{onConfirm,onCancel})` (confirmaciones de peligro que dicen cuántos artículos se van a perder, con la pluralización correcta). `js/app.js` las usa en `createShoppingListPrompt` (encadenada con el ya existente `showShoppingStoreChoice`), `renameShoppingListPrompt`, `deleteShoppingListPrompt` y el `onclick` de `#shoppingClearAll`.
+
+**Cobertura de test**: `tests/shopping.test.mjs` ampliado — comprueba que ninguna de las cuatro acciones usa ya `prompt()`/`confirm()`, y que las tres funciones nuevas de `ui.js` existen y se llaman correctamente.
+
 ## 2026-09-20 — Bajar la cantidad a 0 en la compra quita el artículo directamente V0.22.19
 
 Cuarto hallazgo de "fricción" de la auditoría completa que se corrige (ver la entrada de V0.22.1 para el contexto de la auditoría).

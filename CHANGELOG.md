@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.22.20 · Crear/renombrar/borrar/vaciar una lista de la compra ya usa el modal propio de la app (auditoría, fricción)
+
+- **Antes**: crear o renombrar una lista pedía el nombre con el `prompt()` del navegador, y borrarla o vaciarla confirmaba con `confirm()` — los últimos cuadros feos que quedaban, a diferencia del resto de la app.
+- **Ahora**: las cuatro acciones usan el modal propio de Angeli, con el mismo estilo que el resto de confirmaciones (borrar/vaciar dicen cuántos artículos se van a perder).
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: 1 prueba nueva en `tests/shopping.test.mjs`.
+
 ## V0.22.19 · Bajar la cantidad a 0 en la compra ya quita el artículo directamente (auditoría, fricción)
 
 - **Antes**: bajar la cantidad de un artículo (en la lista o en el carrito) se quedaba clavada en 1 — había que buscar la ✕ aparte para quitarlo del todo.

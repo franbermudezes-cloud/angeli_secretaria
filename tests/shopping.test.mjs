@@ -620,3 +620,22 @@ test('bajar la cantidad de 1 a 0 en la lista quita el artículo directamente, no
  assert.ok(cartClickSource,"shoppingCartItemClick debe existir");
  assert.match(cartClickSource,/if\(action==="cart-qty-dec"&&\(item\.quantity\|\|1\)<=1\)\{void persistShoppingState\(removeCartItem\(shoppingState,listId,id\)\);return\}/,"lo mismo debe pasar en el carrito");
 });
+
+// Hallazgo de fricción de la auditoría completa: crear/renombrar/borrar/
+// vaciar una lista de la compra seguía usando prompt()/confirm() del
+// navegador — los últimos cuadros feos que quedaban en esta parte de la app.
+test('crear, renombrar, borrar y vaciar una lista usan el modal propio de la app, no prompt()/confirm()',()=>{
+ const app=readFileSync(new URL('../js/app.js',import.meta.url),'utf8');
+ assert.doesNotMatch(app,/prompt\("Nombre de la nueva lista/,"crear una lista ya no debe usar prompt()");
+ assert.doesNotMatch(app,/prompt\("Nuevo nombre para la lista/,"renombrar una lista ya no debe usar prompt()");
+ assert.doesNotMatch(app,/confirm\('¿Borrar la lista/,"borrar una lista ya no debe usar confirm()");
+ assert.doesNotMatch(app,/confirm\('¿Vaciar toda la lista/,"vaciar una lista ya no debe usar confirm()");
+ assert.match(app,/ui\.showShoppingNamePrompt\(\{title:"Nueva lista"/);
+ assert.match(app,/ui\.showShoppingNamePrompt\(\{title:"Cambiar nombre"/);
+ assert.match(app,/ui\.showShoppingDeleteConfirm\(list,\{onConfirm:/);
+ assert.match(app,/ui\.showShoppingClearConfirm\(list,\{onConfirm:/);
+ const ui=readFileSync(new URL('../js/ui.js',import.meta.url),'utf8');
+ assert.match(ui,/function showShoppingNamePrompt\(/);
+ assert.match(ui,/function showShoppingDeleteConfirm\(list, \{ onConfirm, onCancel \} = \{\}\)/);
+ assert.match(ui,/function showShoppingClearConfirm\(list, \{ onConfirm, onCancel \} = \{\}\)/);
+});
