@@ -1,5 +1,18 @@
 # Changelog
 
+## V0.21.85 · Listas de la compra con nombre propio, buscador como primer paso
+
+Pedido a partir de una captura real de la app de Mercadona ("así me va perfecto, haz lo mismo en la nuestra"), con un boceto visual aprobado antes de tocar código.
+
+- **Varias listas con nombre**, como "Fran"/"Mamá" en Mercadona: al tocar 🛒 se abre "Mis listas" (una tarjeta por lista, con miniaturas y contador), tocar una entra en su detalle, y "Crear nueva lista" añade otra. Cada lista tiene sus propios artículos, independientes de las demás. Se puede cambiar el nombre o borrar una lista desde el "⋮" de su tarjeta.
+- **El buscador es ahora el primer paso**, no un botón aparte: dentro de una lista, escribir ya busca en vivo en Mercadona (con indicador "Mercadona · en vivo"), cada resultado con foto y precio para añadir con un toque; solo si ninguno vale, un enlace al final permite añadir el texto tal cual.
+- **Un solo artículo por voz o texto ahora abre un modal de confirmación** con la búsqueda de Mercadona ya lanzada — pedido explícitamente: "agrega leche a la lista de Fran" ya no lo vincula en silencio por detrás, deja elegir el producto exacto en el momento. Con varios artículos a la vez, o si la tienda es Consum, se siguen añadiendo directos como antes.
+- **Los comandos de voz/texto ahora entienden el nombre real de una lista**: "añade leche a la lista de Fran", "busca cerveza en la lista de Mamá", "vacía la lista de Fran" — si no se nombra ninguna, se usa la que se tenía abierta.
+- **Total aproximado** al pie de cada lista, sumando el precio de los artículos ya vinculados a un producto real de Mercadona.
+- Migración automática y transparente: la lista única que ya existía se convierte en una lista llamada "Mi lista" la primera vez que se abre, sin perder nada.
+- Sin cambios en el backend ni en `firestore.rules`; no requiere redespliegue.
+- Tests: `tests/shopping.test.mjs` ampliado a 38 pruebas (gestión de varias listas, reconocimiento del nombre real de una lista incluyendo tildes, migración del formato antiguo).
+
 ## V0.21.84 · Cabecera: quitado el icono de Calendario (no cabía en el móvil)
 
 - Reportado: en el móvil, con el nuevo icono 🛒, la cabecera ya no cabía y el icono de Ajustes quedaba fuera de la pantalla. Quitado el icono de Calendario (🗓️) de la cabecera — ya existe el mismo acceso abajo, en "🗓️ Hoy" / "🗓️ Próxima semana".
