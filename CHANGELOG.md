@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.21.84 · Cabecera: quitado el icono de Calendario (no cabía en el móvil)
+
+- Reportado: en el móvil, con el nuevo icono 🛒, la cabecera ya no cabía y el icono de Ajustes quedaba fuera de la pantalla. Quitado el icono de Calendario (🗓️) de la cabecera — ya existe el mismo acceso abajo, en "🗓️ Hoy" / "🗓️ Próxima semana".
+- **Anotado, sin arreglar todavía** (pendiente explícito del propietario): el Dietario → "Eventos" no refleja el Calendar real, solo lo que Angeli ha creado él mismo como entrada — no consulta Google Calendar en vivo. Documentado en `PROJECT_MEMORY.md` con la causa raíz y por qué es un cambio de arquitectura, no un arreglo rápido.
+- Sin cambios en el backend; no requiere redespliegue.
+
 ## V0.21.83 · Lista de la compra: botón de búsqueda explícito
 
 Reportado probando en el móvil: no había ningún botón para buscar — solo micrófono y "+" (que añade el texto tal cual) — así que la búsqueda en vivo al escribir pasaba completamente desapercibida. Además, decir exactamente "busca leche en la lista de la compra" (sin mencionar Mercadona) no se reconocía como búsqueda y se guardaba "busca leche" como artículo literal.

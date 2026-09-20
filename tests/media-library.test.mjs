@@ -33,7 +33,6 @@ assert.match(html, /id="galleryOpen"/);
 assert.match(html, /id="filesOpen"/);
 assert.match(html, /id="notesOpen"/);
 assert.match(html, /id="remindersOpen"/);
-assert.match(html, /id="agendaOpen"/);
 assert.match(html, /id="menuOpen"/);
 assert.doesNotMatch(html, /id="headerSend"/);
 assert.doesNotMatch(html, /id="searchToggle"/);
