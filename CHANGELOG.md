@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.22.6 · Reclasificar un adjunto desde Fotos/archivos ya no escribía en el campo equivocado si era una nota (auditoría, prioridad media)
+
+- **Causa raíz**: el botón "Clasificar ahora"/"Modificar clasificación" de la ficha de un adjunto escribía siempre en `mediaContext`, aunque la entrada fuera una nota (cuya categoría/relación real vive en `noteClassification`) — creaba una segunda clasificación que Notas y Fotos/archivos mostraban de forma distinta para la misma entrada.
+- **Corregido**: las notas ya no ofrecen ese botón — "Abrir nota" ya da acceso a su edición completa, con su categoría/relación real.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: 1 prueba nueva en `tests/media-context.test.mjs`.
+
 ## V0.22.5 · Micrófonos huérfanos: cancelar un dictado ya no exige un segundo toque en otro micro (auditoría, hallazgo 6/6)
 
 Último hallazgo de prioridad alta de la auditoría completa del código.
