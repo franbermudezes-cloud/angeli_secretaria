@@ -121,22 +121,42 @@ def _strip_accents(value: str) -> str:
     return "".join(char for char in unicodedata.normalize("NFD", value) if unicodedata.category(char) != "Mn")
 
 
+_WORD_RE = re.compile(r"\w+")
+
+
+# Real detectado: "café cápsula" no encontraba "Café en cápsulas" — el
+# singular no casaba con el plural del catálogo. El plural en español se
+# forma añadiendo "s" (cápsula→cápsulas) o "es" (según cómo acabe la
+# palabra); sin diccionario no se puede saber cuál aplica, así que se
+# prueban ambas reducciones como candidatas, igual que ya se hace en
+# js/shopping.js para los artículos de la lista.
+def _word_stems(word: str) -> set[str]:
+    stems = {word}
+    if len(word) > 2 and word.endswith("s"):
+        stems.add(word[:-1])
+    if len(word) > 3 and word.endswith("es"):
+        stems.add(word[:-2])
+    return stems
+
+
 def search(query: str, limit: int = 6) -> list[dict[str, Any]]:
-    # Real detectado: "cafe" (sin tilde) no encontraba "café" — muy fácil de
-    # escribir así sin querer, sobre todo dictando. Se comparan sin acentos
-    # en los dos lados para que dé igual cómo se haya escrito la tilde.
+    # "cafe" (sin tilde) tampoco encontraba "café" — muy fácil de escribir
+    # así sin querer, sobre todo dictando. Se comparan sin acentos en los
+    # dos lados para que dé igual cómo se haya escrito la tilde.
     terms = [_strip_accents(word) for word in str(query or "").lower().split() if word]
     if not terms:
         return []
-    # Coincidencia por palabra completa, no por subcadena: "leche entera"
-    # emparejaba antes con "almendras enteras" (chocolate) porque "entera"
-    # es subcadena de "enteras". \b evita ese falso positivo.
-    patterns = [re.compile(r"\b" + re.escape(term) + r"\b") for term in terms]
+    term_stem_sets = [_word_stems(term) for term in terms]
     catalog = _catalog_data()
     scored = []
     for product in catalog:
         name = _strip_accents(product["name"].lower())
-        if not all(pattern.search(name) for pattern in patterns):
+        name_word_stems = [_word_stems(word) for word in _WORD_RE.findall(name)]
+        # Coincidencia por palabra completa (con su plural/singular), no por
+        # subcadena: "leche entera" no debe emparejar con "almendras
+        # enteras" solo porque "entera" sea una subcadena literal de esa
+        # palabra suelta del nombre.
+        if not all(any(term_stems & word_stems for word_stems in name_word_stems) for term_stems in term_stem_sets):
             continue
         rank = 0 if name.startswith(terms[0]) else 1
         scored.append((rank, len(name), product))
