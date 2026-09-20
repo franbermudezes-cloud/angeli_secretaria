@@ -1,5 +1,17 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-20 — Añadir un artículo exacto a la compra ya no exige confirmar V0.22.18
+
+Tercer hallazgo de "fricción" de la auditoría completa que se corrige (ver la entrada de V0.22.1 para el contexto de la auditoría).
+
+**Causa raíz**: `showShoppingAddConfirm(addition,listId)` (`js/app.js`) abría siempre el modal de confirmación (`ui.showShoppingAddConfirm`) ANTES de lanzar la búsqueda en Mercadona (`runConfirmSearch`), y esa búsqueda solo servía para rellenar la lista de sugerencias dentro del modal ya abierto — nunca para decidir si el modal hacía falta. Aunque el resultado fuera un único producto exacto y sin ninguna ambigüedad que resolver, la persona tenía que esperar a que cargaran las sugerencias y tocar "Usar este" para confirmarlo.
+
+**Corrección**: se invierte el orden. Ahora se busca primero, con lo dictado/escrito tal cual, y solo se abre el modal (`openConfirmUI()`, extraído del cableado que antes iba pegado a la apertura inmediata) si la búsqueda no da un único resultado — con 0 resultados (para poder escribirlo a mano) o con varios (para poder elegir). Si da exactamente uno, se llama directamente a `finish(...)` con ese producto, sin abrir nunca el modal. Como beneficio adicional, cuando el modal sí hace falta, se abre ya con los resultados listos (`ui.renderShoppingConfirmResults(results)` justo después de `openConfirmUI()`), evitando el "Buscando en Mercadona…" que antes se veía brevemente incluso con los resultados ya en camino.
+
+**Deliberadamente sin tocar**: `onInput` (cuando la persona ya tiene el modal abierto y sigue escribiendo para refinar la búsqueda) sigue usando `runConfirmSearch`, que SIEMPRE rellena la lista de sugerencias sin saltarse nunca el modal — el salto directo solo tiene sentido en la búsqueda inicial, antes de que la persona haya visto ni tocado nada; una vez el modal está abierto, sí quiere ver y comparar antes de decidir.
+
+**Cobertura de test**: `tests/shopping.test.mjs` ampliado — comprueba, por código fuente, que la búsqueda ocurre antes de decidir si hace falta el modal, que un único resultado se añade directamente sin abrir el modal, y que con 0 o varios resultados el modal sí se abre ya con los resultados listos.
+
 ## 2026-09-20 — "Historial de compras" como acceso directo V0.22.17
 
 Segundo hallazgo de "fricción" de la auditoría completa que se corrige (ver la entrada de V0.22.1 para el contexto de la auditoría).

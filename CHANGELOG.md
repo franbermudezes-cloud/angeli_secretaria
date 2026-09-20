@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.22.18 · Añadir un artículo exacto a la compra ya no pide confirmar si no hay ninguna ambigüedad (auditoría, fricción)
+
+- **Antes**: añadir un artículo a la lista siempre abría el modal de confirmación y esperaba a la búsqueda en Mercadona antes de mostrar nada, aunque solo hubiera un resultado — un toque de más ("Usar este") cuando no había nada que elegir.
+- **Ahora**: se busca primero; si hay un único resultado, se añade directamente sin abrir ningún modal. El modal solo aparece cuando de verdad hace falta elegir (varios resultados) o no se ha encontrado nada (para escribirlo a mano) — y en ese caso ya aparece con los resultados listos, sin un segundo "buscando" de más.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: 1 prueba nueva en `tests/shopping.test.mjs`.
+
 ## V0.22.17 · "Historial de compras" ya es un acceso directo, junto a "Ver carrito" (auditoría, fricción)
 
 - **Antes**: para ver el historial de compras de una lista había que abrir el "⋮" primero.
