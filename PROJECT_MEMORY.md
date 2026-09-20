@@ -1,5 +1,19 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-20 — Gestionar accesos directos, dos accesos rápidos más y el micro ya no corta el dictado V0.21.93
+
+Tres pedidos del propietario en el mismo mensaje, más un cuarto reportado aparte sobre el dictado.
+
+**1. Quitar accesos directos de verdad, desde Ajustes**: pidió "poder quitarlos, o sea, que no ocultarlos". Ya existía `editShortcuts()` (wired a "✎ Editar accesos" en el menú), pero dependía de `prompt()` del navegador con una lista numerada — funcional pero muy pobre para el resto del nivel de esta app. Sustituido por `manageShortcuts()`: un modal real (`ui.openModal`) con un botón "🗑️ <nombre>" por cada acceso — tocarlo lo borra y refresca el propio modal (llamada recursiva a sí mismo) para seguir gestionando sin cerrar y reabrir. **Encontrado en la propia verificación en el navegador**: el botón de Ajustes abría el modal SIN cerrar antes `#settingsMenu` (a diferencia de "Ajustes de notas", que sí llama a `ui.closeLayers()` primero) — como `.settings-menu` tiene z-index:7 y `.action-modal` z-index:6, el modal quedaba tapado detrás del propio menú de Ajustes. Corregido igualando el wiring al de "Ajustes de notas".
+
+**Efecto secundario necesario**: `.modal-actions` (la fila de botones de cualquier modal) usaba `display:flex` sin `flex-wrap`, pensado para los 2-3 botones habituales de confirmar/cancelar. Con hasta 9 botones (7 accesos + crear + cerrar) se habrían aplastado en una sola fila ilegible. Se añadió `flex-wrap:wrap` y `min-width:110px` a `.modal-actions button` — con 2-3 botones no cambia nada (siguen cabiendo en una fila), pero listas más largas envuelven en varias filas legibles. Beneficia de paso a cualquier otro modal con muchas acciones de este proyecto (p. ej. `showShoppingListChoice` con muchas listas), no solo a este.
+
+**2. Dos accesos rápidos nuevos**: "Llamar" y "WhatsApp" junto a Notas/Recordatorios/Calendario (mismo `.quicknav-btn` del rediseño de home, V0.21.87). Reutilizan literalmente `DEFAULT_SHORTCUTS[2]`/`DEFAULT_SHORTCUTS[3]` (ya usados por la fila de accesos directos de siempre) en vez de redefinir el mismo objeto dos veces. `.quicknav` pasa de `display:flex` a `flex-wrap:wrap` (con `.quicknav-btn{flex:1 1 28%}`) para que los 5 botones queden en dos filas (3+2) en vez de aplastarse en una.
+
+**3. El micro general cortaba el dictado a los 1-3 segundos** (reportado aparte, no por pausa del propio usuario): causa raíz, `rec.continuous=false` en `start()` (la función de dictado general reutilizada por "Toca para hablar", el compositor, los campos de Calendar, etc.) — con `continuous:false`, el reconocedor de voz da la sesión por terminada nada más entregar su primer resultado "final", no solo tras una pausa real. Corregido a `continuous:true` **solo en `start()`**: el modo conversación (`conversationRec`) y el micro rápido de la lista de la compra (`shoppingQuickMic`) siguen con `continuous:false` a propósito, ya documentado en el propio código — ahí cada sesión de reconocimiento es intencionalmente una sola orden completa, no una instrucción larga que pueda necesitar pensar a mitad de frase.
+
+**Cobertura de test**: `tests/shortcuts.test.mjs` ampliado (gestión real de accesos sin `prompt()`, que cierra Ajustes antes de abrir el modal, los dos accesos rápidos nuevos reutilizando `DEFAULT_SHORTCUTS`); `tests/dictation.test.mjs` nuevo, comprobando `rec.continuous=true` en `start()` sin tocar `conversationRec`/el micro rápido de la compra. Verificado a mano en el navegador sandbox: el modal de gestión aparece por delante de Ajustes, borrar un acceso lo quita al instante de la lista y de la fila de la pantalla principal, y los 5 accesos rápidos caben en dos filas a 375px sin desbordar.
+
 ## 2026-09-20 — Acceso directo al carrito y detalle de precios en el historial V0.21.92
 
 Nada más probar el carrito recién enviado (V0.21.91), el propietario pidió dos retoques puntuales:

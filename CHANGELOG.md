@@ -1,5 +1,13 @@
 # Changelog
 
+## V0.21.93 · Gestionar accesos directos desde Ajustes, accesos rápidos de Llamar/WhatsApp y el micro ya no corta el dictado
+
+- **Nuevo modal en Ajustes ("🗑️ Gestionar accesos directos")** para quitar de verdad un acceso directo de la pantalla principal — sustituye al antiguo flujo con un cuadro de texto del navegador para elegir el número a borrar.
+- **Dos accesos rápidos nuevos** junto a Notas/Recordatorios/Calendario: Llamar y WhatsApp, mismas órdenes de siempre, solo un acceso más directo.
+- **Corregido**: el micro de dictado general ("Toca para hablar") cortaba a los 1-3 segundos, obligando a hablar muy rápido y sin pausas. Causa: el reconocedor de voz daba la sesión por terminada nada más entregar el primer resultado. Ahora sigue escuchando hasta tocar el micro de nuevo o pulsar Enviar. El modo conversación y el micro rápido de la lista de la compra no se han tocado — ahí sí es correcto que cada sesión sea una sola orden.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: 4 pruebas nuevas (gestión de accesos, accesos rápidos de llamar/WhatsApp, dictado sin cortes).
+
 ## V0.21.92 · Acceso directo al carrito y detalle de precios en el historial
 
 Dos ajustes pedidos por el propietario justo después de probar el carrito de la V0.21.91.
