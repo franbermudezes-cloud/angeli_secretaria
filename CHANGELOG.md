@@ -1,5 +1,14 @@
 # Changelog
 
+## V0.21.97 · Llamar y WhatsApp buscan el contacto solos, sin un clic de más
+
+Pedido explícito del propietario: "no tengo el por qué de hacer yo clic para que haga la búsqueda... menos es más".
+
+- **Antes**: al pedir una llamada o un WhatsApp, solo se buscaba el contacto sola si la orden venía del acceso directo "Llamar contacto" — hablar o escribir la orden de la forma normal, o cualquier WhatsApp (por cualquier vía), obligaba a tocar "Buscar contacto" antes de poder elegir el número.
+- **Ahora**: en cuanto Angeli sabe a quién va dirigida la llamada o el WhatsApp, busca el contacto sola — un toque menos para llegar al número. Solo se salta la búsqueda si el número ya se conocía de antes.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: `tests/shortcuts.test.mjs` actualizado.
+
 ## V0.21.96 · Cursor listo para escribir en todos los modales con su propio cuadro de texto
 
 El propietario avisó, tras la corrección de la V0.21.95, de que el mismo fallo (cuadro de texto sin el cursor puesto al abrirse) podía repetirse en cualquier otro modal con su propio campo de escritura.

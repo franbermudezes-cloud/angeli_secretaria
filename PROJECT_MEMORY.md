@@ -1,5 +1,15 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-20 — Llamar y WhatsApp buscan el contacto solos, sin un clic de más V0.21.97
+
+El propietario probó "enviar WhatsApp a Ana" y notó que, una vez detectado el destinatario, tenía que tocar "Buscar contacto" y LUEGO elegir el contacto — dos toques donde debería bastar uno: "¿por qué no lo busca ya directamente?... menos es más. Y lo que queremos es que sea funcional." Después aclaró que el mismo patrón (un clic de más para que Angeli busque algo) le molestaba en general: "en WhatsApp, en teléfono, en muchas cosas que tiene que buscar... no tengo el por qué de hacer yo clic para que haga la búsqueda."
+
+**Causa raíz**: en `add()` (`js/app.js`), justo antes de `ui.showEntryAction(entry,google)`, ya existía una búsqueda automática de contacto — pero con una condición demasiado estrecha: `if(shortcutContext?.direct&&interpretation.intent==="contact.call")`. Solo se cumplía cuando la orden venía EXACTAMENTE del acceso directo "📞 Llamar contacto" (el único shortcut con `action:"contact.call"` y `direct:true`). Cualquier otra forma de pedir una llamada (hablando o escribiendo la orden normal, sin pasar por ese acceso concreto) y CUALQUIER WhatsApp (ni siquiera tenía una rama para `whatsapp.compose`) se quedaban sin la búsqueda automática, mostrando primero una tarjeta con un botón "Buscar contacto" que había que tocar antes de ver el número.
+
+**Corrección**: la condición pasa a `if((interpretation.intent==="contact.call"||interpretation.intent==="whatsapp.compose")&&!entry.phone)` — se busca sola para las dos intenciones, sin importar cómo llegó la orden, salvo que el número ya se conociera de antes (entonces no hay nada que buscar). `google.searchContact(note)` ya se autoprotegía para esto (`js/google.js`): sin `contactQuery` avisa y no hace nada; sin Contactos conectado, deja un error que `showEntryAction` ya sabía mostrar — no hizo falta tocar esa función.
+
+**Cobertura de test**: `tests/shortcuts.test.mjs` actualizado — la prueba antigua que exigía literalmente `shortcutContext?.direct&&interpretation.intent==="contact.call"` se sustituyó por una que comprueba justo lo contrario (que YA NO depende de venir de un acceso directo) y que la nueva condición cubre ambas intenciones.
+
 ## 2026-09-20 — Cursor listo para escribir en todos los modales con su propio cuadro de texto V0.21.96
 
 Tras la corrección de la V0.21.95 (el modal de "solo me falta un dato" no dejaba terminar la instrucción), el propietario avisó: "este error vamos a tenerlo en todas las modales" — su preocupación era que el mismo patrón de fallo pudiera repetirse en cualquier otro modal parecido.
