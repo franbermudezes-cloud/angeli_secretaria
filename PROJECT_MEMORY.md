@@ -1,5 +1,15 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-20 — Formularios de editar recordatorio y evento compartidos V0.22.22
+
+Segundo hallazgo de "calidad de código" de la auditoría completa que se corrige (ver la entrada de V0.22.1 para el contexto de la auditoría).
+
+**Causa raíz**: `showReminderEditor` y `showCalendarEventEditor` (`js/ui.js`) construían, cada una por su cuenta, el mismo `innerHTML` de cinco campos (título/fecha/hora/ubicación/descripción) dentro de un `<div class="record-editor">` — con ids de campo distintos (`reminderEdit*` vs `eventEdit*`) pero estructura idéntica. Cualquier cambio en ese formulario (un campo nuevo, un ajuste de estilo, una corrección de accesibilidad) exigía acordarse de aplicarlo en las dos funciones por separado.
+
+**Corrección**: se extrae `buildRecordEditorForm(idPrefix)`, que genera el mismo HTML parametrizado por el prefijo de id. Cada editor sigue teniendo su propia lógica específica, sin tocar: `showReminderEditor` sigue leyendo `calendarDetails(entry)`/`entry.schedule.dueAt` para los valores iniciales y exige fecha y hora antes de guardar; `showCalendarEventEditor` sigue leyendo el `event` de la API de Calendar (`summary`/`start`/`allDay`/`location`/`description`) y no exige fecha y hora. El único cambio interno es que el `<textarea>` del evento pasa de `id="eventEditNotes"` a `id="eventEditDescription"` (para compartir el mismo generador) — sin ningún efecto observable, porque `onSave` sigue devolviendo la clave `notes:` como siempre; nada fuera de `showCalendarEventEditor` leía ese id directamente.
+
+**Cobertura de test**: `tests/record-editor.test.mjs` (nuevo) — comprueba que existe una única función que construye el formulario, que ambos editores la reutilizan, y que cada uno conserva su validación y el nombre de su campo de texto libre en el resultado. Verificado también en el navegador sandbox: los dos editores se abren con los valores correctos precargados, y guardar el del evento devuelve `{title,date,time,location,notes}` como siempre.
+
 ## 2026-09-20 — Palabras clave de "recordatorio" centralizadas en js/keywords.js V0.22.21
 
 Primer hallazgo de "calidad de código" de la auditoría completa que se corrige (ver la entrada de V0.22.1 para el contexto de la auditoría).

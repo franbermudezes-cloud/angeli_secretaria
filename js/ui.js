@@ -1,13 +1,13 @@
-import { typeLabel } from "./classifier.js?v=0.22.21";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.22.21";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.22.21";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.21";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.22.21";
-import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.22.21";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.21";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.22.21";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.22.21";
-import { groupDietarioByDay } from "./dietario.js?v=0.22.21";
+import { typeLabel } from "./classifier.js?v=0.22.22";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.22.22";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.22.22";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.22";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.22.22";
+import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.22.22";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.22";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.22.22";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.22.22";
+import { groupDietarioByDay } from "./dietario.js?v=0.22.22";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -189,7 +189,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.22.21";
+    image.src = "assets/angeli-welcome.gif?v=0.22.22";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -281,10 +281,23 @@ export function createUI({ getMedia }) {
       {label:"Cancelar aviso",kind:"danger",onClick:()=>onCancel?.(entry)}
     ]});
   }
+  // Hallazgo de "calidad de código" de la auditoría completa: showReminderEditor
+  // y showCalendarEventEditor eran casi el mismo formulario (título/fecha/
+  // hora/ubicación/descripción) copiado dos veces con ids de campo distintos
+  // — cualquier cambio en el HTML del formulario (un nuevo campo, un cambio
+  // de estilo) había que acordarse de aplicarlo en las dos funciones por
+  // separado. Se extrae la construcción del formulario a una única función;
+  // cada editor conserva sus propios valores iniciales, su propia validación
+  // y su propio nombre de campo en el resultado (una diferencia real: el
+  // recordatorio exige fecha y hora, el evento no).
+  function buildRecordEditorForm(idPrefix){
+    const form=document.createElement("div");form.className="record-editor";
+    form.innerHTML=`<label>Título<input id="${idPrefix}Title" type="text"></label><label>Fecha<input id="${idPrefix}Date" type="date"></label><label>Hora<input id="${idPrefix}Time" type="time"></label><label>Ubicación<input id="${idPrefix}Location" type="text"></label><label>Descripción<textarea id="${idPrefix}Description" rows="3"></textarea></label>`;
+    return form;
+  }
   function showReminderEditor(entry,{onSave,onCancel}={}){
     const details=calendarDetails(entry),due=entry.schedule?.dueAt||"";
-    const form=document.createElement("div");form.className="record-editor";
-    form.innerHTML='<label>Título<input id="reminderEditTitle" type="text"></label><label>Fecha<input id="reminderEditDate" type="date"></label><label>Hora<input id="reminderEditTime" type="time"></label><label>Ubicación<input id="reminderEditLocation" type="text"></label><label>Descripción<textarea id="reminderEditDescription" rows="3"></textarea></label>';
+    const form=buildRecordEditorForm("reminderEdit");
     openModal({title:"Modificar recordatorio",lead:"Corrige cualquier dato y guardaré el cambio también en Calendar.",body:form,actions:[{label:"Volver",kind:"secondary",onClick:onCancel},{label:"Guardar cambios",kind:"confirm",onClick:()=>{const date=$("reminderEditDate").value,time=$("reminderEditTime").value;if(!date||!time)return notify("Indica la fecha y la hora");onSave?.({title:$("reminderEditTitle").value.trim(),date,time,location:$("reminderEditLocation").value.trim(),description:$("reminderEditDescription").value.trim()})}}]});
     $("reminderEditTitle").value=details.title;$("reminderEditDate").value=due.slice(0,10)||entry.scheduledDate||"";$("reminderEditTime").value=due.slice(11,16)||entry.scheduledTime||"";$("reminderEditLocation").value=details.location||"";$("reminderEditDescription").value=details.description||"";
   }
@@ -824,10 +837,9 @@ export function createUI({ getMedia }) {
   }
 
   function showCalendarEventEditor(event,{onSave,onCancel}={}){
-    const form=document.createElement("div");form.className="record-editor";
-    form.innerHTML='<label>Título<input id="eventEditTitle" type="text"></label><label>Fecha<input id="eventEditDate" type="date"></label><label>Hora<input id="eventEditTime" type="time"></label><label>Ubicación<input id="eventEditLocation" type="text"></label><label>Descripción<textarea id="eventEditNotes" rows="3"></textarea></label>';
-    openModal({title:"Modificar evento",lead:"Puedes cambiar cualquier dato de esta cita.",body:form,actions:[{label:"Volver",kind:"secondary",onClick:onCancel},{label:"Guardar cambios",kind:"confirm",onClick:()=>onSave?.({title:$("eventEditTitle").value.trim(),date:$("eventEditDate").value,time:$("eventEditTime").value,location:$("eventEditLocation").value.trim(),notes:$("eventEditNotes").value.trim()})}]});
-    $("eventEditTitle").value=event.summary||"";$("eventEditDate").value=event.start?.slice(0,10)||"";$("eventEditTime").value=event.allDay?"":event.start?.slice(11,16)||"";$("eventEditLocation").value=event.location||"";$("eventEditNotes").value=event.description||"";
+    const form=buildRecordEditorForm("eventEdit");
+    openModal({title:"Modificar evento",lead:"Puedes cambiar cualquier dato de esta cita.",body:form,actions:[{label:"Volver",kind:"secondary",onClick:onCancel},{label:"Guardar cambios",kind:"confirm",onClick:()=>onSave?.({title:$("eventEditTitle").value.trim(),date:$("eventEditDate").value,time:$("eventEditTime").value,location:$("eventEditLocation").value.trim(),notes:$("eventEditDescription").value.trim()})}]});
+    $("eventEditTitle").value=event.summary||"";$("eventEditDate").value=event.start?.slice(0,10)||"";$("eventEditTime").value=event.allDay?"":event.start?.slice(11,16)||"";$("eventEditLocation").value=event.location||"";$("eventEditDescription").value=event.description||"";
   }
 
   function calendarActions(note, google) {
