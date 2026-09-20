@@ -1,5 +1,17 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-20 — Auditoría completa del código: badge "en vivo" mal oculto V0.22.2
+
+Segundo hallazgo de prioridad alta de la auditoría completa (ver la entrada de V0.22.1 para el contexto de la auditoría en sí).
+
+**Causa raíz**: `#shoppingLiveBadge` (`.live-badge{display:flex}`), `#shoppingFallbackAdd` (`.shopping-fallback-add{display:block}`) y `#shoppingSuggestions` (`.shopping-suggestions{display:flex}`) se ocultan y muestran alternando el atributo `hidden` (`ui.js`: `hideShoppingSuggestions`, `showShoppingSuggestionsMessage`, `renderShoppingSuggestions`, `setShoppingFallback`). Pero la regla `[hidden]{display:none}` del navegador y la regla de la propia clase (`display:flex`/`display:block`) tienen exactamente la misma especificidad (0,1,0) — cuando empatan, gana la que aparece más tarde en la cascada, y las reglas de clase de `styles.css` están después. Resultado: poner `hidden=true` en estos tres elementos NO los ocultaba de verdad. Es el mismo patrón exacto ya documentado y corregido dos veces antes en este proyecto (para `#dietarioLibrary`/`#shoppingLibrary` frente a `.action-modal`, y para `#shoppingOverview`/`#shoppingDetail`) — pero se coló de nuevo porque estos tres elementos se añadieron después de esas correcciones, y no hay ningún sitio único donde comprobar "¿todo elemento oculto con `hidden` tiene su override?" (la propia auditoría señaló esto como un problema de fondo: sería mejor un único bloque de reglas `[hidden]` consolidado en vez de ir parcheando uno a uno según se descubren).
+
+**Corrección**: una línea más en `styles.css`, `#shoppingLiveBadge[hidden],#shoppingFallbackAdd[hidden],#shoppingSuggestions[hidden]{display:none}`, junto a las reglas ya existentes para `#shoppingOverview`/`#shoppingDetail`.
+
+**Verificado en el navegador sandbox**: con `hidden=true`, `getComputedStyle` de los tres confirma `display:none`; quitando `hidden`, cada uno recupera su `display` real (`flex`/`block`/`flex`).
+
+**Cobertura de test**: `tests/shopping.test.mjs` ampliado con una prueba que comprueba que las tres reglas `[hidden]` existen en `styles.css`.
+
 ## 2026-09-20 — Auditoría completa del código: cerrar sesión estaba roto V0.22.1
 
 El propietario pidió una auditoría de punta a punta de toda la aplicación ("revisa la aplicación... encontrar fallos, errores... como si empezaras de cero"), dado que el proyecto arrancó con código ya escrito por otra IA y ha crecido desde entonces a base de parches puntuales. Se lanzaron 6 agentes en paralelo, cada uno cubriendo una parte de la app (lista de la compra/carrito, notas/adjuntos, recordatorios/calendario/contactos/WhatsApp, dietario/accesos directos/pantalla principal/modo conversación, sincronización/ajustes/notificaciones, y el backend de interpretación IA), con instrucciones de leer el código completo de su área, contrastarlo con el historial ya documentado aquí, y reportar bugs reales, fricción de UX y calidad de código — sin tocar nada. Se compiló un informe único con ~50 hallazgos, priorizados con el propietario antes de arreglar nada.
