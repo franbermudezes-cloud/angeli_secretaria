@@ -1,4 +1,5 @@
-import{calendarQueryRange,cleanTemporalText,naturalQueryRange,temporalData}from"./temporal.js?v=0.22.12";
+import{calendarQueryRange,cleanTemporalText,naturalQueryRange,temporalData}from"./temporal.js?v=0.22.13";
+import{localWhatsApp}from"./whatsapp.js?v=0.22.13";
 
 export const VALID_INTENTS=["note","note.query","task.create","task.complete","reminder.create","reminder.query","calendar.create","calendar.query","calendar.update","calendar.delete","contact.call","whatsapp.compose","file.store","photo.store"];
 const SENSITIVE_INTENTS=new Set(["calendar.update","calendar.delete","contact.call","whatsapp.compose"]);
@@ -144,6 +145,49 @@ export function localImmediateCall(text="",now=new Date()){
   const name=match[1].replace(/\b(?:mañana|hoy|luego|ahora|por favor|ya)\b.*$/i,"").trim();
   if(!name)return null;
   return{...EMPTY,intent:"contact.call",confidence:1,contactName:name,requiresConfirmation:true};
+}
+
+// Hallazgo de la auditoría completa del código, generalizando el carve-out ya
+// aplicado a la lista de la compra (ver app.js, add()): una pregunta pendiente
+// de OTRA orden (p. ej. un WhatsApp a medias esperando el nombre del contacto
+// o el texto del mensaje) se comía cualquier frase nueva como si fuera la
+// respuesta a esa pregunta — incluido un "Recuérdame llamar al médico
+// mañana" que no tiene nada que ver. El problema no es solo que la IA remota
+// reciba el contexto de `active` y pueda malinterpretar continuidad: algunos
+// respaldos locales (localWhatsApp con missingFields contactName/notes) daban
+// por buena CUALQUIER texto como respuesta, sin comprobar si en realidad era
+// una orden nueva de otro dominio. Esta función detecta, de forma
+// determinista y ANTES de tocar el intérprete, si el texto trae un disparador
+// inequívoco de orden nueva ("Recuérdame...", "envía/manda un whatsapp a...",
+// "nuevo evento"/"añade... al calendario", "llama a..."), reutilizando los
+// mismos parsers locales ya usados para detectar esas órdenes desde cero
+// (localWhatsApp sin `active` y localImmediateCall, que nunca han necesitado
+// contexto de conversación porque ya son disparadores explícitos). Solo se
+// usa para decidir si `active` debe descartarse ese turno — nunca para
+// generar la interpretación final, que sigue haciéndose con el pipeline
+// normal una vez `active` es null.
+const EXPLICIT_REMINDER_TRIGGER = /\brecu[eé]rdame(?:l[oa]s?)?\b|\b(?:recuerda|acu[eé]rdate)\b/i;
+const EXPLICIT_CALENDAR_CREATE_TRIGGER = /\bnuevo\s+evento\b|\ba[ñn]ade(?:lo)?\s+(?:esto\s+)?al\s+calendario\b/i;
+export function explicitNewCommandDomain(text = "", now = new Date()) {
+  const value = String(text || "").trim();
+  if (!value) return null;
+  if (EXPLICIT_REMINDER_TRIGGER.test(value)) return "reminder";
+  if (EXPLICIT_CALENDAR_CREATE_TRIGGER.test(value)) return "calendar";
+  // Se llama con `active=null` a propósito: aquí solo interesa si el texto
+  // por sí solo dispara una orden nueva de WhatsApp, no si continúa una
+  // interacción — esa distinción la hace `activeIntentDomain` comparando
+  // dominios, no localWhatsApp.
+  if (localWhatsApp(value, null)) return "whatsapp";
+  if (localImmediateCall(value, now)) return "call";
+  return null;
+}
+export function activeIntentDomain(active) {
+  const intent = active?.aiIntent?.intent;
+  if (intent === "reminder.create") return "reminder";
+  if (intent === "whatsapp.compose") return "whatsapp";
+  if (intent === "calendar.create" || intent === "calendar.update" || intent === "calendar.delete") return "calendar";
+  if (intent === "contact.call") return "call";
+  return null;
 }
 
 // Si la IA ya identificó una llamada (puede traer teléfono, apellidos...) se
