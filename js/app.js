@@ -1,25 +1,25 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts,readShortcutsHidden,writeShortcutsHidden}from"./storage.js?v=0.22.18";
-import{classify,actionData}from"./classifier.js?v=0.22.18";
-import{sendEntry}from"./sheets.js?v=0.22.18";
-import{createUI}from"./ui.js?v=0.22.18";
-import{createGoogleIntegration}from"./google.js?v=0.22.18";
-import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,activeIntentDomain,explicitNewCommandDomain,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.22.18";
-import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,setShoppingListStore,isMercadonaList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.22.18";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.22.18";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.22.18";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime,calendarDetails}from"./schedule.js?v=0.22.18";
-import{createCloudSync}from"./firebase.js?v=0.22.18";
-import{createMediaService}from"./media.js?v=0.22.18";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.22.18";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.22.18";
-import{createAgendaActions}from"./agenda.js?v=0.22.18";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.22.18";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.22.18";
-import{DEFAULT_SHORTCUTS,SHORTCUT_PRESETS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.22.18";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.22.18";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.22.18";
-import{mediaLibraryItems}from"./media-library.js?v=0.22.18";
-import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.22.18";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts,readShortcutsHidden,writeShortcutsHidden}from"./storage.js?v=0.22.19";
+import{classify,actionData}from"./classifier.js?v=0.22.19";
+import{sendEntry}from"./sheets.js?v=0.22.19";
+import{createUI}from"./ui.js?v=0.22.19";
+import{createGoogleIntegration}from"./google.js?v=0.22.19";
+import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,activeIntentDomain,explicitNewCommandDomain,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.22.19";
+import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,setShoppingListStore,isMercadonaList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.22.19";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.22.19";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.22.19";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime,calendarDetails}from"./schedule.js?v=0.22.19";
+import{createCloudSync}from"./firebase.js?v=0.22.19";
+import{createMediaService}from"./media.js?v=0.22.19";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.22.19";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.22.19";
+import{createAgendaActions}from"./agenda.js?v=0.22.19";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.22.19";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.22.19";
+import{DEFAULT_SHORTCUTS,SHORTCUT_PRESETS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.22.19";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.22.19";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.22.19";
+import{mediaLibraryItems}from"./media-library.js?v=0.22.19";
+import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.22.19";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],pendingMediaContext=null,selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -926,6 +926,11 @@ function shoppingItemClick(event){
  else if(action==="qty-inc"||action==="qty-dec"){
   const item=getActiveList(shoppingState)?.items.find(entry=>entry.id===id);
   if(!item)return;
+  // Fricción reportada por el propietario: bajar la cantidad a 0 se quedaba
+  // clavada en 1 (setShoppingItemQuantity nunca baja de ahí) — había que
+  // buscar la ✕ aparte para quitar el artículo. Igual que en cualquier
+  // carrito normal, bajar de 1 quita el artículo directamente.
+  if(action==="qty-dec"&&(item.quantity||1)<=1){void persistShoppingState(updateListItems(shoppingState,listId,items=>removeShoppingItemById(items,id)));return}
   void persistShoppingState(updateListItems(shoppingState,listId,items=>setShoppingItemQuantity(items,id,(item.quantity||1)+(action==="qty-inc"?1:-1))));
  }
 }
@@ -946,6 +951,9 @@ function shoppingCartItemClick(event){
  else if(action==="cart-qty-inc"||action==="cart-qty-dec"){
   const item=getActiveList(shoppingState)?.cart?.find(entry=>entry.id===id);
   if(!item)return;
+  // Mismo criterio que en la lista (ver shoppingItemClick): bajar de 1 en
+  // el carrito quita el artículo directamente, en vez de quedarse clavado.
+  if(action==="cart-qty-dec"&&(item.quantity||1)<=1){void persistShoppingState(removeCartItem(shoppingState,listId,id));return}
   void persistShoppingState(setCartItemQuantity(shoppingState,listId,id,(item.quantity||1)+(action==="cart-qty-inc"?1:-1)));
  }
 }
@@ -1400,7 +1408,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.22.18",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.22.19",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}

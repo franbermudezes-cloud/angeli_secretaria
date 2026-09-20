@@ -606,3 +606,17 @@ test('escribir en una lista que no es de Mercadona no dispara la búsqueda en vi
  assert.match(app,/if\(!mercadona\)\{hideShoppingSuggestions\(\);return\}/,"si la lista no es de Mercadona, no debe programarse ninguna búsqueda");
  assert.match(app,/shoppingInput"\)\.onkeydown=event=>\{if\(event\.key==="Enter"\)\{event\.preventDefault\(\);const raw=[\s\S]{0,120}isMercadonaList\(getActiveList\(shoppingState\)\)\)\{addShoppingItemAsIs\(raw\);return\}/,"pulsar Enter en una lista de otra tienda debe añadir el artículo directamente, no buscar");
 });
+
+// Hallazgo de fricción de la auditoría completa: bajar la cantidad a 0 en la
+// lista (o en el carrito) se quedaba clavada en 1 (setShoppingItemQuantity/
+// setCartItemQuantity nunca bajan de ahí) — había que buscar la ✕ aparte
+// para quitar el artículo, como en cualquier carrito normal.
+test('bajar la cantidad de 1 a 0 en la lista quita el artículo directamente, no se queda clavada en 1',()=>{
+ const app=readFileSync(new URL('../js/app.js',import.meta.url),'utf8');
+ const listClickSource=app.match(/function shoppingItemClick\(event\)\{[\s\S]*?\n\}/)?.[0]||"";
+ assert.ok(listClickSource,"shoppingItemClick debe existir");
+ assert.match(listClickSource,/if\(action==="qty-dec"&&\(item\.quantity\|\|1\)<=1\)\{void persistShoppingState\(updateListItems\(shoppingState,listId,items=>removeShoppingItemById\(items,id\)\)\);return\}/,"bajar de 1 debe quitar el artículo, no quedarse clavado");
+ const cartClickSource=app.match(/function shoppingCartItemClick\(event\)\{[\s\S]*?\n\}/)?.[0]||"";
+ assert.ok(cartClickSource,"shoppingCartItemClick debe existir");
+ assert.match(cartClickSource,/if\(action==="cart-qty-dec"&&\(item\.quantity\|\|1\)<=1\)\{void persistShoppingState\(removeCartItem\(shoppingState,listId,id\)\);return\}/,"lo mismo debe pasar en el carrito");
+});
