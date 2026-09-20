@@ -1,12 +1,12 @@
-import { typeLabel } from "./classifier.js?v=0.21.98";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.98";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.98";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.98";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.98";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.98";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.21.98";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.21.98";
-import { groupDietarioByDay } from "./dietario.js?v=0.21.98";
+import { typeLabel } from "./classifier.js?v=0.21.99";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.99";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.99";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.99";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.99";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.99";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.21.99";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.21.99";
+import { groupDietarioByDay } from "./dietario.js?v=0.21.99";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -188,7 +188,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.98";
+    image.src = "assets/angeli-welcome.gif?v=0.21.99";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -455,6 +455,12 @@ export function createUI({ getMedia }) {
     ] });
   }
 
+  // Pedido explícito del propietario: al clasificar un adjunto puede hacer
+  // falta un tipo de relación que todavía no existe en Ajustes (p. ej.
+  // "familia") — antes solo se podían elegir los ya configurados, y crear
+  // uno nuevo exigía salir a Ajustes primero. La opción "+ Nuevo tipo…"
+  // deja escribirlo aquí mismo, en el momento de subir el adjunto; app.js
+  // lo crea de verdad en los ajustes de notas antes de guardar el adjunto.
   function showMediaContextEditor({ files = [], context = {}, settings = currentNoteSettings, onSave, onCancel } = {}) {
     const normalizedSettings = normalizeNoteSettings(settings);
     const current = normalizeMediaContext(context, normalizedSettings);
@@ -463,16 +469,22 @@ export function createUI({ getMedia }) {
     form.innerHTML = '<div class="media-context-files">' + files.map(name => '<span>📎 ' + esc(name) + '</span>').join("") + '</div>' +
       '<label>¿Para qué lo guardas?<textarea id="mediaContextPurpose" rows="3" placeholder="Ej.: Presupuesto de la reforma del local"></textarea></label>' +
       '<label>Categoría<select id="mediaContextScope">' + normalizedSettings.categories.map(option => '<option value="' + esc(option.id) + '">' + esc(option.label) + '</option>').join("") + '</select></label>' +
-      '<label>Relacionado con<select id="mediaContextRelationType"><option value="none">Sin relación</option>' + normalizedSettings.relationTypes.map(option => '<option value="' + esc(option.id) + '">' + esc(option.label) + '</option>').join("") + '</select></label>' +
+      '<label>Relacionado con<select id="mediaContextRelationType"><option value="none">Sin relación</option>' + normalizedSettings.relationTypes.map(option => '<option value="' + esc(option.id) + '">' + esc(option.label) + '</option>').join("") + '<option value="__new__">+ Nuevo tipo…</option></select></label>' +
+      '<label id="mediaContextRelationTypeNewRow" class="hidden">Nombre del nuevo tipo<input id="mediaContextRelationTypeNew" type="text" placeholder="Ej.: Familia"></label>' +
       '<label id="mediaContextRelationRow">Nombre relacionado<input id="mediaContextRelationName" type="text" placeholder="Persona, cliente, proyecto o evento"></label>';
-    const toggleRelation = () => $("mediaContextRelationRow").classList.toggle("hidden", $("mediaContextRelationType").value === "none");
+    const toggleRelation = () => {
+      const isNew = $("mediaContextRelationType").value === "__new__";
+      $("mediaContextRelationTypeNewRow").classList.toggle("hidden", !isNew);
+      $("mediaContextRelationRow").classList.toggle("hidden", $("mediaContextRelationType").value === "none");
+    };
     openModal({ title: "Organizar adjunto", lead: "Indica por qué lo guardas para poder encontrarlo después.", body: form, actions: [
       { label: "Quitar adjunto", kind: "secondary", onClick: () => { closeLayers(); onCancel?.(); } },
       { label: "Continuar", kind: "confirm", onClick: () => {
-        const purpose = $("mediaContextPurpose").value.trim(), relationType = $("mediaContextRelationType").value, relationName = $("mediaContextRelationName").value.trim();
+        const purpose = $("mediaContextPurpose").value.trim(), relationType = $("mediaContextRelationType").value, relationName = $("mediaContextRelationName").value.trim(), newRelationType = $("mediaContextRelationTypeNew").value.trim();
         if (!purpose) { notify("Explica brevemente para qué guardas este adjunto"); $("mediaContextPurpose").focus(); return; }
+        if (relationType === "__new__" && !newRelationType) { notify("Escribe el nombre del nuevo tipo de relación"); $("mediaContextRelationTypeNew").focus(); return; }
         if (relationType !== "none" && !relationName) { notify("Indica con quién o con qué está relacionado"); $("mediaContextRelationName").focus(); return; }
-        onSave?.({ purpose, scope: $("mediaContextScope").value, relationType, relationName });
+        onSave?.({ purpose, scope: $("mediaContextScope").value, relationType, relationName, ...(relationType === "__new__" ? { newRelationType } : {}) });
       } }
     ] });
     $("mediaContextPurpose").value = current.purpose;

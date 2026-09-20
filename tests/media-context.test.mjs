@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { fromCloudEntry, toCloudEntry } from "../js/cloud-entry.js";
 import { mediaContextComplete, mediaContextRelation, normalizeMediaContext } from "../js/media-context.js";
 
@@ -24,5 +25,26 @@ const fromNull = normalizeMediaContext(null, settings);
 assert.equal(fromNull.scope, "personal");
 assert.equal(fromNull.purpose, "");
 assert.equal(mediaContextRelation(null), "");
+
+// Real reportado por el propietario: hacer una foto con la cámara y luego
+// añadir también fotos de la galería (o al revés) perdía en silencio lo
+// elegido primero — prepareMedia sustituía pendingImages/pendingFiles
+// entero por lo último elegido en vez de sumarlo, así que la primera foto
+// nunca llegaba a subirse ni avisaba de que se había perdido.
+const app = readFileSync(new URL("../js/app.js", import.meta.url), "utf8");
+const prepareMediaSource = app.match(/function prepareMedia\(files,kind,message\)\{[\s\S]*?\n\}/)?.[0] || "";
+assert.ok(prepareMediaSource, "prepareMedia debe existir");
+assert.match(prepareMediaSource, /pendingImages=\[\.\.\.pendingImages,\.\.\.files\]/, "las fotos nuevas deben sumarse a las ya elegidas, no sustituirlas");
+assert.match(prepareMediaSource, /pendingFiles=\[\.\.\.pendingFiles,\.\.\.files\]/, "los archivos nuevos deben sumarse a los ya elegidos, no sustituirlos");
+
+// Pedido explícito: poder crear un tipo de relación nuevo (p. ej. "Familia")
+// en el momento de clasificar un adjunto, sin tener que ir antes a Ajustes.
+const ui = readFileSync(new URL("../js/ui.js", import.meta.url), "utf8");
+assert.match(ui, /<option value="__new__">\+ Nuevo tipo…<\/option>/, 'el selector de "Relacionado con" debe ofrecer crear uno nuevo');
+assert.match(ui, /id="mediaContextRelationTypeNew"/);
+const askMediaContextSource = app.match(/async function askMediaContext\(\)\{[\s\S]*?\n\}/)?.[0] || "";
+assert.ok(askMediaContextSource, "askMediaContext debe existir");
+assert.match(askMediaContextSource, /addNoteSetting\(noteSettings,"relationTypes",values\.newRelationType\)/, "el tipo nuevo debe crearse de verdad en los ajustes de notas, no solo usarse una vez");
+assert.match(askMediaContextSource, /await saveNoteSettings\(/, "debe persistir el nuevo tipo, no solo guardarlo en memoria");
 
 console.log("media-context: ok");

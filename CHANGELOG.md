@@ -1,5 +1,14 @@
 # Changelog
 
+## V0.21.99 · Fotos de cámara+galería mezcladas ya no se pierden; nuevo tipo de relación al vuelo
+
+Dos fallos reales reportados por el propietario probando la app: fotos que desaparecían al combinar cámara y galería, y no poder crear un tipo de relación nuevo (p. ej. "Familia") sin ir antes a Ajustes.
+
+- **Causa raíz de las fotos perdidas**: hacer una foto con la cámara y luego añadir también fotos de la galería (o al revés) sustituía en silencio la selección anterior por la nueva, en vez de sumarlas — la primera foto nunca llegaba a subirse, sin ningún aviso de que se había perdido. Corregido para que cada nueva selección se sume a la anterior.
+- **Nuevo tipo de relación al clasificar un adjunto**: el selector "Relacionado con" ahora incluye "+ Nuevo tipo…" — se escribe el nombre ahí mismo (p. ej. "Familia") y queda creado de verdad en los ajustes de notas, sin salir a Ajustes primero.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: 2 pruebas nuevas en `tests/media-context.test.mjs`.
+
 ## V0.21.98 · Modo conversación: el micrófono se abre solo
 
 Pedido explícito del propietario: tocar "modo conversación" y tener que tocar OTRA VEZ el micrófono para empezar a hablar era un clic de más que además confundía.

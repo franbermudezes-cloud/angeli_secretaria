@@ -1,5 +1,19 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-20 — Fotos de cámara+galería mezcladas ya no se pierden; nuevo tipo de relación al vuelo V0.21.99
+
+El propietario reportó que subir fotos "de cámara, como de fotos, no funciona bien": hizo una foto, la clasificó, y al ir a Multimedia no estaba; repitió la prueba combinando cámara y galería, con el mismo resultado.
+
+**Diagnóstico con logs reales de Cloud Run** (`gcloud logging read` sobre `angeli-ai-interpreter`, backend por el que pasa toda subida a Drive vía `/media/upload`): en las últimas 6 horas solo aparecía UNA subida completada, pese a que el propietario describía varios intentos recientes con múltiples fotos. Eso descartaba un problema de Drive/red — las fotos "perdidas" ni siquiera llegaban a intentarse subir.
+
+**Causa raíz encontrada en el código**: `prepareMedia(files,kind,message)` en `js/app.js` hacía `pendingImages=files` — una asignación directa, no una suma. Cada vez que se elige una foto (cámara → `readImages` → `prepareMedia`, o galería → lo mismo), esa línea SUSTITUÍA por completo lo que ya hubiera pendiente. Hacer una foto con la cámara y luego añadir también fotos de la galería descartaba en silencio la foto de la cámara — sin ningún aviso, sin ningún error, simplemente desaparecía del array antes de llegar siquiera a `media.upload()`. Coincide exactamente con lo reportado: "tanto de cámara como de fotos, no funciona bien" (mezclar las dos fuentes es justo lo que dispara el bug; usar solo una repetidamente, dentro del límite `multiple` de un único selector, no lo activa).
+
+**Corrección**: `pendingImages=[...pendingImages,...files]` y lo mismo para `pendingFiles` — cada nueva selección se SUMA a la anterior en vez de reemplazarla.
+
+**Segundo pedido en el mismo mensaje**: poder crear un tipo de relación nuevo (dio el ejemplo "Familia") en el momento de clasificar un adjunto, sin tener que ir antes a "Ajustes → Ajustes de notas" a crearlo primero — "no tener que ajustes para ponerla para luego ponerla aquí. En el momento que la estoy subiendo." El selector `mediaContextRelationType` de `showMediaContextEditor` (`js/ui.js`) ganó una opción `+ Nuevo tipo…`, que revela un campo de texto para el nombre del tipo nuevo. En `askMediaContext()` (`js/app.js`), si se elige esa opción, se llama a `addNoteSetting(noteSettings,"relationTypes",...)` y se persiste de verdad con `saveNoteSettings()` (la misma función pura y el mismo guardado ya usados desde la pantalla de Ajustes) ANTES de construir el `mediaContext` del adjunto — el nuevo tipo queda disponible para futuras clasificaciones exactamente igual que si se hubiera creado desde Ajustes.
+
+**Cobertura de test**: `tests/media-context.test.mjs` ampliado con dos pruebas — que `prepareMedia` suma en vez de sustituir, y que el flujo de "+ Nuevo tipo…" crea y persiste el tipo de verdad. Verificado también en el navegador sandbox llamando a `ui.showMediaContextEditor` directamente: elegir "+ Nuevo tipo…" revela el campo, y el `onSave` recibe `{relationType:"__new__", newRelationType:"Familia", ...}` tal como espera `askMediaContext()`.
+
 ## 2026-09-20 — Modo conversación: el micrófono se abre solo V0.21.98
 
 El propietario señaló otro "doble clic" innecesario, mismo espíritu que el de la búsqueda automática de contacto: "cuando yo clico para conversacional tengo que ir luego al micrófono, abrir el micrófono... si ya sabemos que quiero hablar. Por lo tanto, cuando abre ya directamente el micrófono abierto."
