@@ -1,5 +1,13 @@
 # Changelog
 
+## V0.21.98 · Modo conversación: el micrófono se abre solo
+
+Pedido explícito del propietario: tocar "modo conversación" y tener que tocar OTRA VEZ el micrófono para empezar a hablar era un clic de más que además confundía.
+
+- Al entrar en modo conversación, el micrófono queda escuchando automáticamente — ya no hace falta tocarlo aparte para empezar a hablar.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: 1 prueba nueva en `tests/conversation-mode.test.mjs`.
+
 ## V0.21.97 · Llamar y WhatsApp buscan el contacto solos, sin un clic de más
 
 Pedido explícito del propietario: "no tengo el por qué de hacer yo clic para que haga la búsqueda... menos es más".
