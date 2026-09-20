@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.22.11 · Añadir de nuevo al carrito un artículo ya vinculado a Mercadona ya actualiza el producto de esa línea (auditoría, prioridad media)
+
+- **Causa raíz**: al fusionar con una línea ya existente del carrito, `mergeIntoCart` solo sumaba la cantidad — si el artículo de la lista se vinculaba a un producto de Mercadona (o cambiaba de vínculo) DESPUÉS de la primera vez que se añadía al carrito, esa línea se quedaba para siempre sin precio ni foto.
+- **Corregido**: al fusionar, la línea del carrito también actualiza su producto vinculado con el más reciente.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: 1 prueba nueva en `tests/shopping.test.mjs`.
+
 ## V0.22.10 · Un móvil de contacto en formato no reconocido ya no se daba por "no encontrado" (auditoría, prioridad media)
 
 - **Causa raíz**: `whatsappPhone` solo acepta números que empiecen por "+"/"00" o que encajen en el patrón español de móvil de 9 cifras — cualquier otro formato (p. ej. un número extranjero guardado sin prefijo) se descartaba en silencio, y la pantalla de WhatsApp mostraba "No encuentro un móvil" como si el contacto no tuviera ninguno.
