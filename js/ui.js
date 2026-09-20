@@ -1,13 +1,13 @@
-import { typeLabel } from "./classifier.js?v=0.22.22";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.22.22";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.22.22";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.22";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.22.22";
-import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.22.22";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.22";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.22.22";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.22.22";
-import { groupDietarioByDay } from "./dietario.js?v=0.22.22";
+import { typeLabel } from "./classifier.js?v=0.22.23";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.22.23";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.22.23";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.23";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.22.23";
+import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.22.23";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.23";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.22.23";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.22.23";
+import { groupDietarioByDay } from "./dietario.js?v=0.22.23";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -189,7 +189,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.22.22";
+    image.src = "assets/angeli-welcome.gif?v=0.22.23";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";

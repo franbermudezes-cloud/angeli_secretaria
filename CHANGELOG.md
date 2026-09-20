@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.22.23 · El estado del micrófono del compositor ya no es una variable global suelta (auditoría, calidad de código)
+
+- **Antes**: si el micrófono del compositor estaba escuchando vivía como una variable global (`listening`) tocada directamente desde cinco sitios distintos — la misma clase de fallo que ya causó el bug de "micrófonos huérfanos" (V0.21.95, V0.22.5).
+- **Ahora**: se agrupa en `dictationMic`, un objeto con dos métodos explícitos (`isActive()`/`set(valor)`), sin cambiar ningún comportamiento.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: `tests/dictation.test.mjs` ampliado.
+
 ## V0.22.22 · Los formularios de editar recordatorio y evento ya comparten su construcción (auditoría, calidad de código)
 
 - **Antes**: `showReminderEditor` y `showCalendarEventEditor` (`js/ui.js`) eran casi el mismo formulario (título/fecha/hora/ubicación/descripción) copiado dos veces con ids de campo distintos.
