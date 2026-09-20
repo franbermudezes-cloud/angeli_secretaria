@@ -1,5 +1,14 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-20 — Acceso directo al carrito y detalle de precios en el historial V0.21.92
+
+Nada más probar el carrito recién enviado (V0.21.91), el propietario pidió dos retoques puntuales:
+
+1. **"Ver carrito" tenía que ser un acceso directo**, no algo escondido detrás del "⋮" — "que no tenga que ir a los tres puntitos para verlo". Se movió el botón a la misma fila que "Quitar comprados"/"Vaciar lista" (`.library-filters` dentro de `#shoppingDetail`), y se quitó del menú "⋮" para no duplicarlo (el historial de compras se queda ahí, ya que ese sí es un acceso secundario).
+2. **El historial solo enseñaba los nombres de los artículos** ("cerveza especial San Miguel, tal") — el propietario quería poder pulsar una compra y ver el detalle con precios: "que sea más, con más información". Se añadió `ui.showPurchaseDetail(purchase)`, un modal con cada artículo (cantidad, precio unitario si hay más de una unidad, precio de esa línea) y el total de la compra abajo — reutilizando `purchase.items[].product.price`, el mismo precio que ya se guarda al vincular un artículo a un producto real de Mercadona. Cada tarjeta del historial (`shoppingPurchaseMarkup`) pasó de `<div>` a `<button>` con `data-shopping-purchase-id`, y ahora también enseña el total de un vistazo en la propia tarjeta, no solo dentro de la ficha.
+
+**Cobertura de test**: 3 pruebas nuevas en `tests/shopping.test.mjs`, comprobación de código fuente (mismo patrón que el resto de regresiones de UI de este proyecto) de que "Ver carrito" está en la fila correcta y de que pulsar una compra llama a `showPurchaseDetail`.
+
 ## 2026-09-20 — Carrito de la compra e historial de compras V0.21.91
 
 El propietario pidió esta función explicando cómo la usa en la app real de Mercadona: la lista habitual (lo que sueles comprar, ~20 artículos) es distinta de la compra concreta de un día (unos pocos de esos, con la cantidad de esa vez). Primero se publicó un boceto con pestañas dentro de la propia lista (mismo patrón que las listas y el rediseño anteriores), pero el propietario lo corrigió de inmediato: **"la lista se queda exactamente como estaba... no quites nada de ahí, solamente tienes que poner agregar al carrito"** — el boceto cambiaba visualmente la lista (pestañas, botones por artículo) y eso no era lo pedido.
