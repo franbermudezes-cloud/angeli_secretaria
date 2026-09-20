@@ -1,5 +1,17 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-20 — Modo conversación: arreglado el modal de "solo me falta un dato" V0.21.95
+
+El propietario reportó que, en modo conversación, cuando Angeli necesitaba un dato más para completar una orden (el modal "Solo me falta un dato" / `showInteractionQuestion`), no podía terminar la instrucción de ninguna manera: "si toco cualquier cosa, ya no puedo escribir nada... y al mismo tiempo también me da acceso para abrir el micrófono del modal. Y al final da error."
+
+**Causa raíz**: `conversationHandleOutcome()` distingue varios tipos de modal según lo que Angeli necesita del usuario. El tipo `"manual"` (elegir una opción tocando la pantalla) ya esperaba correctamente a que el modal se cerrase antes de reanudar el micrófono de fondo del modo conversación (`watchForModalClose`). Pero el tipo `"question"` — el modal de `showInteractionQuestion`, que trae su PROPIO cuadro de texto y su PROPIO botón "🎙️ Hablar" — llamaba a `resumeConversationListening()` inmediatamente, reanudando el micrófono de fondo del modo conversación MIENTRAS ese modal seguía abierto con su propio micrófono disponible. Con dos `SpeechRecognition` compitiendo por el mismo micrófono, tocar el botón del modal intentaba arrancar un reconocedor nuevo mientras el de fondo ya lo tenía ocupado — el navegador lo rechaza (falla `rec.start()`), así que hablar no escribía nada en el cuadro y la instrucción se quedaba sin poder completarse nunca, sin ningún aviso claro de qué había pasado.
+
+**Corrección**: la rama `"question"` ahora se comporta igual que `"manual"` — habla la pregunta, y espera a que el modal se cierre (`watchForModalClose`) antes de reanudar la escucha de fondo. Mientras el modal está abierto, su propio micrófono es la única vía de voz disponible, sin competencia.
+
+**Segundo fallo relacionado, mismo mensaje**: "hay un espacio donde hay un texto para poner... no está puesto ahí para poner... aunque yo diga algo, no pone nada" — el cuadro de texto (`#conversationDraft`) se creaba y añadía al modal sin nunca enfocarlo (`draft.focus()` no existía), así que ni el cursor quedaba listo para escribir a mano ni, en apariencia, se notaba que dictar por voz sí escribía ahí (vía `ui.updateDraft`, que si funciona correctamente una vez arreglado el conflicto de micrófonos de arriba). Corregido añadiendo `draft.focus()` justo tras abrir el modal.
+
+**Cobertura de test**: `tests/conversation-mode.test.mjs` ampliado — comprobación de código fuente de que la rama `"question"` ya no reanuda el micrófono de fondo directamente y sí usa `watchForModalClose`, y de que `showInteractionQuestion` enfoca el cuadro de texto al abrirse. Verificado también llamando a `ui.showInteractionQuestion` en el navegador sandbox: el cuadro queda con el foco (`document.activeElement`) nada más abrirse.
+
 ## 2026-09-20 — Ocultar del todo los accesos directos, y elegirlos ya preparados V0.21.94
 
 Justo después de enviar "Gestionar accesos directos" (V0.21.93), el propietario aclaró que no era exactamente lo que pedía: "por eso te había dicho ocultar los accesos directos, esos. En pantalla. Ocultarlo... que no salga nada. Ni accesos directos ni el más ni nada. Se queda limpio." Es decir: quería un interruptor para dejar la pantalla principal sin nada en esa zona, no (solo) un modal para borrar accesos uno a uno.

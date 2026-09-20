@@ -1,12 +1,12 @@
-import { typeLabel } from "./classifier.js?v=0.21.94";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.94";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.94";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.94";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.94";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.94";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.21.94";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.21.94";
-import { groupDietarioByDay } from "./dietario.js?v=0.21.94";
+import { typeLabel } from "./classifier.js?v=0.21.95";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.95";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.95";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.95";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.95";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.95";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.21.95";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.21.95";
+import { groupDietarioByDay } from "./dietario.js?v=0.21.95";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -184,7 +184,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.94";
+    image.src = "assets/angeli-welcome.gif?v=0.21.95";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -767,6 +767,13 @@ export function createUI({ getMedia }) {
       ]
     });
     $("actionModal").classList.add("conversation-modal");
+    // Real reportado: el cuadro se abría sin el cursor puesto, así que
+    // escribir a mano exigía tocar el cuadro primero — y dictar por voz
+    // (que sí escribe aquí en cuanto se abre, vía updateDraft) pasaba
+    // desapercibido si la persona no había mirado dos veces. El cursor
+    // debe quedar puesto en cuanto se abre el modal, listo para cualquiera
+    // de las dos vías (voz o teclado) sin tocar nada antes.
+    draft.focus();
   }
 
   function showCalendarEvent(note, google, eventId, {onEdit}={}) {
