@@ -1,5 +1,17 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-20 — Modo conversación: el micrófono se abre solo V0.21.98
+
+El propietario señaló otro "doble clic" innecesario, mismo espíritu que el de la búsqueda automática de contacto: "cuando yo clico para conversacional tengo que ir luego al micrófono, abrir el micrófono... si ya sabemos que quiero hablar. Por lo tanto, cuando abre ya directamente el micrófono abierto."
+
+**Causa raíz**: `openConversationModeReal()` (`js/app.js`) ponía `conversationOn=true` y abría la pantalla (`ui.openConversationMode()`), pero nunca llamaba a `startConversationRecognizer()` — el micrófono se quedaba parado hasta que la persona tocaba el botón del micrófono dentro de la pantalla (`toggleConversationMic`). Entrar en modo conversación ya es, en sí mismo, la señal de que se quiere hablar — no hacía falta un segundo toque para confirmarlo.
+
+**Corrección**: una línea, `startConversationRecognizer();` justo después de abrir la pantalla. El resto del ciclo de vida (parar al tocar el micrófono, reanudar tras cerrar un modal, parar al cerrar el modo conversación) no cambia — solo el arranque inicial deja de depender de un toque extra.
+
+**Verificado en el navegador sandbox** con un `SpeechRecognition` simulado: tocar "modo conversación" deja el micrófono ya escuchando (`.listening` en `#conversationModeMic`, estado "Escuchándote…") sin ninguna otra acción.
+
+**Cobertura de test**: `tests/conversation-mode.test.mjs` ampliado con una comprobación de código fuente de que `openConversationModeReal` llama a `startConversationRecognizer()` tras abrir la pantalla.
+
 ## 2026-09-20 — Llamar y WhatsApp buscan el contacto solos, sin un clic de más V0.21.97
 
 El propietario probó "enviar WhatsApp a Ana" y notó que, una vez detectado el destinatario, tenía que tocar "Buscar contacto" y LUEGO elegir el contacto — dos toques donde debería bastar uno: "¿por qué no lo busca ya directamente?... menos es más. Y lo que queremos es que sea funcional." Después aclaró que el mismo patrón (un clic de más para que Angeli busque algo) le molestaba en general: "en WhatsApp, en teléfono, en muchas cosas que tiene que buscar... no tengo el por qué de hacer yo clic para que haga la búsqueda."

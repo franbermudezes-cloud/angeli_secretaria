@@ -172,4 +172,13 @@ for (const [name, focusTarget] of [
   assert.match(source, new RegExp(`${focusTarget}\\.focus\\(\\);`), `${name} debe dejar su campo enfocado en cuanto se abre`);
 }
 
+// Pedido explícito del propietario: tocar "modo conversación" y tener que
+// tocar OTRA VEZ el micrófono para empezar a hablar es un clic de más que
+// además confunde — si ya se entró en modo conversación, ya se sabe que se
+// quiere hablar. El micrófono debe quedar escuchando en cuanto se abre la
+// pantalla, sin ese segundo toque.
+const openConversationModeRealSource = app.match(/function openConversationModeReal\(\)\{[\s\S]*?\n\}/)?.[0] || "";
+assert.ok(openConversationModeRealSource, "openConversationModeReal debe existir");
+assert.match(openConversationModeRealSource, /ui\.openConversationMode\(\);\s*startConversationRecognizer\(\);/, "el micrófono debe arrancar solo, nada más abrir la pantalla");
+
 console.log("conversation-mode: ok");
