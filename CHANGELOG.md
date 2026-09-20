@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.22.22 · Los formularios de editar recordatorio y evento ya comparten su construcción (auditoría, calidad de código)
+
+- **Antes**: `showReminderEditor` y `showCalendarEventEditor` (`js/ui.js`) eran casi el mismo formulario (título/fecha/hora/ubicación/descripción) copiado dos veces con ids de campo distintos.
+- **Ahora**: `buildRecordEditorForm(idPrefix)` construye el formulario una sola vez; cada editor conserva sus propios valores iniciales, su propia validación (el recordatorio exige fecha y hora; el evento no) y su propio nombre de campo en el resultado (`description` vs `notes`). Sin cambios de comportamiento.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: `tests/record-editor.test.mjs` (nuevo).
+
 ## V0.22.21 · Palabras clave de "recordatorio" centralizadas, ya no duplicadas en tres archivos (auditoría, calidad de código)
 
 - **Antes**: el disparador de "esto habla de un recordatorio" vivía repetido en `js/ai.js` (4 copias, algunas escritas de formas distintas), `js/classifier.js` y `js/shortcuts.js` — ya había causado una regresión real (el guard de "recuérdame" tuvo que parchearse por separado en dos funciones porque cada una tenía su propia copia pegada).
