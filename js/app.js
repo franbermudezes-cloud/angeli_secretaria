@@ -1,25 +1,25 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.93";
-import{classify,actionData}from"./classifier.js?v=0.21.93";
-import{sendEntry}from"./sheets.js?v=0.21.93";
-import{createUI}from"./ui.js?v=0.21.93";
-import{createGoogleIntegration}from"./google.js?v=0.21.93";
-import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.21.93";
-import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.21.93";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.93";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.93";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.93";
-import{createCloudSync}from"./firebase.js?v=0.21.93";
-import{createMediaService}from"./media.js?v=0.21.93";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.93";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.93";
-import{createAgendaActions}from"./agenda.js?v=0.21.93";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.93";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.93";
-import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.93";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.93";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.93";
-import{mediaLibraryItems}from"./media-library.js?v=0.21.93";
-import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.93";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts,readShortcutsHidden,writeShortcutsHidden}from"./storage.js?v=0.21.94";
+import{classify,actionData}from"./classifier.js?v=0.21.94";
+import{sendEntry}from"./sheets.js?v=0.21.94";
+import{createUI}from"./ui.js?v=0.21.94";
+import{createGoogleIntegration}from"./google.js?v=0.21.94";
+import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.21.94";
+import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.21.94";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.94";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.94";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.94";
+import{createCloudSync}from"./firebase.js?v=0.21.94";
+import{createMediaService}from"./media.js?v=0.21.94";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.94";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.94";
+import{createAgendaActions}from"./agenda.js?v=0.21.94";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.94";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.94";
+import{DEFAULT_SHORTCUTS,SHORTCUT_PRESETS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.94";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.94";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.94";
+import{mediaLibraryItems}from"./media-library.js?v=0.21.94";
+import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.94";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],pendingMediaContext=null,selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -30,7 +30,7 @@ let libraryState={kind:"all",category:"all",query:""};
 let noteLibraryState={status:"pending",category:"all",query:""};
 let dietarioState={range:"week",type:"all"};
 let shoppingState=normalizeShoppingState(null),shoppingView="overview",shoppingConfirmTimer=null,shoppingConfirmSeq=0,shoppingConfirmResults=[];
-let shortcuts=normalizeShortcuts(readShortcuts()||DEFAULT_SHORTCUTS);
+let shortcuts=normalizeShortcuts(readShortcuts()||DEFAULT_SHORTCUTS),shortcutsHidden=readShortcutsHidden();
 // Los avisos push llegan con "?reminder=<id>" (backend/push_notifications.py),
 // pero hasta ahora nadie leía ese parámetro: tocar la notificación abría la
 // app en la pantalla de siempre sin llevar a la entrada que la originó.
@@ -56,16 +56,45 @@ function focusPendingReminder(){
  ui.showEntryAction(target,google);
 }
 function autosize(){const text=$("text");text.style.height="auto";text.style.height=Math.min(text.scrollHeight,78)+"px"}
-function renderShortcuts(){$("shortcuts").innerHTML=shortcuts.map((shortcut,index)=>`<button class="shortcut" data-shortcut="${index}">${esc(shortcut.label)}</button>`).join("")+`<button class="shortcut add" id="shortcutAdd" aria-label="Crear acceso directo">＋</button>`}
+// Pedido explícito: poder dejar la pantalla principal "limpia", sin la fila
+// de accesos directos ni el "＋" de crear uno nuevo — no basta con vaciar la
+// lista, porque el "＋" seguiría apareciendo igualmente.
+function renderShortcuts(){$("shortcutsSection").hidden=shortcutsHidden;$("shortcutsToggleHide").textContent=shortcutsHidden?"👁️ Mostrar accesos directos":"🙈 Ocultar accesos directos";if(shortcutsHidden)return;$("shortcuts").innerHTML=shortcuts.map((shortcut,index)=>`<button class="shortcut" data-shortcut="${index}">${esc(shortcut.label)}</button>`).join("")+`<button class="shortcut add" id="shortcutAdd" aria-label="Crear acceso directo">＋</button>`}
 // Reportado por el propietario: el móvil tenía 7 accesos y el ordenador (PWA)
 // solo 3 — cada dispositivo guardaba sus accesos únicamente en su propio
 // localStorage (SHORTCUTS_KEY), sin sincronizar nunca con Firestore, a
 // diferencia de la lista de la compra o los ajustes de notas. localStorage
 // se mantiene como caché para abrir sin esperar a la nube, pero a partir de
 // ahora cada cambio se sube también a users/{uid}/settings/shortcuts.
-function saveShortcuts(){shortcuts=normalizeShortcuts(shortcuts);writeShortcuts(shortcuts);renderShortcuts();if(cloud.isSignedIn())void cloud.saveShortcuts(shortcuts).catch(()=>ui.notify("Los accesos directos siguen pendientes de sincronizar"))}
+function saveShortcuts(){shortcuts=normalizeShortcuts(shortcuts);writeShortcuts(shortcuts);renderShortcuts();if(cloud.isSignedIn())void cloud.saveShortcuts(shortcuts,shortcutsHidden).catch(()=>ui.notify("Los accesos directos siguen pendientes de sincronizar"))}
+// Pedido explícito del propietario: un botón para ocultar del todo la fila
+// de accesos directos (y su "＋") de la pantalla principal, no solo poder
+// borrar accesos uno a uno. Se sincroniza junto con los propios accesos
+// (mismo documento de Firestore) para que quede oculta o visible igual en
+// todos los dispositivos, y se cachea en local para pintar sin esperar a
+// la nube al abrir la app.
+function toggleShortcutsHidden(){shortcutsHidden=!shortcutsHidden;writeShortcutsHidden(shortcutsHidden);renderShortcuts();if(cloud.isSignedIn())void cloud.saveShortcuts(shortcuts,shortcutsHidden).catch(()=>ui.notify("El ajuste sigue pendiente de sincronizar"));ui.notify(shortcutsHidden?"Accesos directos ocultos":"Accesos directos visibles")}
 function prepareShortcut(shortcut){pendingShortcut=shortcut;if(shortcut.command){$("text").value=shortcut.command;autosize();add({shortcut});return}const prefix=shortcutPrefix(shortcut);$("text").value=prefix;$("text").placeholder=shortcut.prompt||"Escribe o dicta tu instrucción…";autosize();openDraft();if(shortcut.dictate||shortcut.action==="contact.call")setTimeout(start,120);else ui.notify(shortcut.prompt||"Completa la instrucción y pulsa Enviar")}
 function createShortcut(initial=""){const command=prompt("Escribe la orden que ejecutará Angeli.",initial);if(!command?.trim())return;const label=prompt("Nombre corto para el acceso directo.",command.trim().slice(0,24));if(!label?.trim())return;shortcuts.push({label:label.trim(),command:command.trim()});saveShortcuts();ui.notify("Acceso directo creado")}
+// Pedido explícito: "como había antes, que pudiera elegir ya accesos
+// directos con su icono y todo ya puesto" — en vez de escribir el texto y
+// buscar un icono a mano cada vez, se elige uno ya preparado de la lista.
+// Se ocultan los que ya están en la pantalla principal (no tendría sentido
+// ofrecer añadir uno que ya está); "Crear uno personalizado" es la puerta
+// de salida al viejo flujo con prompt(), para lo que no encaje aquí.
+function pickShortcutPreset(){
+ const existingLabels=new Set(shortcuts.map(shortcut=>shortcut.label));
+ const available=SHORTCUT_PRESETS.filter(preset=>!existingLabels.has(preset.label));
+ ui.openModal({
+  title:"Elegir acceso directo",
+  lead:available.length?"Toca uno para añadirlo tal cual a la pantalla principal.":"Ya tienes todos los accesos sugeridos en la pantalla principal.",
+  actions:[
+   ...available.map(preset=>({label:preset.label,kind:"secondary",onClick:()=>{ui.closeLayers();shortcuts.push({...preset});saveShortcuts();ui.notify("Acceso directo añadido")}})),
+   {label:"✎ Crear uno personalizado",kind:"secondary",onClick:()=>{ui.closeLayers();createShortcut()}},
+   {label:"Cancelar",kind:"secondary",onClick:ui.closeLayers}
+  ]
+ });
+}
 // Pedido explícito: poder quitar de verdad un acceso directo de la
 // pantalla principal desde Ajustes (no solo dejarlo fuera de la vista).
 // Sustituye al viejo flujo con prompt() por un modal real, en línea con el
@@ -167,7 +196,7 @@ function showNoteSettings(){
  });
 }
 async function verifyConnections(announce=true){lastConnectionCheck=Date.now();await google.syncLinks({announce});render()}
-async function load(){notes=[];renderShortcuts();google.updateStatus();ui.setPushStatus(cloud.pushStatus());ui.setSyncStatus({state:"connecting"});render();await cloud.initialize({onRemoteNotes:remote=>{notes=remote;render()},onNoteSettings:remote=>{noteSettings=normalizeNoteSettings(remote||DEFAULT_NOTE_SETTINGS);render()},onNotificationSettings:remote=>{notificationSettings=normalizeNotificationSettings(remote||DEFAULT_NOTIFICATION_SETTINGS)},onNoteSettingsError:()=>ui.notify("No se pudieron cargar los ajustes de notas"),onNotificationSettingsError:()=>ui.notify("No se pudieron cargar los ajustes de avisos"),onShoppingState:remote=>{shoppingState=normalizeShoppingState(remote);if($("shoppingLibrary").classList.contains("show"))renderShoppingScreen()},onShoppingListError:()=>ui.notify("No se pudo cargar la lista de la compra"),onShortcuts:remote=>{if(Array.isArray(remote)){shortcuts=normalizeShortcuts(remote);writeShortcuts(shortcuts);renderShortcuts()}else void cloud.saveShortcuts(shortcuts).catch(()=>{})},onShortcutsError:()=>ui.notify("No se pudieron cargar los accesos directos"),onSyncStatus:ui.setSyncStatus,onPushStatus:ui.setPushStatus,onAuthChange:async()=>{google.updateStatus();ui.setPushStatus(cloud.pushStatus());await verifyConnections(true)}});render();ui.dismissWelcome()}
+async function load(){notes=[];renderShortcuts();google.updateStatus();ui.setPushStatus(cloud.pushStatus());ui.setSyncStatus({state:"connecting"});render();await cloud.initialize({onRemoteNotes:remote=>{notes=remote;render()},onNoteSettings:remote=>{noteSettings=normalizeNoteSettings(remote||DEFAULT_NOTE_SETTINGS);render()},onNotificationSettings:remote=>{notificationSettings=normalizeNotificationSettings(remote||DEFAULT_NOTIFICATION_SETTINGS)},onNoteSettingsError:()=>ui.notify("No se pudieron cargar los ajustes de notas"),onNotificationSettingsError:()=>ui.notify("No se pudieron cargar los ajustes de avisos"),onShoppingState:remote=>{shoppingState=normalizeShoppingState(remote);if($("shoppingLibrary").classList.contains("show"))renderShoppingScreen()},onShoppingListError:()=>ui.notify("No se pudo cargar la lista de la compra"),onShortcuts:remote=>{if(remote&&Array.isArray(remote.items)){shortcuts=normalizeShortcuts(remote.items);writeShortcuts(shortcuts);shortcutsHidden=Boolean(remote.hidden);writeShortcutsHidden(shortcutsHidden);renderShortcuts()}else void cloud.saveShortcuts(shortcuts,shortcutsHidden).catch(()=>{})},onShortcutsError:()=>ui.notify("No se pudieron cargar los accesos directos"),onSyncStatus:ui.setSyncStatus,onPushStatus:ui.setPushStatus,onAuthChange:async()=>{google.updateStatus();ui.setPushStatus(cloud.pushStatus());await verifyConnections(true)}});render();ui.dismissWelcome()}
 async function add({interactionId=null,shortcut=null}={}){
  if(saving)return;
  const shortcutContext=shortcut||pendingShortcut,text=$("text").value.trim(),active=interactionId?notes.find(item=>item.id===interactionId&&item.interaction?.status==="awaiting_input")||null:null;
@@ -1063,9 +1092,10 @@ document.querySelector("#noteLibrary .library-filters").onclick=event=>{const bu
 $("noteLibraryList").onclick=event=>{const button=event.target.closest("[data-note-action]");if(!button)return;const entry=noteLibraryEntry(button.dataset.noteId);if(!entry)return;const action=button.dataset.noteAction;if(action==="open")openNoteLibraryDetail(entry);else if(action==="edit"){ui.closeNoteLibrary();editNoteFromLibrary(entry,()=>{ui.closeLayers();ui.openNoteLibrary(noteLibraryItems(),noteLibraryState)})}else if(action==="toggle")void(async()=>{const updated=updateNoteStatus(entry,entry.status==="done"?"pending":"done");if(await saveConfirmed(notes.map(note=>note.id===entry.id?updated:note))){ui.notify(updated.status==="done"?"Nota marcada como hecha":"Nota reabierta");refreshNoteLibrary()}})();else if(action==="delete"){ui.closeNoteLibrary();ui.showNoteDeleteConfirmation(entry,{onCancel:()=>{ui.closeLayers();ui.openNoteLibrary(noteLibraryItems(),noteLibraryState)},onConfirm:async()=>{if(await saveConfirmed(removeNoteEntry(notes,entry.id))){ui.notify("Nota borrada");ui.closeLayers();ui.openNoteLibrary(noteLibraryItems(),noteLibraryState)}}})}};
 $("menuOpen").onclick=ui.openMenu;$("menuClose").onclick=ui.closeLayers;$("scrim").onclick=()=>{if(!$("actionModal").classList.contains("conversation-modal"))ui.closeLayers()};
 $("clearView").onclick=()=>{if(confirm("Esto limpia solo la conversación visible. Tus entradas, fotos y archivos seguirán guardados. ¿Continuar?")){$("list").innerHTML='<div class="empty">Vista limpia. Tus datos siguen guardados.</div>';ui.notify("Vista limpiada")}};
-$("shortcutManual").onclick=()=>createShortcut();
+$("shortcutManual").onclick=()=>{ui.closeLayers();pickShortcutPreset()};
 $("shortcutVoice").onclick=()=>{shortcutCapture=true;$("text").value="";$("text").placeholder="Di la orden que ejecutará el acceso directo…";ui.closeLayers();start()};
 $("shortcutEdit").onclick=()=>{ui.closeLayers();manageShortcuts()};
+$("shortcutsToggleHide").onclick=toggleShortcutsHidden;
 $("noteSettingsOpen").onclick=()=>{ui.closeLayers();showNoteSettings()};
 $("voiceRate").value=voicePrefs.rate??1;
 $("voicePitch").value=voicePrefs.pitch??1;
@@ -1079,7 +1109,7 @@ $("fileInput").onchange=e=>{if(e.target.files.length)prepareMedia([...e.target.f
 $("search").oninput=render;
 $("typeFilter").onchange=e=>{selectedType=e.target.value;render()};
 document.querySelectorAll(".filter").forEach(button=>button.onclick=()=>{selectedFilter=button.dataset.filter;document.querySelectorAll(".filter").forEach(item=>item.classList.toggle("active",item===button));render()});
-$("shortcuts").onclick=event=>{const button=event.target.closest("button");if(!button)return;if(button.id==="shortcutAdd"){createShortcut();return}const shortcut=shortcuts[Number(button.dataset.shortcut)];if(shortcut)prepareShortcut(shortcut)};
+$("shortcuts").onclick=event=>{const button=event.target.closest("button");if(!button)return;if(button.id==="shortcutAdd"){pickShortcutPreset();return}const shortcut=shortcuts[Number(button.dataset.shortcut)];if(shortcut)prepareShortcut(shortcut)};
 function completeCurrentAction(id){
  const current=notes.find(item=>item.id===id);
  if(current?.interaction?.status==="pending_confirmation")save(notes.map(item=>item.id===id?completeInteraction(item):item));
@@ -1187,7 +1217,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.93",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.94",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}

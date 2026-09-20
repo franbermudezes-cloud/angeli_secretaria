@@ -74,14 +74,49 @@ test("accesos directos: se sincronizan con Firestore igual que la lista de la co
   const firebase = readFileSync(new URL("../js/firebase.js", import.meta.url), "utf8");
   assert.match(firebase, /function shortcutsDocument\(\)/);
   assert.match(firebase, /"settings",\s*"shortcuts"/);
-  assert.match(firebase, /async function saveShortcuts\(items\)/);
+  assert.match(firebase, /async function saveShortcuts\(items, hidden = false\)/);
   assert.match(firebase, /onSnapshot\(shortcutsDocument\(\)/);
   assert.match(firebase, /saveNoteSettings,\s*saveNotificationSettings,\s*saveShoppingState,\s*saveShortcuts/, "saveShortcuts debe exportarse igual que el resto de ajustes sincronizados");
   const saveShortcutsSource = app.match(/function saveShortcuts\(\)\{[\s\S]*?\n\}/)?.[0] || "";
   assert.ok(saveShortcutsSource, "saveShortcuts debe existir en app.js");
-  assert.match(saveShortcutsSource, /cloud\.saveShortcuts\(shortcuts\)/, "cada guardado local debe subirse también a la nube");
-  assert.match(app, /onShortcuts:remote=>\{if\(Array\.isArray\(remote\)\)/, "si la nube ya tiene accesos guardados, deben ganar sobre los locales de este dispositivo");
-  assert.match(app, /else void cloud\.saveShortcuts\(shortcuts\)\.catch/, "si la nube está vacía, se sube lo que ya hubiera en este dispositivo en vez de perderlo");
+  assert.match(saveShortcutsSource, /cloud\.saveShortcuts\(shortcuts,shortcutsHidden\)/, "cada guardado local debe subirse también a la nube, junto con si está oculta la fila");
+  assert.match(app, /onShortcuts:remote=>\{if\(remote&&Array\.isArray\(remote\.items\)\)/, "si la nube ya tiene accesos guardados, deben ganar sobre los locales de este dispositivo");
+  assert.match(app, /else void cloud\.saveShortcuts\(shortcuts,shortcutsHidden\)\.catch/, "si la nube está vacía, se sube lo que ya hubiera en este dispositivo en vez de perderlo");
+});
+
+// Pedido explícito del propietario: poder dejar la pantalla principal
+// limpia del todo — "ni accesos directos ni el más ni nada" — no solo
+// borrar accesos uno a uno desde el modal de gestión.
+test("accesos directos: se pueden ocultar del todo (fila + botón ＋) desde Ajustes, sincronizado entre dispositivos", () => {
+  const app = readFileSync(new URL("../js/app.js", import.meta.url), "utf8");
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const storage = readFileSync(new URL("../js/storage.js", import.meta.url), "utf8");
+  assert.match(html, /id="shortcutsSection"/);
+  assert.match(html, /id="shortcutsToggleHide"/);
+  assert.match(app, /\$\("shortcutsToggleHide"\)\.onclick=toggleShortcutsHidden/);
+  assert.match(app, /function toggleShortcutsHidden\(\)/);
+  const renderSource = app.match(/function renderShortcuts\(\)\{[\s\S]*?\n\}/)?.[0] || "";
+  assert.ok(renderSource, "renderShortcuts debe existir");
+  assert.match(renderSource, /\$\("shortcutsSection"\)\.hidden=shortcutsHidden/, "debe ocultar toda la sección, no solo vaciar la lista (si no, el ＋ seguiría viéndose)");
+  assert.match(storage, /export function readShortcutsHidden\(\)/);
+  assert.match(storage, /export function writeShortcutsHidden\(hidden\)/);
+});
+
+// Pedido explícito: "como había antes, que pudiera elegir ya accesos
+// directos con su icono y todo ya puesto" — un catálogo de accesos ya
+// preparados en vez de escribir el texto y buscar un icono a mano cada vez.
+test("elegir un acceso directo de una lista ya preparada, sin tener que escribirlo a mano", () => {
+  const shortcuts = readFileSync(new URL("../js/shortcuts.js", import.meta.url), "utf8");
+  const app = readFileSync(new URL("../js/app.js", import.meta.url), "utf8");
+  assert.match(shortcuts, /export const SHORTCUT_PRESETS = \[/);
+  assert.match(shortcuts, /\.\.\.DEFAULT_SHORTCUTS,/, "debe incluir los accesos por defecto, por si se borró alguno y se quiere recuperar");
+  assert.match(app, /function pickShortcutPreset\(\)/);
+  const pickSource = app.match(/function pickShortcutPreset\(\)\{[\s\S]*?\n\}/)?.[0] || "";
+  assert.ok(pickSource, "pickShortcutPreset debe existir");
+  assert.match(pickSource, /shortcuts\.push\(\{\.\.\.preset\}\)/, "tocar uno lo añade tal cual, sin pedir texto ni icono");
+  assert.match(pickSource, /createShortcut\(\)/, "debe seguir ofreciendo crear uno personalizado como alternativa");
+  assert.match(app, /\$\("shortcutManual"\)\.onclick=\(\)=>\{ui\.closeLayers\(\);pickShortcutPreset\(\)\}/);
+  assert.match(app, /if\(button\.id==="shortcutAdd"\)\{pickShortcutPreset\(\);return\}/, 'el "＋" de la propia fila también debe abrir el catálogo, no el viejo prompt()');
 });
 
 // Regresión real reportada por el propietario: con más accesos precargados,

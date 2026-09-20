@@ -1,5 +1,14 @@
 # Changelog
 
+## V0.21.94 · Ocultar del todo los accesos directos, y elegirlos ya preparados
+
+Aclaración del propietario justo después de la V0.21.93: "Gestionar accesos directos" permite borrar uno a uno, pero pedía además dejar la pantalla principal completamente limpia (ni la fila ni el "＋"), y poder elegir accesos ya preparados en vez de escribirlos a mano.
+
+- **Nuevo "🙈 Ocultar accesos directos" en Ajustes**: oculta del todo la fila de la pantalla principal, incluido el "＋" — no queda nada a la vista. Se sincroniza entre dispositivos igual que los propios accesos.
+- **"＋ Elegir acceso directo"** (antes "Crear acceso manual"): en vez de escribir el texto y buscar un icono a mano, se elige uno de una lista ya preparada (con su icono y su orden real) y se añade con un toque. Incluye los mismos accesos que trae la app por defecto —por si se borró alguno y se quiere recuperar— más "Nueva nota", "Añadir a la compra", "Mañana" y "Esta semana". "Crear uno personalizado" sigue disponible para lo que no encaje ahí.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: 3 pruebas nuevas en `tests/shortcuts.test.mjs`.
+
 ## V0.21.93 · Gestionar accesos directos desde Ajustes, accesos rápidos de Llamar/WhatsApp y el micro ya no corta el dictado
 
 - **Nuevo modal en Ajustes ("🗑️ Gestionar accesos directos")** para quitar de verdad un acceso directo de la pantalla principal — sustituye al antiguo flujo con un cuadro de texto del navegador para elegir el número a borrar.
