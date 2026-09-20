@@ -1,5 +1,23 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-20 — Tienda por lista de la compra V0.22.13
+
+Mejora pedida explícitamente por el propietario, tras terminar la ronda de hallazgos de prioridad media de la auditoría completa (ver la entrada de V0.22.1 para el contexto de la auditoría en sí). No es un bug: el comportamiento de mezclar tienda en un mismo pedido de compra que la auditoría había señalado se dejó aparte a propósito porque el propietario hace el 80-90% de su compra en Mercadona y el comportamiento actual ya le sirve — esto es una función nueva y separada.
+
+**Petición**: cada lista de la compra debe asociarse a una tienda concreta, elegida al crearla, de entre un conjunto de opciones que el propietario nombró explícitamente: Mercadona, Consum, Leroy Merlin, Carrefour, Family Cash, Plaza Mayor ("algo así", dando a entender que la lista podría ampliarse). Solo las listas de Mercadona deben conservar la búsqueda en vivo con catálogo (precio, foto); el resto no tienen ni API ni forma de integrarse igual, así que deben ser listas de artículos escritos a mano.
+
+**Modelo de datos** (`js/shopping.js`): cada lista gana un campo `store` (uno de `SHOPPING_STORE_PRESETS`, o `null`/ausente para listas antiguas). `makeShoppingList`/`createShoppingList` aceptan un tercer parámetro `store`, con `"mercadona"` como valor por defecto — así ni las listas ya existentes (backfilled en `normalizeShoppingState`) ni las nuevas creadas sin elegir tienda cambian de comportamiento, siguiendo el mismo principio de "menos es más" ya aplicado en el resto de la auditoría: no romper lo que ya funciona bien para la mayoría de los pedidos. `isMercadonaList(list)` centraliza el criterio (`(list?.store||"mercadona")==="mercadona"`) para que tanto UI como lógica de negocio lo consulten igual. `setShoppingListStore(state,listId,store)` permite cambiar la tienda de una lista ya creada, validando que sea uno de los presets.
+
+**UI** (`js/ui.js`/`js/app.js`): `createShoppingListPrompt()` pide primero el nombre (con el mismo `prompt()` de siempre) y después abre `ui.showShoppingStoreChoice(null,onPick)`, un modal nuevo con un botón por cada preset (el actual marcado con ✓ cuando se reutiliza para cambiar de tienda). `openShoppingListQuickActions` gana una opción "🏬 Cambiar tienda" que reabre el mismo modal para una lista ya existente, así un error al elegir no obliga a recrear la lista. Tanto "Mis listas" (`shoppingListCardMarkup`) como la ficha de una lista (`renderShoppingDetail`) muestran ahora el nombre de la tienda junto al recuento de artículos.
+
+**Gating de la búsqueda en vivo**: `scheduleShoppingSearch()` (disparada al escribir en el buscador de una lista) y el atajo de Enter (`$("shoppingInput").onkeydown`) ahora comprueban `isMercadonaList(getActiveList(shoppingState))` antes de programar una búsqueda real contra `searchMercadonaProduct` — si la lista activa no es de Mercadona, escribir un artículo y pulsar Enter (o el enlace de "añadir tal cual", con el texto simplificado a "Añadir «X» a la lista" en vez de la redacción pensada para cuando sí hay sugerencias que descartar) lo añade directamente, sin lanzar ninguna búsqueda que nunca tendría resultados reales.
+
+**Fuera de alcance, a propósito**: el comando de voz "busca X en mercadona/consum" (`parseShoppingCommand`'s acción `search`) ya validaba explícitamente la tienga mencionada en la frase misma, y sigue igual — es ortogonal a la tienda por defecto de la lista activa. Tampoco se ha tocado el sufijo por artículo "de mercadona"/"de consum" (`STORE_SUFFIX`), que sigue permitiendo vincular un artículo concreto a una tienda distinta de la lista donde vive, como ya hacía antes de esta mejora.
+
+**Verificado en el navegador sandbox**: `ui.showShoppingStoreChoice` muestra los seis presets con el actual marcado, y elegir uno devuelve su id correctamente; `ui.renderShoppingOverview` con una lista Mercadona y otra Leroy Merlin muestra la etiqueta de cada tienda junto al recuento de artículos en las dos tarjetas.
+
+**Cobertura de test**: `tests/shopping.test.mjs` ampliado con 6 pruebas — creación con/sin tienda explícita, backfill de listas antiguas a "mercadona", `isMercadonaList` con compatibilidad hacia atrás, `setShoppingListStore` (incluida la validación de tiendas inválidas) y, por código fuente, que escribir/pulsar Enter en una lista que no es de Mercadona añade el artículo directamente en vez de buscar.
+
 ## 2026-09-20 — Abrir la lista de la compra por voz en pleno modo conversación la dejaba invisible detrás V0.22.12
 
 Séptimo hallazgo de prioridad media de la auditoría completa que se corrige.

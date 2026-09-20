@@ -251,8 +251,35 @@ export function shoppingListTotal(items) {
 // de una colección nueva que firestore.rules no autorice (el fallo real de
 // sincronización de la V0.21.80 fue justo por eso).
 
-export function makeShoppingList(name, items = []) {
-  return { id: makeId("sl"), name: String(name || "Mi lista").trim() || "Mi lista", items, cart: [], purchases: [] };
+// Tienda asociada a cada lista, elegida al crearla: pedido explícito del
+// propietario, que hace el 80-90% de su compra en Mercadona (por eso sigue
+// siendo el valor por defecto, tanto para listas nuevas sin elegir tienda
+// como para las que ya existían antes de esta función). Solo Mercadona tiene
+// de verdad catálogo con búsqueda/precio/foto (searchMercadonaProduct en
+// ai.js); el resto son solo nombres de tienda para organizar las listas —
+// "no tenemos ni API ni manera de hacer lo mismo que hacemos en Mercadona"
+// para ellas, así que esas listas son de artículos escritos a mano, sin
+// búsqueda en vivo ni vinculación de producto.
+export const SHOPPING_STORE_PRESETS = [
+  { id: "mercadona", label: "Mercadona" },
+  { id: "consum", label: "Consum" },
+  { id: "leroy-merlin", label: "Leroy Merlin" },
+  { id: "carrefour", label: "Carrefour" },
+  { id: "family-cash", label: "Family Cash" },
+  { id: "plaza-mayor", label: "Plaza Mayor" }
+];
+const DEFAULT_STORE = "mercadona";
+
+export function shoppingStoreLabel(storeId) {
+  return SHOPPING_STORE_PRESETS.find(preset => preset.id === storeId)?.label || null;
+}
+
+export function isMercadonaList(list) {
+  return (list?.store || DEFAULT_STORE) === DEFAULT_STORE;
+}
+
+export function makeShoppingList(name, items = [], store = DEFAULT_STORE) {
+  return { id: makeId("sl"), name: String(name || "Mi lista").trim() || "Mi lista", store: store || DEFAULT_STORE, items, cart: [], purchases: [] };
 }
 
 // Antes de que existieran listas con nombre, el documento guardaba
@@ -265,6 +292,7 @@ export function normalizeShoppingState(raw) {
     const lists = raw.lists.map(list => ({
       id: list.id || makeId("sl"),
       name: String(list.name || "Mi lista").trim() || "Mi lista",
+      store: list.store || DEFAULT_STORE,
       items: Array.isArray(list.items) ? list.items : [],
       cart: Array.isArray(list.cart) ? list.cart : [],
       purchases: Array.isArray(list.purchases) ? list.purchases : []
@@ -287,8 +315,8 @@ export function findListByName(state, name) {
   return state.lists.find(list => normalizeName(list.name) === key) || null;
 }
 
-export function createShoppingList(state, name) {
-  const list = makeShoppingList(name);
+export function createShoppingList(state, name, store = DEFAULT_STORE) {
+  const list = makeShoppingList(name, [], store);
   return { lists: [...state.lists, list], activeListId: list.id };
 }
 
@@ -296,6 +324,11 @@ export function renameShoppingList(state, listId, name) {
   const trimmed = String(name || "").trim();
   if (!trimmed) return state;
   return { ...state, lists: state.lists.map(list => list.id === listId ? { ...list, name: trimmed } : list) };
+}
+
+export function setShoppingListStore(state, listId, store) {
+  if (!SHOPPING_STORE_PRESETS.some(preset => preset.id === store)) return state;
+  return { ...state, lists: state.lists.map(list => list.id === listId ? { ...list, store } : list) };
 }
 
 // Siempre deja al menos una lista: borrar la última no vacía la app entera,
