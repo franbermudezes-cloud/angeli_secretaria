@@ -55,11 +55,26 @@ class MercadonaCatalogSearchTests(unittest.TestCase):
         self.assertEqual(mercadona_catalog.search("   "), [])
 
     def test_word_boundary_avoids_substring_false_positives(self):
-        # Real detectado: "leche entera" emparejaba con "Chocolate ... almendras
-        # enteras" porque "entera" es subcadena de "enteras". No debe pasar.
-        mercadona_catalog._catalog.append({"id": "4", "name": "Chocolate con leche Hacendado almendras enteras", "packaging": "Tableta", "price": 2.1, "thumbnail": None, "url": ""})
-        results = mercadona_catalog.search("leche entera")
-        self.assertEqual([item["id"] for item in results], ["1"])
+        # Real detectado: "leche" emparejaba con "lechera" (u otra palabra
+        # que solo contiene "leche" como subcadena literal, sin ser la
+        # misma palabra ni su plural). Coincidencia por palabra completa
+        # (tokenizada), no por subcadena cualquiera.
+        mercadona_catalog._catalog.append({"id": "4", "name": "Olla lechera Hacendado", "packaging": "Ud.", "price": 12.0, "thumbnail": None, "url": ""})
+        results = mercadona_catalog.search("leche")
+        self.assertEqual([item["id"] for item in results if item["id"] == "4"], [], '"leche" no debe encontrar "lechera": es otra palabra, no su plural')
+
+    def test_matches_singular_against_a_plural_in_the_catalog_and_viceversa(self):
+        # Real detectado: "café cápsula" (singular) no encontraba "Café en
+        # cápsulas" (plural) en el catálogo real. El plural en español se
+        # forma con "+s" o "+es" según la palabra, así que se prueban ambas
+        # reducciones como en js/shopping.js — a costa de que, igual que
+        # allí, un término y su plural de la MISMA palabra (p. ej. "entera"
+        # y "enteras") también casen entre sí aunque describan cosas
+        # distintas en el nombre; se acepta el mismo compromiso que ya se
+        # tomó para los artículos de la lista.
+        mercadona_catalog._catalog.append({"id": "4", "name": "Café en cápsulas Hacendado", "packaging": "Caja", "price": 3.5, "thumbnail": None, "url": ""})
+        self.assertEqual([item["id"] for item in mercadona_catalog.search("cafe capsula")], ["4"])
+        self.assertEqual([item["id"] for item in mercadona_catalog.search("cafe capsulas")], ["4"])
 
     def test_search_ignores_accents_in_both_directions(self):
         # Real detectado: escribir "cafe" (sin tilde) no encontraba "Café" en
