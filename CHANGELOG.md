@@ -1,5 +1,14 @@
 # Changelog
 
+## V0.22.0 · Una foto clasificada ya no se queda huérfana sin forma de enviarse
+
+Reportado con captura de pantalla justo después de la V0.21.99: tras clasificar una foto (categoría, tipo de relación...), se quedaba como miniatura fija encima del footer — sin ningún botón visible para enviarla, y tocarla no hacía nada.
+
+- **Causa raíz**: desde el rediseño de la pantalla principal (V0.21.87), el compositor fijo con el botón "➤ Enviar" quedó oculto por defecto. Clasificar un adjunto avisaba "puedes añadir una instrucción o enviarlo", pero ningún paso volvía a abrir ese compositor — la foto se quedaba solo en memoria, sin ninguna forma de completarse, hasta que se cerraba la app y se perdía.
+- **Corregido**: justo después de clasificar el adjunto, se abre el mismo cuadro "Te escucho" de siempre (con su micrófono y su "➤ Enviar"), para poder añadir una instrucción o enviarlo tal cual en el momento. Al enviarse, la miniatura desaparece del footer, como debía.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: 1 prueba nueva en `tests/media-context.test.mjs`.
+
 ## V0.21.99 · Fotos de cámara+galería mezcladas ya no se pierden; nuevo tipo de relación al vuelo
 
 Dos fallos reales reportados por el propietario probando la app: fotos que desaparecían al combinar cámara y galería, y no poder crear un tipo de relación nuevo (p. ej. "Familia") sin ir antes a Ajustes.

@@ -1,5 +1,19 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-20 — Una foto clasificada ya no se queda huérfana sin forma de enviarse V0.22.0
+
+Justo después de la V0.21.99, el propietario probó de nuevo: hizo una foto, la clasificó (categoría + relación) sin problema, pero al ir a "Galería" no aparecía — ni en "Archivos". Mandó una captura real: la miniatura de la foto se veía fija justo encima de los iconos del footer (Cámara/Fotos/Evento/Archivo), y explicó "si está ahí y la pincho, tampoco puedo abrirla. O sea, no hace nada." También pidió, con buen criterio, que "cuando está guardada debe desaparecer de ahí."
+
+**Diagnóstico confirmado con logs reales de Cloud Run**: cero peticiones a `/media/upload` en la última hora, pese a que el propietario había completado el flujo de clasificación. Esto confirmó que la entrada nunca llegó a construirse ni a intentar subirse — no era un fallo de red ni de Drive, era que `add()` (la función que sube el adjunto y guarda la entrada) nunca se llegaba a llamar.
+
+**Causa raíz**: `askMediaContext()` (`js/app.js`) abre `ui.showMediaContextEditor` (el modal "Organizar adjunto"). Al pulsar "Continuar", el `onSave` guardaba `pendingMediaContext`, cerraba ese modal (`ui.closeLayers()`) y mostraba un aviso ("Adjunto clasificado. Puedes añadir una instrucción o enviarlo.") — pero **ningún paso volvía a abrir el compositor**. Antes del rediseño de la pantalla principal (V0.21.87), el compositor con su textarea y su botón "➤ Enviar" estaba siempre visible al pie de la pantalla, así que terminar ahí no era un problema: se veía y se podía pulsar Enviar directamente. Desde que ese compositor pasa a estar oculto por defecto (`.composer[hidden]`), cerrar el modal de clasificación dejaba a la persona sin NINGÚN control visible para completar el envío — la miniatura en `#preview` (que sí queda visible, por estar fuera de `.composer`) se quedaba ahí para siempre, sin ninguna función de clic asociada (`ui.showImagePreview` nunca la tuvo: solo pinta `<img>` planas), y el aviso "puedes... enviarlo" prometía una acción que no existía en pantalla.
+
+**Corrección**: se añade `openDraft()` justo después de `ui.closeLayers()` en el `onSave` de `askMediaContext()`. Esto abre el modal `showDraft` de siempre ("Te escucho", con micrófono y "➤ Enviar"), permitiendo terminar de completar la entrada con una instrucción dictada/escrita o enviarla tal cual, sin texto. Al pulsar Enviar, `add()` sube el adjunto de verdad y `clearComposer()` vacía `#preview` — la miniatura desaparece del footer exactamente como pedía el propietario, porque ahora sí hay un camino real para llegar a ese punto.
+
+**Verificado en el navegador sandbox**, disparando un `change` real sobre `#photoInput` con un archivo simulado: se abre "Organizar adjunto"; al pulsar "Continuar" se cierra y se abre automáticamente "Te escucho" con el borrador (`#activeDraft`) listo, mientras la miniatura sigue en `#preview` a la espera de enviarse.
+
+**Cobertura de test**: `tests/media-context.test.mjs` ampliado con una comprobación de código fuente de que `askMediaContext()` llama a `openDraft()` tras clasificar.
+
 ## 2026-09-20 — Fotos de cámara+galería mezcladas ya no se pierden; nuevo tipo de relación al vuelo V0.21.99
 
 El propietario reportó que subir fotos "de cámara, como de fotos, no funciona bien": hizo una foto, la clasificó, y al ir a Multimedia no estaba; repitió la prueba combinando cámara y galería, con el mismo resultado.

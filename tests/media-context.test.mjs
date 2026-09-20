@@ -47,4 +47,14 @@ assert.ok(askMediaContextSource, "askMediaContext debe existir");
 assert.match(askMediaContextSource, /addNoteSetting\(noteSettings,"relationTypes",values\.newRelationType\)/, "el tipo nuevo debe crearse de verdad en los ajustes de notas, no solo usarse una vez");
 assert.match(askMediaContextSource, /await saveNoteSettings\(/, "debe persistir el nuevo tipo, no solo guardarlo en memoria");
 
+// Real reportado por el propietario, con captura de pantalla: tras
+// clasificar una foto, se quedaba como miniatura fija encima del footer,
+// sin ninguna forma visible de enviarla ni de que desapareciera de ahí.
+// Causa: desde que el rediseño de la pantalla principal (V0.21.87) ocultó
+// el compositor fijo con el botón Enviar, ningún paso volvía a abrirlo tras
+// clasificar un adjunto — la foto se quedaba huérfana en #preview para
+// siempre, y el aviso "puedes... enviarlo" prometía algo que no existía en
+// pantalla.
+assert.match(askMediaContextSource, /openDraft\(\);/, "debe abrir el borrador (con su botón Enviar) justo después de clasificar, o la foto se queda sin forma de enviarse");
+
 console.log("media-context: ok");
