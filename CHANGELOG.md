@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.22.4 · Dos falsos positivos del intérprete: frases cotidianas y "recuérdame que..." (auditoría, hallazgos 4 y 5/6)
+
+- **"Cámbiame el turno del trabajo, ponlo de tarde" ya no se confunde con modificar un evento**: el detector local de "modificar evento" solo exigía un verbo cotidiano (cambia/mueve/pasa...), sin ninguna señal de que la frase fuera realmente sobre Calendar. Ahora exige también una palabra de calendario, un campo modificable (hora/fecha/ubicación/título...) o una fecha/hora real detectada.
+- **"Recuérdame que revise los recordatorios del banco el viernes" ya no se pierde como una consulta vacía**: si el contenido de un recordatorio nuevo mencionaba las palabras "notas" o "recordatorios", se malinterpretaba como una consulta en vez de crearse. Corregido con el mismo criterio ya usado para "recuérdame llamar a X".
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: 2 pruebas nuevas en `tests/conversation.test.mjs`.
+
 ## V0.22.3 · Completar un aviso ya borrado en Calendar ya no lo deja atascado para siempre (auditoría, hallazgo 3/6)
 
 - **Causa raíz**: borrar en el backend un evento de Calendar que ya no existe (borrado a mano por el propietario, o en un intento anterior) devolvía 404/410, y tanto completar como cancelar un aviso/recordatorio lo trataban como un fallo real — con un mensaje falso ("el aviso sigue activo en Calendar") y sin marcar nunca la entrada como hecha. Cada reintento chocaba con el mismo evento inexistente, sin salida posible desde la interfaz.

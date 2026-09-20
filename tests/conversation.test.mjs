@@ -276,6 +276,34 @@ test('reprogramar entiende frases naturales y separa objetivo de nueva fecha y h
   }
 });
 
+// Hallazgo de la auditoría completa del código: localCalendarUpdate solo
+// exigía un verbo cotidiano (pasa/cambia/mueve/...), sin ninguna señal de
+// que la frase fuera realmente sobre un evento — frases normales sin
+// relación con Calendar coincidían igual y protectCalendarInterpretation
+// sustituía la clasificación correcta (nota/tarea) por un falso «modificar
+// evento» con un título inventado.
+test('frases cotidianas con un verbo de "cambiar" pero sin nada de calendario no se confunden con modificar un evento',()=>{
+  const now=new Date(2026,7,26,12);
+  assert.equal(localCalendarUpdate('Cámbiame el turno del trabajo, ponlo de tarde',now),null);
+  assert.equal(localCalendarUpdate('Mueve la caja del salón al trastero',now),null);
+  assert.equal(localCalendarUpdate('Cambia el pañal al bebé',now),null);
+});
+
+// Hallazgo de la auditoría completa del código: «Recuérdame que revise
+// [los recordatorios/mis notas] del banco el viernes» es una orden normal
+// para CREAR un recordatorio nuevo — pero al contener "que" y la palabra
+// "recordatorios"/"notas" en su propio contenido, coincidía igual con el
+// patrón de consulta y protectReadQuery sustituía la creación por una
+// consulta vacía, perdiendo la orden entera.
+test('"recuérdame que..." nunca se confunde con una consulta, aunque mencione notas o recordatorios en su contenido',()=>{
+  assert.equal(localReminderQuery('Recuérdame que revise los recordatorios del banco el viernes'),null);
+  assert.equal(localReminderQuery('Recuérdame que actualice los recordatorios de pago'),null);
+  assert.equal(localNoteQuery('Recuérdame que revise mis notas del banco el viernes'),null);
+  // Las consultas reales (sin "recuérdame") siguen funcionando igual.
+  assert.equal(localReminderQuery('Recordatorios').intent,'reminder.query');
+  assert.equal(localNoteQuery('Ver las notas que tenemos hechas').intent,'note.query');
+});
+
 test('reprogramar sin hora mantiene el modal y una respuesta corta completa la misma operación',()=>{
   const now=new Date(2026,7,26,12);
   const firstIntent=localCalendarUpdate('Cámbiame la hora de llamar a Miguel',now);
