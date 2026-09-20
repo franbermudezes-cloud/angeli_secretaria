@@ -71,6 +71,13 @@ test('"añade la leche de mercadona a la lista de la compra" sigue siendo un "ad
  assert.equal(command.action,'add');
 });
 
+test('reconoce "busca X en la lista de la compra" (sin nombrar tienda) como búsqueda en Mercadona',()=>{
+ // Real detectado: exactamente esta frase se guardaba como artículo literal
+ // "busca leche" en vez de reconocerse como una búsqueda.
+ assert.deepEqual(parseShoppingCommand('busca leche en la lista de la compra'),{action:'search',query:'leche',store:'mercadona'});
+ assert.deepEqual(parseShoppingCommand('mira la cerveza en la lista del súper'),{action:'search',query:'cerveza',store:'mercadona'});
+});
+
 test('parseItemList separa por comas y por "y", quitando artículos iniciales',()=>{
  assert.deepEqual(parseItemList('la leche, el pan y unos huevos'),[
   {name:'leche',store:null,quantity:1},{name:'pan',store:null,quantity:1},{name:'huevos',store:null,quantity:1}

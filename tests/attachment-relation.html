@@ -1,9 +1,9 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../styles.css?v=0.21.82"><link rel="stylesheet" href="../styles-flow.css?v=0.21.82"><title>Prueba de relación de adjuntos</title></head><body><div class="app-shell">
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../styles.css?v=0.21.83"><link rel="stylesheet" href="../styles-flow.css?v=0.21.83"><title>Prueba de relación de adjuntos</title></head><body><div class="app-shell">
 <section id="mediaLibrary" class="media-library show" aria-hidden="false"><header class="library-header"><div><strong id="libraryTitle">Fotos y archivos</strong><span id="libraryCount">0 elementos</span></div><button id="libraryClose" class="icon-button">×</button></header><div class="library-controls"><input id="librarySearch" type="search"><div class="library-filters"><button class="filter active" data-library-kind="all">Todo</button><button class="filter" data-library-kind="image">Fotos</button><button class="filter" data-library-kind="file">Archivos</button></div><select id="libraryCategory"><option value="all">Todas las categorías</option></select></div><div id="libraryList" class="library-list"></div></section>
 <div id="scrim" class="scrim"></div><section id="actionModal" class="action-modal"><div class="modal-handle"></div><h2 id="modalTitle"></h2><p id="modalLead"></p><div id="modalBody"></div><div id="modalActions" class="modal-actions"></div></section>
 </div><div id="toast"></div><script type="module">
-import { createUI } from "../js/ui.js?v=0.21.82";
-import { mediaLibraryItems } from "../js/media-library.js?v=0.21.82";
+import { createUI } from "../js/ui.js?v=0.21.83";
+import { mediaLibraryItems } from "../js/media-library.js?v=0.21.83";
 
 const notes = [
   { id: "note1", type: "note", status: "pending", date: "2026-09-10T08:00:00", text: "Revisar el contrato antes de firmarlo", aiIntent: { title: "Revisar contrato" }, noteClassification: { scope: "casa", categoryLabel: "Casa" }, mediaContext: { purpose: "Revisar contrato antes de firmarlo", scope: "casa", categoryLabel: "Casa" }, images: [{ id: "i1", name: "contrato.jpg" }] },

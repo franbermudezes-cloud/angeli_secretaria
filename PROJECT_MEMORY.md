@@ -1,5 +1,20 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-20 — Lista de la compra: botón de búsqueda explícito V0.21.83
+
+Reportado por el propietario probando en el móvil, tras la ronda anterior (V0.21.82) donde ya había verificado el catálogo/cantidades en el navegador de escritorio: "no hay ningún botón para poder buscar... lo único que me deja es a la derecha el micro y un más". La búsqueda en vivo al escribir (V0.21.82) funcionaba, pero era invisible como funcionalidad — nada en la interfaz decía que escribir ya buscaba, así que en el móvil, donde además el usuario probó pulsar "+" esperando que buscara, el "+" simplemente añadía el texto tal cual.
+
+Segundo fallo real encontrado con la frase exacta que el usuario probó: "busca leche en la lista de la compra" (sin decir "Mercadona") no coincidía con `SEARCH_TRIGGER` (que exigía mencionar `mercadona|consum` explícitamente) y cae en el flujo de "add" genérico — "busca leche" se guardó literalmente como nombre de artículo, justo lo que el usuario reportó ver.
+
+Corregido:
+- Botón "🔍" explícito (`#shoppingSearchBtn`) que llama a `runShoppingSearch` al momento (sin el debounce de 350ms de la búsqueda en vivo, innecesario en una acción explícita), y estados visibles "Buscando en Mercadona…" / "Sin resultados en Mercadona" en vez de una lista vacía silenciosa. Antes, `renderShoppingSuggestions([])` llamaba a `hideShoppingSuggestions()`, así que un resultado vacío y "no ha empezado a buscar todavía" se veían exactamente igual — indistinguibles para quien está probando.
+- Nuevo patrón `SEARCH_TRIGGER_GENERIC` en `js/shopping.js`: "busca/mira/enséñame/dime X en la lista de la compra|del súper" (sin nombrar tienda) se entiende como búsqueda en Mercadona — el único catálogo con búsqueda real ([[shopping-list-mercadona-api]] documenta por qué solo Mercadona). Se comprueba después de `SEARCH_TRIGGER` (que sigue ganando si se nombra la tienda explícitamente) y antes de caer al flujo genérico de "add".
+- Pista visible bajo el campo ("🔍 busca en Mercadona · ＋ añade el texto tal cual") — la lección de esta ronda es que una función que solo se descubre escribiendo y esperando no cuenta como descubrible; hace falta decirlo.
+
+**Metodología**: igual que la ronda anterior, verificado contra la sesión real del propietario vía Claude en Chrome antes de darlo por bueno, no solo con los tests unitarios.
+
+**Cobertura de test**: `tests/shopping.test.mjs` ampliado a 25 pruebas (la frase exacta reportada, "busca leche en la lista de la compra" → `{action:'search', store:'mercadona'}`).
+
 ## 2026-09-20 — Lista de la compra: catálogo fiable, cantidades +/-, búsqueda ampliada V0.21.82
 
 El propietario pidió explícitamente esta vez que las pruebas las hiciera yo mismo en su aplicación real (producción, con su sesión ya iniciada en Chrome), en vez de ir probando él a mano y reportando una cosa cada vez. Usé las herramientas de Claude en Chrome para operar su pestaña real de `franbermudezes-cloud.github.io/angeli_secretaria` (nunca su micrófono/voz — eso no lo puedo simular — pero sí el mismo camino de texto que usa `add()` para cualquier orden). Encontré así, antes de que él tuviera que reportarlos, varios fallos reales:
