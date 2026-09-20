@@ -29,7 +29,7 @@ assert.match(app, /rec\.lang="es-ES";rec\.continuous=false;rec\.interimResults=f
 // fantasma (start() se autoapaga si `listening` es true) sin arrancar
 // nada — hacía falta un segundo toque para que el nuevo micrófono
 // funcionara de verdad.
-assert.match(app, /function stopStrayDictation\(\)\{if\(listening\)stop\(\)\}/, "debe existir un único punto que pare el dictado general huérfano");
+assert.match(app, /function stopStrayDictation\(\)\{if\(dictationMic\.isActive\(\)\)stop\(\)\}/, "debe existir un único punto que pare el dictado general huérfano");
 for (const site of [
   /onCancel:\(\)=>\{stopStrayDictation\(\);pendingShortcut=null;ui\.closeLayers\(\)\}/,
   /onCancel:\(\)=>\{stopStrayDictation\(\);cancelActive\(entry\)\}/,
@@ -44,5 +44,24 @@ for (const site of [
 // cualquier dictado huérfano antes de cambiar de pantalla.
 const onCancelShowEntryActionCount = (app.match(/onCancel:\(\)=>\{stopStrayDictation\(\);ui\.showEntryAction\(/g) || []).length;
 assert.equal(onCancelShowEntryActionCount, 4, "los 4 editores de campo (calendar-field, calendar-datetime, whatsapp, whatsapp-phone) deben parar el dictado huérfano al cancelar");
+
+// Hallazgo de "calidad de código" de la auditoría completa: si el
+// micrófono del compositor está escuchando vivía como una variable global
+// suelta (`listening`), tocada directamente desde cinco sitios (start,
+// stop, y los tres manejadores rec.onstart/onerror/onend) — la misma clase
+// de fallo que ya causó el bug de "micrófonos huérfanos" (V0.21.95,
+// V0.22.5). Se agrupa en un objeto (`dictationMic`) con métodos explícitos.
+assert.doesNotMatch(app, /let notes=\[\],rec=null,listening=false/, "\"listening\" ya no debe ser una variable global suelta");
+assert.match(app, /const dictationMic=\{active:false,isActive\(\)\{return this\.active\},set\(value\)\{this\.active=value\}\};/, "debe existir el objeto que centraliza el estado");
+for (const site of [
+  /function stop\(\)\{dictationMic\.set\(false\);/,
+  /function start\(\{inConversation=false,draftId=null\}=\{\}\)\{const SR=window\.SpeechRecognition\|\|window\.webkitSpeechRecognition;if\(dictationMic\.isActive\(\)\)\{stop\(\);return\}/,
+  /rec\.onstart=\(\)=>\{dictationMic\.set\(true\);setMicState\(true\);/,
+  /rec\.onerror=e=>\{dictationMic\.set\(false\);setMicState\(false\);/,
+  /rec\.onend=\(\)=>\{finalText=sessionFinal;paint\(finalText\);dictationMic\.set\(false\);setMicState\(false\);/,
+  /try\{rec\.start\(\)\}catch\(e\)\{dictationMic\.set\(false\);setMicState\(false\);ui\.notify\("No se pudo iniciar el dictado"\)\}\}/
+]) {
+  assert.match(app, site, `falta usar dictationMic en: ${site}`);
+}
 
 console.log("dictation: ok");

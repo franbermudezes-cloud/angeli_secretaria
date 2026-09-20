@@ -1,5 +1,17 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-20 — El estado del micrófono del compositor deja de ser una variable global suelta V0.22.23
+
+Tercer y último hallazgo de "calidad de código" de la auditoría completa que se corrige (ver la entrada de V0.22.1 para el contexto de la auditoría completa) — cierra la ronda de fricción/calidad de código; queda pendiente, aparte, el "field bleed" de `mergeInterpretation` (marcado como opcional en el triage original).
+
+**Causa raíz**: si el micrófono del compositor de texto (el dictado general, distinto del de modo conversación) está escuchando ahora mismo vivía como `listening`, una variable module-scope de `js/app.js` mutada directamente desde cinco sitios distintos: `start()`, `stop()`, y los tres manejadores `rec.onstart`/`rec.onerror`/`rec.onend` (más el `catch` de `rec.start()`). No había ningún punto único por el que tuviera que pasar cada cambio de estado — exactamente el tipo de dispersión que ya causó el bug de "micrófonos huérfanos" (V0.21.95, y de nuevo en más sitios en V0.22.5): bastaba con que un nuevo punto de la app tocara `listening` sin coordinarse con los demás para dejar el estado desincronizado del micrófono real.
+
+**Corrección**: se agrupa en `dictationMic`, un objeto con dos métodos explícitos — `isActive()` (lectura) y `set(valor)` (escritura) — en vez de una variable suelta que cualquiera puede reasignar sin darse cuenta de que hay más sitios que dependen de ella. Es un refactor puro: cada uno de los cinco sitios sigue haciendo exactamente lo mismo que antes, solo que a través del objeto en vez de la variable directa.
+
+**Fuera de alcance, a propósito**: `conversationListening`/`conversationRec` (el micrófono del modo conversación) se dejan como están — ya viven razonablemente contenidos dentro de un único bloque de funciones (`stopConversationRecognizer`/`startConversationRecognizer`/`resumeConversationListening`), a diferencia de `listening`, que sí estaba disperso por toda la función `start()`. Unificar ambos sistemas de seguimiento en uno solo sería un cambio de comportamiento real (decidir qué pasa cuando dos micrófonos distintos podrían competir), no un refactor de calidad de código, así que se deja fuera de este hallazgo.
+
+**Cobertura de test**: `tests/dictation.test.mjs` ampliado — comprueba que `listening` ya no es una variable global suelta, que existe `dictationMic` con la forma esperada, y que los seis puntos que antes la tocaban directamente ahora usan `dictationMic.isActive()`/`dictationMic.set(...)`.
+
 ## 2026-09-20 — Formularios de editar recordatorio y evento compartidos V0.22.22
 
 Segundo hallazgo de "calidad de código" de la auditoría completa que se corrige (ver la entrada de V0.22.1 para el contexto de la auditoría).
