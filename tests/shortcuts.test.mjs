@@ -57,8 +57,22 @@ test("accesos directos: consultas y llamadas ejecutan la búsqueda sin tarjeta i
   const app = readFileSync(new URL("../js/app.js", import.meta.url), "utf8");
   const worker = readFileSync(new URL("../sw.js", import.meta.url), "utf8");
   assert.match(app, /shortcutContext\?\.direct&&interpretation\.intent==="calendar\.query"/);
-  assert.match(app, /shortcutContext\?\.direct&&interpretation\.intent==="contact\.call"[\s\S]*google\.searchContact\(entry\)/);
   assert.match(worker, /\.\/js\/shortcuts\.js\?v=/);
+});
+
+// Pedido explícito del propietario: "no tengo el por qué de hacer yo clic
+// para que haga la búsqueda" — antes solo se buscaba el contacto sola
+// cuando la orden venía del acceso directo "Llamar contacto"
+// (shortcutContext?.direct); hablar o escribir la orden normal, o cualquier
+// WhatsApp, obligaba a tocar "Buscar contacto" a mano. Ahora se busca sola
+// en cuanto se conoce a quién, sin depender de cómo llegó la orden.
+test("contact.call y whatsapp.compose buscan el contacto solos, sin esperar a un clic ni a venir de un acceso directo", () => {
+  const app = readFileSync(new URL("../js/app.js", import.meta.url), "utf8");
+  assert.doesNotMatch(app, /shortcutContext\?\.direct&&interpretation\.intent==="contact\.call"/, "ya no debe depender de que la orden viniera de un acceso directo");
+  assert.match(app, /if\(\(interpretation\.intent==="contact\.call"\|\|interpretation\.intent==="whatsapp\.compose"\)&&!entry\.phone\)\{/);
+  const autoSearchSource = app.match(/if\(\(interpretation\.intent==="contact\.call"\|\|interpretation\.intent==="whatsapp\.compose"\)&&!entry\.phone\)\{[\s\S]*?\n     \}/)?.[0] || "";
+  assert.ok(autoSearchSource, "la búsqueda automática de contacto debe existir");
+  assert.match(autoSearchSource, /google\.searchContact\(entry\)/);
 });
 
 // Regresión real reportada por el propietario: el móvil tenía 7 accesos
