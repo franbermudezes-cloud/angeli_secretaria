@@ -1,5 +1,19 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-20 — Ocultar del todo los accesos directos, y elegirlos ya preparados V0.21.94
+
+Justo después de enviar "Gestionar accesos directos" (V0.21.93), el propietario aclaró que no era exactamente lo que pedía: "por eso te había dicho ocultar los accesos directos, esos. En pantalla. Ocultarlo... que no salga nada. Ni accesos directos ni el más ni nada. Se queda limpio." Es decir: quería un interruptor para dejar la pantalla principal sin nada en esa zona, no (solo) un modal para borrar accesos uno a uno.
+
+**Por qué no bastaba con vaciar la lista**: `renderShortcuts()` siempre añade un botón "＋" al final del HTML generado, aparte de los accesos guardados — si `shortcuts` estuviera vacío igualmente seguiría viéndose el "＋". La única forma de dejar "limpio" de verdad es ocultar la sección entera (`#shortcutsSection`), no solo su contenido.
+
+**Diseño elegido**: un booleano `shortcutsHidden` que viaja EN EL MISMO documento de Firestore que los propios accesos (`users/{uid}/settings/shortcuts`, ahora `{items, hidden}` en vez de solo el array) — se sincroniza entre dispositivos junto con ellos, con el mismo razonamiento que llevó a sincronizar los accesos en la V0.21.90: si se oculta en un sitio, debe quedar oculto en el otro. `cloud.saveShortcuts(items, hidden=false)` ahora acepta el segundo parámetro; el snapshot de `onShortcuts` pasa el documento completo (antes solo `snapshot.data().items`) para que `app.js` pueda leer también `.hidden`. Se cachea también en `localStorage` (`readShortcutsHidden`/`writeShortcutsHidden` en `js/storage.js`) para pintar sin esperar a la nube al abrir la app, igual que ya se hace con los propios accesos.
+
+**Segundo pedido en el mismo mensaje**: "como había antes, que pudiera elegir ya accesos directos con su icono y todo ya puesto... crear accesos directos que ya estén ahí." Se sustituyó el botón "＋ Crear acceso manual" (que abría directamente el viejo flujo con dos `prompt()`, uno para el texto y otro para el nombre) por "＋ Elegir acceso directo", que abre un catálogo (`SHORTCUT_PRESETS` en `js/shortcuts.js`): los mismos `DEFAULT_SHORTCUTS` de siempre (por si se borró alguno y se quiere recuperar tal cual, con su icono ya puesto) más cuatro nuevos para funciones que ya existían en la app pero no tenían un acceso propio — Nueva nota, Añadir a la compra, Mañana, Esta semana. Tocar uno lo añade sin escribir nada; el picker excluye los que ya están en la pantalla principal (no tendría sentido ofrecer añadir uno que ya está). "✎ Crear uno personalizado" al final sigue dando salida al viejo flujo con `prompt()`, para lo que no encaje en el catálogo. El "＋" de la propia fila de accesos (en la pantalla principal) se enganchó al mismo `pickShortcutPreset()`, no solo el de Ajustes.
+
+**Verificado en el navegador sandbox**: activar "🙈 Ocultar accesos directos" hace desaparecer la fila entera y el "＋", capturado en captura de pantalla; desactivarlo la devuelve; el catálogo de accesos excluye correctamente los 7 ya presentes y ofrece los 4 nuevos; elegir "📝 Nueva nota" la añade al instante a la fila sin pedir ningún texto.
+
+**Cobertura de test**: `tests/shortcuts.test.mjs` ampliado — que ocultar afecta a `#shortcutsSection` entero (no solo vacía la lista), que el ajuste se sincroniza junto con los accesos, y que el catálogo de presets existe y se usa tanto desde Ajustes como desde el "＋" de la propia fila.
+
 ## 2026-09-20 — Gestionar accesos directos, dos accesos rápidos más y el micro ya no corta el dictado V0.21.93
 
 Tres pedidos del propietario en el mismo mensaje, más un cuarto reportado aparte sobre el dictado.

@@ -1,5 +1,5 @@
-import { contactQuery } from "./classifier.js?v=0.21.93";
-import { calendarQueryRange, temporalData } from "./temporal.js?v=0.21.93";
+import { contactQuery } from "./classifier.js?v=0.21.94";
+import { calendarQueryRange, temporalData } from "./temporal.js?v=0.21.94";
 
 export const DEFAULT_SHORTCUTS = [
   { label: "🗓️ Hoy", command: "¿Qué tengo hoy?", action: "calendar.query", direct: true },
@@ -9,6 +9,21 @@ export const DEFAULT_SHORTCUTS = [
   { label: "＋ Nuevo evento", prompt: "Cuéntame el evento: fecha, hora y lugar.", prefix: "Añade al calendario ", action: "calendar.create" },
   { label: "⏰ Recordatorio", prompt: "¿Qué quieres que te recuerde y cuándo?", prefix: "Recuérdame ", action: "reminder.create" },
   { label: "✕ Cancelar evento", prompt: "¿Qué evento quieres cancelar?", prefix: "Cancela ", action: "calendar.delete", direct: true }
+];
+
+// Pedido explícito del propietario: "como había antes, que pudiera elegir
+// ya accesos directos con su icono y todo ya puesto" — en vez de escribir
+// el texto y buscar un icono a mano cada vez (el viejo flujo con prompt()),
+// se elige uno de esta lista ya lista para usar. Incluye los mismos
+// DEFAULT_SHORTCUTS (por si se borró alguno desde "Gestionar accesos
+// directos" y se quiere recuperar tal cual) más unos cuantos más para
+// funciones que ya existen en la app pero no tenían acceso propio.
+export const SHORTCUT_PRESETS = [
+  ...DEFAULT_SHORTCUTS,
+  { label: "📝 Nueva nota", prompt: "Escribe o dicta la nota.", prefix: "", action: "note" },
+  { label: "🛒 Añadir a la compra", prompt: "Di qué artículo añadir a la lista.", prefix: "Añade a la lista de la compra ", dictate: true },
+  { label: "🗓️ Mañana", command: "¿Qué tengo mañana?", action: "calendar.query", direct: true },
+  { label: "🗓️ Esta semana", command: "¿Qué tengo esta semana?", action: "calendar.query", direct: true }
 ];
 
 export function normalizeShortcuts(saved) {

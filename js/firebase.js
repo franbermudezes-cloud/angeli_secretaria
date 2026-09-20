@@ -27,8 +27,8 @@ import {
   waitForPendingWrites
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 import { deleteToken, getMessaging, getToken, isSupported, onMessage } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging.js";
-import { fromCloudEntry, sameEntry, toCloudEntry } from "./cloud-entry.js?v=0.21.93";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.93";
+import { fromCloudEntry, sameEntry, toCloudEntry } from "./cloud-entry.js?v=0.21.94";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.94";
 
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
 const VAPID_KEY = "BHyc8Ne9wyaAFoju-9FNG5_qCXPOLSQhHhsfye9bdFlAv3zdLfAvjcvb29Cyrtj80kSq7gJ3qGJ9k3Mb_EqYt_o";
@@ -259,11 +259,11 @@ export function createCloudSync({ notify }) {
     // cómo migrarlo, no este módulo de sincronización.
     unsubscribeShoppingList = onSnapshot(shoppingListDocument(), snapshot => callbacks.onShoppingState?.(snapshot.exists() ? snapshot.data() : null), error => callbacks.onShoppingListError?.(error));
     unsubscribeShortcuts?.();
-    // Igual que la lista de la compra: se pasa el array de accesos tal cual
-    // viene del documento (o null si nunca se ha guardado nada todavía),
+    // Igual que la lista de la compra: se pasa el documento entero tal cual
+    // viene ({items, hidden}), o null si nunca se ha guardado nada todavía,
     // sin normalizar aquí — normalizeShortcuts (js/shortcuts.js) decide qué
     // hacer con eso, incluida la migración inicial descrita en app.js.
-    unsubscribeShortcuts = onSnapshot(shortcutsDocument(), snapshot => callbacks.onShortcuts?.(snapshot.exists() ? snapshot.data().items : null), error => callbacks.onShortcutsError?.(error));
+    unsubscribeShortcuts = onSnapshot(shortcutsDocument(), snapshot => callbacks.onShortcuts?.(snapshot.exists() ? snapshot.data() : null), error => callbacks.onShortcutsError?.(error));
   }
 
   async function saveShoppingState(state) {
@@ -273,9 +273,9 @@ export function createCloudSync({ notify }) {
     return true;
   }
 
-  async function saveShortcuts(items) {
+  async function saveShortcuts(items, hidden = false) {
     if (!user || !db) throw new Error("Inicia sesión en Angeli para guardar los accesos directos");
-    await setDoc(shortcutsDocument(), { items });
+    await setDoc(shortcutsDocument(), { items, hidden });
     await waitForPendingWrites(db);
     return true;
   }
