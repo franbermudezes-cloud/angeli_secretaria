@@ -1,25 +1,25 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts,readShortcutsHidden,writeShortcutsHidden}from"./storage.js?v=0.22.7";
-import{classify,actionData}from"./classifier.js?v=0.22.7";
-import{sendEntry}from"./sheets.js?v=0.22.7";
-import{createUI}from"./ui.js?v=0.22.7";
-import{createGoogleIntegration}from"./google.js?v=0.22.7";
-import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.22.7";
-import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.22.7";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.22.7";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.22.7";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.22.7";
-import{createCloudSync}from"./firebase.js?v=0.22.7";
-import{createMediaService}from"./media.js?v=0.22.7";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.22.7";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.22.7";
-import{createAgendaActions}from"./agenda.js?v=0.22.7";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.22.7";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.22.7";
-import{DEFAULT_SHORTCUTS,SHORTCUT_PRESETS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.22.7";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.22.7";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.22.7";
-import{mediaLibraryItems}from"./media-library.js?v=0.22.7";
-import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.22.7";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts,readShortcutsHidden,writeShortcutsHidden}from"./storage.js?v=0.22.8";
+import{classify,actionData}from"./classifier.js?v=0.22.8";
+import{sendEntry}from"./sheets.js?v=0.22.8";
+import{createUI}from"./ui.js?v=0.22.8";
+import{createGoogleIntegration}from"./google.js?v=0.22.8";
+import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.22.8";
+import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.22.8";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.22.8";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.22.8";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.22.8";
+import{createCloudSync}from"./firebase.js?v=0.22.8";
+import{createMediaService}from"./media.js?v=0.22.8";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.22.8";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.22.8";
+import{createAgendaActions}from"./agenda.js?v=0.22.8";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.22.8";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.22.8";
+import{DEFAULT_SHORTCUTS,SHORTCUT_PRESETS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.22.8";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.22.8";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.22.8";
+import{mediaLibraryItems}from"./media-library.js?v=0.22.8";
+import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.22.8";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],pendingMediaContext=null,selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -423,8 +423,16 @@ function noteLibraryItems(){return notes.filter(note=>note.type==="note")}
 function refreshNoteLibrary(){ui.renderNoteLibrary(noteLibraryItems(),noteLibraryState)}
 function openNoteLibrary(){noteLibraryState={status:"pending",category:"all",query:""};$("noteLibrarySearch").value="";document.querySelectorAll("[data-note-status]").forEach(button=>button.classList.toggle("active",button.dataset.noteStatus==="pending"));ui.openNoteLibrary(noteLibraryItems(),noteLibraryState)}
 function noteLibraryEntry(id){return notes.find(note=>note.id===id&&note.type==="note")}
-function editNoteFromLibrary(entry,onCancel){ui.showNoteEditor(entry,{settings:noteSettings,onCancel,onSave:async values=>{try{const updated=await uploadNoteAttachments(stageNoteDraft(entry,values));if(await saveConfirmed(notes.map(note=>note.id===entry.id?updated:note))){ui.notify("Nota y adjuntos actualizados");ui.closeLayers();refreshNoteLibrary()}}catch(error){ui.notify(error.message||"No se pudieron subir los adjuntos")}}})}
-function openNoteLibraryDetail(entry){ui.closeNoteLibrary();const show=()=>ui.showNoteDetail(entry,{onBack:()=>{ui.closeLayers();ui.openNoteLibrary(noteLibraryItems(),noteLibraryState)},onEdit:()=>editNoteFromLibrary(entry,show),onToggle:async()=>{const updated=updateNoteStatus(entry,entry.status==="done"?"pending":"done");if(await saveConfirmed(notes.map(note=>note.id===entry.id?updated:note))){entry=updated;ui.notify(updated.status==="done"?"Nota marcada como hecha":"Nota reabierta");show()}},onDelete:()=>ui.showNoteDeleteConfirmation(entry,{onCancel:show,onConfirm:async()=>{if(await saveConfirmed(removeNoteEntry(notes,entry.id))){ui.notify("Nota borrada");ui.closeLayers();ui.openNoteLibrary(noteLibraryItems(),noteLibraryState)}}})});show()}
+// Real encontrado en auditoría: al guardar, siempre hacía closeLayers()
+// seguido de refreshNoteLibrary() — pero refreshNoteLibrary() solo actualiza
+// el HTML de una biblioteca que en ese momento está oculta (closeNoteLibrary
+// ya se había llamado antes de abrir el editor), así que guardar dejaba a la
+// persona en la pantalla de inicio sin ninguna confirmación de que el
+// cambio se había aplicado. onSaved(updated) deja que cada sitio que llama
+// a esto decida a qué pantalla volver tras guardar, igual que ya hace con
+// onCancel.
+function editNoteFromLibrary(entry,onCancel,onSaved){ui.showNoteEditor(entry,{settings:noteSettings,onCancel,onSave:async values=>{try{const updated=await uploadNoteAttachments(stageNoteDraft(entry,values));if(await saveConfirmed(notes.map(note=>note.id===entry.id?updated:note))){ui.notify("Nota y adjuntos actualizados");if(onSaved)onSaved(updated);else{ui.closeLayers();refreshNoteLibrary()}}}catch(error){ui.notify(error.message||"No se pudieron subir los adjuntos")}}})}
+function openNoteLibraryDetail(entry){ui.closeNoteLibrary();const show=()=>ui.showNoteDetail(entry,{onBack:()=>{ui.closeLayers();ui.openNoteLibrary(noteLibraryItems(),noteLibraryState)},onEdit:()=>editNoteFromLibrary(entry,show,updated=>{entry=updated;ui.closeLayers();show()}),onToggle:async()=>{const updated=updateNoteStatus(entry,entry.status==="done"?"pending":"done");if(await saveConfirmed(notes.map(note=>note.id===entry.id?updated:note))){entry=updated;ui.notify(updated.status==="done"?"Nota marcada como hecha":"Nota reabierta");show()}},onDelete:()=>ui.showNoteDeleteConfirmation(entry,{onCancel:show,onConfirm:async()=>{if(await saveConfirmed(removeNoteEntry(notes,entry.id))){ui.notify("Nota borrada");ui.closeLayers();ui.openNoteLibrary(noteLibraryItems(),noteLibraryState)}}})});show()}
 // Modo conversación: escucha continua en primer plano. Reutiliza sin
 // modificarlo el mismo add() que usa el compositor normal (el intérprete y
 // las confirmaciones de calendario/recordatorios costaron muchas rondas de
@@ -1160,7 +1168,7 @@ $("noteLibraryClose").onclick=ui.closeNoteLibrary;
 $("noteLibrarySearch").oninput=event=>{noteLibraryState.query=event.target.value;refreshNoteLibrary()};
 $("noteLibraryCategory").onchange=event=>{noteLibraryState.category=event.target.value;refreshNoteLibrary()};
 document.querySelector("#noteLibrary .library-filters").onclick=event=>{const button=event.target.closest("[data-note-status]");if(!button)return;noteLibraryState.status=button.dataset.noteStatus;document.querySelectorAll("[data-note-status]").forEach(item=>item.classList.toggle("active",item===button));refreshNoteLibrary()};
-$("noteLibraryList").onclick=event=>{const button=event.target.closest("[data-note-action]");if(!button)return;const entry=noteLibraryEntry(button.dataset.noteId);if(!entry)return;const action=button.dataset.noteAction;if(action==="open")openNoteLibraryDetail(entry);else if(action==="edit"){ui.closeNoteLibrary();editNoteFromLibrary(entry,()=>{ui.closeLayers();ui.openNoteLibrary(noteLibraryItems(),noteLibraryState)})}else if(action==="toggle")void(async()=>{const updated=updateNoteStatus(entry,entry.status==="done"?"pending":"done");if(await saveConfirmed(notes.map(note=>note.id===entry.id?updated:note))){ui.notify(updated.status==="done"?"Nota marcada como hecha":"Nota reabierta");refreshNoteLibrary()}})();else if(action==="delete"){ui.closeNoteLibrary();ui.showNoteDeleteConfirmation(entry,{onCancel:()=>{ui.closeLayers();ui.openNoteLibrary(noteLibraryItems(),noteLibraryState)},onConfirm:async()=>{if(await saveConfirmed(removeNoteEntry(notes,entry.id))){ui.notify("Nota borrada");ui.closeLayers();ui.openNoteLibrary(noteLibraryItems(),noteLibraryState)}}})}};
+$("noteLibraryList").onclick=event=>{const button=event.target.closest("[data-note-action]");if(!button)return;const entry=noteLibraryEntry(button.dataset.noteId);if(!entry)return;const action=button.dataset.noteAction;if(action==="open")openNoteLibraryDetail(entry);else if(action==="edit"){ui.closeNoteLibrary();const backToLibrary=()=>{ui.closeLayers();ui.openNoteLibrary(noteLibraryItems(),noteLibraryState)};editNoteFromLibrary(entry,backToLibrary,backToLibrary)}else if(action==="toggle")void(async()=>{const updated=updateNoteStatus(entry,entry.status==="done"?"pending":"done");if(await saveConfirmed(notes.map(note=>note.id===entry.id?updated:note))){ui.notify(updated.status==="done"?"Nota marcada como hecha":"Nota reabierta");refreshNoteLibrary()}})();else if(action==="delete"){ui.closeNoteLibrary();ui.showNoteDeleteConfirmation(entry,{onCancel:()=>{ui.closeLayers();ui.openNoteLibrary(noteLibraryItems(),noteLibraryState)},onConfirm:async()=>{if(await saveConfirmed(removeNoteEntry(notes,entry.id))){ui.notify("Nota borrada");ui.closeLayers();ui.openNoteLibrary(noteLibraryItems(),noteLibraryState)}}})}};
 $("menuOpen").onclick=ui.openMenu;$("menuClose").onclick=ui.closeLayers;$("scrim").onclick=()=>{if(!$("actionModal").classList.contains("conversation-modal"))ui.closeLayers()};
 $("clearView").onclick=()=>{if(confirm("Esto limpia solo la conversación visible. Tus entradas, fotos y archivos seguirán guardados. ¿Continuar?")){$("list").innerHTML='<div class="empty">Vista limpia. Tus datos siguen guardados.</div>';ui.notify("Vista limpiada")}};
 $("shortcutManual").onclick=()=>{ui.closeLayers();pickShortcutPreset()};
@@ -1288,7 +1296,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.22.7",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.22.8",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}
