@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.22.7 · Una subida con varios adjuntos que falla a medias ya no deja archivos huérfanos en Drive (auditoría, prioridad media)
+
+- **Causa raíz**: al añadir varios adjuntos a la vez, si el segundo (o el tercero) fallaba al subir a Drive, el primero ya subido nunca se borraba — quedaba huérfano, sin ninguna entrada que lo referenciara.
+- **Corregido**: se deshace lo ya subido antes de limpiar el estado local, igual que ya hacía el mismo tipo de subida al editar una nota.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: 1 prueba nueva en `tests/media-context.test.mjs`.
+
 ## V0.22.6 · Reclasificar un adjunto desde Fotos/archivos ya no escribía en el campo equivocado si era una nota (auditoría, prioridad media)
 
 - **Causa raíz**: el botón "Clasificar ahora"/"Modificar clasificación" de la ficha de un adjunto escribía siempre en `mediaContext`, aunque la entrada fuera una nota (cuya categoría/relación real vive en `noteClassification`) — creaba una segunda clasificación que Notas y Fotos/archivos mostraban de forma distinta para la misma entrada.

@@ -1,5 +1,15 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-20 — Subida parcial de varios adjuntos dejaba huérfanos en Drive V0.22.7
+
+Segundo hallazgo de prioridad media de la auditoría completa que se corrige.
+
+**Causa raíz**: en `add()` (`js/app.js`), la subida de varios adjuntos a la vez itera `pendingImages`/`pendingFiles` subiendo uno a uno a Drive (`for(const file of pendingImages){images.push(await media.upload(...))}`). Si el segundo o tercer archivo fallaba (red, tamaño, cuota de Drive), el `catch` general solo entraba en la rama `if(hasMedia&&!mediaUploaded){clearPendingMedia();...}` — esta rama limpiaba el estado LOCAL (los archivos pendientes en memoria), pero nunca tocaba Drive: el primer archivo, que sí se había subido con éxito antes del fallo, se quedaba huérfano ahí para siempre, sin que ninguna entrada de Angeli lo referenciara. La rama hermana (`if(mediaUploaded)...`, para fallos DESPUÉS de que la subida completa hubiera terminado bien) sí hacía la limpieza correcta con `Promise.allSettled` — pero esa rama nunca se ejecutaba en este escenario, porque `mediaUploaded` solo se pone a `true` cuando TODA la subida termina sin errores. `uploadNoteAttachments` (la función equivalente usada al editar una nota) ya tenía el patrón correcto desde el principio; `add()` (usada para crear/editar cualquier otra entrada) nunca lo replicó.
+
+**Corrección**: la rama `hasMedia&&!mediaUploaded` ahora también deshace lo ya subido (`Promise.allSettled([...images,...files].map(item=>media.remove(...)))`) antes de limpiar el estado local — mismo patrón ya usado en `uploadNoteAttachments` y en la rama hermana de más abajo.
+
+**Cobertura de test**: `tests/media-context.test.mjs` ampliado — comprueba que esa rama del `catch` borra de Drive lo ya subido antes de limpiar el estado local.
+
 ## 2026-09-20 — Reclasificar un adjunto tipo nota escribía en el campo equivocado V0.22.6
 
 Primer hallazgo de prioridad media de la auditoría completa que se corrige (los de prioridad alta ya están todos cerrados — ver la entrada de V0.22.1 para el contexto de la auditoría).

@@ -69,4 +69,14 @@ assert.ok(showMediaEntryDetailSource, "showMediaEntryDetail debe existir");
 assert.match(showMediaEntryDetailSource, /const isNote = entry\.type === "note"/, "debe distinguir explícitamente las entradas de tipo nota");
 assert.match(showMediaEntryDetailSource, /\.\.\.\(isNote \? \[\] : \[\{label:context \? "Modificar clasificación" : "Clasificar ahora"/, 'el botón de clasificar (que escribe en mediaContext) no debe ofrecerse para notas');
 
+// Hallazgo de la auditoría completa del código: con varios adjuntos a la
+// vez, si el segundo (o el tercero...) fallaba al subir a Drive, el
+// primero ya subido nunca se borraba — quedaba huérfano en Drive sin que
+// ninguna entrada lo referenciara. uploadNoteAttachments (usada al editar
+// una nota) ya deshacía todo lo subido hasta el fallo; el mismo camino
+// dentro de add() (usado al crear/editar una entrada normal) no lo hacía.
+const addCatchSource = app.match(/\}catch\(error\)\{\n {3}\/\/ Real encontrado en auditoría[\s\S]*?\n {3}if\(mediaUploaded\)await Promise\.allSettled/)?.[0] || "";
+assert.ok(addCatchSource, "el catch de add() debe documentar y arreglar el fallo de subida parcial");
+assert.match(addCatchSource, /if\(hasMedia&&!mediaUploaded\)\{await Promise\.allSettled\(\[\.\.\.images,\.\.\.files\]\.map\(item=>media\.remove\(item\.driveFileId\|\|item\.id\)\)\);clearPendingMedia\(\)/, "debe borrar de Drive lo ya subido antes de limpiar el estado local, igual que uploadNoteAttachments");
+
 console.log("media-context: ok");
