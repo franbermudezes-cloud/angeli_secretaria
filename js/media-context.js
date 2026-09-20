@@ -1,4 +1,4 @@
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.8";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.9";
 
 // El valor por defecto de un parámetro solo actúa sobre "undefined": si
 // pendingMediaContext aún es null (antes de la primera clasificación), un

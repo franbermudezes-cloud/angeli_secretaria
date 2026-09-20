@@ -1,4 +1,4 @@
-import{calendarQueryRange,cleanTemporalText,naturalQueryRange,temporalData}from"./temporal.js?v=0.22.8";
+import{calendarQueryRange,cleanTemporalText,naturalQueryRange,temporalData}from"./temporal.js?v=0.22.9";
 
 export const VALID_INTENTS=["note","note.query","task.create","task.complete","reminder.create","reminder.query","calendar.create","calendar.query","calendar.update","calendar.delete","contact.call","whatsapp.compose","file.store","photo.store"];
 const SENSITIVE_INTENTS=new Set(["calendar.update","calendar.delete","contact.call","whatsapp.compose"]);
@@ -183,7 +183,14 @@ export function protectCalendarInterpretation(remote, local) {
     ...remote,
     intent: local.intent,
     target,
-    changes: local.changes || remote.changes || null,
+    // Real encontrado en auditoría: localCalendarUpdate solo detecta fecha/
+    // hora explícitas, nunca ubicación/título/descripción — pero con "||" en
+    // vez de fusionar, en cuanto local.changes traía algo (una fecha u hora
+    // detectada), se descartaba entero remote.changes, perdiendo en
+    // silencio cualquier otro cambio (p. ej. ubicación) que la IA sí hubiera
+    // entendido bien en la misma orden («...a las nueve y ponla en el
+    // restaurante Cala Blava» perdía el restaurante).
+    changes: (local.changes || remote.changes) ? { ...(remote.changes || {}), ...(local.changes || {}) } : null,
     requiresConfirmation: true,
     missingFields: [],
     question: null
