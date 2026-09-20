@@ -1,6 +1,6 @@
-import { calendarDetails, scheduleTitle } from "./schedule.js?v=0.21.88";
-import { noteTitle } from "./notes.js?v=0.21.88";
-import { typeLabel } from "./classifier.js?v=0.21.88";
+import { calendarDetails, scheduleTitle } from "./schedule.js?v=0.21.89";
+import { noteTitle } from "./notes.js?v=0.21.89";
+import { typeLabel } from "./classifier.js?v=0.21.89";
 
 /** Tipo visual (color/rail) usado en el Dietario para agrupar entradas afines. */
 const RAIL_BY_TYPE = { calendar: "calendar", reminder: "reminder", task: "reminder", contact: "reminder", note: "note", photo: "attach", file: "attach" };
@@ -75,14 +75,28 @@ export function dietarioDayLabel(dateKey) {
 // se resolvió), con un horizonte según el rango elegido y una sección final
 // para lo que aún no tiene fecha, igual que las notas sueltas al final del
 // dietario. No crea ningún dato: solo agrupa lo que Angeli ya tiene guardado.
+//
+// Pedido explícito del propietario: "Hoy"/"Esta semana"/"Todo" solo miran
+// hacia delante (dateKey >= hoy), así que algo con fecha pasada que sigue
+// activo (un aviso que no se llegó a cancelar ni completar, un evento sin
+// marcar) no aparecía en NINGÚN filtro — se perdía sin que nadie lo viera.
+// El rango "pending" es justo para eso: en vez de mirar hacia delante, mira
+// hacia atrás (dateKey < hoy), de más reciente a más antiguo, para que lo
+// atrasado no quede invisible. Se suma la misma sección "sin fecha" que ya
+// llevan el resto de rangos, porque también es "pendiente" en el sentido
+// que pide el propietario ("pendientes o anteriores").
 export function groupDietarioByDay(notes, { now = new Date(), range = "week", type = "all" } = {}) {
   const items = dietarioEntries(notes).filter(item => type === "all" || item.rail === type);
   const todayKey = toDateKey(now);
+  const isPending = range === "pending";
   const endKey = range === "today" ? todayKey : range === "week" ? toDateKey(addDays(now, 7)) : null;
-  const dated = items.filter(item => item.dated && item.dateKey >= todayKey && (endKey === null || item.dateKey <= endKey));
+  const dated = isPending
+    ? items.filter(item => item.dated && item.dateKey < todayKey)
+    : items.filter(item => item.dated && item.dateKey >= todayKey && (endKey === null || item.dateKey <= endKey));
   const undated = items.filter(item => !item.dated).sort((a, b) => a.title.localeCompare(b.title, "es"));
   const byDay = new Map();
-  for (const item of dated.sort((a, b) => a.sortKey.localeCompare(b.sortKey))) {
+  const sortedDated = dated.sort((a, b) => isPending ? b.sortKey.localeCompare(a.sortKey) : a.sortKey.localeCompare(b.sortKey));
+  for (const item of sortedDated) {
     if (!byDay.has(item.dateKey)) byDay.set(item.dateKey, []);
     byDay.get(item.dateKey).push(item);
   }

@@ -1,25 +1,25 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.88";
-import{classify,actionData}from"./classifier.js?v=0.21.88";
-import{sendEntry}from"./sheets.js?v=0.21.88";
-import{createUI}from"./ui.js?v=0.21.88";
-import{createGoogleIntegration}from"./google.js?v=0.21.88";
-import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.21.88";
-import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,updateListItems}from"./shopping.js?v=0.21.88";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.88";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.88";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.88";
-import{createCloudSync}from"./firebase.js?v=0.21.88";
-import{createMediaService}from"./media.js?v=0.21.88";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.88";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.88";
-import{createAgendaActions}from"./agenda.js?v=0.21.88";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.88";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.88";
-import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.88";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.88";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.88";
-import{mediaLibraryItems}from"./media-library.js?v=0.21.88";
-import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.88";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.89";
+import{classify,actionData}from"./classifier.js?v=0.21.89";
+import{sendEntry}from"./sheets.js?v=0.21.89";
+import{createUI}from"./ui.js?v=0.21.89";
+import{createGoogleIntegration}from"./google.js?v=0.21.89";
+import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.21.89";
+import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,updateListItems}from"./shopping.js?v=0.21.89";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.89";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.89";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.89";
+import{createCloudSync}from"./firebase.js?v=0.21.89";
+import{createMediaService}from"./media.js?v=0.21.89";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.89";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.89";
+import{createAgendaActions}from"./agenda.js?v=0.21.89";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.89";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.89";
+import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.89";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.89";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.89";
+import{mediaLibraryItems}from"./media-library.js?v=0.21.89";
+import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.89";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],pendingMediaContext=null,selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -35,7 +35,7 @@ let shortcuts=normalizeShortcuts(readShortcuts()||DEFAULT_SHORTCUTS);
 // pero hasta ahora nadie leía ese parámetro: tocar la notificación abría la
 // app en la pantalla de siempre sin llevar a la entrada que la originó.
 let pendingReminderFocus=new URLSearchParams(location.search).get("reminder")||null;
-function render(){ui.render({notes,selectedFilter,selectedType,google,noteSettings});focusPendingReminder()}
+function render(){ui.render({notes,selectedFilter,selectedType,google,noteSettings});focusPendingReminder();if($("dietarioLibrary").classList.contains("show"))refreshDietario()}
 function focusPendingReminder(){
  if(!pendingReminderFocus)return;
  const target=notes.find(item=>item.id===pendingReminderFocus);
@@ -832,6 +832,21 @@ function openNewEventDraft(){prepareShortcut({label:"Nuevo evento",prompt:"Cuén
 
 function openDietario(){ui.openDietario(notes,dietarioState)}
 function refreshDietario(){ui.renderDietario(notes,dietarioState)}
+// Pedido explícito del propietario: desde el Dietario, poder añadir sin
+// salir a buscar el acceso — mismo patrón que openDietarioQuickActions,
+// reutilizando exactamente los mismos compositores/inputs de siempre
+// (prepareShortcut, openNewEventDraft, los inputs de fotos/archivo ya
+// ocultos en el footer). "La función son las mismas, no cambian."
+function openDietarioAddMenu(){
+ ui.openModal({title:"Añadir al dietario",lead:"¿Qué quieres añadir?",actions:[
+  {label:"📅 Añadir evento",kind:"secondary",onClick:()=>{ui.closeLayers();openNewEventDraft()}},
+  {label:"🔔 Añadir aviso",kind:"secondary",onClick:()=>{ui.closeLayers();prepareShortcut({label:"Recordatorio",prompt:"¿Qué quieres que te recuerde y cuándo?",prefix:"Recuérdame ",action:"reminder.create"})}},
+  {label:"📝 Añadir nota",kind:"secondary",onClick:()=>{ui.closeLayers();prepareShortcut({label:"Nota",prompt:"Escribe o dicta la nota.",prefix:"",action:"note"})}},
+  {label:"🖼️ Añadir imagen",kind:"secondary",onClick:()=>{ui.closeLayers();$("photoInput").click()}},
+  {label:"📎 Añadir adjunto",kind:"secondary",onClick:()=>{ui.closeLayers();$("fileInput").click()}},
+  {label:"Cancelar",kind:"secondary",onClick:ui.closeLayers}
+ ]});
+}
 function openDietarioEntry(id){
  const entry=notes.find(note=>note.id===id);
  if(!entry)return;
@@ -930,6 +945,7 @@ $("shoppingClearAll").onclick=()=>{const list=getActiveList(shoppingState);if(li
 $("conversationModeOpen").onclick=openConversationModeReal;
 $("conversationModeClose").onclick=closeConversationModeReal;
 $("conversationModeMic").onclick=toggleConversationMic;
+$("dietarioAdd").onclick=openDietarioAddMenu;
 $("dietarioClose").onclick=ui.closeDietario;
 $("dietarioRangeFilters").onclick=event=>{const button=event.target.closest("[data-dietario-range]");if(!button)return;dietarioState.range=button.dataset.dietarioRange;document.querySelectorAll("[data-dietario-range]").forEach(item=>item.classList.toggle("active",item===button));refreshDietario()};
 $("dietarioTypeFilters").onclick=event=>{const button=event.target.closest("[data-dietario-type]");if(!button)return;dietarioState.type=button.dataset.dietarioType;document.querySelectorAll("[data-dietario-type]").forEach(item=>item.classList.toggle("active",item===button));refreshDietario()};
@@ -1076,7 +1092,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.88",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.89",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}

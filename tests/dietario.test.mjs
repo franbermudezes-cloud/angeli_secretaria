@@ -13,11 +13,13 @@ const notes = [
   { id: "note3", type: "note", status: "done", date: "2026-09-01T08:00:00", text: "Nota ya resuelta" },
   { id: "remCancelled", type: "reminder", status: "pending", schedule: { dueAt: "2026-09-15T08:00:00", status: "cancelled", action: { kind: "reminder" }, title: "Aviso cancelado" } },
   { id: "calFuture", type: "calendar", scheduledDate: "2026-09-30", scheduledTime: "09:00", calendarTitle: "Fuera de la semana", calendarStatus: "synced" },
-  { id: "calQuery1", type: "calendar", status: "pending", date: "2026-09-14T08:00:00", text: "¿Qué tengo la semana que viene?", aiIntent: { intent: "calendar.query" }, proposal: { intent: "calendar.query" } }
+  { id: "calQuery1", type: "calendar", status: "pending", date: "2026-09-14T08:00:00", text: "¿Qué tengo la semana que viene?", aiIntent: { intent: "calendar.query" }, proposal: { intent: "calendar.query" } },
+  { id: "remPast", type: "reminder", status: "pending", schedule: { dueAt: "2026-09-10T09:00:00", status: "scheduled", action: { kind: "reminder" }, title: "Renovar el seguro del coche" } },
+  { id: "calPast", type: "calendar", scheduledDate: "2026-09-05", scheduledTime: "17:00", calendarTitle: "Revisión pasada sin resolver", calendarStatus: "synced" }
 ];
 
 const entries = dietarioEntries(notes);
-assert.equal(entries.length, 6, "una nota hecha, un aviso cancelado y una consulta de calendario no deben considerarse activos");
+assert.equal(entries.length, 8, "una nota hecha, un aviso cancelado y una consulta de calendario no deben considerarse activos");
 assert.ok(!entries.some(item => item.id === "remCancelled"));
 // Regresión real reportada por el usuario: preguntar por la agenda (incluidos
 // los accesos "Hoy"/"Próxima semana") deja una entrada permanente sin fecha
@@ -55,6 +57,17 @@ assert.equal(week.undated.length, 2);
 
 const all = groupDietarioByDay(notes, { now, range: "all" });
 assert.ok(all.days.some(day => day.dateKey === "2026-09-30"), "el rango 'todo' sí incluye eventos futuros lejanos");
+assert.ok(!all.days.some(day => day.dateKey === "2026-09-10" || day.dateKey === "2026-09-05"), "ni siquiera 'todo' mira hacia el pasado: para eso está el rango 'pending'");
+
+// Nuevo rango pedido por el propietario: "Pendientes o anteriores" — lo
+// atrasado y activo (no cancelado ni completado) que ningún otro rango
+// enseña porque todos miran solo hacia delante desde hoy.
+const pending = groupDietarioByDay(notes, { now, range: "pending" });
+assert.ok(!pending.days.some(day => day.dateKey === "2026-09-15" || day.dateKey === "2026-09-17" || day.dateKey === "2026-09-30"), "el rango 'pending' no debe repetir lo que ya se ve en hoy/semana/todo");
+assert.deepEqual(pending.days.map(day => day.dateKey), ["2026-09-10", "2026-09-05"], "de más reciente a más antiguo, para ver primero lo más urgente de recuperar");
+assert.equal(pending.days[0].items[0].id, "remPast");
+assert.equal(pending.days[1].items[0].id, "calPast");
+assert.equal(pending.undated.length, 2, "lo sin fecha también cuenta como pendiente");
 
 const today = groupDietarioByDay(notes, { now, range: "today" });
 assert.equal(today.days.length, 1);
@@ -139,5 +152,30 @@ const dietarioLibraryZ = Number(css.match(/#dietarioLibrary\{[^}]*z-index:(\d+)/
 const actionModalZForDietario = Number(css.match(/\.action-modal\{[^}]*z-index:(\d+)/)?.[1] || -1);
 assert.ok(dietarioLibraryZ >= 0 && actionModalZForDietario >= 0, "deben existir ambas reglas de z-index");
 assert.ok(dietarioLibraryZ < actionModalZForDietario, `#dietarioLibrary (z-index ${dietarioLibraryZ}) debe quedar por detrás de .action-modal (z-index ${actionModalZForDietario}) para que el menú rápido sea visible y pulsable con el Dietario abierto`);
+
+// Pedido explícito del propietario: un botón "+" dentro del propio Dietario
+// con las mismas acciones de añadir de siempre (evento/aviso/nota/imagen/
+// adjunto), para no tener que salir a buscarlas.
+assert.match(html, /id="dietarioAdd"/);
+assert.match(app, /function openDietarioAddMenu\(\)/);
+assert.match(app, /\$\("dietarioAdd"\)\.onclick=openDietarioAddMenu/);
+const addMenuSource = app.match(/function openDietarioAddMenu\(\)\{[\s\S]*?\n\}/)?.[0] || "";
+assert.ok(addMenuSource, "openDietarioAddMenu debe existir");
+assert.match(addMenuSource, /openNewEventDraft\(\)/, "añadir evento reutiliza la misma función de siempre");
+assert.match(addMenuSource, /action:"reminder\.create"/, "añadir aviso reutiliza el mismo atajo de siempre");
+assert.match(addMenuSource, /action:"note"/, "añadir nota reutiliza el mismo atajo de siempre");
+assert.match(addMenuSource, /\$\("photoInput"\)\.click\(\)/, "añadir imagen reutiliza el mismo input de siempre");
+assert.match(addMenuSource, /\$\("fileInput"\)\.click\(\)/, "añadir adjunto reutiliza el mismo input de siempre");
+
+// Regresión evitada: dos botones sueltos en una cabecera con
+// justify-content:space-between (comprobado en el navegador) quedan
+// repartidos por todo el ancho en vez de juntos junto al de cerrar —
+// deben ir agrupados en su propio contenedor, como ya hace .header-actions.
+assert.match(html, /class="library-header-actions"><button id="dietarioAdd"/);
+assert.match(css, /\.library-header-actions\{[^}]*display:flex/);
+
+// Nuevo filtro de rango pedido explícitamente: "Pendientes o anteriores".
+assert.match(html, /data-dietario-range="pending"/);
+assert.match(ui, /function groupDietarioByDay|groupDietarioByDay/);
 
 console.log("dietario: ok");
