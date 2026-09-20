@@ -1,5 +1,14 @@
 # Changelog
 
+## V0.22.13 · Cada lista de la compra se asocia ahora a una tienda concreta
+
+- **Novedad**: al crear una lista de la compra se elige su tienda entre un conjunto de presets (Mercadona, Consum, Leroy Merlin, Carrefour, Family Cash, Plaza Mayor) — también se puede cambiar después desde el "⋮" de la lista, sin tener que recrearla.
+- **Por qué**: pedido explícito del propietario, que hace el 80-90% de su compra en Mercadona (por eso sigue siendo el valor por defecto para las listas ya existentes y las nuevas sin elegir tienda) pero también compra en otras tiendas sin catálogo con el que integrarse.
+- **Comportamiento**: solo las listas de Mercadona conservan la búsqueda en vivo con precio y foto (es la única tienda con catálogo real). El resto son listas de artículos escritos a mano — escribir un artículo y pulsar Enter (o el botón de añadir) lo mete directamente en la lista, sin lanzar ninguna búsqueda que nunca podría responder.
+- Cada lista muestra su tienda junto al número de artículos, tanto en "Mis listas" como dentro de la propia lista.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: 6 pruebas nuevas en `tests/shopping.test.mjs`.
+
 ## V0.22.12 · Abrir la lista de la compra por voz en pleno modo conversación ya no la dejaba invisible detrás (auditoría, prioridad media)
 
 - **Causa raíz**: `#shoppingLibrary`/`#dietarioLibrary` y el fondo a pantalla completa del modo conversación compartían el mismo `z-index:4` — en el empate ganaba el modo conversación, por ir después en el HTML, y la lista se abría de verdad pero invisible detrás.

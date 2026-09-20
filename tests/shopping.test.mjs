@@ -1,11 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import {
  parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,
  toggleShoppingItem,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,
  normalizeShoppingState,makeShoppingList,getActiveList,findListByName,createShoppingList,renameShoppingList,
- deleteShoppingList,setActiveShoppingList,updateListItems,
+ deleteShoppingList,setActiveShoppingList,setShoppingListStore,isMercadonaList,SHOPPING_STORE_PRESETS,shoppingStoreLabel,updateListItems,
  addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase
 } from '../js/shopping.js';
 
@@ -518,4 +519,60 @@ test('la lista de la compra y el dietario quedan por delante del modo conversaci
  assert.ok(shoppingZ>conversationZ,"la lista de la compra debe quedar por delante del modo conversación");
  assert.ok(dietarioZ>conversationZ,"el dietario debe quedar por delante del modo conversación");
  assert.ok(shoppingZ<actionModalZ&&dietarioZ<actionModalZ,"pero siguen por detrás del menú rápido de #actionModal, como antes");
+});
+
+// Mejora pedida explícitamente por el propietario, aparte de la auditoría:
+// cada lista se asocia a una tienda concreta al crearla, elegida entre las
+// que él mismo compra. Mercadona sigue siendo el valor por defecto — hace
+// el 80-90% de su compra ahí, y así ninguna lista ya existente cambia de
+// comportamiento — pero ahora se puede crear una lista para otra tienda,
+// que se queda como una lista de artículos escritos a mano (sin catálogo).
+test('una lista nueva se puede asociar a una tienda de una lista de presets, con Mercadona por defecto',()=>{
+ let state=normalizeShoppingState(null);
+ assert.equal(getActiveList(state).store,'mercadona',"la lista de siempre, sin elegir tienda, sigue siendo Mercadona");
+ state=createShoppingList(state,'Fran');
+ assert.equal(state.lists.at(-1).store,'mercadona',"crear una lista sin indicar tienda también cae en Mercadona por defecto");
+ state=createShoppingList(state,'Bricolaje','leroy-merlin');
+ assert.equal(state.lists.at(-1).store,'leroy-merlin');
+ assert.ok(SHOPPING_STORE_PRESETS.some(preset=>preset.id==='consum'));
+ assert.ok(SHOPPING_STORE_PRESETS.some(preset=>preset.id==='carrefour'));
+ assert.ok(SHOPPING_STORE_PRESETS.some(preset=>preset.id==='family-cash'));
+ assert.ok(SHOPPING_STORE_PRESETS.some(preset=>preset.id==='plaza-mayor'));
+ assert.equal(shoppingStoreLabel('leroy-merlin'),'Leroy Merlin');
+});
+
+test('normalizeShoppingState rellena "mercadona" en listas guardadas antes de esta función, sin cambiar su comportamiento',()=>{
+ const state=normalizeShoppingState({lists:[{id:'l1',name:'Mi lista',items:[]}],activeListId:'l1'});
+ assert.equal(state.lists[0].store,'mercadona');
+});
+
+test('isMercadonaList trata una lista sin tienda como Mercadona (compatibilidad) y reconoce el resto',()=>{
+ assert.equal(isMercadonaList({store:'mercadona'}),true);
+ assert.equal(isMercadonaList({}),true,"una lista antigua sin store todavía se comporta como Mercadona");
+ assert.equal(isMercadonaList(null),true);
+ assert.equal(isMercadonaList({store:'carrefour'}),false);
+});
+
+test('setShoppingListStore cambia la tienda de una lista concreta sin tocar las demás',()=>{
+ let state=normalizeShoppingState(null);
+ state=createShoppingList(state,'Fran','consum');
+ const [defaultId,franId]=state.lists.map(list=>list.id);
+ state=setShoppingListStore(state,franId,'carrefour');
+ assert.equal(state.lists.find(list=>list.id===franId).store,'carrefour');
+ assert.equal(state.lists.find(list=>list.id===defaultId).store,'mercadona',"la otra lista no se ve afectada");
+ const before=state;
+ state=setShoppingListStore(state,franId,'tienda-inventada');
+ assert.equal(state,before,"una tienda que no está en los presets no se acepta");
+});
+
+// Hallazgo/mejora: la búsqueda en vivo (con precio y foto) solo tiene
+// sentido para Mercadona, que es la única tienda con catálogo real
+// (searchMercadonaProduct en ai.js) — "no tenemos ni API ni manera de hacer
+// lo mismo que hacemos en Mercadona" para el resto, así que escribir en una
+// lista de otra tienda debe ofrecer solo añadir el artículo tal cual.
+test('escribir en una lista que no es de Mercadona no dispara la búsqueda en vivo (código fuente)',()=>{
+ const app=readFileSync(new URL('../js/app.js',import.meta.url),'utf8');
+ assert.match(app,/function scheduleShoppingSearch\(\)\{[\s\S]{0,400}isMercadonaList\(getActiveList\(shoppingState\)\)/,"scheduleShoppingSearch debe comprobar la tienda de la lista activa");
+ assert.match(app,/if\(!mercadona\)\{hideShoppingSuggestions\(\);return\}/,"si la lista no es de Mercadona, no debe programarse ninguna búsqueda");
+ assert.match(app,/shoppingInput"\)\.onkeydown=event=>\{if\(event\.key==="Enter"\)\{event\.preventDefault\(\);const raw=[\s\S]{0,120}isMercadonaList\(getActiveList\(shoppingState\)\)\)\{addShoppingItemAsIs\(raw\);return\}/,"pulsar Enter en una lista de otra tienda debe añadir el artículo directamente, no buscar");
 });

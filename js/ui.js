@@ -1,12 +1,13 @@
-import { typeLabel } from "./classifier.js?v=0.22.12";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.22.12";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.22.12";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.12";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.22.12";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.12";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.22.12";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.22.12";
-import { groupDietarioByDay } from "./dietario.js?v=0.22.12";
+import { typeLabel } from "./classifier.js?v=0.22.13";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.22.13";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.22.13";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.13";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.22.13";
+import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.22.13";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.13";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.22.13";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.22.13";
+import { groupDietarioByDay } from "./dietario.js?v=0.22.13";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -188,7 +189,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.22.12";
+    image.src = "assets/angeli-welcome.gif?v=0.22.13";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -1014,9 +1015,10 @@ export function createUI({ getMedia }) {
     const pending = list.items.filter(item => !item.checked).length, done = list.items.length - pending;
     const thumbs = list.items.slice(0, 4).map(item => item.product?.thumbnail ? `<div style="background-image:url('${esc(item.product.thumbnail)}')"></div>` : '<div class="ph">🛒</div>');
     while (thumbs.length < 4) thumbs.push('<div class="ph"></div>');
+    const storeLabel = shoppingStoreLabel(list.store);
     return `<article class="shopping-list-card" data-shopping-list-id="${esc(list.id)}">` +
       `<div class="shopping-thumb-grid">${thumbs.join("")}</div>` +
-      `<div class="shopping-list-card-body"><strong>${esc(list.name)}</strong><span>${list.items.length} artículo${list.items.length === 1 ? "" : "s"}${done ? ` · ${done} comprado${done === 1 ? "" : "s"}` : ""}</span></div>` +
+      `<div class="shopping-list-card-body"><strong>${esc(list.name)}</strong><span>${storeLabel ? esc(storeLabel) + " · " : ""}${list.items.length} artículo${list.items.length === 1 ? "" : "s"}${done ? ` · ${done} comprado${done === 1 ? "" : "s"}` : ""}</span></div>` +
       `<button class="shopping-list-quick" data-shopping-quick="${esc(list.id)}" aria-label="Opciones de ${esc(list.name)}">⋮</button></article>`;
   }
 
@@ -1052,12 +1054,13 @@ export function createUI({ getMedia }) {
     $("shoppingDetailMenu").hidden = false;
     $("shoppingLibraryTitle").textContent = list.name;
     const pending = list.items.filter(item => !item.checked), done = list.items.filter(item => item.checked);
-    $("shoppingLibrarySubtitle").textContent = `${pending.length} pendiente${pending.length === 1 ? "" : "s"}${done.length ? ` · ${done.length} comprado${done.length === 1 ? "" : "s"}` : ""}`;
+    const storeLabel = shoppingStoreLabel(list.store);
+    $("shoppingLibrarySubtitle").textContent = `${storeLabel ? storeLabel + " · " : ""}${pending.length} pendiente${pending.length === 1 ? "" : "s"}${done.length ? ` · ${done.length} comprado${done.length === 1 ? "" : "s"}` : ""}`;
     hideAllShoppingScreens();
     $("shoppingDetail").hidden = false;
     $("shoppingList").innerHTML = list.items.length
       ? pending.map(shoppingItemMarkup).join("") + (done.length ? '<div class="day">Comprado</div>' + done.map(shoppingItemMarkup).join("") : "")
-      : '<div class="empty">Esta lista está vacía. Escribe un artículo arriba para buscarlo o añadirlo.</div>';
+      : `<div class="empty">Esta lista está vacía. Escribe un artículo arriba para ${isMercadonaList(list) ? "buscarlo o añadirlo" : "añadirlo"}.</div>`;
     $("shoppingTotalBar").hidden = !(total > 0);
     if (total > 0) $("shoppingTotalValue").textContent = `Total aproximado ${total.toFixed(2)} €`;
   }
@@ -1164,11 +1167,11 @@ export function createUI({ getMedia }) {
   // Sustituye al antiguo botón "+": un enlace de última instancia, visible
   // solo mientras hay algo escrito, para cuando ninguna coincidencia real
   // vale y hace falta guardar el texto tal cual.
-  function setShoppingFallback(text, onClick) {
+  function setShoppingFallback(text, onClick, { plain = false } = {}) {
     const button = $("shoppingFallbackAdd");
     if (!text) { button.hidden = true; button.onclick = null; return; }
     button.hidden = false;
-    button.textContent = `Ninguna es lo que busco → añadir «${text}» tal cual`;
+    button.textContent = plain ? `Añadir «${text}» a la lista` : `Ninguna es lo que busco → añadir «${text}» tal cual`;
     button.onclick = onClick;
   }
 
@@ -1216,6 +1219,20 @@ export function createUI({ getMedia }) {
       lead: "Tienes varias listas de la compra.",
       actions: [
         ...lists.map(list => ({ label: `${list.name} · ${list.items.length} artículo${list.items.length === 1 ? "" : "s"}`, kind: "secondary", onClick: () => { closeLayers(); onChoose(list.id); } })),
+        { label: "Cancelar", kind: "secondary", onClick: closeLayers }
+      ]
+    });
+  }
+  // Pedido explícito del propietario: cada lista se asocia a una tienda
+  // concreta al crearla (o después, desde sus opciones), elegida entre las
+  // que él mismo compra — Mercadona sigue siendo la única con búsqueda en
+  // vivo/precio/foto real; el resto son listas de artículos escritos a mano.
+  function showShoppingStoreChoice(currentStore, onPick) {
+    openModal({
+      title: "¿En qué tienda?",
+      lead: "Mercadona tiene búsqueda con precio y foto en vivo; el resto son listas de artículos escritos a mano.",
+      actions: [
+        ...SHOPPING_STORE_PRESETS.map(preset => ({ label: `${preset.id === currentStore ? "✓ " : ""}${preset.label}`, kind: preset.id === currentStore ? "confirm" : "secondary", onClick: () => { closeLayers(); onPick(preset.id); } })),
         { label: "Cancelar", kind: "secondary", onClick: closeLayers }
       ]
     });
@@ -1382,7 +1399,7 @@ export function createUI({ getMedia }) {
     $("conversationModeTranscript").scrollTop = $("conversationModeTranscript").scrollHeight;
   }
 
-  return { $, notify, setGoogleStatus, setPushStatus, setSyncStatus, showConnectionHealth, showNotificationSettings, render, openMediaLibrary, renderMediaLibrary, closeMediaLibrary, openNoteLibrary, renderNoteLibrary, closeNoteLibrary, openDietario, renderDietario, closeDietario, showDietarioDetail, openShoppingList, closeShoppingList, renderShoppingOverview, renderShoppingDetail, renderShoppingCart, renderShoppingPurchases, showPurchaseDetail, hideShoppingSuggestions, showShoppingSuggestionsMessage, renderShoppingSuggestions, setShoppingFallback, showShoppingAddConfirm, renderShoppingConfirmResults, setShoppingConfirmStatus, showShoppingListChoice, showMediaViewer, closeMediaViewer, showMediaEntryDetail, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showMediaContextEditor, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome, openConversationMode, closeConversationMode, setConversationStatus, addConversationTurn };
+  return { $, notify, setGoogleStatus, setPushStatus, setSyncStatus, showConnectionHealth, showNotificationSettings, render, openMediaLibrary, renderMediaLibrary, closeMediaLibrary, openNoteLibrary, renderNoteLibrary, closeNoteLibrary, openDietario, renderDietario, closeDietario, showDietarioDetail, openShoppingList, closeShoppingList, renderShoppingOverview, renderShoppingDetail, renderShoppingCart, renderShoppingPurchases, showPurchaseDetail, hideShoppingSuggestions, showShoppingSuggestionsMessage, renderShoppingSuggestions, setShoppingFallback, showShoppingAddConfirm, renderShoppingConfirmResults, setShoppingConfirmStatus, showShoppingListChoice, showShoppingStoreChoice, showMediaViewer, closeMediaViewer, showMediaEntryDetail, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showMediaContextEditor, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome, openConversationMode, closeConversationMode, setConversationStatus, addConversationTurn };
 }
 
 function esc(value) {
