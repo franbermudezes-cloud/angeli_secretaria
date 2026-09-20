@@ -1,5 +1,15 @@
 # Changelog
 
+## V0.21.90 · Accesos directos sincronizados entre dispositivos, sin scroll horizontal
+
+Reportado por el propietario: en el móvil tenía 7 accesos directos y en el ordenador (PWA) solo 3 — no eran los mismos en cada sitio.
+
+- **Causa raíz**: los accesos directos solo se guardaban en el `localStorage` de cada dispositivo, sin sincronizar nunca con Firestore — a diferencia de la lista de la compra o los ajustes de notas, que sí viven en la nube. Corregido guardando también en `users/{uid}/settings/shortcuts`: crear o eliminar un acceso en un dispositivo ahora se refleja en los demás. `localStorage` se mantiene como caché para abrir sin esperar a la red.
+- **Migración transparente**: la primera vez que un dispositivo se conecta y la nube todavía no tiene ningún acceso guardado, sube los que ya tuviera ese dispositivo en vez de perderlos — mismo patrón ya usado para la lista de la compra.
+- **Fila de accesos sin scroll horizontal**: con más accesos precargados, la fila con desplazamiento lateral escondía la mayoría fuera de la pantalla. Ahora la fila envuelve en varias líneas para que se vean todos de un vistazo, sin tener que desplazarse.
+- Sin cambios en el backend; no requiere redespliegue (solo reglas de Firestore ya vigentes, que autorizan cualquier documento bajo `settings`).
+- Tests: `tests/shortcuts.test.mjs` ampliado para comprobar la sincronización (guardado local + subida a la nube, migración si la nube está vacía) y que la fila envuelve en vez de desplazarse.
+
 ## V0.21.89 · Dietario: rango "Pendientes/Anteriores" y botón "+" para añadir sin salir
 
 Pedido explícito del propietario, sin boceto previo (cambio acotado a un filtro y un botón dentro de una pantalla ya existente).
