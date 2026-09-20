@@ -27,8 +27,8 @@ import {
   waitForPendingWrites
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 import { deleteToken, getMessaging, getToken, isSupported, onMessage } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging.js";
-import { fromCloudEntry, sameEntry, toCloudEntry } from "./cloud-entry.js?v=0.21.89";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.89";
+import { fromCloudEntry, sameEntry, toCloudEntry } from "./cloud-entry.js?v=0.21.90";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.90";
 
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
 const VAPID_KEY = "BHyc8Ne9wyaAFoju-9FNG5_qCXPOLSQhHhsfye9bdFlAv3zdLfAvjcvb29Cyrtj80kSq7gJ3qGJ9k3Mb_EqYt_o";
@@ -56,6 +56,7 @@ export function createCloudSync({ notify }) {
   let unsubscribeSettings = null;
   let unsubscribeNotificationSettings = null;
   let unsubscribeShoppingList = null;
+  let unsubscribeShortcuts = null;
   let callbacks = {};
   let messaging = null;
   let currentPushToken = "";
@@ -257,11 +258,24 @@ export function createCloudSync({ notify }) {
     // listas con nombre) — normalizeShoppingState (js/shopping.js) decide
     // cómo migrarlo, no este módulo de sincronización.
     unsubscribeShoppingList = onSnapshot(shoppingListDocument(), snapshot => callbacks.onShoppingState?.(snapshot.exists() ? snapshot.data() : null), error => callbacks.onShoppingListError?.(error));
+    unsubscribeShortcuts?.();
+    // Igual que la lista de la compra: se pasa el array de accesos tal cual
+    // viene del documento (o null si nunca se ha guardado nada todavía),
+    // sin normalizar aquí — normalizeShortcuts (js/shortcuts.js) decide qué
+    // hacer con eso, incluida la migración inicial descrita en app.js.
+    unsubscribeShortcuts = onSnapshot(shortcutsDocument(), snapshot => callbacks.onShortcuts?.(snapshot.exists() ? snapshot.data().items : null), error => callbacks.onShortcutsError?.(error));
   }
 
   async function saveShoppingState(state) {
     if (!user || !db) throw new Error("Inicia sesión en Angeli para guardar la lista de la compra");
     await setDoc(shoppingListDocument(), state);
+    await waitForPendingWrites(db);
+    return true;
+  }
+
+  async function saveShortcuts(items) {
+    if (!user || !db) throw new Error("Inicia sesión en Angeli para guardar los accesos directos");
+    await setDoc(shortcutsDocument(), { items });
     await waitForPendingWrites(db);
     return true;
   }
@@ -275,6 +289,8 @@ export function createCloudSync({ notify }) {
     unsubscribeNotificationSettings = null;
     if (unsubscribeShoppingList) unsubscribeShoppingList();
     unsubscribeShoppingList = null;
+    if (unsubscribeShortcuts) unsubscribeShortcuts();
+    unsubscribeShortcuts = null;
   }
 
   function entriesCollection() {
@@ -303,5 +319,10 @@ export function createCloudSync({ notify }) {
     return doc(db, "users", user.uid, "settings", "shopping");
   }
 
-  return { initialize, session, isSignedIn, getAuthToken, connect, disconnect, syncNotes, saveNoteSettings, saveNotificationSettings, saveShoppingState, pushStatus, enablePush, disablePush, schedulePush, cancelPush, testPush };
+  function shortcutsDocument() {
+    if (!user || !db) throw new Error("Sesión de Angeli no disponible");
+    return doc(db, "users", user.uid, "settings", "shortcuts");
+  }
+
+  return { initialize, session, isSignedIn, getAuthToken, connect, disconnect, syncNotes, saveNoteSettings, saveNotificationSettings, saveShoppingState, saveShortcuts, pushStatus, enablePush, disablePush, schedulePush, cancelPush, testPush };
 }

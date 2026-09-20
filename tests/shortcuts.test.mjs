@@ -60,3 +60,38 @@ test("accesos directos: consultas y llamadas ejecutan la búsqueda sin tarjeta i
   assert.match(app, /shortcutContext\?\.direct&&interpretation\.intent==="contact\.call"[\s\S]*google\.searchContact\(entry\)/);
   assert.match(worker, /\.\/js\/shortcuts\.js\?v=/);
 });
+
+// Regresión real reportada por el propietario: el móvil tenía 7 accesos
+// directos y el ordenador (PWA) solo 3 — cada dispositivo los guardaba
+// únicamente en su propio localStorage, sin sincronizar nunca entre sí
+// (a diferencia de la lista de la compra o los ajustes de notas, que sí
+// viven en Firestore). Ahora cada cambio se sube también a
+// users/{uid}/settings/shortcuts, con la misma migración transparente que
+// ya usa la lista de la compra: si la nube no tiene nada guardado todavía,
+// se sube lo que ya hubiera en este dispositivo en vez de perderlo.
+test("accesos directos: se sincronizan con Firestore igual que la lista de la compra", () => {
+  const app = readFileSync(new URL("../js/app.js", import.meta.url), "utf8");
+  const firebase = readFileSync(new URL("../js/firebase.js", import.meta.url), "utf8");
+  assert.match(firebase, /function shortcutsDocument\(\)/);
+  assert.match(firebase, /"settings",\s*"shortcuts"/);
+  assert.match(firebase, /async function saveShortcuts\(items\)/);
+  assert.match(firebase, /onSnapshot\(shortcutsDocument\(\)/);
+  assert.match(firebase, /saveNoteSettings,\s*saveNotificationSettings,\s*saveShoppingState,\s*saveShortcuts/, "saveShortcuts debe exportarse igual que el resto de ajustes sincronizados");
+  const saveShortcutsSource = app.match(/function saveShortcuts\(\)\{[\s\S]*?\n\}/)?.[0] || "";
+  assert.ok(saveShortcutsSource, "saveShortcuts debe existir en app.js");
+  assert.match(saveShortcutsSource, /cloud\.saveShortcuts\(shortcuts\)/, "cada guardado local debe subirse también a la nube");
+  assert.match(app, /onShortcuts:remote=>\{if\(Array\.isArray\(remote\)\)/, "si la nube ya tiene accesos guardados, deben ganar sobre los locales de este dispositivo");
+  assert.match(app, /else void cloud\.saveShortcuts\(shortcuts\)\.catch/, "si la nube está vacía, se sube lo que ya hubiera en este dispositivo en vez de perderlo");
+});
+
+// Regresión real reportada por el propietario: con más accesos precargados,
+// la fila con scroll horizontal escondía la mayoría fuera de la pantalla y
+// obligaba a desplazarse para verlos todos. Ahora la fila envuelve en varias
+// líneas para que todos queden visibles sin desplazamiento.
+test("accesos directos: la fila envuelve en vez de desplazarse horizontalmente", () => {
+  const css = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+  const shortcutsCss = css.match(/\.shortcuts\{[^}]*\}/)?.[0] || "";
+  assert.ok(shortcutsCss, "debe existir la regla .shortcuts");
+  assert.match(shortcutsCss, /flex-wrap:wrap/);
+  assert.doesNotMatch(shortcutsCss, /overflow-x:auto/);
+});

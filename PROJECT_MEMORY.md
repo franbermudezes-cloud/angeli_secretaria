@@ -1,5 +1,19 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-20 — Accesos directos sincronizados entre dispositivos V0.21.90
+
+El propietario reportó que el móvil tenía 7 accesos directos y el ordenador (PVA/PWA) solo 3, y que además quería que editar en un sitio (añadir o eliminar) se reflejara en el otro — "si yo elimino en un sitio, se quitan los dos sitios; y si agrego en un sitio, se agrega en el otro".
+
+**Causa raíz**: `readShortcuts()`/`writeShortcuts()` (`js/storage.js`) solo leen y escriben `localStorage`, con clave `angeli_secretaria_shortcuts_v1`. A diferencia de la lista de la compra (`users/{uid}/settings/shopping`) o los ajustes de notas/avisos (`users/{uid}/settings/notes` y `.../notifications`), los accesos directos nunca se subían a Firestore — cada dispositivo llevaba su propia copia local, sin ninguna relación entre sí. El "7 vs 3" no era un fallo de sincronización fallando: es que nunca hubo sincronización en absoluto.
+
+**Arreglo con el mismo patrón ya usado para el resto de ajustes**: nuevo documento `users/{uid}/settings/shortcuts` (`{items:[...]}`, ya autorizado por `firestore.rules` sin necesidad de desplegar nada — la regla existente cubre cualquier documento bajo `settings`), con `saveShortcuts(items)` y una suscripción `onSnapshot` igual que `noteSettingsDocument`/`shoppingListDocument`. `localStorage` se mantiene como caché de arranque (para pintar los accesos antes de que la sesión de Firestore esté lista), pero deja de ser la fuente de verdad.
+
+**Migración transparente al primer login de cada cuenta**: si el snapshot remoto no existe todavía (`onShortcuts` recibe `null`), se sube lo que ya hubiera en este dispositivo (`cloud.saveShortcuts(shortcuts)`) en vez de sobrescribirlo con la lista vacía por defecto — mismo patrón que `normalizeShoppingState` uso para migrar el formato antiguo de la lista de la compra. Si el remoto SÍ existe (aunque sea con menos accesos que los locales), gana el remoto: es la fuente compartida. **Limitación aceptada conscientemente**: si dos dispositivos hacen este primer login "en paralelo" (los dos con la nube vacía a la vez), cada uno sube su propia copia local y gana el último en escribir — no hay resolución de conflicto de por medio, igual que ningún otro punto de sincronización de este proyecto la tiene; caso límite raro (solo ocurre una vez, en el primer login de una cuenta nueva) frente a la complejidad de resolverlo.
+
+**Segundo problema en el mismo reporte, ya resuelto de una vez**: con más accesos ahora sincronizados y visibles, la fila `.shortcuts` con `overflow-x:auto` (desplazamiento horizontal) escondía la mayoría fuera de la pantalla — "que se vean todos, no haya que desplazarse". Cambiado a `flex-wrap:wrap` para que la fila crezca hacia abajo en vez de hacia los lados; verificado en el navegador sandbox a 375px de ancho que los 8 botones (7 accesos + "＋") caben en varias líneas sin desbordar.
+
+**Cobertura de test**: `tests/shortcuts.test.mjs` ampliado — comprobación de código fuente (mismo patrón que el resto de regresiones de este proyecto) de que `saveShortcuts()` en `js/app.js` sube a `cloud.saveShortcuts`, que la migración solo sube si la nube viene vacía, y que `.shortcuts` ya no usa `overflow-x:auto`. La lógica de sincronización en sí (el snapshot de Firestore, la migración en el primer login real) no tiene test automatizado — vive en `js/firebase.js`, acoplado al SDK de Firestore, mismo patrón que el resto de sincronización de este proyecto, que nunca ha tenido test automatizado por esa misma razón.
+
 ## 2026-09-20 — Dietario: rango "Pendientes/Anteriores" y botón "+" para añadir V0.21.89
 
 El propietario pidió dos cosas para el Dietario en el mismo mensaje: (1) un rango "pendientes o anteriores" además de Hoy/Esta semana/Todo, y (2) un "+" con desplegable dentro del propio Dietario para añadir sin salir a buscar el acceso.
