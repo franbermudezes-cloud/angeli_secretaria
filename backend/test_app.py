@@ -450,6 +450,36 @@ class InterpretEndpointTests(unittest.TestCase):
         self.assertFalse(deleted["exists"])
         os.environ.pop("ALLOWED_FIREBASE_EMAILS", None)
 
+    def test_calendar_delete_of_already_gone_event_succeeds(self):
+        # Completar o cancelar un aviso cuyo evento ya se había borrado en
+        # Calendar (a mano, o en un intento anterior) devolvía 404/410, el
+        # cliente lo trataba como fallo real y el recordatorio quedaba
+        # atascado para siempre: reintentar chocaba una y otra vez con el
+        # mismo evento inexistente. Un delete que ya no encuentra el recurso
+        # debe ser éxito, porque el estado deseado ya se cumple.
+        from google_sessions import GoogleResourceNotFound
+
+        class FakeSessions:
+            def api(self, integration, method, url, body=None):
+                if url.endswith("/already-gone"):
+                    raise GoogleResourceNotFound(404)
+                return {}
+
+        app.set_test_dependencies(
+            lambda text, now, timezone: VALID_RESPONSE.copy(),
+            lambda token: {"uid": "approved-sub", "email": "owner@example.com", "email_verified": True},
+            lambda: FakeSessions(),
+        )
+        os.environ.pop("ANGELI_AI_DEV_BYPASS_AUTH", None)
+        os.environ["ALLOWED_FIREBASE_EMAILS"] = "owner@example.com"
+        status, result = request_path("/google", {"integration": "calendar", "action": "delete", "eventId": "already-gone"}, "Bearer test")
+        self.assertEqual(status, "200 OK")
+        self.assertTrue(result["alreadyDeleted"])
+        status, result = request_path("/google", {"integration": "calendar", "action": "delete", "eventId": "still-there"}, "Bearer test")
+        self.assertEqual(status, "200 OK")
+        self.assertNotIn("alreadyDeleted", result)
+        os.environ.pop("ALLOWED_FIREBASE_EMAILS", None)
+
     def test_calendar_failure_is_not_reported_as_an_empty_result(self):
         class FailingSessions:
             def api(self, integration, method, url, body=None):
