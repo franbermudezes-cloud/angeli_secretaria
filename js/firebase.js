@@ -23,12 +23,14 @@ import {
   doc,
   getFirestore,
   onSnapshot,
+  runTransaction,
   setDoc,
   waitForPendingWrites
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 import { deleteToken, getMessaging, getToken, isSupported, onMessage } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging.js";
-import { fromCloudEntry, sameEntry, toCloudEntry } from "./cloud-entry.js?v=0.22.12";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.12";
+import { fromCloudEntry, sameEntry, toCloudEntry } from "./cloud-entry.js?v=0.22.13";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.13";
+import { applyShortcutsDiff, diffShortcuts } from "./shortcuts.js?v=0.22.13";
 
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
 const VAPID_KEY = "BHyc8Ne9wyaAFoju-9FNG5_qCXPOLSQhHhsfye9bdFlAv3zdLfAvjcvb29Cyrtj80kSq7gJ3qGJ9k3Mb_EqYt_o";
@@ -281,11 +283,30 @@ export function createCloudSync({ notify }) {
     return true;
   }
 
-  async function saveShortcuts(items, hidden = false) {
+  // Real reportado: dos móviles editando los accesos directos casi a la vez
+  // (uno crea uno, el otro borra otro) — antes esto era un setDoc() que
+  // sobrescribía {items,hidden} entero, así que el segundo guardado pisaba
+  // sin avisar el cambio del primero. Ahora se recibe también `previous`
+  // (los accesos tal y como estaban en ESTE dispositivo antes de la
+  // edición local) para calcular qué cambió aquí, y una transacción lee la
+  // copia más reciente de la nube y le aplica solo esos cambios — así el
+  // acceso que haya añadido o borrado el otro móvil mientras tanto no se
+  // pierde. Devuelve el resultado ya fusionado para que app.js actualice su
+  // copia local con lo que de verdad quedó guardado (puede incluir cambios
+  // del otro dispositivo que este todavía no tenía).
+  async function saveShortcuts(previous, items, hidden = false) {
     if (!user || !db) throw new Error("Inicia sesión en Angeli para guardar los accesos directos");
-    await setDoc(shortcutsDocument(), { items, hidden });
+    const diff = diffShortcuts(previous, items);
+    const ref = shortcutsDocument();
+    const merged = await runTransaction(db, async transaction => {
+      const snapshot = await transaction.get(ref);
+      const remoteItems = snapshot.exists() && Array.isArray(snapshot.data().items) ? snapshot.data().items : [];
+      const mergedItems = applyShortcutsDiff(remoteItems, diff);
+      transaction.set(ref, { items: mergedItems, hidden });
+      return mergedItems;
+    });
     await waitForPendingWrites(db);
-    return true;
+    return merged;
   }
 
   function stopListening() {

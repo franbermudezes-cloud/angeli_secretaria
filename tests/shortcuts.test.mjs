@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { DEFAULT_SHORTCUTS, normalizeShortcuts, routeShortcutIntent, shortcutPrefix, shortcutSemantics, shortcutType } from "../js/shortcuts.js";
+import { DEFAULT_SHORTCUTS, applyShortcutsDiff, diffShortcuts, normalizeShortcuts, routeShortcutIntent, shortcutPrefix, shortcutSemantics, shortcutType } from "../js/shortcuts.js";
 
 test("una petición normal sin acceso directo no intenta leer action de null", () => {
   assert.equal(shortcutType(null), null);
@@ -88,14 +88,15 @@ test("accesos directos: se sincronizan con Firestore igual que la lista de la co
   const firebase = readFileSync(new URL("../js/firebase.js", import.meta.url), "utf8");
   assert.match(firebase, /function shortcutsDocument\(\)/);
   assert.match(firebase, /"settings",\s*"shortcuts"/);
-  assert.match(firebase, /async function saveShortcuts\(items, hidden = false\)/);
+  assert.match(firebase, /async function saveShortcuts\(previous, items, hidden = false\)/, "debe recibir también la copia previa local para poder calcular qué cambió de verdad y fusionarlo por id, en vez de sobrescribir el documento entero");
+  assert.match(firebase, /runTransaction\(db, async transaction =>/, "la fusión debe leer la copia más reciente de la nube dentro de una transacción antes de escribir, para no perder un cambio del otro dispositivo");
   assert.match(firebase, /onSnapshot\(shortcutsDocument\(\)/);
   assert.match(firebase, /saveNoteSettings,\s*saveNotificationSettings,\s*saveShoppingState,\s*saveShortcuts/, "saveShortcuts debe exportarse igual que el resto de ajustes sincronizados");
   const saveShortcutsSource = app.match(/function saveShortcuts\(\)\{[\s\S]*?\n\}/)?.[0] || "";
   assert.ok(saveShortcutsSource, "saveShortcuts debe existir en app.js");
-  assert.match(saveShortcutsSource, /cloud\.saveShortcuts\(shortcuts,shortcutsHidden\)/, "cada guardado local debe subirse también a la nube, junto con si está oculta la fila");
+  assert.match(saveShortcutsSource, /cloud\.saveShortcuts\(previous,shortcuts,shortcutsHidden\)/, "cada guardado local debe subirse también a la nube junto con la copia previa (para poder fusionar), y si está oculta la fila");
   assert.match(app, /onShortcuts:remote=>\{if\(remote&&Array\.isArray\(remote\.items\)\)/, "si la nube ya tiene accesos guardados, deben ganar sobre los locales de este dispositivo");
-  assert.match(app, /else void cloud\.saveShortcuts\(shortcuts,shortcutsHidden\)\.catch/, "si la nube está vacía, se sube lo que ya hubiera en este dispositivo en vez de perderlo");
+  assert.match(app, /else void cloud\.saveShortcuts\(\[\],shortcuts,shortcutsHidden\)\.then/, "si la nube está vacía, se sube lo que ya hubiera en este dispositivo (como altas) en vez de perderlo");
 });
 
 // Pedido explícito del propietario: poder dejar la pantalla principal
@@ -175,4 +176,66 @@ test("accesos rápidos nuevos para llamar y WhatsApp reutilizan los mismos DEFAU
   assert.match(app, /\$\("quickWhatsappBtn"\)\.onclick=\(\)=>prepareShortcut\(DEFAULT_SHORTCUTS\[3\]\)/);
   assert.equal(DEFAULT_SHORTCUTS[2].action, "contact.call");
   assert.equal(DEFAULT_SHORTCUTS[3].action, "whatsapp.compose");
+});
+
+// Real reportado: dos móviles con Angeli abierto a la vez tocando los
+// accesos directos casi al mismo tiempo — como el guardado en la nube era un
+// setDoc() que sobrescribía {items,hidden} entero, el que guardaba en
+// segundo lugar borraba sin avisar el cambio del primero (un acceso añadido
+// o eliminado en el otro dispositivo desaparecía sin más). La corrección da
+// a cada acceso un `id` estable y fusiona por id en vez de sobrescribir.
+test("accesos directos: los accesos base y los presets siempre tienen un id estable", () => {
+  assert.ok(DEFAULT_SHORTCUTS.every(item => typeof item.id === "string" && item.id.length > 0));
+  const idsA = normalizeShortcuts(null).map(item => item.id);
+  const idsB = normalizeShortcuts(null).map(item => item.id);
+  assert.deepEqual(idsA, idsB, "dos dispositivos sin nada guardado deben caer en los mismos ids de DEFAULT_SHORTCUTS, o la primera sincronización los duplicaría");
+});
+
+test("accesos directos: un acceso antiguo sin id guardado en local recibe uno estable (no cambia en cada normalización)", () => {
+  const legacy = [{ label: "Mis citas", command: "¿Qué tengo esta semana?" }];
+  const first = normalizeShortcuts(legacy);
+  const second = normalizeShortcuts(first);
+  assert.equal(first[0].id, second[0].id);
+});
+
+test("diffShortcuts: detecta altas, bajas, ediciones y el orden deseado por id", () => {
+  const before = [
+    { id: "a", label: "Uno" },
+    { id: "b", label: "Dos" }
+  ];
+  const after = [
+    { id: "b", label: "Dos editado" },
+    { id: "c", label: "Tres" }
+  ];
+  const diff = diffShortcuts(before, after);
+  assert.deepEqual(diff.removed, ["a"]);
+  assert.deepEqual(diff.added.map(item => item.id), ["c"]);
+  assert.deepEqual(diff.edited.map(item => item.id), ["b"]);
+  assert.deepEqual(diff.order, ["b", "c"]);
+});
+
+test("fusión de accesos directos: un acceso añadido en otro móvil no se pierde al guardar un cambio local", () => {
+  // Los dos móviles arrancan con la misma base ya sincronizada.
+  const base = [{ id: "a", label: "Uno" }, { id: "b", label: "Dos" }];
+
+  // Móvil 1 borra "Dos" (edición local, todavía no ha llegado a la nube).
+  const phone1Local = [{ id: "a", label: "Uno" }];
+  const phone1Diff = diffShortcuts(base, phone1Local);
+
+  // Mientras tanto, móvil 2 ya guardó en la nube un acceso nuevo "c".
+  const remoteAfterPhone2 = [{ id: "a", label: "Uno" }, { id: "b", label: "Dos" }, { id: "c", label: "Tres" }];
+
+  // Móvil 1 guarda su cambio: debe fusionarse sobre lo que YA hay en la
+  // nube (con el "c" de móvil 2), no sobre su propia copia desactualizada.
+  const merged = applyShortcutsDiff(remoteAfterPhone2, phone1Diff);
+  assert.deepEqual(merged.map(item => item.id), ["a", "c"], "debe faltar \"b\" (lo borró móvil 1) pero conservar \"c\" (lo añadió móvil 2, que móvil 1 ni siquiera conocía)");
+});
+
+test("fusión de accesos directos: dos altas simultáneas en dispositivos distintos coexisten", () => {
+  const base = [{ id: "a", label: "Uno" }];
+  const phone1Local = [{ id: "a", label: "Uno" }, { id: "x", label: "Nuevo de móvil 1" }];
+  const phone1Diff = diffShortcuts(base, phone1Local);
+  const remoteAfterPhone2 = [{ id: "a", label: "Uno" }, { id: "y", label: "Nuevo de móvil 2" }];
+  const merged = applyShortcutsDiff(remoteAfterPhone2, phone1Diff);
+  assert.deepEqual(merged.map(item => item.id).sort(), ["a", "x", "y"]);
 });

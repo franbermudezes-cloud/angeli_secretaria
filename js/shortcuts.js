@@ -1,14 +1,20 @@
-import { contactQuery } from "./classifier.js?v=0.22.12";
-import { calendarQueryRange, temporalData } from "./temporal.js?v=0.22.12";
+import { contactQuery } from "./classifier.js?v=0.22.13";
+import { calendarQueryRange, temporalData } from "./temporal.js?v=0.22.13";
 
+// Los accesos por defecto llevan un `id` fijo (no generado al vuelo) para
+// que dos dispositivos que arrancan sin nada guardado todavía — y por tanto
+// caen los dos en DEFAULT_SHORTCUTS como base — terminen de acuerdo en qué
+// id le corresponde a cada uno. Si el id se generase al azar en cada
+// normalizeShortcuts(), la fusión con la nube (ver mergeShortcuts) los
+// trataría como accesos distintos y los duplicaría en cuanto sincronizasen.
 export const DEFAULT_SHORTCUTS = [
-  { label: "🗓️ Hoy", command: "¿Qué tengo hoy?", action: "calendar.query", direct: true },
-  { label: "🗓️ Próxima semana", command: "¿Qué tengo la semana que viene?", action: "calendar.query", direct: true },
-  { label: "📞 Llamar contacto", prompt: "Di el nombre del contacto.", prefix: "Llama a ", dictate: true, action: "contact.call", direct: true },
-  { label: "💬 WhatsApp", prompt: "Di el contacto y el mensaje.", prefix: "Envía un WhatsApp a ", dictate: true, action: "whatsapp.compose" },
-  { label: "＋ Nuevo evento", prompt: "Cuéntame el evento: fecha, hora y lugar.", prefix: "Añade al calendario ", action: "calendar.create" },
-  { label: "⏰ Recordatorio", prompt: "¿Qué quieres que te recuerde y cuándo?", prefix: "Recuérdame ", action: "reminder.create" },
-  { label: "✕ Cancelar evento", prompt: "¿Qué evento quieres cancelar?", prefix: "Cancela ", action: "calendar.delete", direct: true }
+  { id: "default-hoy", label: "🗓️ Hoy", command: "¿Qué tengo hoy?", action: "calendar.query", direct: true },
+  { id: "default-proxima-semana", label: "🗓️ Próxima semana", command: "¿Qué tengo la semana que viene?", action: "calendar.query", direct: true },
+  { id: "default-llamar-contacto", label: "📞 Llamar contacto", prompt: "Di el nombre del contacto.", prefix: "Llama a ", dictate: true, action: "contact.call", direct: true },
+  { id: "default-whatsapp", label: "💬 WhatsApp", prompt: "Di el contacto y el mensaje.", prefix: "Envía un WhatsApp a ", dictate: true, action: "whatsapp.compose" },
+  { id: "default-nuevo-evento", label: "＋ Nuevo evento", prompt: "Cuéntame el evento: fecha, hora y lugar.", prefix: "Añade al calendario ", action: "calendar.create" },
+  { id: "default-recordatorio", label: "⏰ Recordatorio", prompt: "¿Qué quieres que te recuerde y cuándo?", prefix: "Recuérdame ", action: "reminder.create" },
+  { id: "default-cancelar-evento", label: "✕ Cancelar evento", prompt: "¿Qué evento quieres cancelar?", prefix: "Cancela ", action: "calendar.delete", direct: true }
 ];
 
 // Pedido explícito del propietario: "como había antes, que pudiera elegir
@@ -26,9 +32,50 @@ export const SHORTCUT_PRESETS = [
   { label: "🗓️ Esta semana", command: "¿Qué tengo esta semana?", action: "calendar.query", direct: true }
 ];
 
+const makeShortcutId = () => `sc-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+
 export function normalizeShortcuts(saved) {
   const source = Array.isArray(saved) ? saved : DEFAULT_SHORTCUTS;
-  return source.map(shortcut => ({ ...shortcut, ...shortcutSemantics(shortcut) }));
+  return source.map(shortcut => ({ ...shortcut, ...shortcutSemantics(shortcut), id: shortcut?.id || makeShortcutId() }));
+}
+
+// Real reportado: dos móviles con Angeli abierto a la vez y cada uno tocando
+// sus accesos directos (uno crea uno nuevo, el otro borra otro) — como el
+// guardado en la nube era un setDoc() que sobrescribía el documento entero,
+// el que guardaba en segundo lugar borraba sin avisar el cambio del primero.
+// La solución no puede ser "fusionar objetos": sin un id estable no hay
+// forma de saber si dos accesos distintos son "el mismo, editado" o son dos
+// accesos distintos que coinciden por casualidad, así que ahora cada acceso
+// lleva su `id` (ver normalizeShortcuts) y la fusión se hace por id:
+// diffShortcuts() calcula qué cambió en ESTE dispositivo desde la última vez
+// que se sincronizó (altas, bajas, ediciones y el orden deseado), y
+// applyShortcutsDiff() aplica exactamente esos cambios sobre la copia más
+// reciente que haya en la nube — así un acceso añadido en el otro móvil
+// mientras este estaba editando el suyo no se pierde, y viceversa.
+export function diffShortcuts(before = [], after = []) {
+  const beforeById = new Map(before.filter(item => item?.id).map(item => [item.id, item]));
+  const afterById = new Map(after.filter(item => item?.id).map(item => [item.id, item]));
+  const removed = before.filter(item => item?.id && !afterById.has(item.id)).map(item => item.id);
+  const added = after.filter(item => item?.id && !beforeById.has(item.id));
+  const edited = after.filter(item => {
+    const prior = item?.id ? beforeById.get(item.id) : null;
+    return prior && JSON.stringify(prior) !== JSON.stringify(item);
+  });
+  const order = after.filter(item => item?.id).map(item => item.id);
+  return { removed, added, edited, order };
+}
+
+export function applyShortcutsDiff(remote = [], diff) {
+  const removedIds = new Set(diff.removed);
+  let result = remote.filter(item => !removedIds.has(item.id));
+  result = result.map(item => diff.edited.find(edit => edit.id === item.id) || item);
+  const presentIds = new Set(result.map(item => item.id));
+  for (const item of diff.added) {
+    if (presentIds.has(item.id)) result = result.map(existing => (existing.id === item.id ? item : existing));
+    else { result.push(item); presentIds.add(item.id); }
+  }
+  const orderIndex = new Map(diff.order.map((id, index) => [id, index]));
+  return result.slice().sort((a, b) => (orderIndex.has(a.id) ? orderIndex.get(a.id) : Infinity) - (orderIndex.has(b.id) ? orderIndex.get(b.id) : Infinity));
 }
 
 export function shortcutSemantics(shortcut = {}) {
