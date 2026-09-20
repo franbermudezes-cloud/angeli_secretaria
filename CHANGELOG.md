@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.22.8 · Editar una nota desde su biblioteca ya no deja sin confirmación al guardar (auditoría, prioridad media)
+
+- **Causa raíz**: al guardar los cambios, siempre volvía a la pantalla de inicio sin mostrar nada — no importaba si habías abierto el editor desde la ficha de la nota o desde la propia lista.
+- **Corregido**: editar desde la ficha de una nota vuelve a esa misma ficha, ya actualizada; editar desde la lista de notas vuelve a la lista, ya refrescada.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: 1 prueba nueva en `tests/note-library.test.mjs`.
+
 ## V0.22.7 · Una subida con varios adjuntos que falla a medias ya no deja archivos huérfanos en Drive (auditoría, prioridad media)
 
 - **Causa raíz**: al añadir varios adjuntos a la vez, si el segundo (o el tercero) fallaba al subir a Drive, el primero ya subido nunca se borraba — quedaba huérfano, sin ninguna entrada que lo referenciara.

@@ -1,5 +1,15 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-20 — Editar una nota desde su biblioteca dejaba sin confirmación al guardar V0.22.8
+
+Tercer hallazgo de prioridad media de la auditoría completa que se corrige.
+
+**Causa raíz**: `editNoteFromLibrary(entry,onCancel)` tiene dos puntos de entrada — desde la ficha de una nota (`openNoteLibraryDetail`'s `onEdit`) y desde la propia lista de notas (`$("noteLibraryList")`'s acción "edit"). Ambos cierran la pantalla de origen ANTES de abrir el editor (`ui.closeNoteLibrary()`/similar), y ambos pasan un `onCancel` distinto y correcto para volver atrás si se cancela. Pero al GUARDAR con éxito, la función siempre hacía lo mismo sin importar desde dónde se había llamado: `ui.closeLayers();refreshNoteLibrary()` — `refreshNoteLibrary()` solo repinta el HTML interno de `#noteLibrary`, que en ese momento sigue oculto (se cerró antes de abrir el editor). Resultado: guardar los cambios de una nota siempre dejaba a la persona mirando la pantalla de inicio, sin ninguna nota, ficha ni lista visible que confirmara que el cambio se había aplicado.
+
+**Corrección**: `editNoteFromLibrary` gana un tercer parámetro, `onSaved(updated)`, que cada punto de entrada decide según su propio contexto — mismo patrón ya usado para `onCancel`. Desde la ficha de una nota: `onSaved:updated=>{entry=updated;ui.closeLayers();show()}` (vuelve a la misma ficha, ya con los datos nuevos, reutilizando la variable `entry` capturada en el cierre de `openNoteLibraryDetail`, igual que ya hace `onToggle` un poco más abajo en la misma función). Desde la lista de notas: se define `backToLibrary` una vez y se usa tanto para `onCancel` como para `onSaved` (cancelar o guardar llevan al mismo sitio: la lista, ya refrescada con `noteLibraryItems()`, que relee `notes` en vivo). Si no se pasa `onSaved` (nadie más llama a esta función hoy, pero se mantiene por compatibilidad), cae al comportamiento antiguo.
+
+**Cobertura de test**: `tests/note-library.test.mjs` ampliado — comprueba que `editNoteFromLibrary` acepta el tercer parámetro y lo usa cuando existe, y que los dos puntos de entrada reales pasan el `onSaved` correcto para su contexto.
+
 ## 2026-09-20 — Subida parcial de varios adjuntos dejaba huérfanos en Drive V0.22.7
 
 Segundo hallazgo de prioridad media de la auditoría completa que se corrige.
