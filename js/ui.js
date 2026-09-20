@@ -1,12 +1,12 @@
-import { typeLabel } from "./classifier.js?v=0.21.95";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.95";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.95";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.95";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.95";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.95";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.21.95";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.21.95";
-import { groupDietarioByDay } from "./dietario.js?v=0.21.95";
+import { typeLabel } from "./classifier.js?v=0.21.96";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.96";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.96";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.96";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.96";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.96";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.21.96";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.21.96";
+import { groupDietarioByDay } from "./dietario.js?v=0.21.96";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -171,6 +171,10 @@ export function createUI({ getMedia }) {
       ]
     });
     $("actionModal").classList.add("conversation-modal");
+    // Mismo ajuste que showInteractionQuestion: el propietario pidió que
+    // cualquier cuadro de texto de un modal quede con el cursor puesto en
+    // cuanto se abre, en vez de exigir tocarlo primero para poder escribir.
+    draft.focus();
   }
 
   function updateDraft(value) {
@@ -184,7 +188,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.95";
+    image.src = "assets/angeli-welcome.gif?v=0.21.96";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -666,6 +670,7 @@ export function createUI({ getMedia }) {
     const content = document.createElement("div"); content.className = "conversation-question"; content.append(draft, controls);
     openModal({ title: isReminderTitle ? "Cambiar aviso" : isTitle ? "Cambiar título" : isLocation ? (details.location ? "Cambiar ubicación" : "Añadir ubicación") : details.description ? "Cambiar descripción" : "Añadir descripción", lead: isReminderTitle ? "Esto será lo que veas en el aviso anterior." : isTitle ? "Esto será lo que veas en Calendar y en el aviso del móvil." : isLocation ? "Este recinto o dirección se guardará en el campo Ubicación de Calendar." : "Es opcional. Puedes dictarla o dejarla vacía.", body: content, actions: [{ label: "Volver", kind: "secondary", onClick: onCancel }] });
     $("actionModal").classList.add("conversation-modal");
+    draft.focus();
   }
 
   function showCalendarDateTimeEditor(note,{onSave,onCancel}={}){
@@ -681,6 +686,7 @@ export function createUI({ getMedia }) {
     content.append(dateLabel,timeLabel,save);
     openModal({title:"Cambiar fecha y hora",lead:"Corrige cuándo debe aparecer en Calendar.",body:content,actions:[{label:"Volver",kind:"secondary",onClick:onCancel}]});
     $("actionModal").classList.add("conversation-modal");
+    date.focus();
   }
 
   function showWhatsAppEditor(note, { onSave, onCancel, onMic } = {}) {
@@ -696,6 +702,7 @@ export function createUI({ getMedia }) {
       { label: "Guardar texto", kind: "confirm", onClick: () => { const value=draft.value.trim(); if(!value){notify("Escribe el mensaje");return} onSave?.(value); } }
     ] });
     $("actionModal").classList.add("conversation-modal");
+    draft.focus();
   }
 
   function showWhatsAppPhoneEditor(note, { onSave, onCancel } = {}) {
@@ -707,6 +714,7 @@ export function createUI({ getMedia }) {
       { label: "Volver", kind: "secondary", onClick: onCancel },
       { label: "Usar este número", kind: "confirm", onClick: () => { if(!whatsappPhone(phone.value)){notify("Revisa el número y añade el prefijo internacional");return} onSave?.(phone.value.trim()); } }
     ] });
+    phone.focus();
   }
 
   function showInteractionQuestion(note, { onSend, onMic, onCancel, value = "" } = {}) {

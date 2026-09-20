@@ -457,7 +457,11 @@ test('el modal conversacional conserva micrófono propio y cabe en el viewport v
   const draft=elements.get('modalBody').children[0];
   assert.deepEqual(actions.map(button=>button.textContent),['Ahora no','🎙️ Hablar','➤ Enviar']);
   assert.ok(elements.get('actionModal').classList.contains('conversation-modal'));
-  assert.equal(draft.focusCount,0);
+  // Real reportado por el propietario: el cuadro de texto se abría sin el
+  // cursor puesto, así que escribir a mano exigía tocarlo primero. Ahora
+  // showDraft (y el resto de modales con su propio cuadro de dictado) deja
+  // el cursor puesto en cuanto se abre.
+  assert.equal(draft.focusCount,1);
   actions[1].onclick();
   assert.equal(draft.blurCount,1);
   assert.equal(spoken,1);
@@ -473,6 +477,7 @@ test('evento y recordatorio comparten ficha editable sin añadir pasos al guarda
     set innerHTML(value){this.children=[];this.html=value}
     append(...children){this.children.push(...children)}
     blur(){}
+    focus(){}
   }
   const elements=new Map(),old=globalThis.document;
   globalThis.document={createElement:tag=>new Element(tag),getElementById:id=>{if(!elements.has(id))elements.set(id,new Element());return elements.get(id)}};

@@ -157,4 +157,19 @@ const showInteractionQuestionSource = ui.match(/function showInteractionQuestion
 assert.ok(showInteractionQuestionSource, "showInteractionQuestion debe existir");
 assert.match(showInteractionQuestionSource, /draft\.focus\(\);/, "el cuadro de texto debe quedar enfocado en cuanto se abre el modal");
 
+// El propietario avisó de que este mismo fallo (cuadro de texto sin el
+// cursor puesto) se repetiría en cualquier otro modal con su propio campo
+// de escritura si no se corregía en todos a la vez — no solo en el de la
+// pregunta de aclaración.
+for (const [name, focusTarget] of [
+  ["showCalendarFieldEditor", "draft"],
+  ["showCalendarDateTimeEditor", "date"],
+  ["showWhatsAppEditor", "draft"],
+  ["showWhatsAppPhoneEditor", "phone"]
+]) {
+  const source = ui.match(new RegExp(`function ${name}\\([\\s\\S]*?\\n  \\}`))?.[0] || "";
+  assert.ok(source, `${name} debe existir`);
+  assert.match(source, new RegExp(`${focusTarget}\\.focus\\(\\);`), `${name} debe dejar su campo enfocado en cuanto se abre`);
+}
+
 console.log("conversation-mode: ok");
