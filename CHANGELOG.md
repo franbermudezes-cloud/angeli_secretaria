@@ -1,5 +1,14 @@
 # Changelog
 
+## V0.21.89 · Dietario: rango "Pendientes/Anteriores" y botón "+" para añadir sin salir
+
+Pedido explícito del propietario, sin boceto previo (cambio acotado a un filtro y un botón dentro de una pantalla ya existente).
+
+- **Nuevo filtro de rango "Pendientes/Anteriores"** junto a Hoy/Esta semana/Todo: hasta ahora, cualquier evento o aviso con fecha pasada que seguía activo (no cancelado ni completado) desaparecía del Dietario sin que ningún filtro lo mostrara — ni siquiera "Todo", que solo mira hacia delante desde hoy. Este rango mira hacia atrás en el tiempo (de lo más reciente a lo más antiguo) para recuperar justo eso.
+- **Botón "+" dentro del propio Dietario**, junto a cerrar: abre el mismo desplegable de siempre (Añadir evento / Añadir aviso / Añadir nota / Añadir imagen / Añadir adjunto), cada uno reutilizando exactamente la misma función ya existente en cualquier otra parte de la app — sin tener que salir del Dietario a buscar el acceso.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: `tests/dietario.test.mjs` ampliado para cubrir el nuevo rango (orden de más reciente a más antiguo, y que no repite lo que ya enseñan los demás rangos) y la reutilización de las mismas funciones de siempre en el nuevo botón "+".
+
 ## V0.21.88 · Cuatro correcciones sobre el rediseño (revisión + reporte real del propietario)
 
 Revisión de `chatgpt-codex-connector` sobre la PR del rediseño (V0.21.87) más un aviso real del propietario probando la app ya con el nuevo footer.
