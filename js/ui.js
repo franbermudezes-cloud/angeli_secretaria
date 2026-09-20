@@ -1,12 +1,12 @@
-import { typeLabel } from "./classifier.js?v=0.21.86";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.86";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.86";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.86";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.86";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.86";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.21.86";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.21.86";
-import { groupDietarioByDay } from "./dietario.js?v=0.21.86";
+import { typeLabel } from "./classifier.js?v=0.21.88";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.21.88";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.21.88";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.21.88";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.21.88";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.21.88";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.21.88";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.21.88";
+import { groupDietarioByDay } from "./dietario.js?v=0.21.88";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -184,7 +184,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.21.86";
+    image.src = "assets/angeli-welcome.gif?v=0.21.88";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -1076,6 +1076,18 @@ export function createUI({ getMedia }) {
     if (!box) return; // el modal ya se cerró
     box.innerHTML = results.length ? results.map(shoppingSuggestionMarkup).join("") : '<div class="shopping-suggestions-empty">Sin resultados en Mercadona</div>';
   }
+  // Paso extra del mic de añadir rápido: si hay más de una lista, se
+  // pregunta a cuál antes de guardar (con una sola, se añade sin preguntar).
+  function showShoppingListChoice(lists, onChoose) {
+    openModal({
+      title: "¿A qué lista lo añado?",
+      lead: "Tienes varias listas de la compra.",
+      actions: [
+        ...lists.map(list => ({ label: `${list.name} · ${list.items.length} artículo${list.items.length === 1 ? "" : "s"}`, kind: "secondary", onClick: () => { closeLayers(); onChoose(list.id); } })),
+        { label: "Cancelar", kind: "secondary", onClick: closeLayers }
+      ]
+    });
+  }
   function setShoppingConfirmStatus(message) {
     const box = $("shoppingConfirmResults");
     if (box) box.innerHTML = `<div class="shopping-suggestions-empty">${esc(message)}</div>`;
@@ -1229,7 +1241,7 @@ export function createUI({ getMedia }) {
     $("conversationModeTranscript").scrollTop = $("conversationModeTranscript").scrollHeight;
   }
 
-  return { $, notify, setGoogleStatus, setPushStatus, setSyncStatus, showConnectionHealth, showNotificationSettings, render, openMediaLibrary, renderMediaLibrary, closeMediaLibrary, openNoteLibrary, renderNoteLibrary, closeNoteLibrary, openDietario, renderDietario, closeDietario, showDietarioDetail, openShoppingList, closeShoppingList, renderShoppingOverview, renderShoppingDetail, hideShoppingSuggestions, showShoppingSuggestionsMessage, renderShoppingSuggestions, setShoppingFallback, showShoppingAddConfirm, renderShoppingConfirmResults, setShoppingConfirmStatus, showMediaViewer, closeMediaViewer, showMediaEntryDetail, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showMediaContextEditor, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome, openConversationMode, closeConversationMode, setConversationStatus, addConversationTurn };
+  return { $, notify, setGoogleStatus, setPushStatus, setSyncStatus, showConnectionHealth, showNotificationSettings, render, openMediaLibrary, renderMediaLibrary, closeMediaLibrary, openNoteLibrary, renderNoteLibrary, closeNoteLibrary, openDietario, renderDietario, closeDietario, showDietarioDetail, openShoppingList, closeShoppingList, renderShoppingOverview, renderShoppingDetail, hideShoppingSuggestions, showShoppingSuggestionsMessage, renderShoppingSuggestions, setShoppingFallback, showShoppingAddConfirm, renderShoppingConfirmResults, setShoppingConfirmStatus, showShoppingListChoice, showMediaViewer, closeMediaViewer, showMediaEntryDetail, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showMediaContextEditor, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome, openConversationMode, closeConversationMode, setConversationStatus, addConversationTurn };
 }
 
 function esc(value) {

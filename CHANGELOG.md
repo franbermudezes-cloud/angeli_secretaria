@@ -1,5 +1,27 @@
 # Changelog
 
+## V0.21.88 · Cuatro correcciones sobre el rediseño (revisión + reporte real del propietario)
+
+Revisión de `chatgpt-codex-connector` sobre la PR del rediseño (V0.21.87) más un aviso real del propietario probando la app ya con el nuevo footer.
+
+- **Sin voz, ya no se quedaba sin forma de escribir**: con el compositor de texto fijo ocultado en el rediseño, `start()` salía sin hacer nada en un navegador sin `SpeechRecognition` — no había ninguna otra vía para escribir una instrucción a mano. Ahora siempre abre primero el modal de borrador (`openDraft()`) y solo omite arrancar el dictado si no hay reconocimiento de voz disponible.
+- **Un aviso push de recordatorio abría la app sin enseñar nada**: `focusPendingReminder()` intentaba hacer scroll hasta la entrada dentro de `#list`, que en el rediseño se quedó oculto para siempre. Ahora enseña la misma ficha (`ui.showEntryAction`) que ya se usa en el resto de la app para ver una entrada.
+- **El modal de "¿a qué lista lo añado?" se podía dejar abierto**: al elegir una lista no se cerraba el modal antes de añadir, así que un toque accidental de más podía añadir el artículo dos veces. Ahora cada opción cierra el modal (`closeLayers()`) antes de continuar.
+- **Reportado en real por el propietario**: al tocar "⋮" en una lista de la compra para cambiar el nombre o eliminarla, el modal salía oculto detrás de la propia pantalla de la lista — parecía que no había pasado nada hasta cerrar la lista, momento en el que aparecía. Causa raíz: el mismo problema de z-index ya arreglado para el Dietario en V0.21.x — `#shoppingLibrary` comparte la clase `.media-library` (z-index:8), por delante de `.action-modal` (z-index:6), y el menú rápido de la lista abre ese modal sin cerrar antes la pantalla de fondo. Corregido bajando `#shoppingLibrary` a z-index:4, igual que ya se hizo con `#dietarioLibrary`.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: nueva prueba en `tests/shopping.test.mjs` que comprueba en `styles.css` que `#shoppingLibrary` queda por detrás de `.action-modal`, igual que la ya existente para `#dietarioLibrary`.
+
+## V0.21.87 · Rediseño de la pantalla principal
+
+Pedido explícitamente por el propietario, con un boceto visual aprobado antes de tocar código.
+
+- **Mic central + dos laterales**: a la izquierda, un botón nuevo "🛒 añadir rápido" — se dice solo el producto y va directo al buscador de Mercadona (con el modal de confirmación ya existente), preguntando a qué lista añadirlo si hay más de una. A la derecha, el modo conversación pasa de botón de texto a círculo, a juego con el resto.
+- **Se quita el feed de "Conversación" de la vista principal** — sigue guardándose todo igual por dentro (Firestore), solo deja de ocupar la pantalla.
+- **Accesos rápidos nuevos** debajo de los atajos: Notas, Recordatorios y Calendario — cada uno abre el mismo compositor de siempre para crear uno nuevo, solo cambia el camino para llegar.
+- **Footer nuevo**: fuera el cuadro de texto con micrófono y flecha de enviar. Se quedan Cámara, Fotos y Archivo como iconos directos (antes escondidos tras el "+"), y un botón destacado en medio para crear un evento de Calendar directamente.
+- Todas las funciones son las mismas de siempre — solo cambian los accesos para llegar a ellas.
+- Sin cambios en el backend; no requiere redespliegue.
+
 ## V0.21.86 · Correcciones: dictado no disparaba la búsqueda, y la búsqueda no ignoraba acentos
 
 - Al tocar el micrófono del buscador de una lista y decir "café", no salía ningún resultado. Causa real: `target.value=...` asignado desde JavaScript durante el dictado nunca dispara un evento `input` nativo, así que el buscador (que reacciona a ese evento para lanzar la búsqueda en vivo) nunca se enteraba de que el texto había cambiado. Corregido despachando el evento `input` manualmente tras cada actualización del dictado — beneficia a cualquier campo dictado con `oninput` propio, no solo al buscador de la compra.

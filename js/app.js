@@ -1,25 +1,25 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.86";
-import{classify,actionData}from"./classifier.js?v=0.21.86";
-import{sendEntry}from"./sheets.js?v=0.21.86";
-import{createUI}from"./ui.js?v=0.21.86";
-import{createGoogleIntegration}from"./google.js?v=0.21.86";
-import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.21.86";
-import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,updateListItems}from"./shopping.js?v=0.21.86";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.86";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.86";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.86";
-import{createCloudSync}from"./firebase.js?v=0.21.86";
-import{createMediaService}from"./media.js?v=0.21.86";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.86";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.86";
-import{createAgendaActions}from"./agenda.js?v=0.21.86";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.86";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.86";
-import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.86";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.86";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.86";
-import{mediaLibraryItems}from"./media-library.js?v=0.21.86";
-import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.86";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts}from"./storage.js?v=0.21.88";
+import{classify,actionData}from"./classifier.js?v=0.21.88";
+import{sendEntry}from"./sheets.js?v=0.21.88";
+import{createUI}from"./ui.js?v=0.21.88";
+import{createGoogleIntegration}from"./google.js?v=0.21.88";
+import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.21.88";
+import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,updateListItems}from"./shopping.js?v=0.21.88";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.88";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.88";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.88";
+import{createCloudSync}from"./firebase.js?v=0.21.88";
+import{createMediaService}from"./media.js?v=0.21.88";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.88";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.88";
+import{createAgendaActions}from"./agenda.js?v=0.21.88";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.88";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.88";
+import{DEFAULT_SHORTCUTS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.88";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.88";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.88";
+import{mediaLibraryItems}from"./media-library.js?v=0.21.88";
+import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.88";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],pendingMediaContext=null,selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -47,15 +47,13 @@ function focusPendingReminder(){
   render();
   return;
  }
- const id=pendingReminderFocus;pendingReminderFocus=null;
+ pendingReminderFocus=null;
  history.replaceState(null,"",location.pathname);
- requestAnimationFrame(()=>{
-  const article=document.querySelector('[data-entry-id="'+CSS.escape(id)+'"]');
-  if(!article)return;
-  article.scrollIntoView({behavior:"smooth",block:"center"});
-  article.classList.add("entry-highlight");
-  setTimeout(()=>article.classList.remove("entry-highlight"),2600);
- });
+ // Real (encontrado en revisión): esto hacía scroll hasta la entrada dentro
+ // de #list, que ahora está oculto para siempre — tocar el aviso abría la
+ // app sin mostrar nada. Se enseña la misma ficha que ya se usa en el resto
+ // de la app para ver una entrada, en vez de depender del feed oculto.
+ ui.showEntryAction(target,google);
 }
 function autosize(){const text=$("text");text.style.height="auto";text.style.height=Math.min(text.scrollHeight,78)+"px"}
 function renderShortcuts(){$("shortcuts").innerHTML=shortcuts.map((shortcut,index)=>`<button class="shortcut" data-shortcut="${index}">${esc(shortcut.label)}</button>`).join("")+`<button class="shortcut add" id="shortcutAdd" aria-label="Crear acceso directo">＋</button>`}
@@ -70,7 +68,7 @@ function describePendingMedia(){return [...pendingImages,...pendingFiles].map(fi
 function askMediaContext(){
  ui.showMediaContextEditor({files:describePendingMedia(),context:pendingMediaContext,settings:noteSettings,onCancel:clearPendingMedia,onSave:values=>{pendingMediaContext=normalizeMediaContext(values,noteSettings);ui.closeLayers();ui.notify("Adjunto clasificado. Puedes añadir una instrucción o enviarlo.")}})
 }
-function prepareMedia(files,kind,message){if(kind==="image")pendingImages=files;else pendingFiles=files;ui.showImagePreview(pendingImages);$("attachmentChoices").classList.remove("show");ui.notify(message);askMediaContext()}
+function prepareMedia(files,kind,message){if(kind==="image")pendingImages=files;else pendingFiles=files;ui.showImagePreview(pendingImages);ui.notify(message);askMediaContext()}
 async function saveConfirmed(nextNotes,previousNotes=notes,{waitForServer=false}={}){if(!cloud.isSignedIn()){ui.notify("Inicia sesión en Angeli antes de guardar");return false}notes=nextNotes;render();ui.setSyncStatus({state:"pending"});const syncing=cloud.syncNotes(nextNotes,previousNotes);if(waitForServer){try{await syncing;return true}catch(error){ui.setSyncStatus({state:"error",error});ui.notify("La instrucción sigue pendiente de sincronizar. Revisa Datos en Ajustes.");return false}}void syncing.catch(error=>{ui.setSyncStatus({state:"error",error});ui.notify("La instrucción sigue pendiente de sincronizar. Revisa Datos en Ajustes.")});return true}
 function save(nextNotes,previousNotes=notes){void saveConfirmed(nextNotes,previousNotes);return true}
 const cloud=createCloudSync({notify:ui.notify});
@@ -272,7 +270,15 @@ async function cancelActive(entry){await saveConfirmed(notes.map(item=>item.id==
 function localInterpretation(text,type,active=null){const query=localReminderQuery(text);if(query&&!active)return query;const reminder=type==="reminder"&&!active,data={...actionData(text,type),...temporalData(text,new Date(),{inferDateFromTime:reminder})},isCompletion=/\b(?:ya\s+)?he\s+(?:llamado|terminado|completado|hecho)\b/i.test(text),isCalendarQuery=/\b(?:qué|que)\s+(?:tengo|hay)|\b(?:muéstrame|muestrame|consulta)\s+(?:mi\s+)?(?:agenda|calendario)\b/i.test(text),futureCall=type==="contact"&&Boolean(data.scheduledDate||data.scheduledTime),intent=isCompletion?"task.complete":isCalendarQuery?"calendar.query":futureCall?"reminder.create":{note:"note",task:"task.create",reminder:"reminder.create",calendar:"calendar.create",contact:"contact.call",file:"file.store",photo:"photo.store"}[type]||"note";return{intent,confidence:.5,title:text||null,date:data.scheduledDate||null,time:data.scheduledTime||null,...(isCalendarQuery?(calendarQueryRange(text)||{}):{}),location:null,contactName:data.contactQuery||null,phone:data.phone||null,notes:null,target:isCompletion?{title:completionTarget(text)||text,date:null,time:null}:null,changes:null,missingFields:[],question:null,requiresConfirmation:Boolean(data.scheduledDate&&data.scheduledTime)}}
 function setMicState(active){$("mic").classList.toggle("listening",active);$("micMini").classList.toggle("listening",active);$("shoppingMic")?.classList.toggle("listening",active);document.querySelectorAll(".conversation-mic,.modal-actions .voice").forEach(button=>{button.classList.toggle("listening",active);button.textContent=active?"🎙️ Escuchando…":"🎙️ Hablar"});$("micLabel").textContent=active?"Escuchando… toca otra vez para parar":"Toca para hablar"}
 function stop(){listening=false;if(rec){try{rec.stop()}catch(e){}}rec=null;setMicState(false);$("hint").textContent="Dictado terminado. Puedes continuar o pulsar Enviar cuando acabes.";autosize()}
-function start({inConversation=false,draftId=null}={}){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){ui.notify("Este navegador no admite dictado");return}if(listening){stop();return}if(!inConversation)openDraft();const target=draftId?$(draftId):$("text");finalText=target?.value.trim()||"";rec=new SR();rec.lang="es-ES";rec.continuous=false;rec.interimResults=true;rec.maxAlternatives=1;let sessionFinal=finalText||"",lastInterim="";// Real detectado: dictar en el buscador de la lista de la compra ("café")
+function start({inConversation=false,draftId=null}={}){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(listening){stop();return}
+ // Real (encontrado en revisión): con el compositor de texto ya oculto,
+ // salir aquí sin abrir el borrador dejaba sin ninguna forma de escribir una
+ // instrucción a quien usa un navegador sin reconocimiento de voz. El
+ // borrador se abre igualmente — solo se omite arrancar el dictado — para
+ // que siempre se pueda escribir a mano.
+ if(!inConversation)openDraft();
+ if(!SR){ui.notify("Este navegador no admite dictado; puedes escribir aquí");return}
+ const target=draftId?$(draftId):$("text");finalText=target?.value.trim()||"";rec=new SR();rec.lang="es-ES";rec.continuous=false;rec.interimResults=true;rec.maxAlternatives=1;let sessionFinal=finalText||"",lastInterim="";// Real detectado: dictar en el buscador de la lista de la compra ("café")
 // no disparaba ninguna búsqueda. target.value=... asignado desde JS nunca
 // emite un evento "input" nativo, así que el oninput del buscador (que es
 // justamente lo que lanza la búsqueda en vivo) nunca se enteraba de que el
@@ -771,8 +777,16 @@ async function selectShoppingSuggestion(index){
 // Modal que se abre al pedir un solo artículo por voz/texto ("agrega leche a
 // la lista de Fran"): la búsqueda de Mercadona ya sale lanzada con lo que se
 // pidió, para elegir el producto exacto en el mismo paso en que se pidió.
+// listId=null (usado por el mic de añadir rápido) significa "todavía no se
+// sabe": si solo hay una lista, se añade ahí directamente; si hay varias, se
+// pregunta a cuál antes de guardar — tal como se pidió explícitamente.
 function showShoppingAddConfirm(addition,listId){
- const finish=item=>{ui.closeLayers();void addItemsToList(listId,[item])};
+ const finish=item=>{
+  ui.closeLayers();
+  const targetId=listId||(shoppingState.lists.length<=1?shoppingState.activeListId:null);
+  if(targetId){void addItemsToList(targetId,[item]);return}
+  ui.showShoppingListChoice(shoppingState.lists,chosenId=>void addItemsToList(chosenId,[item]));
+ };
  const runConfirmSearch=async query=>{
   const seq=++shoppingConfirmSeq;
   ui.setShoppingConfirmStatus("Buscando en Mercadona…");
@@ -793,6 +807,28 @@ function showShoppingAddConfirm(addition,listId){
  });
  void runConfirmSearch(addition.name);
 }
+// Mic izquierdo del hero: pedido explícitamente para un único paso — se
+// dice solo el producto, y va derecho al buscador de Mercadona sin pasar
+// por el intérprete general (no es una instrucción cualquiera, siempre es
+// "añadir esto a la lista de la compra").
+function shoppingQuickMic(){
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR){ui.notify("Este navegador no admite dictado");return}
+ let rec;
+ try{rec=new SR()}catch(e){ui.notify("No se pudo iniciar el dictado");return}
+ rec.lang="es-ES";rec.continuous=false;rec.interimResults=false;rec.maxAlternatives=1;
+ rec.onstart=()=>ui.notify("Te escucho… di el producto");
+ rec.onresult=event=>{
+  const phrase=(event.results[0]?.[0]?.transcript||"").trim();
+  if(phrase)showShoppingAddConfirm({name:phrase,store:null,quantity:1},null);
+ };
+ rec.onerror=event=>{if(event.error!=="no-speech")ui.notify(event.error==="not-allowed"?"Permiso de micrófono denegado":"No se pudo escuchar el micrófono")};
+ try{rec.start()}catch(e){ui.notify("No se pudo iniciar el dictado")}
+}
+// Botón "Evento" del footer y "Calendario" de los accesos rápidos: mismo
+// destino, el compositor de un evento nuevo — solo cambia el camino para
+// llegar, la función es la de siempre (＋ Nuevo evento).
+function openNewEventDraft(){prepareShortcut({label:"Nuevo evento",prompt:"Cuéntame el evento: fecha, hora y lugar.",prefix:"Añade al calendario ",action:"calendar.create"})}
 
 function openDietario(){ui.openDietario(notes,dietarioState)}
 function refreshDietario(){ui.renderDietario(notes,dietarioState)}
@@ -850,6 +886,11 @@ async function openLibraryItem(item){
 }
 
 $("mic").onclick=start;$("micMini").onclick=start;
+$("shoppingQuickMic").onclick=shoppingQuickMic;
+$("quickNotesBtn").onclick=()=>prepareShortcut({label:"Nota",prompt:"Escribe o dicta la nota.",prefix:"",action:"note"});
+$("quickRemindersBtn").onclick=()=>prepareShortcut({label:"Recordatorio",prompt:"¿Qué quieres que te recuerde y cuándo?",prefix:"Recuérdame ",action:"reminder.create"});
+$("quickCalendarBtn").onclick=openNewEventDraft;
+$("quickEventBtn").onclick=openNewEventDraft;
 $("clear").onclick=()=>{$("text").value="";finalText="";pendingShortcut=null;autosize();ui.notify("Borrador limpiado")};
 $("contactsConnect").onclick=google.connectContacts;
 $("contactsDisconnect").onclick=google.disconnectContacts;
@@ -868,7 +909,6 @@ $("add").onclick=add;
 $("text").oninput=()=>{autosize();ui.updateDraft($("text").value)};
 $("text").onfocus=()=>{if(!$("actionModal").classList.contains("show"))setTimeout(()=>{if(!$("actionModal").classList.contains("show"))openDraft()},120)};
 $("text").onkeydown=event=>{if(event.key==="Enter"&&!event.shiftKey){event.preventDefault();add()}};
-$("attachToggle").onclick=()=>$("attachmentChoices").classList.toggle("show");
 $("galleryOpen").onclick=()=>openLibrary("image");
 $("filesOpen").onclick=()=>openLibrary("file");
 $("notesOpen").onclick=openNoteLibrary;
@@ -1036,7 +1076,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.86",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.88",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}
