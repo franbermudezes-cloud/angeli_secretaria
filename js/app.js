@@ -1,25 +1,25 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts,readShortcutsHidden,writeShortcutsHidden}from"./storage.js?v=0.21.99";
-import{classify,actionData}from"./classifier.js?v=0.21.99";
-import{sendEntry}from"./sheets.js?v=0.21.99";
-import{createUI}from"./ui.js?v=0.21.99";
-import{createGoogleIntegration}from"./google.js?v=0.21.99";
-import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.21.99";
-import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.21.99";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.21.99";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.21.99";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.21.99";
-import{createCloudSync}from"./firebase.js?v=0.21.99";
-import{createMediaService}from"./media.js?v=0.21.99";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.21.99";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.21.99";
-import{createAgendaActions}from"./agenda.js?v=0.21.99";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.21.99";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.21.99";
-import{DEFAULT_SHORTCUTS,SHORTCUT_PRESETS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.21.99";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.21.99";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.21.99";
-import{mediaLibraryItems}from"./media-library.js?v=0.21.99";
-import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.21.99";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts,readShortcutsHidden,writeShortcutsHidden}from"./storage.js?v=0.22.0";
+import{classify,actionData}from"./classifier.js?v=0.22.0";
+import{sendEntry}from"./sheets.js?v=0.22.0";
+import{createUI}from"./ui.js?v=0.22.0";
+import{createGoogleIntegration}from"./google.js?v=0.22.0";
+import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.22.0";
+import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.22.0";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.22.0";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.22.0";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime}from"./schedule.js?v=0.22.0";
+import{createCloudSync}from"./firebase.js?v=0.22.0";
+import{createMediaService}from"./media.js?v=0.22.0";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.22.0";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.22.0";
+import{createAgendaActions}from"./agenda.js?v=0.22.0";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.22.0";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.22.0";
+import{DEFAULT_SHORTCUTS,SHORTCUT_PRESETS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.22.0";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.22.0";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.22.0";
+import{mediaLibraryItems}from"./media-library.js?v=0.22.0";
+import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.22.0";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,listening=false,finalText="",pendingImages=[],pendingFiles=[],pendingMediaContext=null,selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -126,6 +126,15 @@ async function askMediaContext(){
   }
   pendingMediaContext=normalizeMediaContext({...values,relationType},noteSettings);
   ui.closeLayers();
+  // Real reportado por el propietario: tras clasificar, el aviso decía
+  // "puedes añadir una instrucción o enviarlo", pero desde el rediseño de
+  // la pantalla principal (V0.21.87) el compositor fijo con el botón
+  // Enviar quedó oculto y ningún paso volvía a abrirlo — la foto se
+  // quedaba solo como miniatura fija en #preview, sin ninguna forma visible
+  // de terminar de enviarla (ni de que desapareciera de ahí). Al abrir el
+  // borrador aquí, aparece el mismo modal "Te escucho" de siempre, con su
+  // "➤ Enviar" — y al enviar, clearComposer() vacía #preview como debía.
+  openDraft();
   ui.notify("Adjunto clasificado. Puedes añadir una instrucción o enviarlo.")
  }})
 }
@@ -1261,7 +1270,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.21.99",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.22.0",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}
