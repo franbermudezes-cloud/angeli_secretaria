@@ -1,13 +1,13 @@
-import { typeLabel } from "./classifier.js?v=0.22.15";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.22.15";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.22.15";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.15";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.22.15";
-import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.22.15";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.15";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.22.15";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.22.15";
-import { groupDietarioByDay } from "./dietario.js?v=0.22.15";
+import { typeLabel } from "./classifier.js?v=0.22.16";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.22.16";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.22.16";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.16";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.22.16";
+import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.22.16";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.16";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.22.16";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.22.16";
+import { groupDietarioByDay } from "./dietario.js?v=0.22.16";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -189,7 +189,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.22.15";
+    image.src = "assets/angeli-welcome.gif?v=0.22.16";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -1246,7 +1246,12 @@ export function createUI({ getMedia }) {
   // diferencia de showEntryAction, nunca se cierra sola: esa pantalla está
   // pensada para confirmar algo recién hecho, no para repasar algo que ya
   // existía. Reutiliza los mismos bloques de contenido que showEntryAction.
-  function showDietarioDetail(note) {
+  // Fricción reportada por el propietario: aquí solo se podía "Cerrar" — ni
+  // editar ni cancelar un evento/aviso ya confirmado, había que ir a
+  // Recordatorios/Calendario aparte y volver a buscarlo. `onEdit`/
+  // `onCancelEvent`/`onCancelSchedule` son opcionales: si no se pasan (otros
+  // llamadores, si los hubiera), el comportamiento es el de siempre.
+  function showDietarioDetail(note, { onEdit, onCancelEvent, onCancelSchedule } = {}) {
     const bundled = note.proposal?.intent === "calendar.create" && note.schedule;
     const soloReminder = note.schedule && !bundled;
     const soloEvent = note.type === "calendar" && !note.schedule;
@@ -1273,7 +1278,14 @@ export function createUI({ getMedia }) {
       lead = note.status === "done" ? "Hecho." : "Pendiente.";
       body = entryBody(note);
     }
-    openModal({ title, lead, body, actions: [{ label: "Cerrar", kind: "confirm", onClick: closeLayers }] });
+    const actions = [];
+    const eventEditable = (bundled || soloEvent) && note.calendarStatus === "synced";
+    const reminderEditable = (bundled || soloReminder) && note.schedule?.status === "scheduled";
+    if (eventEditable || reminderEditable) actions.push({ label: "✎ Modificar", kind: "secondary", onClick: () => onEdit?.(note) });
+    if (eventEditable) actions.push({ label: "Anular evento", kind: "danger", onClick: () => onCancelEvent?.(note) });
+    if (reminderEditable) actions.push({ label: "Cancelar aviso", kind: "danger", onClick: () => onCancelSchedule?.(note) });
+    actions.push({ label: "Cerrar", kind: actions.length ? "secondary" : "confirm", onClick: closeLayers });
+    openModal({ title, lead, body, actions });
   }
 
   function openMediaLibrary(items, state) {

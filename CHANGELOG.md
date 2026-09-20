@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.22.16 · Abrir un evento o aviso desde el Dietario ya deja modificarlo o cancelarlo ahí mismo (auditoría, fricción)
+
+- **Antes**: la ficha de un evento/aviso ya confirmado en el Dietario solo dejaba "Cerrar" — para editarlo o cancelarlo había que ir a Recordatorios o Calendario aparte y volver a buscarlo.
+- **Ahora**: si el evento ya está sincronizado en Calendar, aparece "✎ Modificar" (título, fecha y hora, ubicación, descripción, y el título del aviso si va combinado) y "Anular evento"; si tiene un aviso programado, aparece también "Cancelar aviso". Los cambios se guardan también en Calendar, no solo en Angeli.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: ampliados en `tests/dietario.test.mjs`.
+
 ## V0.22.15 · Una pregunta pendiente de otra orden ya no se comía un recordatorio, WhatsApp, evento o llamada nuevos (auditoría, prioridad media)
 
 - **Causa raíz**: solo la lista de la compra tenía un carve-out explícito para que un comando inequívoco y sin relación no se confundiera con la respuesta a una pregunta pendiente de otra orden. Reminders, WhatsApp, calendario y llamadas no lo tenían: un WhatsApp a medias esperando el nombre del contacto, por ejemplo, se comía un "Recuérdame llamar al médico mañana" completamente nuevo como si fuera su respuesta.
