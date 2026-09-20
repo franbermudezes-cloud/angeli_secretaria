@@ -57,4 +57,16 @@ assert.match(askMediaContextSource, /await saveNoteSettings\(/, "debe persistir 
 // pantalla.
 assert.match(askMediaContextSource, /openDraft\(\);/, "debe abrir el borrador (con su botón Enviar) justo después de clasificar, o la foto se queda sin forma de enviarse");
 
+// Hallazgo de la auditoría completa del código: para una entrada de tipo
+// "note", el botón "Clasificar ahora"/"Modificar clasificación" escribía en
+// entry.mediaContext en vez de en noteClassification (que es donde vive de
+// verdad la categoría/relación de una nota) — creaba una segunda
+// clasificación divergente que Notas y Fotos/archivos mostraban de forma
+// distinta para la misma entrada. Las notas ya tienen su propia vía
+// completa de edición ("Abrir nota"), así que no deben ofrecer ese botón.
+const showMediaEntryDetailSource = ui.match(/function showMediaEntryDetail\([\s\S]*?\n  \}/)?.[0] || "";
+assert.ok(showMediaEntryDetailSource, "showMediaEntryDetail debe existir");
+assert.match(showMediaEntryDetailSource, /const isNote = entry\.type === "note"/, "debe distinguir explícitamente las entradas de tipo nota");
+assert.match(showMediaEntryDetailSource, /\.\.\.\(isNote \? \[\] : \[\{label:context \? "Modificar clasificación" : "Clasificar ahora"/, 'el botón de clasificar (que escribe en mediaContext) no debe ofrecerse para notas');
+
 console.log("media-context: ok");

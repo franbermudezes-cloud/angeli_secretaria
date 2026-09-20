@@ -1,5 +1,17 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-20 — Reclasificar un adjunto tipo nota escribía en el campo equivocado V0.22.6
+
+Primer hallazgo de prioridad media de la auditoría completa que se corrige (los de prioridad alta ya están todos cerrados — ver la entrada de V0.22.1 para el contexto de la auditoría).
+
+**Causa raíz**: `mediaLibraryItems()` (`js/media-library.js`) incluye adjuntos de TODOS los tipos de entrada, incluidas las notas (una nota puede llevar fotos/archivos adjuntos). Al abrir una de esas entradas desde "Fotos y archivos" y tocar "Clasificar ahora"/"Modificar clasificación", `openLibraryEntry`'s `onEdit` (`js/app.js`) siempre hacía `{...entry, mediaContext: normalizeMediaContext(values, noteSettings)}` — pero la categoría/relación real de una nota vive en `noteClassification`, no en `mediaContext`. Esto creaba una segunda clasificación divergente sobre la misma entrada: la pantalla de Notas seguía leyendo `noteClassification` de siempre, mientras que Fotos/archivos (`mediaLibraryItems()`) pasaba a preferir el `mediaContext` recién escrito — la misma nota mostraba una categoría distinta según desde dónde se mirase.
+
+**Corrección**: en vez de intentar redirigir ese botón a la vía correcta de edición de notas (que habría duplicado lógica ya existente en `showNoteEditor`/`editNoteFromLibrary`), se quita el botón por completo para entradas de tipo nota — "Abrir nota" ya lleva a la ficha completa de la nota, con su categoría/relación real editable ahí. `showMediaEntryDetail` (`js/ui.js`) ahora distingue `isNote=entry.type==="note"` y omite el botón de clasificar (y las tarjetas de contexto pensadas solo para adjuntos sueltos) cuando la entrada es una nota.
+
+**Verificado en el navegador sandbox**: `ui.showMediaEntryDetail` con una entrada `type:"note"` muestra solo "Volver"/"Abrir nota"; con una entrada `type:"photo"` sigue mostrando "Volver"/"Clasificar ahora"/"Añadir nota" exactamente como antes.
+
+**Cobertura de test**: `tests/media-context.test.mjs` ampliado — comprueba que `showMediaEntryDetail` distingue explícitamente las notas y omite el botón de clasificar para ellas.
+
 ## 2026-09-20 — Auditoría completa del código: micrófonos huérfanos V0.22.5
 
 Sexto y último hallazgo de prioridad alta de la auditoría completa (ver la entrada de V0.22.1 para el contexto de la auditoría en sí).

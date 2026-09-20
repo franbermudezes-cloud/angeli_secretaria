@@ -1,12 +1,12 @@
-import { typeLabel } from "./classifier.js?v=0.22.5";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.22.5";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.22.5";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.5";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.22.5";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.5";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.22.5";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.22.5";
-import { groupDietarioByDay } from "./dietario.js?v=0.22.5";
+import { typeLabel } from "./classifier.js?v=0.22.6";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.22.6";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.22.6";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.6";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.22.6";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.6";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.22.6";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.22.6";
+import { groupDietarioByDay } from "./dietario.js?v=0.22.6";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -188,7 +188,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.22.5";
+    image.src = "assets/angeli-welcome.gif?v=0.22.6";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -1290,15 +1290,24 @@ export function createUI({ getMedia }) {
     return '<div class="calendar-confirmation"><span class="calendar-field-label">Relacionado con</span><strong>Sin nota ni persona relacionada</strong></div>';
   }
 
+  // Real encontrado en auditoría: para una entrada de tipo "note", el botón
+  // "Clasificar ahora"/"Modificar clasificación" escribía en entry.mediaContext
+  // (vía onEdit → showMediaContextEditor) en vez de en noteClassification,
+  // que es donde vive de verdad la categoría/relación de una nota — creaba
+  // una segunda clasificación divergente que Notas y Fotos/archivos
+  // mostraban de forma distinta para la misma entrada. Una nota ya tiene su
+  // propia vía completa de edición ("Abrir nota" → editor de la nota, con su
+  // categoría/relación real), así que para notas no se ofrece este botón.
   function showMediaEntryDetail(entry, item, { onBack, onEdit, onNote } = {}) {
+    const isNote = entry.type === "note";
     const context = entry.mediaContext;
-    const contextCard = entry.type !== "note" && context ? mediaContextCard(entry) : "";
-    const emptyState = entry.type !== "note" && !context ? '<div class="empty">Esta imagen es anterior a la clasificación. Puedes indicar ahora para qué la guardaste.</div>' : "";
+    const contextCard = !isNote && context ? mediaContextCard(entry) : "";
+    const emptyState = !isNote && !context ? '<div class="empty">Esta imagen es anterior a la clasificación. Puedes indicar ahora para qué la guardaste.</div>' : "";
     const body = mediaRelationCard(entry) + contextCard + emptyState;
     openModal({title:item.name || "Ficha del adjunto",lead:"Información para localizar este adjunto.",body,actions:[
       {label:"Volver",kind:"secondary",onClick:onBack},
-      {label:context ? "Modificar clasificación" : "Clasificar ahora",kind:"secondary",onClick:()=>onEdit?.(entry)},
-      {label:entry.type === "note" ? "Abrir nota" : "Añadir nota",kind:"confirm",onClick:()=>onNote?.(entry)}
+      ...(isNote ? [] : [{label:context ? "Modificar clasificación" : "Clasificar ahora",kind:"secondary",onClick:()=>onEdit?.(entry)}]),
+      {label:isNote ? "Abrir nota" : "Añadir nota",kind:"confirm",onClick:()=>onNote?.(entry)}
     ]});
   }
 
