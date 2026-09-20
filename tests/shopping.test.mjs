@@ -487,6 +487,20 @@ test('"Historial" es un acceso directo junto a Ver carrito, no solo desde el "�
  assert.doesNotMatch(quickActionsSource,/Historial de compras/,'ya no debe duplicarse dentro del "⋮" ahora que es un acceso directo');
 });
 
+// Hallazgo de fricción de la auditoría completa: añadir un artículo a la
+// lista siempre abría el modal de confirmación y esperaba a que la búsqueda
+// en Mercadona terminara para mostrar los resultados, aunque solo hubiera
+// uno — obligando a un toque de más ("Usar este") incluso cuando no hay
+// nada que elegir.
+test('showShoppingAddConfirm: un único resultado se añade directamente, sin abrir el modal de confirmación',async()=>{
+ const app=readFileSync(new URL('../js/app.js',import.meta.url),'utf8');
+ const source=app.match(/function showShoppingAddConfirm\(addition,listId\)\{[\s\S]*?\n\}\n/)?.[0]||"";
+ assert.ok(source,"showShoppingAddConfirm debe existir");
+ assert.match(source,/searchMercadonaProduct\(addition\.name,idToken,8\)/,"debe buscar primero, antes de decidir si hace falta el modal");
+ assert.match(source,/if\(results\.length===1\)\{finish\(\{name:results\[0\]\.name,store:"mercadona",quantity:addition\.quantity,product:results\[0\]\}\);return\}/,"un único resultado debe añadirse directamente, sin abrir el modal");
+ assert.match(source,/openConfirmUI\(\);\s*\n\s*ui\.renderShoppingConfirmResults\(results\);/,"con 0 o varios resultados sí debe abrirse el modal, ya con los resultados listos");
+});
+
 // Pedido explícito del propietario: pulsar una compra del historial debe
 // enseñar cada artículo con su precio y el total, no solo los nombres.
 test('pulsar una compra del historial enseña cada artículo con su precio y el total',async()=>{
