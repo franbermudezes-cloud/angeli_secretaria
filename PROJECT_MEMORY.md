@@ -1,5 +1,15 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-20 — "Historial de compras" como acceso directo V0.22.17
+
+Segundo hallazgo de "fricción" de la auditoría completa que se corrige (ver la entrada de V0.22.1 para el contexto de la auditoría).
+
+**Causa raíz**: "Ver carrito" ya se había sacado del menú "⋮" en una mejora anterior (ver comentario en `js/app.js` sobre "El carrito y el historial de compras son pantallas nuevas..."), pero "Historial de compras" seguía escondido detrás de ese menú — inconsistencia entre dos accesos igual de frecuentes.
+
+**Corrección**: se añade el botón `#shoppingViewPurchases` ("🧾 Historial") a la misma fila de `.library-filters` que ya tiene "Quitar comprados"/"Vaciar lista"/"Ver carrito" (`index.html`), cableado a `openShoppingPurchases(shoppingState.activeListId)` (`js/app.js`) — la misma función que ya usaba la entrada del "⋮", ahora retirada de `openShoppingListQuickActions` para no duplicarla.
+
+**Cobertura de test**: `tests/shopping.test.mjs` ampliado — comprueba que el botón está en la fila correcta, que llama a la función correcta, y que ya no aparece dentro del "⋮".
+
 ## 2026-09-20 — Editar o cancelar un evento/aviso desde el Dietario V0.22.16
 
 Primer hallazgo de "fricción" de la auditoría completa que se corrige (ver la entrada de V0.22.1 para el contexto de la auditoría; a partir de aquí se trabajan los hallazgos de fricción y calidad de código, tras cerrar los de prioridad alta y media).

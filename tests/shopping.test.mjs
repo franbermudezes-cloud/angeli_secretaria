@@ -471,6 +471,22 @@ test('"Ver carrito" es un acceso directo junto a Quitar comprados/Vaciar lista, 
  assert.match(app,/\$\("shoppingViewCart"\)\.onclick=\(\)=>openShoppingCart\(shoppingState\.activeListId\)/);
 });
 
+// Hallazgo de fricción de la auditoría completa: "Historial de compras"
+// seguía escondido detrás del "⋮", a diferencia de "Ver carrito", que ya se
+// sacó de ahí en su momento. Mismo tratamiento ahora para el historial.
+test('"Historial" es un acceso directo junto a Ver carrito, no solo desde el "⋮"',async()=>{
+ const [html,app]=await Promise.all([
+  readFile(new URL('../index.html',import.meta.url),'utf8'),
+  readFile(new URL('../js/app.js',import.meta.url),'utf8')
+ ]);
+ const filtersRow=html.match(/<div class="library-filters" role="group" aria-label="Acciones de la lista">[\s\S]*?<\/div>/)?.[0]||"";
+ assert.match(filtersRow,/id="shoppingViewPurchases"/,'"Historial" debe estar en la misma fila que Ver carrito');
+ assert.match(app,/\$\("shoppingViewPurchases"\)\.onclick=\(\)=>openShoppingPurchases\(shoppingState\.activeListId\)/);
+ const quickActionsSource=app.match(/function openShoppingListQuickActions\(listId\)\{[\s\S]*?\n\}/)?.[0]||"";
+ assert.ok(quickActionsSource,"openShoppingListQuickActions debe existir");
+ assert.doesNotMatch(quickActionsSource,/Historial de compras/,'ya no debe duplicarse dentro del "⋮" ahora que es un acceso directo');
+});
+
 // Pedido explícito del propietario: pulsar una compra del historial debe
 // enseñar cada artículo con su precio y el total, no solo los nombres.
 test('pulsar una compra del historial enseña cada artículo con su precio y el total',async()=>{
