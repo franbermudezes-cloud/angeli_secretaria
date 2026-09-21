@@ -1,5 +1,15 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-21 — Crear un acceso directo con el modal propio (también al dictarlo) V0.22.30
+
+Sexto arreglo de la segunda auditoría (usabilidad). Señalado por dos agentes.
+
+**Causa raíz**: `createShortcut(initial)` (`js/app.js`) usaba dos `prompt()` nativos seguidos — "Escribe la orden…" y "Nombre corto…". Se llamaba desde tres sitios (el catálogo de presets "✎ Crear uno personalizado", el "＋ Crear acceso nuevo" del modal de gestión, y la vía de voz `$("shortcutVoice")` que, tras dictar la orden, pasaba el texto a `createShortcut` en `rec.onend`). El caso de voz era el más absurdo: en una app de voz, elegías "🎙️ Dictar acceso" precisamente para no teclear, dictabas la orden entera, y aun así te salía un `prompt()` nativo pidiendo teclear el nombre. Es el mismo patrón que ya se eliminó de las listas de la compra (V0.22.20) y de todo lo demás.
+
+**Corrección**: nuevo `ui.showShortcutEditor({command,label,onSave,onCancel})` (`js/ui.js`) — modal propio con dos campos (orden + nombre corto) en una sola pantalla, reutilizando la clase `record-editor` de los otros editores. El nombre se autocompleta a partir de la orden (`command.slice(0,24)`) al perder el foco del campo de orden y al abrir con orden precargada, sin pisar lo que la persona escriba; al guardar, si el nombre quedó vacío se rellena con ese mismo recorte. `createShortcut(initial)` en `js/app.js` pasa a una sola línea que abre ese modal con `command:initial` precargado (la orden dictada, en la vía de voz) y, en `onSave`, hace el `shortcuts.push({label,command})` + `saveShortcuts()` de siempre. Los tres puntos de entrada siguen llamando a `createShortcut` igual, así que todos se benefician sin más cambios.
+
+**Cobertura de test**: `tests/shortcuts.test.mjs` — comprueba que `createShortcut` ya no usa `prompt()`, que abre `showShortcutEditor` con la orden precargada, que el editor existe y está exportado, y que el nombre se autocompleta desde la orden. Verificado en vivo: con la orden dictada precargada, el nombre se autocompleta y "Crear" guarda en una sola pantalla, sin diálogo nativo.
+
 ## 2026-09-21 — Cancelar desde el Dietario: modal propio + comprobación de fallo V0.22.29
 
 Quinto arreglo de la segunda auditoría (usabilidad). Señalado por tres agentes a la vez (era la única inconsistencia de diálogo nativo que quedaba en un flujo por lo demás pulido, el nuevo de V0.22.16).

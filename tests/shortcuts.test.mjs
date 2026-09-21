@@ -239,3 +239,19 @@ test("fusión de accesos directos: dos altas simultáneas en dispositivos distin
   const merged = applyShortcutsDiff(remoteAfterPhone2, phone1Diff);
   assert.deepEqual(merged.map(item => item.id).sort(), ["a", "x", "y"]);
 });
+
+// Reportado en la 2ª auditoría (usabilidad): crear un acceso directo (y la
+// opción "🎙️ Dictar acceso") usaba dos prompt() nativos seguidos — hasta
+// después de dictar. Ahora usa el modal propio showShortcutEditor.
+test("accesos directos: crear uno personalizado usa el modal propio, no prompt() nativo", () => {
+  const app = readFileSync(new URL("../js/app.js", import.meta.url), "utf8");
+  const ui = readFileSync(new URL("../js/ui.js", import.meta.url), "utf8");
+  const createSource = app.match(/function createShortcut\(initial=""\)\{.*\}/)?.[0] || "";
+  assert.ok(createSource, "createShortcut debe existir");
+  assert.doesNotMatch(createSource, /\bprompt\(/, "createShortcut ya no debe usar prompt() nativo");
+  assert.match(createSource, /ui\.showShortcutEditor\(\{command:initial,onSave:/, "debe usar el modal propio, precargando la orden dictada");
+  assert.match(ui, /function showShortcutEditor\(\{ command = "", label = "", onSave, onCancel \} = \{\}\)/, "el editor propio debe existir");
+  assert.match(ui, /showShortcutEditor,/, "y estar exportado");
+  // El nombre se autocompleta a partir de la orden (no obliga a teclearlo).
+  assert.match(ui, /const label = \$\("shortcutEditLabel"\)\.value\.trim\(\) \|\| command\.slice\(0, 24\)/, "el nombre se rellena solo desde la orden si se deja vacío");
+});

@@ -1,13 +1,13 @@
-import { typeLabel } from "./classifier.js?v=0.22.29";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.22.29";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.22.29";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.29";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.22.29";
-import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.22.29";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.29";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.22.29";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.22.29";
-import { groupDietarioByDay } from "./dietario.js?v=0.22.29";
+import { typeLabel } from "./classifier.js?v=0.22.30";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.22.30";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.22.30";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.30";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.22.30";
+import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.22.30";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.30";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.22.30";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.22.30";
+import { groupDietarioByDay } from "./dietario.js?v=0.22.30";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -189,7 +189,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.22.29";
+    image.src = "assets/angeli-welcome.gif?v=0.22.30";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -1282,6 +1282,35 @@ export function createUI({ getMedia }) {
     input.focus();
   }
 
+  // Reportado en la 2ª auditoría: crear un acceso directo personalizado (y la
+  // opción "🎙️ Dictar acceso") seguía usando dos prompt() nativos seguidos —
+  // el mismo patrón feo que ya se quitó de las listas de la compra (V0.22.20)
+  // y del resto de la app. Este modal propio recoge la orden y el nombre en
+  // una sola pantalla; el nombre se rellena solo a partir de la orden (se
+  // puede editar), así que dictar la orden y pulsar "Crear" basta.
+  function showShortcutEditor({ command = "", label = "", onSave, onCancel } = {}) {
+    const form = document.createElement("div");
+    form.className = "record-editor";
+    form.innerHTML = '<label>Orden que ejecutará Angeli<textarea id="shortcutEditCommand" rows="2" placeholder="Ej.: ¿Qué tengo mañana?"></textarea></label><label>Nombre corto<input id="shortcutEditLabel" type="text" placeholder="Ej.: Mañana"></label>';
+    const suggestLabel = () => { const l = $("shortcutEditLabel"); if (!l.value.trim()) l.value = $("shortcutEditCommand").value.trim().slice(0, 24); };
+    openModal({ title: "Nuevo acceso directo", lead: "Escribe o dicta la orden; el nombre se rellena solo, pero puedes cambiarlo.", body: form, actions: [
+      { label: "Cancelar", kind: "secondary", onClick: onCancel || closeLayers },
+      { label: "Crear", kind: "confirm", onClick: () => {
+        const command = $("shortcutEditCommand").value.trim();
+        if (!command) { notify("Escribe la orden que ejecutará Angeli"); $("shortcutEditCommand").focus(); return; }
+        const label = $("shortcutEditLabel").value.trim() || command.slice(0, 24);
+        onSave?.({ command, label });
+      } }
+    ] });
+    $("shortcutEditCommand").value = command;
+    $("shortcutEditLabel").value = label;
+    if (command && !label) suggestLabel();
+    // Al terminar de escribir/dictar la orden, si el nombre sigue vacío, se
+    // propone uno a partir de ella (sin pisar lo que la persona haya escrito).
+    $("shortcutEditCommand").onblur = suggestLabel;
+    $(command ? "shortcutEditLabel" : "shortcutEditCommand").focus();
+  }
+
   function showShoppingDeleteConfirm(list, { onConfirm, onCancel } = {}) {
     const count = list.items.length;
     openModal({
@@ -1499,7 +1528,7 @@ export function createUI({ getMedia }) {
     $("conversationModeTranscript").scrollTop = $("conversationModeTranscript").scrollHeight;
   }
 
-  return { $, notify, setGoogleStatus, setPushStatus, setSyncStatus, showConnectionHealth, showNotificationSettings, render, openMediaLibrary, renderMediaLibrary, closeMediaLibrary, openNoteLibrary, renderNoteLibrary, closeNoteLibrary, openDietario, renderDietario, closeDietario, showDietarioDetail, openShoppingList, closeShoppingList, renderShoppingOverview, renderShoppingDetail, renderShoppingCart, renderShoppingPurchases, showPurchaseDetail, hideShoppingSuggestions, showShoppingSuggestionsMessage, renderShoppingSuggestions, setShoppingFallback, showShoppingAddConfirm, renderShoppingConfirmResults, setShoppingConfirmStatus, showShoppingListChoice, showShoppingStoreChoice, showShoppingNamePrompt, showShoppingDeleteConfirm, showShoppingClearConfirm, showShoppingRemoveMarkedConfirm, showMediaViewer, closeMediaViewer, showMediaEntryDetail, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showMediaContextEditor, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome, openConversationMode, closeConversationMode, setConversationStatus, addConversationTurn };
+  return { $, notify, setGoogleStatus, setPushStatus, setSyncStatus, showConnectionHealth, showNotificationSettings, render, openMediaLibrary, renderMediaLibrary, closeMediaLibrary, openNoteLibrary, renderNoteLibrary, closeNoteLibrary, openDietario, renderDietario, closeDietario, showDietarioDetail, openShoppingList, closeShoppingList, renderShoppingOverview, renderShoppingDetail, renderShoppingCart, renderShoppingPurchases, showPurchaseDetail, hideShoppingSuggestions, showShoppingSuggestionsMessage, renderShoppingSuggestions, setShoppingFallback, showShoppingAddConfirm, renderShoppingConfirmResults, setShoppingConfirmStatus, showShoppingListChoice, showShoppingStoreChoice, showShoppingNamePrompt, showShoppingDeleteConfirm, showShoppingClearConfirm, showShoppingRemoveMarkedConfirm, showShortcutEditor, showMediaViewer, closeMediaViewer, showMediaEntryDetail, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showMediaContextEditor, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome, openConversationMode, closeConversationMode, setConversationStatus, addConversationTurn };
 }
 
 function esc(value) {
