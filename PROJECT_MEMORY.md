@@ -1,5 +1,15 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-21 — La ficha del Dietario siempre deja eliminar V0.22.35
+
+Undécimo arreglo de la segunda auditoría (usabilidad) — cierra el último callejón sin salida encontrado.
+
+**Causa raíz**: `showDietarioDetail` (`js/ui.js`, V0.22.16) construye sus acciones a partir de `eventEditable` (exige `calendarStatus==="synced"`) y `reminderEditable` (exige `schedule.status==="scheduled"`). Una entrada en estado `error` (falló al crearse en Calendar) o `pending` no cumple ninguna de las dos, así que la ficha quedaba con una única acción: "Cerrar". La única forma de quitar esa entrada atascada era volver a la lista del Dietario y usar el "⋮" de su fila (`openDietarioQuickActions`), nada evidente desde la ficha donde la persona está mirando.
+
+**Corrección**: `showDietarioDetail` gana un cuarto callback opcional `onDelete`; si se pasa, la ficha añade siempre "🗑️ Eliminar" (danger), justo antes de "Cerrar". `openDietarioEntry` (`js/app.js`) pasa `onDelete:deleteDietarioEntry`, que confirma con el modal propio (`ui.showConfirm`, avisando de que también se retirará de Calendar si tenía evento/aviso) y luego reutiliza el `deleteEntry` de siempre — la misma función que ya usa el "⋮", que borra la entrada, sus rastros en Calendar y sus adjuntos en Drive. Así ninguna entrada del Dietario queda sin salida, y de paso cualquier entrada (no solo las fallidas) se puede eliminar desde su ficha, no solo desde el "⋮".
+
+**Cobertura de test**: `tests/dietario.test.mjs` — la firma de `showDietarioDetail` incluye `onDelete`, la ficha añade "🗑️ Eliminar" cuando se pasa, y `openDietarioEntry` pasa `onDelete:deleteDietarioEntry`. Verificado en vivo: un evento en estado `error` pasa de solo "Cerrar" a "🗑️ Eliminar / Cerrar"; uno sincronizado muestra Modificar/Anular/Eliminar/Cerrar.
+
 ## 2026-09-21 — Editor de notas: elegir un tipo de relación sin nombre ya no lo descarta en silencio V0.22.34
 
 Décimo arreglo de la segunda auditoría (usabilidad). El reverso del patrón de la foto/nota: allí el problema era exigir un campo de más; aquí es una pérdida silenciosa por NO exigir uno que sí tiene sentido.
