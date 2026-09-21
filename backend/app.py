@@ -30,6 +30,7 @@ from google_sessions import (
     GoogleSessions,
 )
 from push_notifications import PushNotifications, verify_delivery_identity
+from access_control import AccessControl, AccessDenied, QuotaExhausted
 import mercadona_catalog
 
 MAX_TEXT_LENGTH = 500
@@ -297,6 +298,7 @@ _chat_aside: Callable[[str], str] | None = None
 _identity_verifier: Callable[[str], dict[str, Any]] | None = None
 _sessions_factory: Callable[[], GoogleSessions] | None = None
 _push_factory: Callable[[], PushNotifications] | None = None
+_access_factory: Callable[[], AccessControl] | None = None
 _mercadona_search: Callable[[str], list] | None = None
 MERCADONA_SEARCH_LIMIT = 6
 MERCADONA_SEARCH_MAX_LIMIT = 30
@@ -578,19 +580,34 @@ def persistent_google_action(payload: dict[str, Any]) -> dict[str, Any]:
     raise ValueError("Acción no válida")
 
 
-def verify_identity(environ: dict[str, Any]) -> str:
+def authenticate(environ: dict[str, Any]) -> dict[str, Any]:
+    """Verifica solo *quién* es (token válido), sin decidir si tiene acceso.
+
+    Separado de la autorización para que /access/status pueda responder a una
+    cuenta identificada pero aún no invitada ("pide que te den de alta") en lugar
+    de rechazarla con un 401 indistinguible de una sesión caducada.
+    """
     if os.getenv("ANGELI_AI_DEV_BYPASS_AUTH") == "1" and not os.getenv("K_SERVICE"):
-        return "local-test-user"
+        return {"uid": "local-test-user", "email": "local-test-user@angeli", "email_verified": True, "bypass": True}
     token = environ.get("HTTP_AUTHORIZATION", "").removeprefix("Bearer ").strip()
     if not token:
         raise PermissionError("Falta identificación")
     verifier = _identity_verifier or firebase_identity_verifier
-    claims = verifier(token)
-    allowed_emails = {value.strip().lower() for value in os.getenv("ALLOWED_FIREBASE_EMAILS", "").split(",") if value.strip()}
-    email = str(claims.get("email") or "").lower()
-    if not allowed_emails or not claims.get("email_verified") or email not in allowed_emails:
-        raise PermissionError("Usuario no autorizado")
+    return verifier(token)
+
+
+def authorize(claims: dict[str, Any]) -> str:
+    """Aplica la invitación (propietario, lista heredada o Firestore) y devuelve el uid."""
+    access_control().authorize(claims)
     return str(claims.get("uid") or claims.get("sub") or "")
+
+
+def verify_identity(environ: dict[str, Any]) -> str:
+    return authorize(authenticate(environ))
+
+
+def access_control() -> AccessControl:
+    return _access_factory() if _access_factory else AccessControl()
 
 
 def firebase_identity_verifier(token: str) -> dict[str, Any]:
@@ -913,7 +930,7 @@ def app(environ: dict[str, Any], start_response: Callable):
     if environ.get("REQUEST_METHOD") == "OPTIONS":
         return cors_preflight_response(start_response, origin)
     path = environ.get("PATH_INFO")
-    routes = {"/interpret", "/chat/aside", "/shopping/mercadona/search", "/session/status", "/oauth/exchange", "/google", "/media/upload", "/media/download", "/media/delete", "/push/register", "/push/unregister", "/push/schedule", "/push/cancel", "/push/test", "/push/deliver", "/test/session/status", "/test/oauth/exchange"}
+    routes = {"/interpret", "/chat/aside", "/shopping/mercadona/search", "/access/status", "/session/status", "/oauth/exchange", "/google", "/media/upload", "/media/download", "/media/delete", "/push/register", "/push/unregister", "/push/schedule", "/push/cancel", "/push/test", "/push/deliver", "/test/session/status", "/test/oauth/exchange"}
     if environ.get("REQUEST_METHOD") != "POST" or path not in routes:
         return json_response(start_response, "404 Not Found", {"error": "No encontrado"}, origin)
     if environ.get("HTTP_ORIGIN") and not origin:
@@ -927,7 +944,13 @@ def app(environ: dict[str, Any], start_response: Callable):
             if not isinstance(uid, str) or not uid or not isinstance(entry_id, str) or not entry_id or not isinstance(due_at, str) or not isinstance(generation, str) or kind not in {"before", "at", "after"}:
                 raise ValueError("Entrega no válida")
             return json_response(start_response, "200 OK", service.deliver(uid, entry_id, due_at, generation, kind), origin)
-        subject = verify_identity(environ)
+        claims = authenticate(environ)
+        # El estado de acceso se responde a cualquier cuenta identificada, aunque
+        # todavía no esté invitada, para que el cliente pueda mostrar "pide que te
+        # den de alta" en vez de un error de sesión.
+        if path == "/access/status":
+            return json_response(start_response, "200 OK", access_control().status(claims), origin)
+        subject = authorize(claims)
     except PermissionError as error:
         if "Usuario no autorizado" in str(error):
             return json_response(start_response, "401 Unauthorized", {"error": "Esta cuenta no está autorizada para Angeli", "code": "account_not_allowed", "integration": "ai"}, origin)
@@ -939,6 +962,11 @@ def app(environ: dict[str, Any], start_response: Callable):
         return json_response(start_response, "401 Unauthorized", {"error": "La sesión de Angeli necesita volver a iniciarse", "code": "session_required", "integration": "ai"}, origin)
     try:
         enforce_rate_limit(subject)
+        # Las rutas que gastan IA cobran una interacción al cupo mensual antes de
+        # trabajar; el propietario y la lista heredada no gastan, y quien tenga el
+        # grifo abierto cuenta pero no se corta.
+        if path in ("/interpret", "/chat/aside", "/shopping/mercadona/search"):
+            access_control().consume(claims)
         if path.startswith("/test/") and os.getenv("ANGELI_TEST_HARNESS_ENABLED") != "1":
             return json_response(start_response, "404 Not Found", {"error": "No encontrado"}, origin)
         if path == "/session/status":
@@ -1052,6 +1080,8 @@ def app(environ: dict[str, Any], start_response: Callable):
         return json_response(start_response, "200 OK", interpretation, origin)
     except PermissionError:
         return json_response(start_response, "401 Unauthorized", {"error": "No autorizado"}, origin)
+    except QuotaExhausted:
+        return json_response(start_response, "429 Too Many Requests", {"error": "Se agotó tu prueba de Angeli. Para seguir, pon tu propia IA en Ajustes o pide más.", "code": "quota_exhausted", "integration": "ai"}, origin)
     except OutputValidationError as error:
         log_interpreter_error("invalid_model_output", error)
         return json_response(start_response, "503 Service Unavailable", {"error": "Interpretación no disponible"}, origin)
@@ -1067,9 +1097,10 @@ def app(environ: dict[str, Any], start_response: Callable):
         return json_response(start_response, "503 Service Unavailable", {"error": "Interpretación no disponible"}, origin)
 
 
-def set_test_dependencies(interpreter: Callable[[str, str, str], dict[str, Any]] | None = None, verifier: Callable[[str], dict[str, Any]] | None = None, session_factory: Callable[[], GoogleSessions] | None = None, push_factory: Callable[[], PushNotifications] | None = None, chat_aside: Callable[[str], str] | None = None, mercadona_search: Callable[[str, int], list] | None = None) -> None:
-    global _interpreter, _identity_verifier, _sessions_factory, _push_factory, _chat_aside, _mercadona_search
+def set_test_dependencies(interpreter: Callable[[str, str, str], dict[str, Any]] | None = None, verifier: Callable[[str], dict[str, Any]] | None = None, session_factory: Callable[[], GoogleSessions] | None = None, push_factory: Callable[[], PushNotifications] | None = None, chat_aside: Callable[[str], str] | None = None, mercadona_search: Callable[[str, int], list] | None = None, access_factory: Callable[[], AccessControl] | None = None) -> None:
+    global _interpreter, _identity_verifier, _sessions_factory, _push_factory, _chat_aside, _mercadona_search, _access_factory
     _interpreter, _identity_verifier, _sessions_factory, _push_factory, _chat_aside, _mercadona_search = interpreter, verifier, session_factory, push_factory, chat_aside, mercadona_search
+    _access_factory = access_factory
 
 
 def wsgi_request(payload: dict[str, Any], authorization: str = "") -> tuple[str, dict[str, Any]]:

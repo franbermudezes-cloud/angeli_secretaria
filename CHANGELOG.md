@@ -1,5 +1,20 @@
 # Changelog
 
+## V0.23.0 · Multiusuario por invitación con panel de administrador y cupo de IA
+
+Angeli deja de ser de un solo usuario: ahora el propietario puede invitar a gente de confianza, controlar cuánta IA gasta cada uno y cortarla cuando quiera, sin tocar el servidor.
+
+- **Acceso por invitación (Opción A)**: solo entra quien el propietario da de alta. Cualquier otra cuenta identificada se cierra sesión con un mensaje claro ("pide el alta"), en vez de un error de sesión. El propietario entra directo, sin consultar al servidor.
+- **Aislamiento intacto**: cada persona sigue teniendo su propio espacio bajo `users/{uid}` (reglas de Firestore por uid). Lo del propietario nunca se mezcla con lo de nadie.
+- **Cupo mensual de IA ("el grifo")**: cada interacción de IA (interpretar, buscar en Mercadona, chat) cuenta contra un tope mensual por persona (40 por defecto). Al agotarse, el servidor responde `quota_exhausted` y la app avisa; sigue funcionando en modo básico local.
+- **Panel de administrador** (solo lo ve el propietario, en Ajustes): lista de personas con su gasto del mes, e invitar por correo, abrir el grifo (sin límite), poner en prueba con tope, cambiar el tope, cortar/reactivar y quitar. Todo en vivo.
+- **Backend**: la lista de invitados se traslada de la variable `ALLOWED_FIREBASE_EMAILS` (que exigía redesplegar) a Firestore (colección `access`, un documento por correo), administrable desde la app. El propietario y la lista heredada siguen entrando siempre y sin contar. Nuevo endpoint `/access/status`; `verify_identity` se separa en autenticar (quién eres) y autorizar (si tienes acceso).
+- **Reglas de Firestore**: nueva colección `access`, legible/escribible solo por el propietario; el servidor la consulta y anota el gasto con el SDK de administración.
+- **Verificado en el navegador sandbox**: el panel renderiza los tres estados (prueba/grifo abierto/cortado) y todos los mandos disparan su acción; validación de correo al invitar.
+- **Tests**: backend `test_access_control.py` (15 pruebas nuevas), frontend `tests/admin-access.test.mjs` y `tests/firebase-auth.test.mjs` reescrito para el nuevo candado. 207 pruebas de frontend, 95 de backend (sin contar las de Vertex, que necesitan el módulo `google`).
+- **Requiere despliegue**: redesplegar el servicio de Cloud Run (backend) y publicar `firestore.rules`. Pendiente además, en el panel de Google Cloud: dar de alta a cada invitado en la pantalla de consentimiento OAuth (modo prueba) para que Google les deje entrar.
+- **Pendiente (fase 2, no incluido)**: "trae tu propia IA" (que un invitado pegue su clave de Gemini en Ajustes cuando se le agote el cupo).
+
 ## V0.22.36 · Cancelar un evento encontrado en Calendar usa el modal propio, no el cuadro del navegador (2ª auditoría, usabilidad)
 
 - **Antes**: al anular un evento encontrado por búsqueda en Calendar, la confirmación era el `confirm()` nativo del navegador — el último que quedaba en un flujo de gestión.
