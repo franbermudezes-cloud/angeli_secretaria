@@ -1,5 +1,15 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-21 — Confirmar un evento/aviso: los "Cambiar X" agrupados tras "Corregir un dato" V0.22.33
+
+Noveno arreglo de la segunda auditoría (usabilidad). Caso de criterio, no bug: la sesión principal decidió **conservar la confirmación** (crear un evento escribe en Google Calendar, un efecto externo que conviene revisar por si la IA interpretó mal la fecha/hora) pero **reducir el muro de botones**, en lugar de auto-crear sin confirmar.
+
+**Causa raíz**: las tres ramas de `showEntryAction` (`js/ui.js`) que confirman antes de escribir en Calendar — evento (`calendar.create`), aviso (`schedule`) y evento+aviso combinados — mostraban cada una 5-6 botones "Cambiar título / Cambiar fecha y hora / (Cambiar aviso) / Cambiar ubicación / Cambiar descripción" antes del botón de confirmar. Para el caso común (una orden de voz bien dictada donde no hay nada que cambiar), era un muro de botones para pulsar uno solo. Existía además código muerto (`canExecuteNow` en `js/intents.js`, calculado pero nunca leído) que sugería que en algún momento se pensó una vía "créalo y ya" sin confirmación — no se conecta, a propósito, por la razón de seguridad de arriba.
+
+**Corrección**: las tres ramas sustituyen los 4-5 botones "Cambiar X" por uno solo, "✎ Corregir un dato" (acción `edit-calendar-menu`). `handleEntryAction` (`js/app.js`) maneja esa acción abriendo un submenú (`ui.openModal`) con exactamente las mismas opciones de antes (título, fecha y hora, ubicación, descripción, y "Cambiar aviso" solo cuando es evento+aviso), cada una con su misma acción `edit-calendar-field`/`edit-calendar-datetime` de siempre — así el flujo de edición no cambia en nada — más un "Volver" que reabre la confirmación. Resultado: la confirmación de un evento bien dictado queda en 3 botones (Cancelar · Corregir · Añadir), pero se puede corregir cualquier campo en un toque más, y la confirmación antes de escribir en Calendar se mantiene. Mismo patrón de submenú que ya usa `openDietarioCalendarMenu` (V0.22.16).
+
+**Cobertura de test**: `tests/conversation.test.mjs` — se actualizaron las dos aserciones que comprobaban el conjunto exacto de botones de las confirmaciones (evento y evento+aviso) al nuevo conjunto colapsado, y se añadió una prueba que comprueba que las 3 pantallas usan el botón agrupado y que el submenú ofrece los campos correctos (con "Cambiar aviso" solo en el caso combinado) y un "Volver". Verificado en vivo: la confirmación de un evento muestra 3 botones y "✎ Corregir un dato" abre el submenú con los campos.
+
 ## 2026-09-21 — Buscador de la compra: placeholder por tienda y limpieza al cambiar de lista V0.22.32
 
 Octavo arreglo de la segunda auditoría (dos detalles cosméticos del buscador de la lista, agrupados).

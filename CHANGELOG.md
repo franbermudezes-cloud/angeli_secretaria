@@ -1,5 +1,13 @@
 # Changelog
 
+## V0.22.33 · Confirmar un evento o aviso ya no muestra un muro de botones (2ª auditoría, usabilidad)
+
+- **Antes**: la pantalla de "¿Lo añado al calendario?" (y las de aviso y evento+aviso) mostraba 5-6 botones "Cambiar X" antes de poder confirmar, aunque lo dictado estuviera perfecto.
+- **Ahora**: esos cambios se agrupan tras un solo "✎ Corregir un dato" que abre un submenú con las mismas opciones (y un "Volver"). La confirmación en sí se mantiene, porque crear el evento escribe en Google Calendar y conviene revisarlo. Para un evento bien dictado, la pantalla queda en 3 botones: Cancelar · Corregir · Añadir.
+- **Verificado en el navegador sandbox**.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: `tests/conversation.test.mjs` actualizado + 1 prueba nueva.
+
 ## V0.22.32 · El buscador de la compra se ajusta a la tienda y se limpia al cambiar de lista (2ª auditoría, detalle)
 
 - **Antes**: el buscador ponía siempre "Buscar o añadir un artículo…", aunque en una lista que no es de Mercadona no hay búsqueda en vivo; y al cambiar de lista conservaba lo escrito en la anterior.
