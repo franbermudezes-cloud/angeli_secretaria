@@ -1,5 +1,13 @@
 # Changelog
 
+## V0.22.24 · Subir una foto o archivo ya no obliga a explicar para qué se guarda
+
+- **Antes**: en cuanto se seleccionaba una foto o un archivo, se abría "Organizar adjunto" y quedaba bloqueado del todo hasta escribir "¿para qué lo guardas?" — no había forma de saltarlo ni de subirlo tal cual.
+- **Ahora**: ese campo es opcional. Con la categoría y la relación ya puestas por defecto, "Continuar" funciona con un solo toque si solo se quiere adjuntar la foto sin más explicación. Solo se sigue pidiendo el nombre si se elige explícitamente un tipo de relación (persona/cliente/proyecto) — dejarlo en blanco ahí sí sería un dato sin sentido.
+- Verificado en el navegador sandbox simulando la selección real de un archivo: antes del cambio, "Continuar" quedaba bloqueado; después, funciona directamente.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: `tests/media-context.test.mjs` ampliado.
+
 ## V0.22.23 · El estado del micrófono del compositor ya no es una variable global suelta (auditoría, calidad de código)
 
 - **Antes**: si el micrófono del compositor estaba escuchando vivía como una variable global (`listening`) tocada directamente desde cinco sitios distintos — la misma clase de fallo que ya causó el bug de "micrófonos huérfanos" (V0.21.95, V0.22.5).
