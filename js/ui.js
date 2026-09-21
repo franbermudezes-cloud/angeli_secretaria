@@ -1,13 +1,13 @@
-import { typeLabel } from "./classifier.js?v=0.23.1";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.23.1";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.23.1";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.23.1";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.23.1";
-import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.23.1";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.23.1";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.23.1";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.23.1";
-import { groupDietarioByDay } from "./dietario.js?v=0.23.1";
+import { typeLabel } from "./classifier.js?v=0.23.2";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.23.2";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.23.2";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.23.2";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.23.2";
+import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.23.2";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.23.2";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.23.2";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.23.2";
+import { groupDietarioByDay } from "./dietario.js?v=0.23.2";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -153,7 +153,7 @@ export function createUI({ getMedia }) {
     $("actionModal").classList.add("show");
   }
 
-  function showDraft({ value = "", onInput, onSend, onMic, onCancel }) {
+  function showDraft({ value = "", onInput, onSend, onMic, onCancel, focus = false }) {
     const draft = document.createElement("textarea");
     draft.id = "activeDraft";
     draft.className = "active-draft";
@@ -167,15 +167,18 @@ export function createUI({ getMedia }) {
       body: draft,
       actions: [
         { label: "Ahora no", kind: "secondary", onClick: onCancel || closeLayers },
+        { label: "⌨️ Teclado", kind: "secondary", onClick: () => draft.focus() },
         { label: "🎙️ Hablar", kind: "voice", onClick: () => { draft.blur(); onMic?.(); } },
         { label: "➤ Enviar", kind: "confirm", onClick: onSend }
       ]
     });
     $("actionModal").classList.add("conversation-modal");
-    // Mismo ajuste que showInteractionQuestion: el propietario pidió que
-    // cualquier cuadro de texto de un modal quede con el cursor puesto en
-    // cuanto se abre, en vez de exigir tocarlo primero para poder escribir.
-    draft.focus();
+    // Reportado por el propietario en el móvil: este modal es de voz primero,
+    // pero al abrirse enfocaba el cuadro y Android abría el teclado solo,
+    // tapando los botones — había que esconderlo a mano cada vez. Ahora el
+    // teclado NO se abre solo: solo se enfoca si el modal se abrió justo para
+    // escribir (al tocar el compositor), o cuando la persona pulsa "⌨️ Teclado".
+    if (focus) draft.focus();
   }
 
   function updateDraft(value) {
@@ -189,7 +192,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.23.1";
+    image.src = "assets/angeli-welcome.gif?v=0.23.2";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -820,17 +823,16 @@ export function createUI({ getMedia }) {
       lead: interaction.question || "¿Puedes completar la información que falta?",
       body: content,
       actions: [
-        { label: "Cancelar", kind: "secondary", onClick: onCancel || closeLayers }
+        { label: "Cancelar", kind: "secondary", onClick: onCancel || closeLayers },
+        { label: "⌨️ Teclado", kind: "secondary", onClick: () => draft.focus() }
       ]
     });
     $("actionModal").classList.add("conversation-modal");
-    // Real reportado: el cuadro se abría sin el cursor puesto, así que
-    // escribir a mano exigía tocar el cuadro primero — y dictar por voz
-    // (que sí escribe aquí en cuanto se abre, vía updateDraft) pasaba
-    // desapercibido si la persona no había mirado dos veces. El cursor
-    // debe quedar puesto en cuanto se abre el modal, listo para cualquiera
-    // de las dos vías (voz o teclado) sin tocar nada antes.
-    draft.focus();
+    // Reportado por el propietario en el móvil: al abrirse, el modal enfocaba el
+    // cuadro y Android abría el teclado solo, tapando los botones de voz. Es un
+    // modal de voz primero (Angeli pregunta, tú respondes hablando): ya no se
+    // enfoca solo. Si la persona prefiere escribir, toca el cuadro visible o el
+    // botón "⌨️ Teclado". El dictado sigue escribiendo aquí vía updateDraft.
   }
 
   function showCalendarEvent(note, google, eventId, {onEdit}={}) {
