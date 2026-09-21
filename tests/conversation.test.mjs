@@ -534,9 +534,11 @@ test('evento y recordatorio comparten ficha editable sin añadir pasos al guarda
   assert.match(elements.get('modalBody').html,/San Marcos de Gandía/);
   assert.match(elements.get('modalBody').html,/Sin descripción/);
   const actions=elements.get('modalActions').children;
-  assert.deepEqual(actions.map(button=>button.textContent),['Cancelar','Cambiar título','Cambiar fecha y hora','Cambiar ubicación','Añadir descripción','📅 Añadir']);
-  assert.equal(actions[3].dataset.field,'location');
-  assert.equal(actions[5].dataset.a,'calendar');
+  // 2ª auditoría: los "Cambiar X" se agrupan tras "✎ Corregir un dato" para
+  // no mostrar un muro de botones antes de confirmar un evento bien dictado.
+  assert.deepEqual(actions.map(button=>button.textContent),['Cancelar','✎ Corregir un dato','📅 Añadir']);
+  assert.equal(actions[1].dataset.a,'edit-calendar-menu');
+  assert.equal(actions[2].dataset.a,'calendar');
 
   let saved=null,micTarget=null;
   ui.showCalendarFieldEditor(event,'description',{onSave:value=>saved=value,onMic:id=>micTarget=id,onCancel:()=>{}});
@@ -568,15 +570,16 @@ test('evento y recordatorio comparten ficha editable sin añadir pasos al guarda
   const reminder={...reminderFixture(),aiIntent:{...reminderFixture().aiIntent,notes:null},proposal:{intent:'reminder.create'}};
   ui.showEntryAction(reminder);
   assert.match(elements.get('modalBody').html,/Llamar a Miguel Ibiza/);
-  assert.deepEqual(elements.get('modalActions').children.map(button=>button.textContent),['Cancelar','Cambiar título','Cambiar fecha y hora','Añadir ubicación','Añadir descripción','⏰ Programar']);
+  assert.deepEqual(elements.get('modalActions').children.map(button=>button.textContent),['Cancelar','✎ Corregir un dato','⏰ Programar']);
 
   const linked={...event,schedule:{dueAt:'2026-08-26T21:00:00',title:'Comprobar el equipo',status:'pending_confirmation'},calendarStatus:'pending'};
   ui.showEntryAction(linked);
   assert.match(elements.get('modalBody').html,/Cena con María/);
   assert.match(elements.get('modalBody').html,/Aviso vinculado/);
   assert.match(elements.get('modalBody').html,/Comprobar el equipo/);
-  assert.deepEqual(elements.get('modalActions').children.map(button=>button.textContent),['Cancelar','Cambiar título','Cambiar fecha y hora','Cambiar aviso','Cambiar ubicación','Añadir descripción','📅 Crear los dos']);
-  assert.equal(elements.get('modalActions').children[6].dataset.a,'calendar-bundle');
+  assert.deepEqual(elements.get('modalActions').children.map(button=>button.textContent),['Cancelar','✎ Corregir un dato','📅 Crear los dos']);
+  assert.equal(elements.get('modalActions').children[2].dataset.a,'calendar-bundle');
+  assert.equal(elements.get('modalActions').children[1].dataset.a,'edit-calendar-menu');
 });
 
 test('evento y recordatorio permiten corregir fecha y hora antes de guardar',()=>{
@@ -1450,4 +1453,21 @@ test('carve-out generalizado (b): una continuación real de whatsapp.compose sig
   assert.equal(turn.interpretation.contactName, 'Juan');
   assert.equal(turn.interpretation.notes, answer);
   assert.equal(turn.interaction.status, 'pending_confirmation');
+});
+
+// 2ª auditoría (usabilidad): la confirmación de un evento/aviso mostraba un
+// muro de 5-6 botones "Cambiar X". Ahora se agrupan tras "✎ Corregir un
+// dato", que abre un submenú con las mismas acciones; la confirmación en sí
+// (escribir en Calendar) se mantiene como red de seguridad.
+test('el submenú "Corregir un dato" agrupa los cambios y ofrece "Volver" (código fuente)', () => {
+  const app = readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
+  const ui = readFileSync(new URL('../js/ui.js', import.meta.url), 'utf8');
+  // las tres confirmaciones usan el botón agrupado
+  assert.equal((ui.match(/a: "edit-calendar-menu"/g) || []).length, 3, 'las 3 pantallas de confirmación (evento, aviso, evento+aviso) deben usar el botón agrupado');
+  const menuSource = app.match(/if\(action==="edit-calendar-menu"\)\{[\s\S]*?\n {2}\]\}\);\n {2}return;\n \}/)?.[0] || '';
+  assert.ok(menuSource, 'el handler de edit-calendar-menu debe existir');
+  assert.match(menuSource, /a:"edit-calendar-field",id:note\.id,field:"title"/, 'el submenú ofrece cambiar el título');
+  assert.match(menuSource, /a:"edit-calendar-datetime"/, 'y la fecha y hora');
+  assert.match(menuSource, /bundle\?\[\{label:"Cambiar aviso"/, 'y el aviso solo cuando es evento+aviso');
+  assert.match(menuSource, /label:"Volver",kind:"secondary",onClick:\(\)=>ui\.showEntryAction/, 'con "Volver" a la confirmación');
 });

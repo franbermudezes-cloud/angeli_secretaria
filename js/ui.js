@@ -1,13 +1,13 @@
-import { typeLabel } from "./classifier.js?v=0.22.32";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.22.32";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.22.32";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.32";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.22.32";
-import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.22.32";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.32";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.22.32";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.22.32";
-import { groupDietarioByDay } from "./dietario.js?v=0.22.32";
+import { typeLabel } from "./classifier.js?v=0.22.33";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.22.33";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.22.33";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.33";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.22.33";
+import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.22.33";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.33";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.22.33";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.22.33";
+import { groupDietarioByDay } from "./dietario.js?v=0.22.33";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -189,7 +189,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.22.32";
+    image.src = "assets/angeli-welcome.gif?v=0.22.33";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -558,11 +558,7 @@ export function createUI({ getMedia }) {
       }
       openModal({ ...base, title: note.calendarStatus === "error" ? "No se pudo completar" : "¿Creo el evento y su aviso?", lead: "Comprueba los dos elementos. Se guardarán juntos o no se guardará ninguno.", body: entryBody(note) + calendarCard(note) + reminder, actions: [
         { label: "Cancelar", kind: "secondary", onClick: closeLayers },
-        { label: "Cambiar título", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "title" } },
-        { label: "Cambiar fecha y hora", kind: "secondary", dataset: { a: "edit-calendar-datetime", id: note.id } },
-        { label: "Cambiar aviso", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "reminderTitle" } },
-        { label: calendarDetails(note).location ? "Cambiar ubicación" : "Añadir ubicación", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "location" } },
-        { label: calendarDetails(note).description ? "Cambiar descripción" : "Añadir descripción", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "description" } },
+        { label: "✎ Corregir un dato", kind: "secondary", dataset: { a: "edit-calendar-menu", id: note.id } },
         { label: note.calendarStatus === "error" ? "Reintentar" : "📅 Crear los dos", kind: "confirm", dataset: { a: "calendar-bundle", id: note.id } }
       ] });
       return;
@@ -582,7 +578,7 @@ export function createUI({ getMedia }) {
         showCompletion({ title: "✓ Pendiente completado", lead: "Lo he marcado como hecho.", body: detail });
         return;
       }
-      openModal({ ...base, title: note.schedule.status === "error" ? "No se pudo programar" : "¿Programo este aviso?", lead: "Comprueba el título. Si está bien, solo tienes que programarlo.", body: detail, actions: [{ label: "Cancelar", kind: "secondary", onClick: closeLayers }, { label: "Cambiar título", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "title" } }, { label: "Cambiar fecha y hora", kind: "secondary", dataset: { a: "edit-calendar-datetime", id: note.id } }, { label: calendarDetails(note).location ? "Cambiar ubicación" : "Añadir ubicación", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "location" } }, { label: calendarDetails(note).description ? "Cambiar descripción" : "Añadir descripción", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "description" } }, { label: note.schedule.status === "error" ? "Reintentar" : "⏰ Programar", kind: "confirm", dataset: { a: "schedule", id: note.id } }] });
+      openModal({ ...base, title: note.schedule.status === "error" ? "No se pudo programar" : "¿Programo este aviso?", lead: "Comprueba el título. Si está bien, solo tienes que programarlo.", body: detail, actions: [{ label: "Cancelar", kind: "secondary", onClick: closeLayers }, { label: "✎ Corregir un dato", kind: "secondary", dataset: { a: "edit-calendar-menu", id: note.id } }, { label: note.schedule.status === "error" ? "Reintentar" : "⏰ Programar", kind: "confirm", dataset: { a: "schedule", id: note.id } }] });
       return;
     }
     if (intent === "calendar.create") {
@@ -593,10 +589,7 @@ export function createUI({ getMedia }) {
       }
       openModal({ ...base, title: "¿Lo añado al calendario?", lead: "Comprueba el título. La ubicación y la descripción se guardarán en sus campos.", body: entryBody(note) + calendarCard(note), actions: [
         { label: "Cancelar", kind: "secondary", onClick: closeLayers },
-        { label: "Cambiar título", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "title" } },
-        { label: "Cambiar fecha y hora", kind: "secondary", dataset: { a: "edit-calendar-datetime", id: note.id } },
-        { label: calendarDetails(note).location ? "Cambiar ubicación" : "Añadir ubicación", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "location" } },
-        { label: calendarDetails(note).description ? "Cambiar descripción" : "Añadir descripción", kind: "secondary", dataset: { a: "edit-calendar-field", id: note.id, field: "description" } },
+        { label: "✎ Corregir un dato", kind: "secondary", dataset: { a: "edit-calendar-menu", id: note.id } },
         { label: "📅 Añadir", kind: "confirm", dataset: { a: "calendar", id: note.id } }
       ] });
       return;
