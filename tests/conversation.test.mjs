@@ -1471,3 +1471,18 @@ test('el submenú "Corregir un dato" agrupa los cambios y ofrece "Volver" (códi
   assert.match(menuSource, /bundle\?\[\{label:"Cambiar aviso"/, 'y el aviso solo cuando es evento+aviso');
   assert.match(menuSource, /label:"Volver",kind:"secondary",onClick:\(\)=>ui\.showEntryAction/, 'con "Volver" a la confirmación');
 });
+
+// 2ª auditoría: cancelar un evento encontrado en Calendar usaba el confirm()
+// nativo dentro de google.deleteCalendarEvent. Ahora la confirmación vive en
+// la app (modal propio) y se ejecuta ANTES de borrar.
+test('cancelar un evento de Calendar confirma con el modal propio, no con confirm() nativo (código fuente)', () => {
+  const google = readFileSync(new URL('../js/google.js', import.meta.url), 'utf8');
+  const app = readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
+  const deleteSource = google.match(/async function deleteCalendarEvent\(note, eventId\) \{[\s\S]*?\n  \}/)?.[0] || '';
+  assert.ok(deleteSource, 'deleteCalendarEvent debe existir');
+  assert.doesNotMatch(deleteSource, /\bconfirm\(/, 'deleteCalendarEvent ya no debe usar el confirm() nativo');
+  assert.match(app, /function confirmCalendarEventDeletion\(eventId,onConfirm\)\{/, 'debe existir el helper de confirmación con modal propio');
+  assert.match(app, /ui\.showConfirm\(\{title:localBundle\?"¿Cancelar el evento y su aviso\?"/, 'confirma con el modal propio, distinguiendo si hay aviso vinculado');
+  assert.match(app, /if\(action==="agenda-delete"\)\{confirmCalendarEventDeletion\(button\.dataset\.eventId,\(\)=>cancelAgendaEvent/, 'agenda-delete confirma antes de cancelar');
+  assert.match(app, /if\(action==="calendar-delete"\)\{\n\s*confirmCalendarEventDeletion\(button\.dataset\.eventId,async\(\)=>\{/, 'calendar-delete confirma antes de borrar');
+});

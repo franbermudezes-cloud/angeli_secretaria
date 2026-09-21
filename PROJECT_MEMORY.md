@@ -1,5 +1,15 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-21 — Cancelar un evento de Calendar con el modal propio V0.22.36
+
+Duodécimo arreglo de la segunda auditoría (usabilidad). Encontrado en el barrido final de `prompt()`/`confirm()` nativos que hizo la sesión principal tras cerrar los hallazgos de los agentes — se le había escapado a los agentes porque vivía en la capa de integración (`js/google.js`), no en la UI.
+
+**Causa raíz**: `deleteCalendarEvent(note, eventId)` (`js/google.js`) — invocada al anular un evento encontrado por búsqueda en Calendar ("Anular este evento", acción `agenda-delete`, y la acción `calendar-delete`) — confirmaba con `confirm()` nativo, con un mensaje que distinguía si el evento tenía un aviso vinculado (`localBundle`). Era el último `confirm()` nativo en un flujo de gestión (quedan solo dos, en "Eliminar caché local" y "Limpiar vista" de Ajustes, que son avisos puntuales sobre datos locales de este dispositivo y se dejan a propósito). `js/google.js` es la capa de integración y no tiene acceso al `ui` propio de la app, por eso usaba el diálogo del navegador.
+
+**Corrección**: la confirmación se saca de `deleteCalendarEvent` (que ahora borra directamente, asumiendo que el llamador ya confirmó) y se sube a `js/app.js`, donde sí hay `ui`. Nuevo helper `confirmCalendarEventDeletion(eventId,onConfirm)`: calcula `localBundle` (mirando `notes`), muestra `ui.showConfirm` con el título/lead adecuados según haya o no aviso vinculado, y solo ejecuta `onConfirm` (el borrado real) tras aceptar. Los dos puntos de entrada se envuelven en él: `agenda-delete` → `confirmCalendarEventDeletion(...,()=>cancelAgendaEvent(...))`, y la acción `calendar-delete` (separada ahora de `calendar-update`, que no borra nada y no necesita confirmación) → `confirmCalendarEventDeletion(...,async()=>{await google.deleteCalendarEvent(...);...})`. `js/agenda.js` no cambia: su lógica de "solo marca éxito si el DELETE invalidó el resultado en caché" sigue igual, solo que ahora la cancelación por parte del usuario ocurre antes, en el modal, y `cancelAgendaEvent` ni siquiera se llama si se rechaza.
+
+**Cobertura de test**: `tests/conversation.test.mjs` — comprueba que `deleteCalendarEvent` (google.js) ya no usa `confirm()`, que existe `confirmCalendarEventDeletion` con `ui.showConfirm` (distinguiendo aviso vinculado), y que las acciones `agenda-delete`/`calendar-delete` confirman antes de borrar. Las pruebas existentes de agenda (`createAgendaActions`) siguen pasando sin cambios. Verificado en vivo: el modal propio "¿Cancelar este evento?" con "Ahora no"/"Sí, cancelar".
+
 ## 2026-09-21 — La ficha del Dietario siempre deja eliminar V0.22.35
 
 Undécimo arreglo de la segunda auditoría (usabilidad) — cierra el último callejón sin salida encontrado.

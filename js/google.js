@@ -1,6 +1,6 @@
-import { cleanTemporalText } from "./temporal.js?v=0.22.35";
-import { calendarDetails } from "./schedule.js?v=0.22.35";
-import { semanticCalendarTarget } from "./ai.js?v=0.22.35";
+import { cleanTemporalText } from "./temporal.js?v=0.22.36";
+import { calendarDetails } from "./schedule.js?v=0.22.36";
+import { semanticCalendarTarget } from "./ai.js?v=0.22.36";
 
 const CLIENT_ID = "172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
@@ -482,9 +482,10 @@ export function createGoogleIntegration({ notify, refresh, setStatus, showConnec
     refresh();
   }
 
+  // 2ª auditoría: la confirmación ya no vive aquí (usaba el confirm() nativo,
+  // y esta capa no tiene acceso a la UI propia). El llamador confirma con el
+  // modal de la app ANTES de llamar; aquí se borra directamente.
   async function deleteCalendarEvent(note, eventId) {
-    const localBundle = getNotes().some(item => item.calendarEventId === eventId && item.schedule?.relatedEventId === eventId && item.schedule?.calendarEventId);
-    if (!confirm(localBundle ? "¿Cancelar definitivamente este evento y su aviso asociado?" : "¿Cancelar definitivamente este evento?")) return;
     try {
       const linked = await linkedReminderEvents(eventId);
       await calendarRequest("DELETE", `/${encodeURIComponent(eventId)}`);
