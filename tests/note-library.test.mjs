@@ -49,3 +49,11 @@ assert.match(ui, /function showConfirm\(/, "showConfirm debe existir en ui.js");
 
 
 console.log("note-library: ok");
+
+// 2ª auditoría: en el editor de notas, elegir un tipo de relación pero dejar
+// el nombre en blanco descartaba la relación en silencio
+// (normalizeNoteClassification la ponía a "none"). Igual que en el editor de
+// adjuntos, ahora se pide el nombre cuando hay tipo de relación.
+const showNoteEditorSource = ui.match(/function showNoteEditor\([\s\S]*?\n {2}\}/)?.[0] || "";
+assert.ok(showNoteEditorSource, "showNoteEditor debe existir");
+assert.match(showNoteEditorSource, /\$\("noteDraftRelationType"\)\.value !== "none" && !\$\("noteDraftRelationName"\)\.value\.trim\(\)/, "debe validar que haya nombre cuando se elige un tipo de relación");
