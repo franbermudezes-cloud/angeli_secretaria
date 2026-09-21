@@ -1,5 +1,17 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-21 — Dictar una nota corriente ya no obliga a teclear un título a mano V0.22.25
+
+Primer arreglo de la SEGUNDA auditoría (la "auditoría de la auditoría"), pedida por el propietario tras descubrir en vivo el bloqueo de la foto: repasar toda la app desde el ángulo de usabilidad real (no solo corrección), buscando otros sitios con el mismo patrón de "campo obligatorio sin escapatoria", y verificando que los ~16 arreglos del mismo día no rompieron nada. Se lanzaron 5 agentes en paralelo (uno de regresión + cuatro de usabilidad por áreas), todos probando en el navegador, y la sesión principal verificó a mano los hallazgos importantes antes de arreglarlos. El barrido de regresión salió limpio: los 16 arreglos (V0.22.9–V0.22.24) intactos, sin conflictos, 198/198 tests.
+
+**Causa raíz**: `missingNoteDraftFields` (`js/notes.js`) exigía tanto `title` como `text`. `prepareNoteDraft` deliberadamente NO inventa un título cuando el único candidato es una repetición de la propia orden (ver su comentario: "Una repetición de la orden no es un título interpretado"), así que para casi cualquier nota corta dictada el título quedaba en `""`. `reviewNoteDraft` (`js/app.js`) bloquea con la pantalla "Completar nota" (`showNoteEditor` con `missingFields`) mientras falte cualquiera de los dos campos — de modo que dictar "apunta comprar leche mañana" te obligaba a teclear un título a mano antes de poder guardar. Exactamente el mismo tipo de bloqueo que el "¿para qué guardas la foto?" (V0.22.24): un campo obligatorio para algo que la app ya sabe rellenar sola — `noteTitle()` siempre cae al texto de la nota o a "Nota".
+
+Nota sobre la contradicción entre agentes: el agente de notas marcó esto como bloqueo real; el agente de inicio/atajos lo dio por "justificado" (había probado el editor de forma genérica, no el camino concreto de dictar sin título). La sesión principal lo reprodujo en vivo (`prepareNoteDraft` de "comprar leche mañana" → `title:""`, `missing:["title"]`, y `showNoteEditor` con el botón "Revisar cambios" NO dispara `onSave`) y confirmó que el agente de notas tenía razón.
+
+**Corrección**: `missingNoteDraftFields` solo exige `text` ahora. Con contenido, la nota se guarda tal cual y `noteTitle()` usa el texto como título, igual que en el resto de la app. `prepareNoteDraft` no cambia — sigue sin inventar títulos; simplemente ya no se castiga que no haya uno.
+
+**Cobertura de test**: `tests/conversation.test.mjs` — se actualizaron las dos pruebas que esperaban `['title']`/`['title','text']` a `[]`/`['text']`, y se añadió una nueva que reproduce el escenario reportado ("comprar leche mañana" → sin título propio pero `missing:[]`). Verificado en vivo: la nota va directa a "¿Guardo esta nota?".
+
 ## 2026-09-21 — Subir una foto o archivo ya no obliga a explicar para qué se guarda V0.22.24
 
 Reportado en real por el propietario, con petición explícita de comprobarlo en vivo ("Coge y sube un archivo de multimedia y verás qué desastre"). No estaba en la lista de la auditoría — es un hallazgo nuevo, encontrado al reproducirlo directamente en el navegador sandbox.

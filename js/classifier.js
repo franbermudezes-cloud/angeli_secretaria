@@ -1,5 +1,5 @@
-import{temporalData}from"./temporal.js?v=0.22.24";
-import{REMINDER_CLASSIFY_TRIGGER}from"./keywords.js?v=0.22.24";
+import{temporalData}from"./temporal.js?v=0.22.25";
+import{REMINDER_CLASSIFY_TRIGGER}from"./keywords.js?v=0.22.25";
 
 export function classify(text,images=[],files=[]){const value=(text||"").toLowerCase();if(REMINDER_CLASSIFY_TRIGGER.test(value))return"reminder";if(/\b(hacer|comprar|preparar|enviar|revisar)\b/.test(value))return"task";if(/\b(llama|llamar|telefonea|telefonear|contacta|contactar)\b/.test(value))return"contact";const temporal=temporalData(text);if(temporal.scheduledDate&&temporal.scheduledTime)return"calendar";if(images.length)return"photo";if(files.length)return"file";return"note"}
 export function typeLabel(type){return({note:"Nota",task:"Tarea",reminder:"Recordatorio",calendar:"Calendario",contact:"Contacto",file:"Archivo",photo:"Foto"})[type]||"Nota"}

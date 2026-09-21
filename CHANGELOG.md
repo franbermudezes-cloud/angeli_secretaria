@@ -1,5 +1,13 @@
 # Changelog
 
+## V0.22.25 · Dictar una nota corriente ya no obliga a teclear un título a mano (2ª auditoría, usabilidad)
+
+- **Antes**: casi cualquier nota corta dictada ("apunta comprar leche mañana") quedaba bloqueada en la pantalla "Completar nota" exigiendo escribir un título a mano — mismo tipo de bloqueo que el "¿para qué guardas la foto?" (V0.22.24).
+- **Ahora**: el título deja de ser obligatorio; con contenido, la nota se guarda tal cual y usa el propio texto como título (igual que ya hacía en las listas, el Dietario y la biblioteca). Solo se sigue exigiendo el contenido — una nota sin nada escrito no tiene nada que guardar.
+- **Verificado en el navegador sandbox**: una nota dictada corriente ahora va directa a "¿Guardo esta nota?" en vez de bloquearse.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: `tests/conversation.test.mjs` ampliado/actualizado.
+
 ## V0.22.24 · Subir una foto o archivo ya no obliga a explicar para qué se guarda
 
 - **Antes**: en cuanto se seleccionaba una foto o un archivo, se abría "Organizar adjunto" y quedaba bloqueado del todo hasta escribir "¿para qué lo guardas?" — no había forma de saltarlo ni de subirlo tal cual.
