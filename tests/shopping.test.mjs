@@ -660,3 +660,17 @@ test('quitar los artículos marcados de la lista ahora pide confirmación, y ya 
  assert.match(ui,/'<div class="day">Marcados<\/div>'/,"la cabecera de la sección ya no dice \"Comprado\"");
  assert.doesNotMatch(ui,/aria-label="\$\{item\.checked \? "Marcar como pendiente" : "Marcar como comprado"\}"/,"el check ya no se describe como \"comprado\"");
 });
+
+// Reportado en la 2ª auditoría (regresión de V0.22.13): al introducir
+// "tienda por lista" se gateó la búsqueda de Mercadona al ESCRIBIR
+// (scheduleShoppingSearch/Enter), pero no al DICTAR/ordenar por voz
+// (runShoppingCommand), que seguía comprobando solo si el artículo decía
+// "de consum" — no la tienda de la lista de destino. Añadir por voz a una
+// lista de Leroy Merlin/Carrefour lanzaba una búsqueda de Mercadona inútil.
+test('añadir por voz a una lista que no es de Mercadona no abre el modal de búsqueda (código fuente)',()=>{
+ const app=readFileSync(new URL('../js/app.js',import.meta.url),'utf8');
+ const runCmd=app.match(/async function runShoppingCommand\(command\)\{[\s\S]*?\n\}/)?.[0]||"";
+ assert.ok(runCmd,"runShoppingCommand debe existir");
+ assert.match(runCmd,/const targetList=shoppingState\.lists\.find\(list=>list\.id===listId\)/,"debe resolver la lista de destino para consultar su tienda");
+ assert.match(runCmd,/isMercadonaList\(targetList\)/,"debe gatear la búsqueda por la tienda real de la lista, no solo por el sufijo del artículo");
+});

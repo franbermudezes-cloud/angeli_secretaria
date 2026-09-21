@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.22.27 · Añadir por voz a una lista que no es de Mercadona ya no lanza una búsqueda inútil (2ª auditoría, regresión)
+
+- **Antes**: al introducir "tienda por lista" (V0.22.13) se gateó la búsqueda de Mercadona al escribir en el buscador, pero no al dictar/ordenar por voz — añadir por voz a una lista de Leroy Merlin/Carrefour abría igualmente el modal de búsqueda de Mercadona, que nunca podía encontrar nada.
+- **Ahora**: el comando de voz consulta la tienda real de la lista de destino; solo las listas de Mercadona abren el modal de búsqueda, el resto añaden el artículo directamente.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: 1 prueba nueva en `tests/shopping.test.mjs`.
+
 ## V0.22.26 · "Quitar comprados" ya no borra sin avisar, y lo marcado deja de llamarse "comprado" (2ª auditoría, usabilidad)
 
 - **Antes**: marcar un artículo en la lista significa "lo quiero esta vez" (para el carrito), pero la interfaz seguía llamándolos "comprados" y el botón "Quitar comprados" los borraba **permanentemente sin confirmación** — era fácil marcar leche y pan para el carrito y perderlos de golpe.
