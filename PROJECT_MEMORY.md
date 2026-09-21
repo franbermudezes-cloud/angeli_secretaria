@@ -1,5 +1,15 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-21 — Buscador de la compra: placeholder por tienda y limpieza al cambiar de lista V0.22.32
+
+Octavo arreglo de la segunda auditoría (dos detalles cosméticos del buscador de la lista, agrupados).
+
+**Causa raíz**: (1) el `<input id="shoppingInput">` tenía un placeholder estático "Buscar o añadir un artículo…" en `index.html`, nunca ajustado por lista — pero en una lista que no es de Mercadona no hay búsqueda en vivo (`scheduleShoppingSearch` la bloquea desde V0.22.13), así que invitaba a una búsqueda que nunca corre. (2) Ni `openShoppingListDetail` ni `renderShoppingDetail` limpiaban el valor del buscador al cambiar de lista, así que lo escrito en una lista seguía visible al abrir otra.
+
+**Corrección**: (1) `renderShoppingDetail` (`js/ui.js`) fija ahora el placeholder según `isMercadonaList(list)` — "Buscar o añadir un artículo…" en Mercadona, "Añadir un artículo…" en el resto. Se hace en render (no en el HTML estático) porque depende de la lista concreta que se está mostrando. (2) `openShoppingListDetail` (`js/app.js`) limpia `$("shoppingInput").value` y oculta las sugerencias SOLO cuando de verdad se cambia de lista activa (dentro del `if(targetId!==activeListId)`), no en cada re-render — para no borrar lo que la persona esté escribiendo mientras se actualiza la misma lista.
+
+**Cobertura de test**: `tests/shopping.test.mjs` — comprueba que el placeholder depende de `isMercadonaList(list)` y que `openShoppingListDetail` limpia el buscador al cambiar de lista. Verificado en vivo: "Buscar o añadir…" en una lista Mercadona, "Añadir un artículo…" en una de Leroy Merlin.
+
 ## 2026-09-21 — Ajustes de notas con el modal propio, sin prompt()/confirm() nativos V0.22.31
 
 Séptimo arreglo de la segunda auditoría (usabilidad). Con esto, y las cancelaciones del Dietario (V0.22.29) y la creación de accesos directos (V0.22.30), ya no queda ningún `prompt()`/`confirm()` nativo en los flujos de gestión de la app (solo quedan dos `confirm()` en acciones destructivas de Ajustes — "Eliminar caché local" y "Limpiar vista" —, que son avisos puntuales sobre datos locales, no flujos de gestión, y se dejan como estaban).
