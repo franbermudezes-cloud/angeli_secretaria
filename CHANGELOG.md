@@ -1,5 +1,13 @@
 # Changelog
 
+## V0.22.36 · Cancelar un evento encontrado en Calendar usa el modal propio, no el cuadro del navegador (2ª auditoría, usabilidad)
+
+- **Antes**: al anular un evento encontrado por búsqueda en Calendar, la confirmación era el `confirm()` nativo del navegador — el último que quedaba en un flujo de gestión.
+- **Ahora**: confirma con el modal propio de Angeli (distinguiendo si el evento lleva un aviso vinculado). Con esto ya no queda ningún diálogo nativo en los flujos de gestión de la app.
+- **Verificado en el navegador sandbox**.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: 1 prueba nueva en `tests/conversation.test.mjs`.
+
 ## V0.22.35 · La ficha del Dietario siempre deja eliminar, incluso si el evento falló al sincronizar (2ª auditoría, usabilidad)
 
 - **Antes**: abrir desde el Dietario un evento/aviso que falló al sincronizar (o que seguía pendiente) mostraba solo "Cerrar" — la única forma de quitarlo era adivinar que el "⋮" de la fila lo permitía.
