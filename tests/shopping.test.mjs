@@ -674,3 +674,19 @@ test('añadir por voz a una lista que no es de Mercadona no abre el modal de bú
  assert.match(runCmd,/const targetList=shoppingState\.lists\.find\(list=>list\.id===listId\)/,"debe resolver la lista de destino para consultar su tienda");
  assert.match(runCmd,/isMercadonaList\(targetList\)/,"debe gatear la búsqueda por la tienda real de la lista, no solo por el sufijo del artículo");
 });
+
+// Reportado en la 2ª auditoría: al crear una lista salían 7 tiendas sin
+// ninguna por defecto (aunque el código ya usa Mercadona), y "Cancelar" en
+// ese paso perdía el nombre ya escrito sin forma de volver. Ahora Mercadona
+// sale marcada por defecto y "Volver" reabre el paso del nombre.
+test('el selector de tienda marca Mercadona por defecto al crear y ofrece "Volver" sin perder el nombre',()=>{
+ const ui=readFileSync(new URL('../js/ui.js',import.meta.url),'utf8');
+ const app=readFileSync(new URL('../js/app.js',import.meta.url),'utf8');
+ assert.match(ui,/function showShoppingStoreChoice\(currentStore, onPick, \{ onBack \} = \{\}\)/,"debe aceptar onBack");
+ assert.match(ui,/onBack \? \{ label: "Volver"[\s\S]{0,80}: \{ label: "Cancelar"/,'muestra "Volver" cuando hay onBack, "Cancelar" si no');
+ const createSource=app.match(/function createShoppingListPrompt\(prefillName=""\)\{[\s\S]*?\n\}/)?.[0]||"";
+ assert.ok(createSource,"createShoppingListPrompt debe aceptar un nombre a preservar");
+ assert.match(createSource,/ui\.showShoppingStoreChoice\("mercadona"/,"Mercadona por defecto al crear");
+ assert.match(createSource,/onBack:\(\)=>createShoppingListPrompt\(name\)/,'"Volver" reabre el paso del nombre con lo ya escrito');
+ assert.match(createSource,/value:prefillName/,"el nombre previo se vuelve a mostrar en el campo");
+});
