@@ -1,13 +1,13 @@
-import { typeLabel } from "./classifier.js?v=0.22.25";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.22.25";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.22.25";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.25";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.22.25";
-import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.22.25";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.25";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.22.25";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.22.25";
-import { groupDietarioByDay } from "./dietario.js?v=0.22.25";
+import { typeLabel } from "./classifier.js?v=0.22.26";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.22.26";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.22.26";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.26";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.22.26";
+import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.22.26";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.26";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.22.26";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.22.26";
+import { groupDietarioByDay } from "./dietario.js?v=0.22.26";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -189,7 +189,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.22.25";
+    image.src = "assets/angeli-welcome.gif?v=0.22.26";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -1026,7 +1026,7 @@ export function createUI({ getMedia }) {
     const thumb = item.product?.thumbnail ? `<img class="shopping-thumb" src="${esc(item.product.thumbnail)}" alt="">` : '<div class="shopping-thumb placeholder">🛒</div>';
     const stepper = `<div class="shopping-qty-stepper"><button type="button" class="shopping-qty-btn" data-a="qty-dec" aria-label="Quitar una unidad de ${esc(item.name)}">−</button><span class="shopping-qty-value">${quantity}</span><button type="button" class="shopping-qty-btn" data-a="qty-inc" aria-label="Añadir una unidad de ${esc(item.name)}">+</button></div>`;
     return `<div class="shopping-item${item.checked ? " done" : ""}" data-shopping-id="${esc(item.id)}">` +
-      `<button class="shopping-check${item.checked ? " on" : ""}" data-a="toggle" aria-label="${item.checked ? "Marcar como pendiente" : "Marcar como comprado"}">${item.checked ? "✓" : ""}</button>` +
+      `<button class="shopping-check${item.checked ? " on" : ""}" data-a="toggle" aria-label="${item.checked ? "Desmarcar" : "Marcar (lo quiero esta vez)"}">${item.checked ? "✓" : ""}</button>` +
       thumb +
       `<div class="shopping-item-body"><strong>${esc(item.name)}</strong><span class="shopping-meta">${storeBadge}${price}${link}</span></div>` +
       stepper +
@@ -1040,7 +1040,7 @@ export function createUI({ getMedia }) {
     const storeLabel = shoppingStoreLabel(list.store);
     return `<article class="shopping-list-card" data-shopping-list-id="${esc(list.id)}">` +
       `<div class="shopping-thumb-grid">${thumbs.join("")}</div>` +
-      `<div class="shopping-list-card-body"><strong>${esc(list.name)}</strong><span>${storeLabel ? esc(storeLabel) + " · " : ""}${list.items.length} artículo${list.items.length === 1 ? "" : "s"}${done ? ` · ${done} comprado${done === 1 ? "" : "s"}` : ""}</span></div>` +
+      `<div class="shopping-list-card-body"><strong>${esc(list.name)}</strong><span>${storeLabel ? esc(storeLabel) + " · " : ""}${list.items.length} artículo${list.items.length === 1 ? "" : "s"}${done ? ` · ${done} marcado${done === 1 ? "" : "s"}` : ""}</span></div>` +
       `<button class="shopping-list-quick" data-shopping-quick="${esc(list.id)}" aria-label="Opciones de ${esc(list.name)}">⋮</button></article>`;
   }
 
@@ -1077,11 +1077,11 @@ export function createUI({ getMedia }) {
     $("shoppingLibraryTitle").textContent = list.name;
     const pending = list.items.filter(item => !item.checked), done = list.items.filter(item => item.checked);
     const storeLabel = shoppingStoreLabel(list.store);
-    $("shoppingLibrarySubtitle").textContent = `${storeLabel ? storeLabel + " · " : ""}${pending.length} pendiente${pending.length === 1 ? "" : "s"}${done.length ? ` · ${done.length} comprado${done.length === 1 ? "" : "s"}` : ""}`;
+    $("shoppingLibrarySubtitle").textContent = `${storeLabel ? storeLabel + " · " : ""}${pending.length} pendiente${pending.length === 1 ? "" : "s"}${done.length ? ` · ${done.length} marcado${done.length === 1 ? "" : "s"}` : ""}`;
     hideAllShoppingScreens();
     $("shoppingDetail").hidden = false;
     $("shoppingList").innerHTML = list.items.length
-      ? pending.map(shoppingItemMarkup).join("") + (done.length ? '<div class="day">Comprado</div>' + done.map(shoppingItemMarkup).join("") : "")
+      ? pending.map(shoppingItemMarkup).join("") + (done.length ? '<div class="day">Marcados</div>' + done.map(shoppingItemMarkup).join("") : "")
       : `<div class="empty">Esta lista está vacía. Escribe un artículo arriba para ${isMercadonaList(list) ? "buscarlo o añadirlo" : "añadirlo"}.</div>`;
     $("shoppingTotalBar").hidden = !(total > 0);
     if (total > 0) $("shoppingTotalValue").textContent = `Total aproximado ${total.toFixed(2)} €`;
@@ -1301,6 +1301,23 @@ export function createUI({ getMedia }) {
     });
   }
 
+  // Reportado en la 2ª auditoría: "Quitar comprados" borraba los artículos
+  // marcados SIN confirmación — y, como marcar un artículo ahora significa
+  // "lo quiero esta vez" (no "ya lo compré"), era fácil marcar leche y pan
+  // para el carrito y perderlos de la lista de golpe al tocar ese botón. Se
+  // añade confirmación, igual que "Vaciar lista".
+  function showShoppingRemoveMarkedConfirm(count, { onConfirm, onCancel } = {}) {
+    openModal({
+      title: "¿Quitar los marcados?",
+      lead: `Se ${count === 1 ? "quitará el artículo marcado" : `quitarán los ${count} artículos marcados`} de la lista.`,
+      body: "Esta acción no se puede deshacer. (Si solo querías pasarlos al carrito, usa \"🛒 Añadir al carrito\".)",
+      actions: [
+        { label: "Ahora no", kind: "secondary", onClick: onCancel || closeLayers },
+        { label: "Quitar marcados", kind: "danger", onClick: () => onConfirm?.() }
+      ]
+    });
+  }
+
   function setShoppingConfirmStatus(message) {
     const box = $("shoppingConfirmResults");
     if (box) box.innerHTML = `<div class="shopping-suggestions-empty">${esc(message)}</div>`;
@@ -1475,7 +1492,7 @@ export function createUI({ getMedia }) {
     $("conversationModeTranscript").scrollTop = $("conversationModeTranscript").scrollHeight;
   }
 
-  return { $, notify, setGoogleStatus, setPushStatus, setSyncStatus, showConnectionHealth, showNotificationSettings, render, openMediaLibrary, renderMediaLibrary, closeMediaLibrary, openNoteLibrary, renderNoteLibrary, closeNoteLibrary, openDietario, renderDietario, closeDietario, showDietarioDetail, openShoppingList, closeShoppingList, renderShoppingOverview, renderShoppingDetail, renderShoppingCart, renderShoppingPurchases, showPurchaseDetail, hideShoppingSuggestions, showShoppingSuggestionsMessage, renderShoppingSuggestions, setShoppingFallback, showShoppingAddConfirm, renderShoppingConfirmResults, setShoppingConfirmStatus, showShoppingListChoice, showShoppingStoreChoice, showShoppingNamePrompt, showShoppingDeleteConfirm, showShoppingClearConfirm, showMediaViewer, closeMediaViewer, showMediaEntryDetail, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showMediaContextEditor, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome, openConversationMode, closeConversationMode, setConversationStatus, addConversationTurn };
+  return { $, notify, setGoogleStatus, setPushStatus, setSyncStatus, showConnectionHealth, showNotificationSettings, render, openMediaLibrary, renderMediaLibrary, closeMediaLibrary, openNoteLibrary, renderNoteLibrary, closeNoteLibrary, openDietario, renderDietario, closeDietario, showDietarioDetail, openShoppingList, closeShoppingList, renderShoppingOverview, renderShoppingDetail, renderShoppingCart, renderShoppingPurchases, showPurchaseDetail, hideShoppingSuggestions, showShoppingSuggestionsMessage, renderShoppingSuggestions, setShoppingFallback, showShoppingAddConfirm, renderShoppingConfirmResults, setShoppingConfirmStatus, showShoppingListChoice, showShoppingStoreChoice, showShoppingNamePrompt, showShoppingDeleteConfirm, showShoppingClearConfirm, showShoppingRemoveMarkedConfirm, showMediaViewer, closeMediaViewer, showMediaEntryDetail, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showMediaContextEditor, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome, openConversationMode, closeConversationMode, setConversationStatus, addConversationTurn };
 }
 
 function esc(value) {

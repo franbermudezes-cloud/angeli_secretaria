@@ -639,3 +639,24 @@ test('crear, renombrar, borrar y vaciar una lista usan el modal propio de la app
  assert.match(ui,/function showShoppingDeleteConfirm\(list, \{ onConfirm, onCancel \} = \{\}\)/);
  assert.match(ui,/function showShoppingClearConfirm\(list, \{ onConfirm, onCancel \} = \{\}\)/);
 });
+
+// Reportado en la 2ª auditoría (usabilidad): "Quitar comprados" borraba los
+// artículos marcados SIN confirmar, y como marcar ahora significa "lo quiero
+// esta vez" (no "ya lo compré"), era fácil perder de golpe lo que en realidad
+// querías pasar al carrito. Ahora confirma antes de borrar, y la interfaz ya
+// no llama "comprado" a lo marcado.
+test('quitar los artículos marcados de la lista ahora pide confirmación, y ya no se llaman "comprados"',()=>{
+ const app=readFileSync(new URL('../js/app.js',import.meta.url),'utf8');
+ const ui=readFileSync(new URL('../js/ui.js',import.meta.url),'utf8');
+ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ const clearCheckedSource=app.match(/\$\("shoppingClearChecked"\)\.onclick=\(\)=>\{[\s\S]*?\n\};/)?.[0]||"";
+ assert.ok(clearCheckedSource,"el handler de shoppingClearChecked debe existir");
+ assert.match(clearCheckedSource,/ui\.showShoppingRemoveMarkedConfirm\(marked,\{onConfirm:/,"debe pedir confirmación antes de borrar los marcados");
+ assert.match(clearCheckedSource,/onlyChecked:true/,"solo debe borrar los marcados, no la lista entera");
+ assert.match(ui,/function showShoppingRemoveMarkedConfirm\(count, \{ onConfirm, onCancel \} = \{\}\)/,"debe existir el modal de confirmación propio");
+ assert.match(ui,/showShoppingRemoveMarkedConfirm,/,"y estar exportado");
+ // Relabel: la interfaz de la lista ya no llama "comprado" a lo marcado.
+ assert.match(html,/id="shoppingClearChecked">Quitar marcados</,"el botón ya no dice \"Quitar comprados\"");
+ assert.match(ui,/'<div class="day">Marcados<\/div>'/,"la cabecera de la sección ya no dice \"Comprado\"");
+ assert.doesNotMatch(ui,/aria-label="\$\{item\.checked \? "Marcar como pendiente" : "Marcar como comprado"\}"/,"el check ya no se describe como \"comprado\"");
+});

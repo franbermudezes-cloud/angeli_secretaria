@@ -1,5 +1,13 @@
 # Changelog
 
+## V0.22.26 · "Quitar comprados" ya no borra sin avisar, y lo marcado deja de llamarse "comprado" (2ª auditoría, usabilidad)
+
+- **Antes**: marcar un artículo en la lista significa "lo quiero esta vez" (para el carrito), pero la interfaz seguía llamándolos "comprados" y el botón "Quitar comprados" los borraba **permanentemente sin confirmación** — era fácil marcar leche y pan para el carrito y perderlos de golpe.
+- **Ahora**: "Quitar marcados" pide confirmación antes de borrar (con un recordatorio de que, si solo querías pasarlos al carrito, uses "🛒 Añadir al carrito"). Y toda la interfaz de la lista deja de llamar "comprado" a lo marcado (cabecera "Marcados", subtítulo "N marcados", el check dice "lo quiero esta vez").
+- **Verificado en el navegador sandbox**.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: 1 prueba nueva en `tests/shopping.test.mjs`.
+
 ## V0.22.25 · Dictar una nota corriente ya no obliga a teclear un título a mano (2ª auditoría, usabilidad)
 
 - **Antes**: casi cualquier nota corta dictada ("apunta comprar leche mañana") quedaba bloqueada en la pantalla "Completar nota" exigiendo escribir un título a mano — mismo tipo de bloqueo que el "¿para qué guardas la foto?" (V0.22.24).
