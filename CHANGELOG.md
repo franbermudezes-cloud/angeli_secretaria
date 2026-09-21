@@ -1,5 +1,13 @@
 # Changelog
 
+## V0.22.31 · Los ajustes de notas (categorías y relaciones) usan el modal propio, no cuadros del navegador (2ª auditoría, usabilidad)
+
+- **Antes**: crear, renombrar o borrar categorías y tipos de relación en los ajustes de notas usaba los `prompt()`/`confirm()` nativos del navegador, dentro de una pantalla por lo demás con el estilo propio de la app.
+- **Ahora**: usan el modal propio de Angeli (con dos helpers nuevos reutilizables, `showTextPrompt` y `showConfirm`), en línea con el resto de la app.
+- **Verificado en el navegador sandbox**.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: `tests/note-library.test.mjs` ampliado.
+
 ## V0.22.30 · Crear un acceso directo usa el modal propio, también al dictarlo (2ª auditoría, usabilidad)
 
 - **Antes**: crear un acceso directo personalizado usaba dos `prompt()` nativos seguidos — incluso desde "🎙️ Dictar acceso", que en una app de voz obligaba a teclear el nombre en un cuadro feo justo después de dictar la orden.

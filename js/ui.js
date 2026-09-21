@@ -1,13 +1,13 @@
-import { typeLabel } from "./classifier.js?v=0.22.30";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.22.30";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.22.30";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.30";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.22.30";
-import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.22.30";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.30";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.22.30";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.22.30";
-import { groupDietarioByDay } from "./dietario.js?v=0.22.30";
+import { typeLabel } from "./classifier.js?v=0.22.31";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.22.31";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.22.31";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.31";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.22.31";
+import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.22.31";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.31";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.22.31";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.22.31";
+import { groupDietarioByDay } from "./dietario.js?v=0.22.31";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -189,7 +189,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.22.30";
+    image.src = "assets/angeli-welcome.gif?v=0.22.31";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -1282,6 +1282,30 @@ export function createUI({ getMedia }) {
     input.focus();
   }
 
+  // Prompt de texto genérico con el modal propio, para sustituir los prompt()
+  // nativos que quedaban (ajustes de notas: crear/renombrar categorías y
+  // tipos de relación). 2ª auditoría.
+  function showTextPrompt({ title, lead, placeholder = "", value = "", confirmLabel = "Guardar", emptyMessage = "Escribe un nombre", onSave, onCancel } = {}) {
+    const input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = placeholder;
+    input.value = value;
+    openModal({ title, lead, body: input, actions: [
+      { label: "Cancelar", kind: "secondary", onClick: onCancel || closeLayers },
+      { label: confirmLabel, kind: "confirm", onClick: () => { const trimmed = input.value.trim(); if (!trimmed) { notify(emptyMessage); return; } onSave?.(trimmed); } }
+    ] });
+    input.focus();
+  }
+
+  // Confirmación de peligro genérica con el modal propio, para sustituir los
+  // confirm() nativos que quedaban. 2ª auditoría.
+  function showConfirm({ title, lead, body = "", confirmLabel = "Aceptar", cancelLabel = "Ahora no", onConfirm, onCancel } = {}) {
+    openModal({ title, lead, body, actions: [
+      { label: cancelLabel, kind: "secondary", onClick: onCancel || closeLayers },
+      { label: confirmLabel, kind: "danger", onClick: () => onConfirm?.() }
+    ] });
+  }
+
   // Reportado en la 2ª auditoría: crear un acceso directo personalizado (y la
   // opción "🎙️ Dictar acceso") seguía usando dos prompt() nativos seguidos —
   // el mismo patrón feo que ya se quitó de las listas de la compra (V0.22.20)
@@ -1528,7 +1552,7 @@ export function createUI({ getMedia }) {
     $("conversationModeTranscript").scrollTop = $("conversationModeTranscript").scrollHeight;
   }
 
-  return { $, notify, setGoogleStatus, setPushStatus, setSyncStatus, showConnectionHealth, showNotificationSettings, render, openMediaLibrary, renderMediaLibrary, closeMediaLibrary, openNoteLibrary, renderNoteLibrary, closeNoteLibrary, openDietario, renderDietario, closeDietario, showDietarioDetail, openShoppingList, closeShoppingList, renderShoppingOverview, renderShoppingDetail, renderShoppingCart, renderShoppingPurchases, showPurchaseDetail, hideShoppingSuggestions, showShoppingSuggestionsMessage, renderShoppingSuggestions, setShoppingFallback, showShoppingAddConfirm, renderShoppingConfirmResults, setShoppingConfirmStatus, showShoppingListChoice, showShoppingStoreChoice, showShoppingNamePrompt, showShoppingDeleteConfirm, showShoppingClearConfirm, showShoppingRemoveMarkedConfirm, showShortcutEditor, showMediaViewer, closeMediaViewer, showMediaEntryDetail, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showMediaContextEditor, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome, openConversationMode, closeConversationMode, setConversationStatus, addConversationTurn };
+  return { $, notify, setGoogleStatus, setPushStatus, setSyncStatus, showConnectionHealth, showNotificationSettings, render, openMediaLibrary, renderMediaLibrary, closeMediaLibrary, openNoteLibrary, renderNoteLibrary, closeNoteLibrary, openDietario, renderDietario, closeDietario, showDietarioDetail, openShoppingList, closeShoppingList, renderShoppingOverview, renderShoppingDetail, renderShoppingCart, renderShoppingPurchases, showPurchaseDetail, hideShoppingSuggestions, showShoppingSuggestionsMessage, renderShoppingSuggestions, setShoppingFallback, showShoppingAddConfirm, renderShoppingConfirmResults, setShoppingConfirmStatus, showShoppingListChoice, showShoppingStoreChoice, showShoppingNamePrompt, showShoppingDeleteConfirm, showShoppingClearConfirm, showShoppingRemoveMarkedConfirm, showShortcutEditor, showTextPrompt, showConfirm, showMediaViewer, closeMediaViewer, showMediaEntryDetail, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showMediaContextEditor, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome, openConversationMode, closeConversationMode, setConversationStatus, addConversationTurn };
 }
 
 function esc(value) {
