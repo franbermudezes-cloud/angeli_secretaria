@@ -1,5 +1,13 @@
 # Changelog
 
+## V0.22.28 · Crear una lista: Mercadona sale marcada por defecto y "Volver" ya no pierde el nombre (2ª auditoría, usabilidad)
+
+- **Antes**: al crear una lista salían 7 tiendas sin ninguna marcada por defecto (aunque el código ya usa Mercadona), y "Cancelar" en ese paso perdía el nombre ya escrito sin forma de volver atrás.
+- **Ahora**: Mercadona aparece marcada (✓, resaltada) como opción por defecto de un toque, y el botón "Volver" reabre el paso del nombre con lo ya escrito en vez de perderlo.
+- **Verificado en el navegador sandbox**.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: 1 prueba nueva en `tests/shopping.test.mjs`.
+
 ## V0.22.27 · Añadir por voz a una lista que no es de Mercadona ya no lanza una búsqueda inútil (2ª auditoría, regresión)
 
 - **Antes**: al introducir "tienda por lista" (V0.22.13) se gateó la búsqueda de Mercadona al escribir en el buscador, pero no al dictar/ordenar por voz — añadir por voz a una lista de Leroy Merlin/Carrefour abría igualmente el modal de búsqueda de Mercadona, que nunca podía encontrar nada.

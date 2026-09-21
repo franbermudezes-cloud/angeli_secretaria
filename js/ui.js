@@ -1,13 +1,13 @@
-import { typeLabel } from "./classifier.js?v=0.22.27";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.22.27";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.22.27";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.27";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.22.27";
-import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.22.27";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.27";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.22.27";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.22.27";
-import { groupDietarioByDay } from "./dietario.js?v=0.22.27";
+import { typeLabel } from "./classifier.js?v=0.22.28";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.22.28";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.22.28";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.28";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.22.28";
+import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.22.28";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.28";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.22.28";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.22.28";
+import { groupDietarioByDay } from "./dietario.js?v=0.22.28";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -189,7 +189,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.22.27";
+    image.src = "assets/angeli-welcome.gif?v=0.22.28";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -1249,13 +1249,20 @@ export function createUI({ getMedia }) {
   // concreta al crearla (o después, desde sus opciones), elegida entre las
   // que él mismo compra — Mercadona sigue siendo la única con búsqueda en
   // vivo/precio/foto real; el resto son listas de artículos escritos a mano.
-  function showShoppingStoreChoice(currentStore, onPick) {
+  // Reportado en la 2ª auditoría: al crear una lista salían 7 tiendas sin
+  // ninguna marcada por defecto, obligando a elegir una a ciegas aunque el
+  // código ya usa Mercadona por defecto; y "Cancelar" en este paso perdía el
+  // nombre ya escrito sin forma de volver. Ahora quien crea una lista pasa
+  // `currentStore:"mercadona"` para que salga marcada (✓, estilo confirm)
+  // como opción por defecto de un toque, y `onBack` para poder volver al
+  // paso del nombre sin perderlo (se muestra "Volver" en vez de "Cancelar").
+  function showShoppingStoreChoice(currentStore, onPick, { onBack } = {}) {
     openModal({
       title: "¿En qué tienda?",
       lead: "Mercadona tiene búsqueda con precio y foto en vivo; el resto son listas de artículos escritos a mano.",
       actions: [
         ...SHOPPING_STORE_PRESETS.map(preset => ({ label: `${preset.id === currentStore ? "✓ " : ""}${preset.label}`, kind: preset.id === currentStore ? "confirm" : "secondary", onClick: () => { closeLayers(); onPick(preset.id); } })),
-        { label: "Cancelar", kind: "secondary", onClick: closeLayers }
+        onBack ? { label: "Volver", kind: "secondary", onClick: () => onBack() } : { label: "Cancelar", kind: "secondary", onClick: closeLayers }
       ]
     });
   }

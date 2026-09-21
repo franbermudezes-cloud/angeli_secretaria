@@ -1,5 +1,15 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-21 — Selector de tienda con Mercadona por defecto y "Volver" sin perder el nombre V0.22.28
+
+Cuarto arreglo de la segunda auditoría (usabilidad).
+
+**Causa raíz**: `createShoppingListPrompt` (`js/app.js`) encadenaba `showShoppingNamePrompt` → `showShoppingStoreChoice(null, onPick)`. Con `currentStore=null`, `showShoppingStoreChoice` (`js/ui.js`) pintaba los 7 presets como botones idénticos `secondary`, sin ninguno marcado ni resaltado — obligando a elegir uno a ciegas aunque `createShoppingList` ya usa Mercadona por defecto. Y como la lista solo se crea DENTRO del callback `onPick`, la única salida de ese modal era "Cancelar" = `closeLayers`, que descartaba la lista Y el nombre ya tecleado, sin ningún "Volver" al paso anterior.
+
+**Corrección**: `showShoppingStoreChoice(currentStore, onPick, { onBack })` gana un tercer parámetro `onBack`; si se pasa, muestra "Volver" (que llama a `onBack`) en vez de "Cancelar". `createShoppingListPrompt(prefillName="")` pasa ahora `currentStore:"mercadona"` (Mercadona sale con ✓ y estilo `confirm`, como opción por defecto de un toque) y `onBack:()=>createShoppingListPrompt(name)`, que reabre el paso del nombre con lo ya escrito (`showShoppingNamePrompt` ya aceptaba `value`). `changeShoppingListStorePrompt` no cambia (sigue pasando la tienda actual de la lista y sin onBack, así que muestra "Cancelar", correcto para ese contexto).
+
+**Cobertura de test**: `tests/shopping.test.mjs` — comprueba la nueva firma con `onBack`, que se muestra "Volver"/"Cancelar" según corresponda, que crear pasa `"mercadona"` por defecto, que "Volver" reabre el nombre con lo escrito, y que `createShoppingListPrompt` acepta y reusa el nombre previo. Verificado en vivo: "✓ Mercadona" marcada como confirm, "Volver" presente y llamando a onBack.
+
 ## 2026-09-21 — Añadir por voz a una lista no-Mercadona ya no lanza una búsqueda inútil V0.22.27
 
 Tercer arreglo de la segunda auditoría — una regresión concreta de V0.22.13 detectada por el agente de regresión y verificada por la sesión principal leyendo el código.
