@@ -1,5 +1,15 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-21 — Ajustes de notas con el modal propio, sin prompt()/confirm() nativos V0.22.31
+
+Séptimo arreglo de la segunda auditoría (usabilidad). Con esto, y las cancelaciones del Dietario (V0.22.29) y la creación de accesos directos (V0.22.30), ya no queda ningún `prompt()`/`confirm()` nativo en los flujos de gestión de la app (solo quedan dos `confirm()` en acciones destructivas de Ajustes — "Eliminar caché local" y "Limpiar vista" —, que son avisos puntuales sobre datos locales, no flujos de gestión, y se dejan como estaban).
+
+**Causa raíz**: `showNoteSettings` (`js/app.js`) usaba cuatro diálogos nativos — `prompt()` para crear categoría, crear tipo de relación y renombrar, y `confirm()` para borrar un ajuste en uso (con reasignación de las notas afectadas). Feo e inconsistente con el resto de la pantalla, que ya tiene el estilo propio de la app.
+
+**Corrección**: dos helpers genéricos nuevos en `js/ui.js` — `showTextPrompt({title,lead,placeholder,value,confirmLabel,emptyMessage,onSave,onCancel})` (un `<input>` en el modal propio, valida vacío) y `showConfirm({title,lead,body,confirmLabel,cancelLabel,onConfirm,onCancel})` (confirmación de peligro con botón `danger`). `showNoteSettings` los usa para las cuatro acciones, conservando exactamente la misma lógica de reasignación de notas al renombrar/borrar (las notas y adjuntos que usaban la categoría/relación se actualizan igual que antes). El confirm de borrado además explica ahora a dónde van a parar las notas afectadas ("pasarán a la primera categoría" / "quedarán sin ese tipo de relación").
+
+**Cobertura de test**: `tests/note-library.test.mjs` — comprueba que `showNoteSettings` ya no usa `prompt()`/`confirm()`, que usa `showTextPrompt`/`showConfirm` para cada acción, y que ambos helpers existen en `ui.js`. Verificado en vivo: el prompt propio guarda el nombre y el confirm propio muestra "¿Eliminar y reasignar?" con "Ahora no"/"Eliminar".
+
 ## 2026-09-21 — Crear un acceso directo con el modal propio (también al dictarlo) V0.22.30
 
 Sexto arreglo de la segunda auditoría (usabilidad). Señalado por dos agentes.

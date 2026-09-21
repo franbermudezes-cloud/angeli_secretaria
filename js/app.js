@@ -1,25 +1,25 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts,readShortcutsHidden,writeShortcutsHidden}from"./storage.js?v=0.22.30";
-import{classify,actionData}from"./classifier.js?v=0.22.30";
-import{sendEntry}from"./sheets.js?v=0.22.30";
-import{createUI}from"./ui.js?v=0.22.30";
-import{createGoogleIntegration}from"./google.js?v=0.22.30";
-import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,activeIntentDomain,explicitNewCommandDomain,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.22.30";
-import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,setShoppingListStore,isMercadonaList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.22.30";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.22.30";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.22.30";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime,calendarDetails}from"./schedule.js?v=0.22.30";
-import{createCloudSync}from"./firebase.js?v=0.22.30";
-import{createMediaService}from"./media.js?v=0.22.30";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.22.30";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.22.30";
-import{createAgendaActions}from"./agenda.js?v=0.22.30";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.22.30";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.22.30";
-import{DEFAULT_SHORTCUTS,SHORTCUT_PRESETS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.22.30";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.22.30";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.22.30";
-import{mediaLibraryItems}from"./media-library.js?v=0.22.30";
-import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.22.30";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts,readShortcutsHidden,writeShortcutsHidden}from"./storage.js?v=0.22.31";
+import{classify,actionData}from"./classifier.js?v=0.22.31";
+import{sendEntry}from"./sheets.js?v=0.22.31";
+import{createUI}from"./ui.js?v=0.22.31";
+import{createGoogleIntegration}from"./google.js?v=0.22.31";
+import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,activeIntentDomain,explicitNewCommandDomain,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.22.31";
+import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,setShoppingListStore,isMercadonaList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.22.31";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.22.31";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.22.31";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime,calendarDetails}from"./schedule.js?v=0.22.31";
+import{createCloudSync}from"./firebase.js?v=0.22.31";
+import{createMediaService}from"./media.js?v=0.22.31";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.22.31";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.22.31";
+import{createAgendaActions}from"./agenda.js?v=0.22.31";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.22.31";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.22.31";
+import{DEFAULT_SHORTCUTS,SHORTCUT_PRESETS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.22.31";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.22.31";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.22.31";
+import{mediaLibraryItems}from"./media-library.js?v=0.22.31";
+import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.22.31";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,finalText="",pendingImages=[],pendingFiles=[],pendingMediaContext=null,selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -219,24 +219,34 @@ async function saveNoteSettings(nextSettings,nextNotes=notes){
  try{await Promise.all([cloud.saveNoteSettings(normalized),nextNotes===previousNotes?Promise.resolve():cloud.syncNotes(nextNotes,previousNotes)]);ui.notify("Ajustes de notas guardados");return true}catch(error){ui.notify("No se pudieron guardar los ajustes de notas");return false}
 }
 function notesUsingSetting(key,id){return notes.filter(note=>(note.type==="note"&&(key==="categories"?note.noteClassification?.scope:note.noteClassification?.relationType)===id)||(key==="categories"?note.mediaContext?.scope:note.mediaContext?.relationType)===id)}
+// Reportado en la 2ª auditoría: crear/renombrar/borrar categorías y tipos de
+// relación usaba prompt()/confirm() nativos, dentro de una pantalla por lo
+// demás con el estilo propio de la app. Ahora usa el modal propio, igual que
+// el resto (V0.22.20, V0.22.31…).
 function showNoteSettings(){
  ui.showNoteSettings(noteSettings,{
-  onAddCategory:()=>{const label=prompt("Nombre de la nueva categoría");if(label?.trim())saveNoteSettings(addNoteSetting(noteSettings,"categories",label)).then(showNoteSettings)},
-  onAddRelation:()=>{const label=prompt("Nombre del nuevo tipo de relación");if(label?.trim())saveNoteSettings(addNoteSetting(noteSettings,"relationTypes",label)).then(showNoteSettings)},
+  onAddCategory:()=>ui.showTextPrompt({title:"Nueva categoría",lead:"Ponle un nombre a la categoría.",placeholder:"Ej.: Salud",onCancel:showNoteSettings,onSave:label=>saveNoteSettings(addNoteSetting(noteSettings,"categories",label)).then(showNoteSettings)}),
+  onAddRelation:()=>ui.showTextPrompt({title:"Nuevo tipo de relación",lead:"Ponle un nombre al tipo de relación (persona, cliente, proyecto…).",placeholder:"Ej.: Familia",onCancel:showNoteSettings,onSave:label=>saveNoteSettings(addNoteSetting(noteSettings,"relationTypes",label)).then(showNoteSettings)}),
   onAction:async(action,key,id)=>{
    const currentLabel=settingLabel(noteSettings,key,id),used=notesUsingSetting(key,id);
    if(action==="rename"){
-    const label=prompt("Nuevo nombre",currentLabel);if(!label?.trim())return;
-    const nextSettings=renameNoteSetting(noteSettings,key,id,label);
-    const nextNotes=notes.map(note=>{const classification=note.noteClassification||{},context=note.mediaContext||{};let next=note;if(note.type==="note"&&key==="categories"&&classification.scope===id)next={...next,noteClassification:{...classification,categoryLabel:label.trim()}};if(note.type==="note"&&key==="relationTypes"&&classification.relationType===id)next={...next,noteClassification:{...classification,relationTypeLabel:label.trim()}};if(key==="categories"&&context.scope===id)next={...next,mediaContext:{...context,categoryLabel:label.trim()}};if(key==="relationTypes"&&context.relationType===id)next={...next,mediaContext:{...context,relationTypeLabel:label.trim()}};return next});
-    await saveNoteSettings(nextSettings,nextNotes);showNoteSettings();return;
+    ui.showTextPrompt({title:"Cambiar nombre",lead:"Nuevo nombre.",value:currentLabel,onCancel:showNoteSettings,onSave:async label=>{
+     ui.closeLayers();
+     const nextSettings=renameNoteSetting(noteSettings,key,id,label);
+     const nextNotes=notes.map(note=>{const classification=note.noteClassification||{},context=note.mediaContext||{};let next=note;if(note.type==="note"&&key==="categories"&&classification.scope===id)next={...next,noteClassification:{...classification,categoryLabel:label.trim()}};if(note.type==="note"&&key==="relationTypes"&&classification.relationType===id)next={...next,noteClassification:{...classification,relationTypeLabel:label.trim()}};if(key==="categories"&&context.scope===id)next={...next,mediaContext:{...context,categoryLabel:label.trim()}};if(key==="relationTypes"&&context.relationType===id)next={...next,mediaContext:{...context,relationTypeLabel:label.trim()}};return next});
+     await saveNoteSettings(nextSettings,nextNotes);showNoteSettings();
+    }});
+    return;
    }
    if(action==="delete"){
     if(key==="categories"&&noteSettings.categories.length===1){ui.notify("Debe quedar al menos una categoría");return}
-    if(used.length&&!confirm(`${currentLabel} se usa en ${used.length} nota${used.length===1?"":"s"}. ¿Quieres eliminarla y reasignar esas notas?`))return;
-    const nextSettings=removeNoteSetting(noteSettings,key,id),fallback=nextSettings.categories[0];
-    const nextNotes=notes.map(note=>{const classification=note.noteClassification||{},context=note.mediaContext||{};let next=note;if(note.type==="note"&&key==="categories"&&classification.scope===id)next={...next,noteClassification:{...classification,scope:fallback.id,categoryLabel:fallback.label}};if(note.type==="note"&&key==="relationTypes"&&classification.relationType===id)next={...next,noteClassification:{...classification,relationType:"none",relationTypeLabel:"",relationName:null}};if(key==="categories"&&context.scope===id)next={...next,mediaContext:{...context,scope:fallback.id,categoryLabel:fallback.label}};if(key==="relationTypes"&&context.relationType===id)next={...next,mediaContext:{...context,relationType:"none",relationTypeLabel:"",relationName:""}};return next});
-    await saveNoteSettings(nextSettings,nextNotes);showNoteSettings();
+    const doDelete=async()=>{
+     const nextSettings=removeNoteSetting(noteSettings,key,id),fallback=nextSettings.categories[0];
+     const nextNotes=notes.map(note=>{const classification=note.noteClassification||{},context=note.mediaContext||{};let next=note;if(note.type==="note"&&key==="categories"&&classification.scope===id)next={...next,noteClassification:{...classification,scope:fallback.id,categoryLabel:fallback.label}};if(note.type==="note"&&key==="relationTypes"&&classification.relationType===id)next={...next,noteClassification:{...classification,relationType:"none",relationTypeLabel:"",relationName:null}};if(key==="categories"&&context.scope===id)next={...next,mediaContext:{...context,scope:fallback.id,categoryLabel:fallback.label}};if(key==="relationTypes"&&context.relationType===id)next={...next,mediaContext:{...context,relationType:"none",relationTypeLabel:"",relationName:""}};return next});
+     await saveNoteSettings(nextSettings,nextNotes);showNoteSettings();
+    };
+    if(used.length)ui.showConfirm({title:"¿Eliminar y reasignar?",lead:`"${currentLabel}" se usa en ${used.length} nota${used.length===1?"":"s"}.`,body:key==="categories"?"Esas notas pasarán a la primera categoría.":"Esas notas quedarán sin ese tipo de relación.",confirmLabel:"Eliminar",cancelLabel:"Ahora no",onCancel:showNoteSettings,onConfirm:()=>{ui.closeLayers();doDelete()}});
+    else await doDelete();
    }
   }
  });
@@ -1461,7 +1471,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.22.30",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.22.31",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}
