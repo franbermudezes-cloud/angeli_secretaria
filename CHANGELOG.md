@@ -1,5 +1,14 @@
 # Changelog
 
+## V0.23.1 · El dictado en el móvil ya no repite palabras "como si hubiera cincuenta micros"
+
+- **Antes**: en el móvil (Chrome de Android) dar cualquier instrucción por voz repetía palabras y texto sin parar. En el ordenador iba bien.
+- **Causa**: el dictado sumaba el texto reconocido confiando en que `e.resultIndex` avanzara para no releer lo ya dicho. En el ordenador avanza; en Android suele quedarse en 0 y reenvía toda la lista en cada evento, así que lo ya dicho se volvía a sumar una y otra vez.
+- **Ahora**: en cada evento se reconstruye el texto entero desde la lista completa de resultados y se **asigna** (no se suma) — es idempotente, dé igual cuántas veces reenvíe Android. El ordenador sigue igual de bien.
+- **Verificado en el navegador sandbox** simulando el reenvío de Android sobre el código real (`start()`): el texto queda limpio, y seguir dictando sobre texto ya escrito lo respeta.
+- Sin cambios en el backend; no requiere redespliegue (pero sí recargar la PWA del móvil para tomar la versión nueva).
+- Tests: `tests/dictation.test.mjs` ampliado con la regresión de Android.
+
 ## V0.23.0 · Multiusuario por invitación con panel de administrador y cupo de IA
 
 Angeli deja de ser de un solo usuario: ahora el propietario puede invitar a gente de confianza, controlar cuánta IA gasta cada uno y cortarla cuando quiera, sin tocar el servidor.
