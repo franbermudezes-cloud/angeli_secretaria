@@ -211,4 +211,15 @@ assert.match(google, /async function updateSyncedCalendarEntry\(note\)\{/);
 assert.match(google, /async function cancelSyncedCalendarEvent\(note\)\{/);
 assert.match(google, /updateSyncedCalendarEntry,\s*\n\s*cancelSyncedCalendarEvent,/, "las dos funciones deben exportarse desde createGoogleIntegration");
 
+// 2ª auditoría: las cancelaciones del Dietario usaban confirm() nativo y no
+// comprobaban si la operación falló. Ahora confirman con el modal propio y
+// solo dan por hecha la cancelación si google.* devolvió true.
+assert.doesNotMatch(cancelEventSource, /confirm\(/, "cancelDietarioEvent ya no debe usar el confirm() nativo");
+assert.doesNotMatch(cancelReminderSource, /confirm\(/, "cancelDietarioReminder ya no debe usar el confirm() nativo");
+assert.match(cancelEventSource, /ui\.openModal\(\{title:"¿Anular este evento\?"/, "debe confirmar con el modal propio");
+assert.match(cancelEventSource, /const ok=await google\.cancelSyncedCalendarEvent\(note\);\s*\n\s*if\(!ok\)/, "debe comprobar si la cancelación del evento falló");
+assert.match(cancelReminderSource, /const ok=await google\.cancelScheduledReminder\(note\);\s*\n\s*if\(!ok\)/, "debe comprobar si la cancelación del aviso falló");
+assert.match(google, /notify\("Evento cancelado"\);\s*\n\s*return true;/, "cancelSyncedCalendarEvent debe devolver true al éxito");
+assert.match(google, /notify\("Aviso cancelado"\);\s*\n\s*return true;/, "cancelScheduledReminder debe devolver true al éxito");
+
 console.log("dietario: ok");

@@ -1,5 +1,13 @@
 # Changelog
 
+## V0.22.29 · Cancelar un evento/aviso desde el Dietario usa el modal propio y avisa si falla (2ª auditoría, usabilidad)
+
+- **Antes**: cancelar desde el Dietario usaba el `confirm()` nativo del navegador (feo e inconsistente con el resto de la app), y si la cancelación fallaba (p. ej. token caducado) volvía a la ficha como si nada, con solo un aviso fugaz.
+- **Ahora**: confirma con el modal propio de Angeli, y solo da por hecha la cancelación si de verdad salió bien; si falla, avisa claramente de que el evento/aviso sigue activo.
+- **Verificado en el navegador sandbox**.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: `tests/dietario.test.mjs` ampliado.
+
 ## V0.22.28 · Crear una lista: Mercadona sale marcada por defecto y "Volver" ya no pierde el nombre (2ª auditoría, usabilidad)
 
 - **Antes**: al crear una lista salían 7 tiendas sin ninguna marcada por defecto (aunque el código ya usa Mercadona), y "Cancelar" en ese paso perdía el nombre ya escrito sin forma de volver atrás.

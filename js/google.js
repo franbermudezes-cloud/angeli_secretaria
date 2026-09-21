@@ -1,6 +1,6 @@
-import { cleanTemporalText } from "./temporal.js?v=0.22.28";
-import { calendarDetails } from "./schedule.js?v=0.22.28";
-import { semanticCalendarTarget } from "./ai.js?v=0.22.28";
+import { cleanTemporalText } from "./temporal.js?v=0.22.29";
+import { calendarDetails } from "./schedule.js?v=0.22.29";
+import { semanticCalendarTarget } from "./ai.js?v=0.22.29";
 
 const CLIENT_ID = "172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
@@ -385,8 +385,10 @@ export function createGoogleIntegration({ notify, refresh, setStatus, showConnec
       } : item));
       await removeAngeliNotification(note);
       notify("Aviso cancelado");
+      return true;
     } catch (error) {
       applyFailure("calendar", error, "No se pudo cancelar");
+      return false;
     }
   }
 
@@ -456,7 +458,8 @@ export function createGoogleIntegration({ notify, refresh, setStatus, showConnec
       if(note.calendarEventId)await calendarRequest("DELETE",`/${encodeURIComponent(note.calendarEventId)}`);
       saveNotes(getNotes().map(item=>item.id===note.id?{...item,calendarStatus:"cancelled"}:item));
       notify("Evento cancelado");
-    }catch(error){applyFailure("calendar",error,"No se pudo cancelar el evento")}
+      return true;
+    }catch(error){applyFailure("calendar",error,"No se pudo cancelar el evento");return false}
   }
 
   async function searchCalendar(note) {
