@@ -1,13 +1,13 @@
-import { typeLabel } from "./classifier.js?v=0.22.36";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.22.36";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.22.36";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.36";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.22.36";
-import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.22.36";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.36";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.22.36";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.22.36";
-import { groupDietarioByDay } from "./dietario.js?v=0.22.36";
+import { typeLabel } from "./classifier.js?v=0.23.0";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.23.0";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.23.0";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.23.0";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.23.0";
+import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.23.0";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.23.0";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.23.0";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.23.0";
+import { groupDietarioByDay } from "./dietario.js?v=0.23.0";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -189,7 +189,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.22.36";
+    image.src = "assets/angeli-welcome.gif?v=0.23.0";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -1310,6 +1310,73 @@ export function createUI({ getMedia }) {
     ] });
   }
 
+  // Panel de administrador (solo lo ve el propietario). Recibe las personas ya
+  // preparadas para mostrar (correo, nombre, estado, modo, cupo y gasto del mes)
+  // y expone los mandos: invitar, abrir el grifo, poner en prueba con un tope,
+  // cortar/reactivar y quitar. La app reabre el panel en cada cambio en vivo, de
+  // modo que tras cada acción se vuelve solo a la lista ya actualizada.
+  function showAdminPanel({ people = [], onInvite, onSetMode, onSetStatus, onSetLimit, onRemove, onClose } = {}) {
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const body = document.createElement("div");
+    body.className = "admin-panel";
+    if (!people.length) {
+      body.innerHTML = '<p class="menu-copy">Aún no has invitado a nadie. Cada persona entra con su cuenta de Google y tiene su propio espacio, separado del tuyo.</p>';
+    } else {
+      body.innerHTML = people.map((person, index) => {
+        const state = person.status === "blocked"
+          ? '<span class="admin-state blocked">🚫 Cortado</span>'
+          : person.mode === "open"
+            ? '<span class="admin-state open">🚰 Grifo abierto</span>'
+            : `<span class="admin-state trial">${person.used} / ${person.limit}</span>`;
+        const who = person.name ? `${esc(person.name)} · ${esc(person.email)}` : esc(person.email);
+        return `<div class="admin-row"><div class="admin-who"><strong>${who}</strong>${state}</div><button class="small-btn" data-admin-index="${index}" aria-label="Opciones de ${esc(person.name || person.email)}">Opciones</button></div>`;
+      }).join("");
+    }
+    openModal({ title: "👑 Personas con acceso", lead: "Invita a quien quieras y controla su gasto de IA. Tú siempre tienes el grifo abierto.", body, actions: [
+      { label: "Cerrar", kind: "secondary", onClick: () => { onClose?.(); closeLayers(); } },
+      { label: "➕ Invitar por correo", kind: "confirm", onClick: invite }
+    ] });
+    people.forEach((person, index) => {
+      const button = body.querySelector(`[data-admin-index="${index}"]`);
+      if (button) button.onclick = () => options(person);
+    });
+
+    function invite() {
+      showTextPrompt({ title: "Invitar a alguien", lead: "Escribe su correo de Google. Entrará con su propio espacio y un cupo de prueba; luego puedes abrirle el grifo o cortarlo.", placeholder: "persona@gmail.com", confirmLabel: "Invitar", emptyMessage: "Escribe un correo", onSave: value => {
+        const email = value.trim().toLowerCase();
+        if (!emailPattern.test(email)) { notify("Ese correo no parece válido"); return; }
+        onInvite?.(email);
+      } });
+    }
+
+    function options(person) {
+      const actions = [];
+      if (person.status === "blocked") {
+        actions.push({ label: "▶️ Reactivar acceso", kind: "confirm", onClick: () => onSetStatus?.(person, "active") });
+      } else {
+        if (person.mode !== "open") actions.push({ label: "🚰 Abrir el grifo (sin límite)", kind: "confirm", onClick: () => onSetMode?.(person, "open") });
+        if (person.mode !== "trial") actions.push({ label: "🎟️ Poner en prueba (con tope)", kind: "secondary", onClick: () => onSetMode?.(person, "trial") });
+        if (person.mode === "trial") actions.push({ label: "✏️ Cambiar tope mensual", kind: "secondary", onClick: () => changeLimit(person) });
+        actions.push({ label: "🚫 Cortar el acceso", kind: "danger", onClick: () => onSetStatus?.(person, "blocked") });
+      }
+      actions.push({ label: "🗑️ Quitar de la lista", kind: "danger", onClick: () => remove(person) });
+      actions.push({ label: "Volver", kind: "secondary", onClick: () => showAdminPanel({ people, onInvite, onSetMode, onSetStatus, onSetLimit, onRemove, onClose }) });
+      openModal({ title: person.name ? esc(person.name) : esc(person.email), lead: esc(person.email), actions });
+    }
+
+    function changeLimit(person) {
+      showTextPrompt({ title: "Tope mensual", lead: `Cuántas interacciones de IA al mes puede gastar ${esc(person.name || person.email)} con tu grifo.`, placeholder: "40", value: String(person.limit || 40), confirmLabel: "Guardar tope", emptyMessage: "Escribe un número", onSave: value => {
+        const limit = parseInt(value, 10);
+        if (!Number.isFinite(limit) || limit < 0) { notify("Escribe un número válido"); return; }
+        onSetLimit?.(person, limit);
+      } });
+    }
+
+    function remove(person) {
+      showConfirm({ title: "¿Quitar de la lista?", lead: `${esc(person.name || person.email)} dejará de tener acceso a Angeli. Sus propias notas seguirán siendo suyas; solo pierde la entrada.`, confirmLabel: "Quitar", onConfirm: () => onRemove?.(person) });
+    }
+  }
+
   // Reportado en la 2ª auditoría: crear un acceso directo personalizado (y la
   // opción "🎙️ Dictar acceso") seguía usando dos prompt() nativos seguidos —
   // el mismo patrón feo que ya se quitó de las listas de la compra (V0.22.20)
@@ -1560,7 +1627,7 @@ export function createUI({ getMedia }) {
     $("conversationModeTranscript").scrollTop = $("conversationModeTranscript").scrollHeight;
   }
 
-  return { $, notify, setGoogleStatus, setPushStatus, setSyncStatus, showConnectionHealth, showNotificationSettings, render, openMediaLibrary, renderMediaLibrary, closeMediaLibrary, openNoteLibrary, renderNoteLibrary, closeNoteLibrary, openDietario, renderDietario, closeDietario, showDietarioDetail, openShoppingList, closeShoppingList, renderShoppingOverview, renderShoppingDetail, renderShoppingCart, renderShoppingPurchases, showPurchaseDetail, hideShoppingSuggestions, showShoppingSuggestionsMessage, renderShoppingSuggestions, setShoppingFallback, showShoppingAddConfirm, renderShoppingConfirmResults, setShoppingConfirmStatus, showShoppingListChoice, showShoppingStoreChoice, showShoppingNamePrompt, showShoppingDeleteConfirm, showShoppingClearConfirm, showShoppingRemoveMarkedConfirm, showShortcutEditor, showTextPrompt, showConfirm, showMediaViewer, closeMediaViewer, showMediaEntryDetail, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showMediaContextEditor, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome, openConversationMode, closeConversationMode, setConversationStatus, addConversationTurn };
+  return { $, notify, setGoogleStatus, setPushStatus, setSyncStatus, showConnectionHealth, showNotificationSettings, render, openMediaLibrary, renderMediaLibrary, closeMediaLibrary, openNoteLibrary, renderNoteLibrary, closeNoteLibrary, openDietario, renderDietario, closeDietario, showDietarioDetail, openShoppingList, closeShoppingList, renderShoppingOverview, renderShoppingDetail, renderShoppingCart, renderShoppingPurchases, showPurchaseDetail, hideShoppingSuggestions, showShoppingSuggestionsMessage, renderShoppingSuggestions, setShoppingFallback, showShoppingAddConfirm, renderShoppingConfirmResults, setShoppingConfirmStatus, showShoppingListChoice, showShoppingStoreChoice, showShoppingNamePrompt, showShoppingDeleteConfirm, showShoppingClearConfirm, showShoppingRemoveMarkedConfirm, showShortcutEditor, showTextPrompt, showConfirm, showAdminPanel, showMediaViewer, closeMediaViewer, showMediaEntryDetail, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showMediaContextEditor, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome, openConversationMode, closeConversationMode, setConversationStatus, addConversationTurn };
 }
 
 function esc(value) {

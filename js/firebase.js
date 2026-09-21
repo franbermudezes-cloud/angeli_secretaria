@@ -28,9 +28,9 @@ import {
   waitForPendingWrites
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 import { deleteToken, getMessaging, getToken, isSupported, onMessage } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging.js";
-import { fromCloudEntry, sameEntry, toCloudEntry } from "./cloud-entry.js?v=0.22.36";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.36";
-import { applyShortcutsDiff, diffShortcuts } from "./shortcuts.js?v=0.22.36";
+import { fromCloudEntry, sameEntry, toCloudEntry } from "./cloud-entry.js?v=0.23.0";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.23.0";
+import { applyShortcutsDiff, diffShortcuts } from "./shortcuts.js?v=0.23.0";
 
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
 const VAPID_KEY = "BHyc8Ne9wyaAFoju-9FNG5_qCXPOLSQhHhsfye9bdFlAv3zdLfAvjcvb29Cyrtj80kSq7gJ3qGJ9k3Mb_EqYt_o";
@@ -54,6 +54,7 @@ export function createCloudSync({ notify }) {
   let auth;
   let db;
   let user = null;
+  let access = null;
   let unsubscribe = null;
   let unsubscribeSettings = null;
   let unsubscribeNotificationSettings = null;
@@ -75,25 +76,48 @@ export function createCloudSync({ notify }) {
       notify("No se pudo completar el inicio de sesión");
     }
     onAuthStateChanged(auth, async nextUser => {
-      // Real encontrado en auditoría: con "nextUser?.email?.toLowerCase() !==
-      // OWNER_EMAIL" como única condición, un nextUser NULO (cerrar sesión, o
-      // cargar la app sin ninguna sesión previa) también cumple la condición
-      // (undefined !== OWNER_EMAIL), así que cerrar sesión entraba en esta
-      // rama, no hacía nada (nextUser es falso) y salía con "return" sin
-      // llegar nunca a limpiar `user`, desuscribir los 5 listeners de
-      // Firestore ni avisar a la UI — la app se quedaba "pegada" como si
-      // siguiera conectada. Ahora solo se trata como "cuenta equivocada"
-      // cuando de verdad hay una cuenta (nextUser existe) y no es la
-      // propietaria; un nextUser nulo cae directo al flujo normal de abajo.
-      if (nextUser && nextUser.email?.toLowerCase() !== OWNER_EMAIL) {
-        notify("Esta no es la cuenta principal de Angeli");
-        await signOut(auth);
+      // Un nextUser nulo (cerrar sesión, o cargar sin sesión previa) cae siempre
+      // al flujo de "desconectado": limpia `user`, para los listeners de
+      // Firestore y avisa a la UI. Tratarlo antes evita el fallo histórico en
+      // que una condición "email !== OWNER" también era cierta para un usuario
+      // nulo y dejaba la app pegada como si siguiera conectada.
+      if (!nextUser) {
+        user = null;
+        access = null;
+        stopListening();
+        callbacks.onAuthChange?.(session());
+        callbacks.onSyncStatus?.({ state: "signed-out" });
+        callbacks.onPushStatus?.(pushStatus());
         return;
       }
-      user = nextUser || null;
+      // El propietario entra directo, sin preguntar al servidor. Cualquier otra
+      // cuenta debe estar invitada: el servidor (autoridad real del acceso)
+      // responde si está dada de alta y con cuánto cupo; si no, se cierra la
+      // sesión con un mensaje claro en lugar de dejarla a medias.
+      const email = nextUser.email?.toLowerCase() || "";
+      let decision;
+      if (email === OWNER_EMAIL) {
+        decision = { allowed: true, owner: true, mode: "owner", limit: null, used: 0, remaining: null };
+      } else {
+        try {
+          decision = await fetchAccessStatus(nextUser);
+        } catch (error) {
+          notify("No se pudo comprobar tu acceso a Angeli; inténtalo de nuevo");
+          await signOut(auth);
+          return;
+        }
+        if (!decision?.allowed) {
+          notify(decision?.reason === "blocked"
+            ? "Tu acceso a Angeli está en pausa. Pídele que lo reactive a quien te dio de alta."
+            : "Aún no tienes acceso a Angeli. Pídele el alta con este correo a quien te lo recomendó.");
+          await signOut(auth);
+          return;
+        }
+      }
+      user = nextUser;
+      access = decision;
       stopListening();
       callbacks.onAuthChange?.(session());
-      if (!user) { callbacks.onSyncStatus?.({ state: "signed-out" }); callbacks.onPushStatus?.(pushStatus()); return; }
       subscribe();
       subscribeSettings();
       if (Notification.permission === "granted" && localStorage.getItem("angeliPushDisabled") !== "1") void enablePush(false).catch(() => callbacks.onPushStatus?.(pushStatus()));
@@ -104,8 +128,52 @@ export function createCloudSync({ notify }) {
     return {
       signedIn: Boolean(user),
       email: user?.email || "",
-      uid: user?.uid || ""
+      uid: user?.uid || "",
+      owner: Boolean(access?.owner),
+      mode: access?.mode || "",
+      limit: access?.limit ?? null,
+      used: access?.used ?? 0,
+      remaining: access?.remaining ?? null
     };
+  }
+
+  // El servidor es la autoridad del acceso: responde si esta cuenta está
+  // invitada y con cuánto cupo, incluso a una cuenta identificada pero aún no
+  // dada de alta (para poder mostrarle "pide el alta" en vez de un error).
+  async function fetchAccessStatus(account) {
+    const token = await account.getIdToken();
+    const response = await fetch(API + "/access/status", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: "{}"
+    });
+    if (!response.ok) throw new Error("No se pudo comprobar el acceso");
+    return response.json();
+  }
+
+  // Administración de invitaciones: solo el propietario puede leer o escribir la
+  // colección `access` (lo impone firestore.rules). El panel las gestiona aquí.
+  function accessCollection() {
+    if (!db) throw new Error("Sesión de Angeli no disponible");
+    return collection(db, "access");
+  }
+
+  function watchAccessList(onList, onError) {
+    return onSnapshot(accessCollection(), snapshot => {
+      onList(snapshot.docs.map(entry => ({ email: entry.id, ...entry.data() })));
+    }, onError);
+  }
+
+  async function saveAccessEntry(email, data) {
+    const key = String(email || "").trim().toLowerCase();
+    if (!key) throw new Error("Correo no válido");
+    await setDoc(doc(db, "access", key), { email: key, ...data }, { merge: true });
+  }
+
+  async function removeAccessEntry(email) {
+    const key = String(email || "").trim().toLowerCase();
+    if (!key) return;
+    await deleteDoc(doc(db, "access", key));
   }
 
   function isSignedIn() { return Boolean(user); }
@@ -353,5 +421,5 @@ export function createCloudSync({ notify }) {
     return doc(db, "users", user.uid, "settings", "shortcuts");
   }
 
-  return { initialize, session, isSignedIn, getAuthToken, connect, disconnect, syncNotes, saveNoteSettings, saveNotificationSettings, saveShoppingState, saveShortcuts, pushStatus, enablePush, disablePush, schedulePush, cancelPush, testPush };
+  return { initialize, session, isSignedIn, getAuthToken, connect, disconnect, syncNotes, saveNoteSettings, saveNotificationSettings, saveShoppingState, saveShortcuts, pushStatus, enablePush, disablePush, schedulePush, cancelPush, testPush, watchAccessList, saveAccessEntry, removeAccessEntry };
 }

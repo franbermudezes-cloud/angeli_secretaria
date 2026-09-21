@@ -7,5 +7,11 @@ service cloud.firestore {
     match /users/{userId}/settings/{settingId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
+    // Lista de invitaciones y cupos: solo el propietario la lee o la escribe
+    // desde el panel de administrador. El servidor la consulta y anota el gasto
+    // con el SDK de administración, que no pasa por estas reglas.
+    match /access/{emailId} {
+      allow read, write: if request.auth != null && request.auth.token.email == "franbermudez.es@gmail.com";
+    }
   }
 }

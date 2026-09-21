@@ -1,25 +1,25 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts,readShortcutsHidden,writeShortcutsHidden}from"./storage.js?v=0.22.36";
-import{classify,actionData}from"./classifier.js?v=0.22.36";
-import{sendEntry}from"./sheets.js?v=0.22.36";
-import{createUI}from"./ui.js?v=0.22.36";
-import{createGoogleIntegration}from"./google.js?v=0.22.36";
-import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,activeIntentDomain,explicitNewCommandDomain,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.22.36";
-import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,setShoppingListStore,isMercadonaList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.22.36";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.22.36";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.22.36";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime,calendarDetails}from"./schedule.js?v=0.22.36";
-import{createCloudSync}from"./firebase.js?v=0.22.36";
-import{createMediaService}from"./media.js?v=0.22.36";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.22.36";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.22.36";
-import{createAgendaActions}from"./agenda.js?v=0.22.36";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.22.36";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.22.36";
-import{DEFAULT_SHORTCUTS,SHORTCUT_PRESETS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.22.36";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.22.36";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.22.36";
-import{mediaLibraryItems}from"./media-library.js?v=0.22.36";
-import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.22.36";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts,readShortcutsHidden,writeShortcutsHidden}from"./storage.js?v=0.23.0";
+import{classify,actionData}from"./classifier.js?v=0.23.0";
+import{sendEntry}from"./sheets.js?v=0.23.0";
+import{createUI}from"./ui.js?v=0.23.0";
+import{createGoogleIntegration}from"./google.js?v=0.23.0";
+import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,activeIntentDomain,explicitNewCommandDomain,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.23.0";
+import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,setShoppingListStore,isMercadonaList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.23.0";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.23.0";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.23.0";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime,calendarDetails}from"./schedule.js?v=0.23.0";
+import{createCloudSync}from"./firebase.js?v=0.23.0";
+import{createMediaService}from"./media.js?v=0.23.0";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.23.0";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.23.0";
+import{createAgendaActions}from"./agenda.js?v=0.23.0";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.23.0";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.23.0";
+import{DEFAULT_SHORTCUTS,SHORTCUT_PRESETS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.23.0";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.23.0";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.23.0";
+import{mediaLibraryItems}from"./media-library.js?v=0.23.0";
+import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.23.0";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,finalText="",pendingImages=[],pendingFiles=[],pendingMediaContext=null,selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -222,7 +222,7 @@ function notesUsingSetting(key,id){return notes.filter(note=>(note.type==="note"
 // Reportado en la 2ª auditoría: crear/renombrar/borrar categorías y tipos de
 // relación usaba prompt()/confirm() nativos, dentro de una pantalla por lo
 // demás con el estilo propio de la app. Ahora usa el modal propio, igual que
-// el resto (V0.22.20, V0.22.36…).
+// el resto (V0.22.20, V0.22.31…).
 function showNoteSettings(){
  ui.showNoteSettings(noteSettings,{
   onAddCategory:()=>ui.showTextPrompt({title:"Nueva categoría",lead:"Ponle un nombre a la categoría.",placeholder:"Ej.: Salud",onCancel:showNoteSettings,onSave:label=>saveNoteSettings(addNoteSetting(noteSettings,"categories",label)).then(showNoteSettings)}),
@@ -252,7 +252,7 @@ function showNoteSettings(){
  });
 }
 async function verifyConnections(announce=true){lastConnectionCheck=Date.now();await google.syncLinks({announce});render()}
-async function load(){notes=[];renderShortcuts();google.updateStatus();ui.setPushStatus(cloud.pushStatus());ui.setSyncStatus({state:"connecting"});render();await cloud.initialize({onRemoteNotes:remote=>{notes=remote;render()},onNoteSettings:remote=>{noteSettings=normalizeNoteSettings(remote||DEFAULT_NOTE_SETTINGS);render()},onNotificationSettings:remote=>{notificationSettings=normalizeNotificationSettings(remote||DEFAULT_NOTIFICATION_SETTINGS)},onNoteSettingsError:()=>ui.notify("No se pudieron cargar los ajustes de notas"),onNotificationSettingsError:()=>ui.notify("No se pudieron cargar los ajustes de avisos"),onShoppingState:remote=>{shoppingState=normalizeShoppingState(remote);if($("shoppingLibrary").classList.contains("show"))renderShoppingScreen()},onShoppingListError:()=>ui.notify("No se pudo cargar la lista de la compra"),onShortcuts:remote=>{if(remote&&Array.isArray(remote.items)){shortcuts=normalizeShortcuts(remote.items);shortcutsBaseline=shortcuts;writeShortcuts(shortcuts);shortcutsHidden=Boolean(remote.hidden);writeShortcutsHidden(shortcutsHidden);renderShortcuts()}else void cloud.saveShortcuts([],shortcuts,shortcutsHidden).then(merged=>{shortcuts=merged;shortcutsBaseline=merged;writeShortcuts(merged);renderShortcuts()}).catch(()=>{})},onShortcutsError:()=>ui.notify("No se pudieron cargar los accesos directos"),onSyncStatus:ui.setSyncStatus,onPushStatus:ui.setPushStatus,onAuthChange:async()=>{google.updateStatus();ui.setPushStatus(cloud.pushStatus());await verifyConnections(true)}});render();ui.dismissWelcome()}
+async function load(){notes=[];renderShortcuts();google.updateStatus();ui.setPushStatus(cloud.pushStatus());ui.setSyncStatus({state:"connecting"});render();await cloud.initialize({onRemoteNotes:remote=>{notes=remote;render()},onNoteSettings:remote=>{noteSettings=normalizeNoteSettings(remote||DEFAULT_NOTE_SETTINGS);render()},onNotificationSettings:remote=>{notificationSettings=normalizeNotificationSettings(remote||DEFAULT_NOTIFICATION_SETTINGS)},onNoteSettingsError:()=>ui.notify("No se pudieron cargar los ajustes de notas"),onNotificationSettingsError:()=>ui.notify("No se pudieron cargar los ajustes de avisos"),onShoppingState:remote=>{shoppingState=normalizeShoppingState(remote);if($("shoppingLibrary").classList.contains("show"))renderShoppingScreen()},onShoppingListError:()=>ui.notify("No se pudo cargar la lista de la compra"),onShortcuts:remote=>{if(remote&&Array.isArray(remote.items)){shortcuts=normalizeShortcuts(remote.items);shortcutsBaseline=shortcuts;writeShortcuts(shortcuts);shortcutsHidden=Boolean(remote.hidden);writeShortcutsHidden(shortcutsHidden);renderShortcuts()}else void cloud.saveShortcuts([],shortcuts,shortcutsHidden).then(merged=>{shortcuts=merged;shortcutsBaseline=merged;writeShortcuts(merged);renderShortcuts()}).catch(()=>{})},onShortcutsError:()=>ui.notify("No se pudieron cargar los accesos directos"),onSyncStatus:ui.setSyncStatus,onPushStatus:ui.setPushStatus,onAuthChange:async()=>{google.updateStatus();ui.setPushStatus(cloud.pushStatus());refreshOwnerUI();await verifyConnections(true)}});render();ui.dismissWelcome()}
 async function add({interactionId=null,shortcut=null}={}){
  if(saving)return;
  const shortcutContext=shortcut||pendingShortcut,text=$("text").value.trim();
@@ -322,6 +322,7 @@ async function add({interactionId=null,shortcut=null}={}){
    const whatsAppInterpretation=whatsApp?{...interpreted,intent:"whatsapp.compose",contactName:(aiWhatsApp?interpreted.contactName:null)||whatsApp.contactName||null,phone:(aiWhatsApp?interpreted.phone:null)||whatsApp.phone||null,notes:(aiWhatsApp?interpreted.notes:null)||whatsApp.notes||null,requiresConfirmation:true,missingFields:[],question:null}:interpreted;
    const rawInterpretation=applyExplicitNoteCategory(routeShortcutIntent(whatsAppInterpretation,shortcutContext,text,now),text,noteSettings);
    if(rawInterpretation.source==="fallback")ui.updateWorking("Estoy revisando tu petición","Necesito confirmarla contigo antes de continuar.","");
+   if(rawInterpretation.fallbackReason==="quota_exhausted")ui.notify("Se agotó tu prueba de Angeli este mes. Seguiré en modo básico; pídele más a quien te dio de alta.");
    const deterministic=localLinked||cancellation||localUpdate;
    const routedInterpretation=(noteQuery||reminderQuery)?protectReadQuery(rawInterpretation,noteQuery,reminderQuery):protectContactCallInterpretation(preserveCancellation(active,protectCalendarInterpretation(rawInterpretation,deterministic)),immediateCall);
    const normalizedInterpretation=normalizeReminderSchedule(normalizeFutureCall(normalizeUndatedCall(routedInterpretation,text,active,now),text),text,now);
@@ -1288,6 +1289,28 @@ $("driveConnect").onclick=google.connectDrive;
 $("driveDisconnect").onclick=google.disconnectDrive;
 $("aiConnect").onclick=cloud.connect;
 $("aiDisconnect").onclick=cloud.disconnect;
+// Panel de administrador: solo se muestra al propietario, que gestiona en vivo
+// quién tiene acceso y cuánta IA gasta. El tope por defecto y el periodo mensual
+// (año-mes en UTC) replican exactamente los del servidor (access_control.py).
+const ADMIN_DEFAULT_LIMIT=40;
+let adminUnsub=null,adminOpen=false;
+function adminPeriod(){const d=new Date();return`${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}`}
+function toAdminView(person){const mode=person.mode||"trial",status=person.status||"active";const used=person.usagePeriod===adminPeriod()?Math.max(0,Number(person.usageCount)||0):0;const limit=mode==="open"?null:(Number.isFinite(Number(person.monthlyLimit))?Number(person.monthlyLimit):ADMIN_DEFAULT_LIMIT);return{email:person.email,name:person.name||"",status,mode,limit,used}}
+function refreshOwnerUI(){const owner=Boolean(cloud.session().owner);$("adminSection").hidden=!owner;if(!owner)stopAdmin()}
+function stopAdmin(){if(adminUnsub){adminUnsub();adminUnsub=null}adminOpen=false}
+function openAdminPanel(){
+  stopAdmin();adminOpen=true;
+  let people=[];
+  const render=()=>{if(adminOpen)ui.showAdminPanel({people,
+    onInvite:email=>cloud.saveAccessEntry(email,{name:"",status:"active",mode:"trial",monthlyLimit:ADMIN_DEFAULT_LIMIT}).then(()=>ui.notify("Invitación enviada; ya puede entrar")).catch(()=>ui.notify("No se pudo invitar")),
+    onSetMode:(person,mode)=>cloud.saveAccessEntry(person.email,{mode,status:"active"}).then(()=>ui.notify(mode==="open"?"Grifo abierto":"En prueba, con tope")).catch(()=>ui.notify("No se pudo cambiar")),
+    onSetStatus:(person,status)=>cloud.saveAccessEntry(person.email,{status}).then(()=>ui.notify(status==="blocked"?"Acceso cortado":"Acceso reactivado")).catch(()=>ui.notify("No se pudo cambiar")),
+    onSetLimit:(person,limit)=>cloud.saveAccessEntry(person.email,{monthlyLimit:limit,mode:"trial",status:"active"}).then(()=>ui.notify("Tope actualizado")).catch(()=>ui.notify("No se pudo guardar")),
+    onRemove:person=>cloud.removeAccessEntry(person.email).then(()=>ui.notify("Quitado de la lista")).catch(()=>ui.notify("No se pudo quitar")),
+    onClose:stopAdmin})};
+  adminUnsub=cloud.watchAccessList(list=>{people=list.map(toAdminView).sort((a,b)=>(a.name||a.email).localeCompare(b.name||b.email));render()},()=>{ui.notify("No se pudo cargar la lista de acceso");stopAdmin()});
+}
+$("adminPanelOpen").onclick=()=>{ui.closeLayers();openAdminPanel()};
 function showNotificationSettings(){
  ui.showNotificationSettings(notificationSettings,{status:cloud.pushStatus(),onActivate:async()=>{try{await cloud.enablePush(true);ui.notify("Avisos activados en este dispositivo");showNotificationSettings()}catch(error){ui.notify(error.message||"No se pudieron activar los avisos")}},onTest:async()=>{try{const result=await cloud.testPush();ui.notify(result.delivered?"Aviso de prueba enviado":"No hay dispositivos activos")}catch(error){ui.notify(error.message||"No se pudo enviar el aviso de prueba")}},onDisable:async()=>{try{await cloud.disablePush();ui.notify("Avisos desactivados en este dispositivo");showNotificationSettings()}catch(error){ui.notify(error.message||"No se pudieron desactivar los avisos")}},onSave:async value=>{notificationSettings=normalizeNotificationSettings(value);try{await cloud.saveNotificationSettings(notificationSettings);const eligible=notes.filter(entry=>entry.schedule?.status==="scheduled"||(entry.type==="calendar"&&entry.calendarStatus==="synced")||(entry.type==="task"&&entry.status==="pending"&&entry.scheduledDate&&entry.scheduledTime));const results=await Promise.allSettled(eligible.map(entry=>cloud.schedulePush(entry))),failed=results.filter(result=>result.status==="rejected").length;if(failed){ui.notify(`Ajustes guardados, pero ${failed} aviso${failed===1?" necesita":"s necesitan"} reintento`);return}ui.closeLayers();ui.notify("Ajustes de avisos guardados")}catch(error){ui.notify(error.message||"No se pudieron guardar los ajustes")}}});
 }
@@ -1516,7 +1539,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.22.36",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.23.0",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}
