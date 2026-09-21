@@ -139,7 +139,7 @@ assert.match(ui, /function showDietarioDetail/);
 const openDietarioEntrySource = app.match(/function openDietarioEntry\(id\)\{[\s\S]*?\n\}/)?.[0] || "";
 assert.ok(openDietarioEntrySource, "openDietarioEntry debe existir");
 assert.doesNotMatch(openDietarioEntrySource, /showEntryAction\(entry,google\)/, "el dietario ya no debe reutilizar la pantalla de confirmación transitoria showEntryAction");
-assert.match(openDietarioEntrySource, /ui\.showDietarioDetail\(entry,\{onEdit:openDietarioCalendarMenu,onCancelEvent:cancelDietarioEvent,onCancelSchedule:cancelDietarioReminder\}\)/);
+assert.match(openDietarioEntrySource, /ui\.showDietarioDetail\(entry,\{onEdit:openDietarioCalendarMenu,onCancelEvent:cancelDietarioEvent,onCancelSchedule:cancelDietarioReminder,onDelete:deleteDietarioEntry\}\)/);
 assert.match(openDietarioEntrySource, /mediaLibraryItems\(\[entry\]\)/, "las entradas de tipo foto/archivo deben abrir su ficha real de adjunto, no la genérica");
 
 // Regresión real reportada por el usuario: openDietarioQuickActions abre el
@@ -184,12 +184,13 @@ assert.match(ui, /function groupDietarioByDay|groupDietarioByDay/);
 // Recordatorios/Calendario aparte y volver a buscarlo. Ahora reutiliza los
 // editores de campo/fecha-hora ya existentes, pero sincronizando también con
 // Calendar por el id ya guardado en la entrada, no solo el estado local.
-assert.match(ui, /function showDietarioDetail\(note, \{ onEdit, onCancelEvent, onCancelSchedule \} = \{\}\)/, "showDietarioDetail debe aceptar las nuevas acciones");
+assert.match(ui, /function showDietarioDetail\(note, \{ onEdit, onCancelEvent, onCancelSchedule, onDelete \} = \{\}\)/, "showDietarioDetail debe aceptar las nuevas acciones");
+assert.match(ui, /if \(onDelete\) actions\.push\(\{ label: "🗑️ Eliminar"/, "la ficha del Dietario debe ofrecer siempre eliminar, para no dejar sin salida una entrada que falló al sincronizar");
 assert.match(ui, /eventEditable[\s\S]{0,40}note\.calendarStatus === "synced"/, "un evento suelto o combinado solo se puede modificar/anular si ya está sincronizado de verdad en Calendar");
 assert.match(ui, /reminderEditable[\s\S]{0,40}note\.schedule\?\.status === "scheduled"/, "un aviso solo se puede modificar/cancelar si sigue programado");
 assert.match(ui, /"Anular evento"/);
 assert.match(ui, /"Cancelar aviso"/);
-assert.match(app, /ui\.showDietarioDetail\(entry,\{onEdit:openDietarioCalendarMenu,onCancelEvent:cancelDietarioEvent,onCancelSchedule:cancelDietarioReminder\}\)/);
+assert.match(app, /ui\.showDietarioDetail\(entry,\{onEdit:openDietarioCalendarMenu,onCancelEvent:cancelDietarioEvent,onCancelSchedule:cancelDietarioReminder,onDelete:deleteDietarioEntry\}\)/);
 const calendarMenuSource = app.match(/function openDietarioCalendarMenu\(note\)\{[\s\S]*?\n\}/)?.[0] || "";
 assert.ok(calendarMenuSource, "openDietarioCalendarMenu debe existir");
 assert.match(calendarMenuSource, /Cambiar título/);

@@ -28,9 +28,9 @@ import {
   waitForPendingWrites
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 import { deleteToken, getMessaging, getToken, isSupported, onMessage } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging.js";
-import { fromCloudEntry, sameEntry, toCloudEntry } from "./cloud-entry.js?v=0.22.34";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.34";
-import { applyShortcutsDiff, diffShortcuts } from "./shortcuts.js?v=0.22.34";
+import { fromCloudEntry, sameEntry, toCloudEntry } from "./cloud-entry.js?v=0.22.35";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.35";
+import { applyShortcutsDiff, diffShortcuts } from "./shortcuts.js?v=0.22.35";
 
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
 const VAPID_KEY = "BHyc8Ne9wyaAFoju-9FNG5_qCXPOLSQhHhsfye9bdFlAv3zdLfAvjcvb29Cyrtj80kSq7gJ3qGJ9k3Mb_EqYt_o";

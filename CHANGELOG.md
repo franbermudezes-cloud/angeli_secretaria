@@ -1,5 +1,13 @@
 # Changelog
 
+## V0.22.35 · La ficha del Dietario siempre deja eliminar, incluso si el evento falló al sincronizar (2ª auditoría, usabilidad)
+
+- **Antes**: abrir desde el Dietario un evento/aviso que falló al sincronizar (o que seguía pendiente) mostraba solo "Cerrar" — la única forma de quitarlo era adivinar que el "⋮" de la fila lo permitía.
+- **Ahora**: la ficha ofrece siempre "🗑️ Eliminar" (con confirmación), así ninguna entrada queda en un callejón sin salida.
+- **Verificado en el navegador sandbox**.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: `tests/dietario.test.mjs` ampliado.
+
 ## V0.22.34 · Editar una nota: elegir un tipo de relación sin nombre ya no lo descarta en silencio (2ª auditoría, usabilidad)
 
 - **Antes**: en el editor de notas, si elegías un tipo de relación (Persona, Cliente…) pero dejabas el nombre en blanco, la relación se descartaba en silencio al guardar, sin ningún aviso.

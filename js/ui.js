@@ -1,13 +1,13 @@
-import { typeLabel } from "./classifier.js?v=0.22.34";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.22.34";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.22.34";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.34";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.22.34";
-import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.22.34";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.34";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.22.34";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.22.34";
-import { groupDietarioByDay } from "./dietario.js?v=0.22.34";
+import { typeLabel } from "./classifier.js?v=0.22.35";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.22.35";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.22.35";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.35";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.22.35";
+import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.22.35";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.35";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.22.35";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.22.35";
+import { groupDietarioByDay } from "./dietario.js?v=0.22.35";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -189,7 +189,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.22.34";
+    image.src = "assets/angeli-welcome.gif?v=0.22.35";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -1396,7 +1396,7 @@ export function createUI({ getMedia }) {
   // Recordatorios/Calendario aparte y volver a buscarlo. `onEdit`/
   // `onCancelEvent`/`onCancelSchedule` son opcionales: si no se pasan (otros
   // llamadores, si los hubiera), el comportamiento es el de siempre.
-  function showDietarioDetail(note, { onEdit, onCancelEvent, onCancelSchedule } = {}) {
+  function showDietarioDetail(note, { onEdit, onCancelEvent, onCancelSchedule, onDelete } = {}) {
     const bundled = note.proposal?.intent === "calendar.create" && note.schedule;
     const soloReminder = note.schedule && !bundled;
     const soloEvent = note.type === "calendar" && !note.schedule;
@@ -1429,6 +1429,10 @@ export function createUI({ getMedia }) {
     if (eventEditable || reminderEditable) actions.push({ label: "✎ Modificar", kind: "secondary", onClick: () => onEdit?.(note) });
     if (eventEditable) actions.push({ label: "Anular evento", kind: "danger", onClick: () => onCancelEvent?.(note) });
     if (reminderEditable) actions.push({ label: "Cancelar aviso", kind: "danger", onClick: () => onCancelSchedule?.(note) });
+    // Siempre se puede eliminar la entrada desde aquí — así una que falló al
+    // sincronizar (o que sigue pendiente) no queda en un callejón sin salida
+    // con solo "Cerrar". 2ª auditoría.
+    if (onDelete) actions.push({ label: "🗑️ Eliminar", kind: "danger", onClick: () => onDelete(note) });
     actions.push({ label: "Cerrar", kind: actions.length ? "secondary" : "confirm", onClick: closeLayers });
     openModal({ title, lead, body, actions });
   }
