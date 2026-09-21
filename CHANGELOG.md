@@ -1,5 +1,13 @@
 # Changelog
 
+## V0.22.30 · Crear un acceso directo usa el modal propio, también al dictarlo (2ª auditoría, usabilidad)
+
+- **Antes**: crear un acceso directo personalizado usaba dos `prompt()` nativos seguidos — incluso desde "🎙️ Dictar acceso", que en una app de voz obligaba a teclear el nombre en un cuadro feo justo después de dictar la orden.
+- **Ahora**: un modal propio recoge la orden y el nombre en una sola pantalla; la orden dictada llega precargada y el nombre se rellena solo a partir de ella (editable), así que dictar y pulsar "Crear" basta.
+- **Verificado en el navegador sandbox**.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: 1 prueba nueva en `tests/shortcuts.test.mjs`.
+
 ## V0.22.29 · Cancelar un evento/aviso desde el Dietario usa el modal propio y avisa si falla (2ª auditoría, usabilidad)
 
 - **Antes**: cancelar desde el Dietario usaba el `confirm()` nativo del navegador (feo e inconsistente con el resto de la app), y si la cancelación fallaba (p. ej. token caducado) volvía a la ficha como si nada, con solo un aviso fugaz.
