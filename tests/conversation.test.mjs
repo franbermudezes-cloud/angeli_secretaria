@@ -498,16 +498,22 @@ test('el modal conversacional conserva micrófono propio y cabe en el viewport v
   ui.showDraft({onMic:()=>spoken++});
   const actions=elements.get('modalActions').children;
   const draft=elements.get('modalBody').children[0];
-  assert.deepEqual(actions.map(button=>button.textContent),['Ahora no','🎙️ Hablar','➤ Enviar']);
+  assert.deepEqual(actions.map(button=>button.textContent),['Ahora no','⌨️ Teclado','🎙️ Hablar','➤ Enviar']);
   assert.ok(elements.get('actionModal').classList.contains('conversation-modal'));
-  // Real reportado por el propietario: el cuadro de texto se abría sin el
-  // cursor puesto, así que escribir a mano exigía tocarlo primero. Ahora
-  // showDraft (y el resto de modales con su propio cuadro de dictado) deja
-  // el cursor puesto en cuanto se abre.
+  // Reportado por el propietario en el móvil: el modal es de voz primero, pero
+  // al abrirse enfocaba el cuadro y Android abría el teclado solo, tapando los
+  // botones. Ahora NO se enfoca solo al abrir desde el micrófono (focus por
+  // defecto false); la persona saca el teclado con el botón "⌨️ Teclado".
+  assert.equal(draft.focusCount,0);
+  actions[1].onclick(); // ⌨️ Teclado: enfoca el cuadro a demanda
   assert.equal(draft.focusCount,1);
-  actions[1].onclick();
+  actions[2].onclick(); // 🎙️ Hablar: quita el foco (esconde teclado) y dicta
   assert.equal(draft.blurCount,1);
   assert.equal(spoken,1);
+  // Abierto para escribir (al tocar el compositor), sí debe enfocar de entrada.
+  const ui2=createUI({getMedia:async()=>null});
+  ui2.showDraft({focus:true});
+  assert.equal(elements.get('modalBody').children[0].focusCount,1);
   const css=readFileSync(new URL('../styles-flow.css',import.meta.url),'utf8');
   assert.match(css,/--angeli-viewport-height,100dvh/);
   assert.match(css,/--angeli-viewport-top,0px/);

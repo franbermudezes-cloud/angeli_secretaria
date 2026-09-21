@@ -1,5 +1,14 @@
 # Changelog
 
+## V0.23.2 · El teclado ya no salta solo al abrir el modal de voz (móvil)
+
+- **Antes**: al tocar el micrófono principal, se abría el modal "Te escucho" y **el teclado del móvil salía solo**, tapando los botones. Había que esconderlo a mano cada vez antes de poder hablar. Igual en el modal de pregunta del modo conversación.
+- **Ahora**: esos modales son de **voz primero**: al abrirse **no** enfocan el cuadro, así que el teclado no aparece y los botones quedan a la vista. Se añade un botón **⌨️ Teclado** para sacarlo a demanda, y tocar el cuadro también lo abre, como siempre.
+- **Se respeta el teclado donde hace falta**: si abres el borrador tocando el cuadro de texto del compositor (querías escribir), sí se enfoca y el teclado se mantiene. Los editores de campo (título/ubicación/descripción de Calendar, mensaje de WhatsApp, fecha/hora) y los cuadros de "escribe un nombre" (lista de la compra, invitar) siguen abriendo el teclado al entrar, porque ahí vas justo a escribir. El buscador de la lista de la compra no cambia.
+- **Verificado en el navegador sandbox sobre el DOM real**: el modal de voz abre sin foco (sin teclado), el botón ⌨️ lo enfoca a demanda, y el flujo de "toqué para escribir" mantiene el teclado.
+- Sin cambios en el backend; no requiere redespliegue (sí recargar la PWA del móvil).
+- Tests: `tests/conversation.test.mjs` y `tests/conversation-mode.test.mjs` actualizados al nuevo comportamiento de voz primero.
+
 ## V0.23.1 · El dictado en el móvil ya no repite palabras "como si hubiera cincuenta micros"
 
 - **Antes**: en el móvil (Chrome de Android) dar cualquier instrucción por voz repetía palabras y texto sin parar. En el ordenador iba bien.

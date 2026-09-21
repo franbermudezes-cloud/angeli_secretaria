@@ -149,18 +149,20 @@ assert.ok(questionBranchSource, 'la rama "question" de conversationHandleOutcome
 assert.doesNotMatch(questionBranchSource, /^\s*resumeConversationListening\(\);/m, "no debe reanudar el micrófono de fondo mientras el modal con su propio micro sigue abierto");
 assert.match(questionBranchSource, /watchForModalClose\(\(\)=>\{if\(conversationOn\)resumeConversationListening\(\)\}\)/, "debe esperar a que el modal se cierre, igual que la rama \"manual\"");
 
-// Segundo real reportado en el mismo mensaje: el cuadro de texto del modal
-// se abría sin el cursor puesto — escribir a mano exigía tocar el cuadro
-// primero, y ni siquiera dictar por voz se notaba a simple vista si no se
-// había mirado el cuadro antes de hablar.
+// Reportado luego por el propietario en el móvil: los modales de VOZ (el de
+// "Te escucho" y este de pregunta de aclaración) se abrían enfocando su cuadro,
+// y Android abría el teclado solo, tapando los botones de voz — había que
+// esconderlo a mano cada vez. Ahora estos modales de voz NO enfocan al abrir;
+// la persona saca el teclado con el botón "⌨️ Teclado" o tocando el cuadro.
 const showInteractionQuestionSource = ui.match(/function showInteractionQuestion\([\s\S]*?\n  \}/)?.[0] || "";
 assert.ok(showInteractionQuestionSource, "showInteractionQuestion debe existir");
-assert.match(showInteractionQuestionSource, /draft\.focus\(\);/, "el cuadro de texto debe quedar enfocado en cuanto se abre el modal");
+assert.doesNotMatch(showInteractionQuestionSource, /draft\.focus\(\);/, "el modal de voz ya no debe enfocar el cuadro al abrir (en el móvil abría el teclado solo)");
+assert.match(showInteractionQuestionSource, /⌨️ Teclado/, "debe ofrecer un botón para sacar el teclado a demanda");
 
-// El propietario avisó de que este mismo fallo (cuadro de texto sin el
-// cursor puesto) se repetiría en cualquier otro modal con su propio campo
-// de escritura si no se corregía en todos a la vez — no solo en el de la
-// pregunta de aclaración.
+// Los EDITORES de campo son otra cosa: la persona entra ahí justo para escribir
+// un dato concreto (título, ubicación, descripción, mensaje, número), así que
+// esos SÍ dejan el cursor puesto al abrir. Este cambio de "voz primero" no debe
+// tocarlos — el propietario avisó de no quitar el teclado donde hace falta.
 for (const [name, focusTarget] of [
   ["showCalendarFieldEditor", "draft"],
   ["showCalendarDateTimeEditor", "date"],
