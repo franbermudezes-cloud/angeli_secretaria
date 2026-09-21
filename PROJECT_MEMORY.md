@@ -1,5 +1,15 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-21 — Editor de notas: elegir un tipo de relación sin nombre ya no lo descarta en silencio V0.22.34
+
+Décimo arreglo de la segunda auditoría (usabilidad). El reverso del patrón de la foto/nota: allí el problema era exigir un campo de más; aquí es una pérdida silenciosa por NO exigir uno que sí tiene sentido.
+
+**Causa raíz**: en `showNoteEditor` (`js/ui.js`), a diferencia de `showMediaContextEditor` (que sí valida), no había ninguna comprobación de que, al elegir un tipo de relación (Persona/Cliente/Proyecto…), se indicara también el nombre. Al guardar, `updateNoteDraft`→`normalizeNoteClassification` (`js/notes.js`) hace `relationType: relationName ? relationType : "none"` — es decir, si el nombre está vacío, el tipo de relación se descarta y vuelve a "none" en silencio. Escenario: eliges "Persona" como relación, te interrumpen, guardas sin el nombre, y la nota pierde la relación sin ningún aviso — y luego no la encuentras al filtrar por esa persona.
+
+**Corrección**: `showNoteEditor`'s "Revisar cambios" valida, antes de `onSave`, que si `noteDraftRelationType.value !== "none"` haya un `noteDraftRelationName` no vacío; si no, avisa ("Indica con quién o con qué está relacionada, o elige \"Sin relación\"") y no guarda — exactamente el mismo criterio que `showMediaContextEditor` (V0.22.6/V0.22.24). No es una restricción arbitraria: el caso por defecto ("Sin relación") no pide nada; solo se pide el nombre cuando la persona ha afirmado que hay una relación, porque una relación sin nombre es un dato sin sentido.
+
+**Cobertura de test**: `tests/note-library.test.mjs` — comprueba que `showNoteEditor` valida el nombre cuando hay tipo de relación. Verificado en vivo: con tipo elegido y nombre vacío, "Revisar cambios" no guarda y el modal sigue abierto; al poner el nombre, guarda con la relación (`relationType:'person'`, `relationName:'Marta'`).
+
 ## 2026-09-21 — Confirmar un evento/aviso: los "Cambiar X" agrupados tras "Corregir un dato" V0.22.33
 
 Noveno arreglo de la segunda auditoría (usabilidad). Caso de criterio, no bug: la sesión principal decidió **conservar la confirmación** (crear un evento escribe en Google Calendar, un efecto externo que conviene revisar por si la IA interpretó mal la fecha/hora) pero **reducir el muro de botones**, en lugar de auto-crear sin confirmar.

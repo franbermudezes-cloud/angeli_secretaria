@@ -1,5 +1,13 @@
 # Changelog
 
+## V0.22.34 · Editar una nota: elegir un tipo de relación sin nombre ya no lo descarta en silencio (2ª auditoría, usabilidad)
+
+- **Antes**: en el editor de notas, si elegías un tipo de relación (Persona, Cliente…) pero dejabas el nombre en blanco, la relación se descartaba en silencio al guardar, sin ningún aviso.
+- **Ahora**: se pide el nombre cuando hay un tipo de relación elegido (o elegir "Sin relación") — igual que ya hace el editor de adjuntos.
+- **Verificado en el navegador sandbox**.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: `tests/note-library.test.mjs` ampliado.
+
 ## V0.22.33 · Confirmar un evento o aviso ya no muestra un muro de botones (2ª auditoría, usabilidad)
 
 - **Antes**: la pantalla de "¿Lo añado al calendario?" (y las de aviso y evento+aviso) mostraba 5-6 botones "Cambiar X" antes de poder confirmar, aunque lo dictado estuviera perfecto.

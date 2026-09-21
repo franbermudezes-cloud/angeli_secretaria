@@ -1,13 +1,13 @@
-import { typeLabel } from "./classifier.js?v=0.22.33";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.22.33";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.22.33";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.33";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.22.33";
-import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.22.33";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.33";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.22.33";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.22.33";
-import { groupDietarioByDay } from "./dietario.js?v=0.22.33";
+import { typeLabel } from "./classifier.js?v=0.22.34";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.22.34";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.22.34";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.34";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.22.34";
+import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.22.34";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.34";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.22.34";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.22.34";
+import { groupDietarioByDay } from "./dietario.js?v=0.22.34";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -189,7 +189,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.22.33";
+    image.src = "assets/angeli-welcome.gif?v=0.22.34";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -425,6 +425,12 @@ export function createUI({ getMedia }) {
           for (const id of ["noteDraftTitle", "noteDraftText"]) {
             if (!$(id).value.trim()) { notify(id === "noteDraftTitle" ? "Escribe un título para la nota" : "Escribe el contenido de la nota"); $(id).focus(); return; }
           }
+          // 2ª auditoría: si se elegía un tipo de relación pero se dejaba el
+          // nombre en blanco, normalizeNoteClassification lo descartaba en
+          // silencio (relationType→"none"), perdiendo la relación sin avisar.
+          // Igual que en el editor de adjuntos (showMediaContextEditor), si
+          // hay tipo de relación se pide el nombre — no un dato sin sentido.
+          if ($("noteDraftRelationType").value !== "none" && !$("noteDraftRelationName").value.trim()) { notify("Indica con quién o con qué está relacionada, o elige \"Sin relación\""); $("noteDraftRelationName").focus(); return; }
           onSave?.({
           title: $("noteDraftTitle").value,
           text: $("noteDraftText").value,
