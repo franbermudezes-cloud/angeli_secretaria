@@ -1,4 +1,4 @@
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.23";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.24";
 
 // El valor por defecto de un parámetro solo actúa sobre "undefined": si
 // pendingMediaContext aún es null (antes de la primera clasificación), un
@@ -22,8 +22,16 @@ export function normalizeMediaContext(value, settings) {
   };
 }
 
+// Real reportado por el propietario: subir una foto sin más ("porque quiero
+// subirla, ya está") quedaba bloqueado del todo si no se explicaba primero
+// "¿para qué lo guardas?" — no había forma de saltarlo. El motivo siempre ha
+// sido opcional en el resto de la app (media-library.js ya cae a "Entrada
+// con adjunto" cuando no hay ninguno), así que exigirlo aquí era una regla
+// más estricta que en cualquier otro sitio, sin ninguna necesidad real. Solo
+// se sigue exigiendo el nombre de la relación cuando se elige explícitamente
+// un tipo de relación — dejarlo en blanco ahí sí sería un dato sin sentido
+// ("relacionado con: persona ‹en blanco›").
 export function mediaContextComplete(value) {
-  if (!clean(value?.purpose)) return false;
   return !value?.relationType || value.relationType === "none" || Boolean(clean(value.relationName));
 }
 

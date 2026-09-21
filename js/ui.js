@@ -1,13 +1,13 @@
-import { typeLabel } from "./classifier.js?v=0.22.23";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.22.23";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.22.23";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.23";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.22.23";
-import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.22.23";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.23";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.22.23";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.22.23";
-import { groupDietarioByDay } from "./dietario.js?v=0.22.23";
+import { typeLabel } from "./classifier.js?v=0.22.24";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.22.24";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.22.24";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.24";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.22.24";
+import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.22.24";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.24";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.22.24";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.22.24";
+import { groupDietarioByDay } from "./dietario.js?v=0.22.24";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -189,7 +189,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.22.23";
+    image.src = "assets/angeli-welcome.gif?v=0.22.24";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -491,11 +491,17 @@ export function createUI({ getMedia }) {
       $("mediaContextRelationTypeNewRow").classList.toggle("hidden", !isNew);
       $("mediaContextRelationRow").classList.toggle("hidden", $("mediaContextRelationType").value === "none");
     };
-    openModal({ title: "Organizar adjunto", lead: "Indica por qué lo guardas para poder encontrarlo después.", body: form, actions: [
+    openModal({ title: "Organizar adjunto", lead: "Indica por qué lo guardas para poder encontrarlo después, o pulsa Continuar para guardarlo tal cual.", body: form, actions: [
       { label: "Quitar adjunto", kind: "secondary", onClick: () => { closeLayers(); onCancel?.(); } },
+      // Real reportado por el propietario: subir una foto sin más quedaba
+      // bloqueado del todo si no se rellenaba antes "¿para qué lo guardas?"
+      // — no había forma de saltarlo. El motivo pasa a ser opcional (el
+      // resto de la app ya sabe mostrar "Entrada con adjunto" cuando no hay
+      // ninguno); solo se sigue exigiendo el nombre de la relación cuando
+      // se elige explícitamente un tipo de relación, porque dejarlo en
+      // blanco ahí sí sería un dato sin sentido.
       { label: "Continuar", kind: "confirm", onClick: () => {
         const purpose = $("mediaContextPurpose").value.trim(), relationType = $("mediaContextRelationType").value, relationName = $("mediaContextRelationName").value.trim(), newRelationType = $("mediaContextRelationTypeNew").value.trim();
-        if (!purpose) { notify("Explica brevemente para qué guardas este adjunto"); $("mediaContextPurpose").focus(); return; }
         if (relationType === "__new__" && !newRelationType) { notify("Escribe el nombre del nuevo tipo de relación"); $("mediaContextRelationTypeNew").focus(); return; }
         if (relationType !== "none" && !relationName) { notify("Indica con quién o con qué está relacionado"); $("mediaContextRelationName").focus(); return; }
         onSave?.({ purpose, scope: $("mediaContextScope").value, relationType, relationName, ...(relationType === "__new__" ? { newRelationType } : {}) });
@@ -519,7 +525,11 @@ export function createUI({ getMedia }) {
     const context = note.mediaContext;
     if (!context) return "";
     const relation = mediaContextRelation(context);
-    return '<div class="calendar-confirmation media-context-card"><span class="calendar-field-label">Motivo</span><strong>' + esc(context.purpose) + '</strong><span class="calendar-field-label">Categoría</span><b>' + esc(context.categoryLabel || context.scope) + '</b>' + (relation ? '<span class="calendar-field-label">Relacionado con</span><b>' + esc(relation) + '</b>' : '') + '</div>';
+    // El motivo ahora es opcional (ver mediaContextComplete en
+    // media-context.js) — un adjunto guardado tal cual, sin explicar para
+    // qué, no debe mostrar la etiqueta "Motivo" con el hueco en blanco.
+    const purpose = context.purpose ? '<span class="calendar-field-label">Motivo</span><strong>' + esc(context.purpose) + '</strong>' : '';
+    return '<div class="calendar-confirmation media-context-card">' + purpose + '<span class="calendar-field-label">Categoría</span><b>' + esc(context.categoryLabel || context.scope) + '</b>' + (relation ? '<span class="calendar-field-label">Relacionado con</span><b>' + esc(relation) + '</b>' : '') + '</div>';
   }
 
   function calendarCard(note) {

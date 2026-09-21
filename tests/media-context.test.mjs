@@ -79,4 +79,21 @@ const addCatchSource = app.match(/\}catch\(error\)\{\n {3}\/\/ Real encontrado e
 assert.ok(addCatchSource, "el catch de add() debe documentar y arreglar el fallo de subida parcial");
 assert.match(addCatchSource, /if\(hasMedia&&!mediaUploaded\)\{await Promise\.allSettled\(\[\.\.\.images,\.\.\.files\]\.map\(item=>media\.remove\(item\.driveFileId\|\|item\.id\)\)\);clearPendingMedia\(\)/, "debe borrar de Drive lo ya subido antes de limpiar el estado local, igual que uploadNoteAttachments");
 
+// Real reportado por el propietario, verificado en el navegador sandbox
+// simulando la selección de un archivo real: subir una foto o archivo sin
+// más ("porque quiero subirla, ya está") quedaba bloqueado del todo por el
+// modal "Organizar adjunto" si no se rellenaba antes "¿para qué lo
+// guardas?" — no había forma de saltarlo ni de guardarlo tal cual. El resto
+// de la app ya sabía mostrar "Entrada con adjunto" cuando no hay motivo
+// (js/media-library.js), así que exigirlo aquí era más estricto que en
+// cualquier otro sitio sin ninguna necesidad real.
+assert.equal(mediaContextComplete({ purpose: "", relationType: "none", relationName: "" }), true, "un adjunto sin motivo (guardado tal cual) debe considerarse completo");
+assert.equal(mediaContextComplete(normalizeMediaContext(null, settings)), true, "el estado inicial, antes de tocar nada del modal, ya debe dejar continuar");
+assert.equal(mediaContextComplete({ purpose: "", relationType: "client", relationName: "" }), false, "elegir explícitamente un tipo de relación sigue exigiendo el nombre — dejarlo en blanco ahí sí sería un dato sin sentido");
+
+assert.doesNotMatch(ui, /if \(!purpose\) \{ notify\("Explica brevemente para qué guardas este adjunto"\)/, "el modal ya no debe bloquear \"Continuar\" por no tener motivo");
+const mediaContextCardSource = ui.match(/function mediaContextCard\(note\) \{[\s\S]*?\n  \}/)?.[0] || "";
+assert.ok(mediaContextCardSource, "mediaContextCard debe existir");
+assert.match(mediaContextCardSource, /const purpose = context\.purpose \? '<span class="calendar-field-label">Motivo<\/span><strong>' \+ esc\(context\.purpose\) \+ '<\/strong>' : '';/, "la etiqueta \"Motivo\" no debe mostrarse vacía cuando el adjunto se guardó sin explicar para qué");
+
 console.log("media-context: ok");

@@ -1,5 +1,19 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-21 — Subir una foto o archivo ya no obliga a explicar para qué se guarda V0.22.24
+
+Reportado en real por el propietario, con petición explícita de comprobarlo en vivo ("Coge y sube un archivo de multimedia y verás qué desastre"). No estaba en la lista de la auditoría — es un hallazgo nuevo, encontrado al reproducirlo directamente en el navegador sandbox.
+
+**Causa raíz**: `prepareMedia()` (`js/app.js`) llama a `askMediaContext()` en cuanto se selecciona una foto/archivo (cámara, galería o adjunto), abriendo el modal "Organizar adjunto" (`showMediaContextEditor`, `js/ui.js`) de inmediato, antes incluso de llegar al compositor. Su botón "Continuar" exigía `if (!purpose) { notify("Explica brevemente para qué guardas este adjunto"); ... return; }` — un bloqueo total: no había ningún botón ni atajo para guardar el adjunto tal cual, sin explicar nada. `mediaContextComplete()` (`js/media-context.js`), que vuelve a comprobarse justo antes de enviar (`add()`, línea ~285), tenía la misma exigencia (`if (!clean(value?.purpose)) return false`). La categoría y la relación ya tenían valores por defecto sensatos ("General"/"Sin relación") que no bloqueaban nada — el único campo realmente obligatorio, y el único que de verdad detenía a alguien que solo quería subir una foto, era el motivo.
+
+Esta exigencia era más estricta que en cualquier otro sitio de la app: `media-library.js` ya sabe mostrar "Entrada con adjunto" cuando no hay ningún motivo guardado — el resto del sistema siempre ha tolerado un motivo vacío, solo este modal lo prohibía.
+
+**Corrección**: se quita la validación de `purpose` en las dos capas (`showMediaContextEditor`'s "Continuar" en `js/ui.js`, y `mediaContextComplete()` en `js/media-context.js`) — el motivo pasa a ser opcional. Se conserva la única validación que sigue teniendo sentido: si se elige explícitamente un tipo de relación (persona/cliente/proyecto) en el desplegable "Relacionado con", sigue exigiéndose el nombre, porque dejarlo en blanco ahí produciría un dato sin sentido ("relacionado con: cliente ‹en blanco›") — a diferencia del motivo, que simplemente no aparece si está vacío. `mediaContextCard()` (`js/ui.js`) también deja de mostrar la etiqueta "Motivo" con un hueco en blanco cuando no hay ninguno.
+
+**Verificado en el navegador sandbox**: se simuló la selección real de un archivo (disparando el evento `change` de `#photoInput` con un `File` sintético, exactamente como lo hace el navegador al elegir una foto real) tanto ANTES como DESPUÉS del cambio. Antes: pulsar "Continuar" con el motivo vacío resaltaba el campo en naranja y no dejaba avanzar. Después: pulsar "Continuar" sin tocar nada lleva directamente a la pantalla "Te escucho", con la foto ya preparada para enviar.
+
+**Cobertura de test**: `tests/media-context.test.mjs` ampliado — comprueba que `mediaContextComplete` acepta un motivo vacío (tanto un objeto explícito como el estado inicial recién normalizado), que sigue exigiendo el nombre de la relación cuando se elige un tipo explícito, que el modal ya no contiene el bloqueo por motivo vacío, y que `mediaContextCard` no muestra la etiqueta "Motivo" en blanco.
+
 ## 2026-09-20 — El estado del micrófono del compositor deja de ser una variable global suelta V0.22.23
 
 Tercer y último hallazgo de "calidad de código" de la auditoría completa que se corrige (ver la entrada de V0.22.1 para el contexto de la auditoría completa) — cierra la ronda de fricción/calidad de código; queda pendiente, aparte, el "field bleed" de `mergeInterpretation` (marcado como opcional en el triage original).
