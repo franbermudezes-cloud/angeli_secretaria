@@ -1,5 +1,16 @@
 # Changelog
 
+## V0.23.3 · El dictado en el móvil ya no repite palabras (de verdad esta vez)
+
+- **Antes**: en el móvil (Chrome de Android) dictar cualquier instrucción repetía palabras sin parar ("programa una visita programa una visita programa una visita…"). El propietario confirmó un dato clave: **antes no pasaba**, hasta que se cambió el dictado a `continuous:true` (que se puso para que el micro del **ordenador** no se cortara tras la primera frase).
+- **Causa real**: `continuous:true` en Android está roto — encadena cada fragmento que va creciendo como resultados separados, y cualquier acumulación los multiplica. El intento anterior (V0.23.1, reconstruir desde la lista) no lo curó porque la raíz es el propio modo `continuous`.
+- **Ahora**, según la plataforma:
+  - **Ordenador**: sigue en `continuous:true` (una sola sesión, segmentos distintos que se concatenan). Igual de bien que hasta ahora.
+  - **Móvil**: vuelve a `continuous:false` (el modo con el que **antes funcionaba**), tomando el último resultado de cada enunciado (nunca la suma) y **reiniciando el reconocedor** al terminar cada frase — así se mantiene la escucha del dictado largo sin cortarse, que era justo el motivo por el que se había puesto `continuous`.
+- **Verificado en el navegador sandbox sobre el `start()` real**, emulando el user-agent de Android: se reproduce el encadenamiento de fragmentos y el texto queda limpio ("programa una visita para el día 20"), el reconocedor se reinicia para seguir escuchando, al parar no se reinicia, y en escritorio sigue concatenando bien sin reiniciar.
+- Sin cambios en el backend; no requiere redespliegue (sí recargar la PWA del móvil).
+- Tests: `tests/dictation.test.mjs` actualizado al enfoque por plataforma.
+
 ## V0.23.2 · El teclado ya no salta solo al abrir el modal de voz (móvil)
 
 - **Antes**: al tocar el micrófono principal, se abría el modal "Te escucho" y **el teclado del móvil salía solo**, tapando los botones. Había que esconderlo a mano cada vez antes de poder hablar. Igual en el modal de pregunta del modo conversación.

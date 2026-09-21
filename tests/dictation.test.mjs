@@ -12,19 +12,23 @@ const app = await readFile(new URL("../js/app.js", import.meta.url), "utf8");
 // se corte el dictado.
 const startSource = app.match(/function start\(\{[\s\S]*?\n\}/)?.[0] || "";
 assert.ok(startSource, "start() debe existir");
-assert.match(startSource, /rec\.continuous=true/, "el dictado general no debe cortarse tras el primer resultado final");
-
 // Real reportado por el propietario: en el móvil (Chrome de Android) el dictado
-// repetía palabras "como si hubiera cincuenta micros". Con continuous:true,
-// Android suele no avanzar e.resultIndex y reenvía toda la lista en cada evento,
-// así que el patrón incremental de antes ("sessionFinal += lo nuevo desde
-// resultIndex") volvía a sumar lo ya dicho una y otra vez. El ordenador no lo
-// sufría porque allí resultIndex sí avanza. La lista e.results es acumulativa de
-// toda la sesión, así que se reconstruye el texto entero desde 0 y se ASIGNA
-// (idempotente), en vez de sumar los deltas.
-assert.match(startSource, /for\(let i=0;i<e\.results\.length;i\+\+\)/, "el dictado general debe reconstruir desde 0, no fiarse de resultIndex (que Android no avanza)");
-assert.match(startSource, /sessionFinal=\(\(dictationBase\?dictationBase\+" ":""\)\+finals\)\.trim\(\)/, "debe ASIGNAR el texto reconstruido (partiendo del texto previo), no acumularlo");
-assert.doesNotMatch(startSource, /sessionFinal\+=/, "no debe volver la acumulación incremental que duplicaba en Android");
+// repetía palabras "como si hubiera cincuenta micros", y confirmó que ANTES no
+// pasaba — hasta que se cambió a continuous:true (puesto para que el micro del
+// ordenador no se cortara tras el primer resultado). continuous:true en Android
+// encadena cada interino/final que crece como resultados separados, y cualquier
+// suma los multiplica. Solución por plataforma:
+//   · Ordenador: continuous:true, una sesión, segmentos distintos -> concatenar.
+//   · Móvil: continuous:false (como antes), un enunciado por sesión, se toma el
+//     ÚLTIMO resultado (asignar, no sumar) y se REINICIA en onend para no cortar.
+assert.match(startSource, /rec\.continuous=!isMobileDictation/, "el dictado usa continuous en el ordenador y por enunciado en el móvil");
+assert.match(startSource, /isMobileDictation=\/Android\|iPhone\|iPad\|iPod\/i\.test/, "debe detectar el móvil para elegir el modo");
+// En el móvil se ASIGNA el último resultado (nunca se suman los que crecen).
+assert.match(startSource, /if\(r\.isFinal\)finalPart=phrase;else live=phrase/, "en el móvil se toma el último resultado, no la suma (evita la duplicación)");
+// El reinicio en onend es lo que mantiene el dictado largo sin cortarse.
+assert.match(startSource, /if\(isMobileDictation&&dictationMic\.isActive\(\)&&rec===recognizer\)\{try\{recognizer\.start\(\);return\}/, "en el móvil se reinicia el reconocedor mientras la persona no haya parado");
+// En el ordenador se concatenan los segmentos distintos de la única sesión.
+assert.match(startSource, /finals\+=\(finals\?" ":""\)\+phrase/, "en el ordenador (continuous) los segmentos distintos se concatenan");
 assert.doesNotMatch(startSource, /for\(let i=e\.resultIndex/, "el dictado general no debe volver a depender de e.resultIndex");
 
 // El modo conversación y el micro rápido de la lista de la compra son
@@ -70,8 +74,8 @@ for (const site of [
   /function stop\(\)\{dictationMic\.set\(false\);/,
   /function start\(\{inConversation=false,draftId=null\}=\{\}\)\{const SR=window\.SpeechRecognition\|\|window\.webkitSpeechRecognition;if\(dictationMic\.isActive\(\)\)\{stop\(\);return\}/,
   /rec\.onstart=\(\)=>\{dictationMic\.set\(true\);setMicState\(true\);/,
-  /rec\.onerror=e=>\{dictationMic\.set\(false\);setMicState\(false\);/,
-  /rec\.onend=\(\)=>\{finalText=sessionFinal;paint\(finalText\);dictationMic\.set\(false\);setMicState\(false\);/,
+  /rec\.onerror=e=>\{const fatal=[\s\S]*?dictationMic\.set\(false\);setMicState\(false\);/,
+  /rec\.onend=\(\)=>\{finalText=[\s\S]*?dictationMic\.set\(false\);setMicState\(false\);/,
   /try\{rec\.start\(\)\}catch\(e\)\{dictationMic\.set\(false\);setMicState\(false\);ui\.notify\("No se pudo iniciar el dictado"\)\}\}/
 ]) {
   assert.match(app, site, `falta usar dictationMic en: ${site}`);
