@@ -1,5 +1,15 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-21 — Cancelar desde el Dietario: modal propio + comprobación de fallo V0.22.29
+
+Quinto arreglo de la segunda auditoría (usabilidad). Señalado por tres agentes a la vez (era la única inconsistencia de diálogo nativo que quedaba en un flujo por lo demás pulido, el nuevo de V0.22.16).
+
+**Causa raíz**: `cancelDietarioEvent`/`cancelDietarioReminder` (`js/app.js`, añadidas en V0.22.16) usaban `confirm()` nativo del navegador para confirmar — feo e inconsistente con el resto de la app, que desde V0.22.20 ya no usa diálogos nativos en ningún otro sitio de gestión. Además, ninguna comprobaba el resultado de `google.cancelSyncedCalendarEvent`/`cancelScheduledReminder`: si la llamada fallaba (`applyFailure` disparaba un toast pero la función seguía), la pantalla volvía a la ficha con `openDietarioEntry(note.id)` como si la cancelación hubiera funcionado — el único indicio del fallo era el toast, fácil de perder.
+
+**Corrección**: (1) las dos funciones de `js/google.js` (`cancelScheduledReminder`, `cancelSyncedCalendarEvent`) devuelven ahora `true`/`false` (antes no devolvían nada); el otro llamador de `cancelScheduledReminder` (la acción `cancel-schedule`) no usa el retorno, así que el cambio es seguro. (2) `cancelDietarioEvent`/`cancelDietarioReminder` confirman con `ui.openModal` (modal propio, estilo `danger`, "Ahora no" vuelve a la ficha) en vez de `confirm()`, y tras la cancelación solo la dan por hecha si `ok===true`; si falló, muestran un aviso claro ("No se pudo anular el evento. Sigue activo; inténtalo de nuevo.") antes de reabrir la ficha.
+
+**Cobertura de test**: `tests/dietario.test.mjs` — comprueba que ninguna de las dos funciones usa ya `confirm()`, que confirman con `ui.openModal`, que comprueban el `ok` devuelto, y que las dos funciones de google devuelven `true` al éxito. Verificado en vivo: tocar "Anular evento" abre el modal propio "¿Anular este evento?" con "Ahora no"/"Anular evento", sin diálogo nativo.
+
 ## 2026-09-21 — Selector de tienda con Mercadona por defecto y "Volver" sin perder el nombre V0.22.28
 
 Cuarto arreglo de la segunda auditoría (usabilidad).

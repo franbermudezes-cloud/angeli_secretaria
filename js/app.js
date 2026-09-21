@@ -1,25 +1,25 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts,readShortcutsHidden,writeShortcutsHidden}from"./storage.js?v=0.22.28";
-import{classify,actionData}from"./classifier.js?v=0.22.28";
-import{sendEntry}from"./sheets.js?v=0.22.28";
-import{createUI}from"./ui.js?v=0.22.28";
-import{createGoogleIntegration}from"./google.js?v=0.22.28";
-import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,activeIntentDomain,explicitNewCommandDomain,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.22.28";
-import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,setShoppingListStore,isMercadonaList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.22.28";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.22.28";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.22.28";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime,calendarDetails}from"./schedule.js?v=0.22.28";
-import{createCloudSync}from"./firebase.js?v=0.22.28";
-import{createMediaService}from"./media.js?v=0.22.28";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.22.28";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.22.28";
-import{createAgendaActions}from"./agenda.js?v=0.22.28";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.22.28";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.22.28";
-import{DEFAULT_SHORTCUTS,SHORTCUT_PRESETS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.22.28";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.22.28";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.22.28";
-import{mediaLibraryItems}from"./media-library.js?v=0.22.28";
-import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.22.28";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts,readShortcutsHidden,writeShortcutsHidden}from"./storage.js?v=0.22.29";
+import{classify,actionData}from"./classifier.js?v=0.22.29";
+import{sendEntry}from"./sheets.js?v=0.22.29";
+import{createUI}from"./ui.js?v=0.22.29";
+import{createGoogleIntegration}from"./google.js?v=0.22.29";
+import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,activeIntentDomain,explicitNewCommandDomain,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.22.29";
+import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,setShoppingListStore,isMercadonaList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.22.29";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.22.29";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.22.29";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime,calendarDetails}from"./schedule.js?v=0.22.29";
+import{createCloudSync}from"./firebase.js?v=0.22.29";
+import{createMediaService}from"./media.js?v=0.22.29";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.22.29";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.22.29";
+import{createAgendaActions}from"./agenda.js?v=0.22.29";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.22.29";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.22.29";
+import{DEFAULT_SHORTCUTS,SHORTCUT_PRESETS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.22.29";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.22.29";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.22.29";
+import{mediaLibraryItems}from"./media-library.js?v=0.22.29";
+import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.22.29";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,finalText="",pendingImages=[],pendingFiles=[],pendingMediaContext=null,selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -1176,17 +1176,32 @@ function openDietarioCalendarFieldEditor(note,field){
 function openDietarioCalendarDateTimeEditor(note){
  ui.showCalendarDateTimeEditor(note,{onCancel:()=>{stopStrayDictation();openDietarioCalendarMenu(note)},onSave:async value=>{stopStrayDictation();const next=updateCalendarDateTime(note,value.date,value.time);ui.showWorking("Actualizando","Angeli está guardando los cambios en Calendar…","");if(await google.updateSyncedCalendarEntry(next)&&await saveConfirmed(notes.map(item=>item.id===note.id?next:item)))openDietarioEntry(next.id);else openDietarioCalendarMenu(note)}});
 }
+// Reportado en la 2ª auditoría: estas dos usaban el confirm() nativo del
+// navegador (feo e inconsistente con el resto de la app) y, si la
+// cancelación fallaba (p. ej. token caducado), volvían a la ficha como si
+// nada, con solo un aviso fugaz. Ahora confirman con el modal propio y solo
+// dan por hecha la cancelación si de verdad salió bien.
 async function cancelDietarioEvent(note){
- if(!confirm("¿Anular este evento? Se borrará también de Calendar."))return;
- ui.showWorking("Anulando evento","Angeli está anulando el evento en Calendar…","");
- await google.cancelSyncedCalendarEvent(note);
- openDietarioEntry(note.id);
+ ui.openModal({title:"¿Anular este evento?",lead:"Se borrará también de Calendar.",body:"Esta acción no se puede deshacer.",actions:[
+  {label:"Ahora no",kind:"secondary",onClick:()=>openDietarioEntry(note.id)},
+  {label:"Anular evento",kind:"danger",onClick:async()=>{
+   ui.showWorking("Anulando evento","Angeli está anulando el evento en Calendar…","");
+   const ok=await google.cancelSyncedCalendarEvent(note);
+   if(!ok)ui.notify("No se pudo anular el evento. Sigue activo; inténtalo de nuevo.");
+   openDietarioEntry(note.id);
+  }}
+ ]});
 }
 async function cancelDietarioReminder(note){
- if(!confirm("¿Cancelar este aviso? La entrada seguirá guardada, pero ya no habrá aviso."))return;
- ui.showWorking("Cancelando aviso","Angeli está cancelando el aviso en Calendar…","");
- await google.cancelScheduledReminder(note);
- openDietarioEntry(note.id);
+ ui.openModal({title:"¿Cancelar este aviso?",lead:"La entrada seguirá guardada, pero ya no habrá aviso.",body:"Esta acción no se puede deshacer.",actions:[
+  {label:"Ahora no",kind:"secondary",onClick:()=>openDietarioEntry(note.id)},
+  {label:"Cancelar aviso",kind:"danger",onClick:async()=>{
+   ui.showWorking("Cancelando aviso","Angeli está cancelando el aviso en Calendar…","");
+   const ok=await google.cancelScheduledReminder(note);
+   if(!ok)ui.notify("No se pudo cancelar el aviso. Sigue activo; inténtalo de nuevo.");
+   openDietarioEntry(note.id);
+  }}
+ ]});
 }
 function toggleEntryStatus(note){save(notes.map(item=>item.id===note.id?{...item,status:item.status==="done"?"pending":"done"}:item))}
 async function deleteEntry(note){
@@ -1442,7 +1457,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.22.28",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.22.29",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}
