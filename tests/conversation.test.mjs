@@ -1234,19 +1234,31 @@ test('nota: separa el detalle de la IA de la orden original y conserva la catego
   assert.equal(draft.aiIntent.noteClassification.scope, 'personal');
   assert.deepEqual(missingNoteDraftFields(draft), []);
 });
-test('nota: la regresión de título duplicado pide título y limpia el contenido sin inventarlo', () => {
+test('nota: la regresión de título duplicado limpia el contenido sin inventar título, y ya no exige uno a mano', () => {
   const text = 'Añade una nota personal en la que tengo que enviar un correo';
   for (const notes of [null, text]) {
     const draft = prepareNoteDraft({text,aiIntent:{title:text,notes}},noteSettingsFixture);
     assert.equal(draft.text, 'tengo que enviar un correo');
     assert.equal(draft.aiIntent.title, '');
-    assert.deepEqual(missingNoteDraftFields(draft), ['title']);
+    // El título ya no es obligatorio (V0.22.25): con contenido, la nota se
+    // puede guardar tal cual — noteTitle() usará el texto como título.
+    assert.deepEqual(missingNoteDraftFields(draft), []);
   }
 });
-test('nota: una orden sin contenido solicita los datos que faltan', () => {
+test('nota: una orden sin contenido solicita solo el contenido que falta', () => {
   const draft = prepareNoteDraft({text:'Añade una nota personal',aiIntent:{title:'Nota',notes:null}},noteSettingsFixture);
   assert.equal(draft.text, '');
-  assert.deepEqual(missingNoteDraftFields(draft), ['title','text']);
+  // Solo falta el texto: una nota sin nada escrito no tiene nada que guardar.
+  assert.deepEqual(missingNoteDraftFields(draft), ['text']);
+});
+// Reportado en la segunda auditoría (usabilidad): una nota corta dictada sin
+// un título distinto del propio texto quedaba bloqueada en "Completar nota"
+// exigiendo teclear un título — mismo tipo de bloqueo que el "¿para qué
+// guardas la foto?" de V0.22.24. Ahora se guarda tal cual.
+test('nota: una nota dictada corriente sin título propio ya no queda bloqueada', () => {
+  const draft = prepareNoteDraft({text:'comprar leche mañana',aiIntent:{intent:'note',title:'comprar leche mañana',notes:'comprar leche mañana'}},noteSettingsFixture);
+  assert.equal(draft.aiIntent.title, '', 'prepareNoteDraft sigue sin inventar un título a partir de la propia orden');
+  assert.deepEqual(missingNoteDraftFields(draft), [], 'pero con contenido la nota ya se puede guardar sin pedir título a mano');
 });
 test('nota: conserva contenido libre, detalle largo y metadatos al preparar y modificar', () => {
   const text = 'El presupuesto incluye transporte. Preguntar por el plazo y conservar la oferta anterior.';

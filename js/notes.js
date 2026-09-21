@@ -22,7 +22,17 @@ export function prepareNoteDraft(entry, settings = {}) {
 }
 
 export function missingNoteDraftFields(entry) {
-  return [!clean(entry.aiIntent?.title) && "title", !clean(entry.text) && "text"].filter(Boolean);
+  // El título ya NO es obligatorio: noteTitle() (más abajo) siempre cae al
+  // texto de la nota o a "Nota" cuando no hay uno, igual que en las listas,
+  // el Dietario y la biblioteca. Antes se exigía un título explícito, así
+  // que casi cualquier nota corta dictada ("apunta comprar leche mañana")
+  // —de la que prepareNoteDraft deliberadamente no inventa título— quedaba
+  // bloqueada en la pantalla "Completar nota" hasta teclear uno a mano. Es
+  // el mismo tipo de bloqueo innecesario que el "¿para qué guardas la foto?"
+  // (V0.22.24): un campo obligatorio para algo que la app ya sabe rellenar
+  // sola. Solo se sigue exigiendo el contenido (el texto): una nota sin nada
+  // escrito no tiene nada que guardar.
+  return [!clean(entry.text) && "text"].filter(Boolean);
 }
 
 const SAFE_ID = /^[a-z0-9][a-z0-9-]{0,63}$/;
