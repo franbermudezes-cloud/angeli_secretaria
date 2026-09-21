@@ -1,13 +1,13 @@
-import { typeLabel } from "./classifier.js?v=0.22.31";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.22.31";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.22.31";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.31";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.22.31";
-import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.22.31";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.31";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.22.31";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.22.31";
-import { groupDietarioByDay } from "./dietario.js?v=0.22.31";
+import { typeLabel } from "./classifier.js?v=0.22.32";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.22.32";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.22.32";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.22.32";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.22.32";
+import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.22.32";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.22.32";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.22.32";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.22.32";
+import { groupDietarioByDay } from "./dietario.js?v=0.22.32";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -189,7 +189,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.22.31";
+    image.src = "assets/angeli-welcome.gif?v=0.22.32";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -1075,6 +1075,11 @@ export function createUI({ getMedia }) {
     $("shoppingBack").hidden = false;
     $("shoppingDetailMenu").hidden = false;
     $("shoppingLibraryTitle").textContent = list.name;
+    // 2ª auditoría: el placeholder era siempre "Buscar o añadir…", pero en
+    // una lista que no es de Mercadona no hay búsqueda en vivo — solo se
+    // añade. Se ajusta según la tienda para no invitar a una búsqueda que
+    // nunca corre.
+    $("shoppingInput").placeholder = isMercadonaList(list) ? "Buscar o añadir un artículo…" : "Añadir un artículo…";
     const pending = list.items.filter(item => !item.checked), done = list.items.filter(item => item.checked);
     const storeLabel = shoppingStoreLabel(list.store);
     $("shoppingLibrarySubtitle").textContent = `${storeLabel ? storeLabel + " · " : ""}${pending.length} pendiente${pending.length === 1 ? "" : "s"}${done.length ? ` · ${done.length} marcado${done.length === 1 ? "" : "s"}` : ""}`;

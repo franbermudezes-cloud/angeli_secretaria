@@ -690,3 +690,15 @@ test('el selector de tienda marca Mercadona por defecto al crear y ofrece "Volve
  assert.match(createSource,/onBack:\(\)=>createShoppingListPrompt\(name\)/,'"Volver" reabre el paso del nombre con lo ya escrito');
  assert.match(createSource,/value:prefillName/,"el nombre previo se vuelve a mostrar en el campo");
 });
+
+// 2ª auditoría (cosmético): el buscador tenía siempre el placeholder
+// "Buscar o añadir…" aunque en una lista sin catálogo no hay búsqueda, y
+// conservaba lo escrito al cambiar de lista.
+test('el buscador ajusta su placeholder a la tienda y se limpia al cambiar de lista',()=>{
+ const app=readFileSync(new URL('../js/app.js',import.meta.url),'utf8');
+ const ui=readFileSync(new URL('../js/ui.js',import.meta.url),'utf8');
+ assert.match(ui,/\$\("shoppingInput"\)\.placeholder = isMercadonaList\(list\) \? "Buscar o añadir un artículo…" : "Añadir un artículo…"/,"el placeholder depende de si la lista es de Mercadona");
+ const openDetail=app.match(/function openShoppingListDetail\(listId\)\{[\s\S]*?\n\}/)?.[0]||"";
+ assert.ok(openDetail,"openShoppingListDetail debe existir");
+ assert.match(openDetail,/\$\("shoppingInput"\)\.value="";hideShoppingSuggestions\(\)/,"al cambiar de lista se limpia el buscador y sus sugerencias");
+});

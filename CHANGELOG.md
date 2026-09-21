@@ -1,5 +1,13 @@
 # Changelog
 
+## V0.22.32 · El buscador de la compra se ajusta a la tienda y se limpia al cambiar de lista (2ª auditoría, detalle)
+
+- **Antes**: el buscador ponía siempre "Buscar o añadir un artículo…", aunque en una lista que no es de Mercadona no hay búsqueda en vivo; y al cambiar de lista conservaba lo escrito en la anterior.
+- **Ahora**: el placeholder dice "Añadir un artículo…" en listas sin catálogo (y "Buscar o añadir…" solo en Mercadona), y el buscador se limpia al cambiar de lista.
+- **Verificado en el navegador sandbox**.
+- Sin cambios en el backend; no requiere redespliegue.
+- Tests: 1 prueba nueva en `tests/shopping.test.mjs`.
+
 ## V0.22.31 · Los ajustes de notas (categorías y relaciones) usan el modal propio, no cuadros del navegador (2ª auditoría, usabilidad)
 
 - **Antes**: crear, renombrar o borrar categorías y tipos de relación en los ajustes de notas usaba los `prompt()`/`confirm()` nativos del navegador, dentro de una pantalla por lo demás con el estilo propio de la app.
