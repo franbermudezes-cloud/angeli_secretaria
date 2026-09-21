@@ -1,5 +1,15 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-21 — Añadir por voz a una lista no-Mercadona ya no lanza una búsqueda inútil V0.22.27
+
+Tercer arreglo de la segunda auditoría — una regresión concreta de V0.22.13 detectada por el agente de regresión y verificada por la sesión principal leyendo el código.
+
+**Causa raíz**: cuando "tienda por lista" (V0.22.13) hizo que solo las listas de Mercadona tuvieran búsqueda en vivo, se gateó correctamente el camino de ESCRIBIR (`scheduleShoppingSearch` y el atajo de Enter, ambos consultan `isMercadonaList(getActiveList(...))`), pero se dejó sin gatear el camino de VOZ/orden (`runShoppingCommand`, `js/app.js`). Ese camino comprobaba solo `command.items[0].store!=="consum"` — el sufijo de tienda del propio artículo dictado, no la tienda de la lista de destino. Así que "añade tornillos a la lista" con una lista de Leroy Merlin/Carrefour/Family Cash/Plaza Mayor activa seguía entrando en `showShoppingAddConfirm`, que (desde V0.22.18) lanza una búsqueda real en el catálogo de Mercadona para "tornillos" — que nunca puede dar resultado, dejando a la persona ante un modal de búsqueda sin sentido para esa tienda.
+
+**Corrección**: `runShoppingCommand` resuelve ahora la lista de destino (`shoppingState.lists.find(list=>list.id===listId)`) y solo abre el modal de búsqueda si `isMercadonaList(targetList)` — el mismo criterio que ya usa el camino de escritura. Para cualquier otra tienda, el artículo se añade directamente con `addItemsToList`, como corresponde a una lista sin catálogo.
+
+**Cobertura de test**: `tests/shopping.test.mjs` — prueba por código fuente de que `runShoppingCommand` resuelve la lista de destino y gatea por `isMercadonaList(targetList)`. (El camino completo exige sesión Firebase para probarse en vivo; `isMercadonaList` en sí ya está cubierto por las pruebas de V0.22.13.)
+
 ## 2026-09-21 — "Quitar comprados" ya no borra sin avisar; lo marcado deja de llamarse "comprado" V0.22.26
 
 Segundo arreglo de la segunda auditoría (usabilidad). Trampa de pérdida de datos verificada en vivo por la sesión principal.
