@@ -1,13 +1,13 @@
-import { typeLabel } from "./classifier.js?v=0.23.3";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.23.3";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.23.3";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.23.3";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.23.3";
-import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.23.3";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.23.3";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.23.3";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.23.3";
-import { groupDietarioByDay } from "./dietario.js?v=0.23.3";
+import { typeLabel } from "./classifier.js?v=0.23.4";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.23.4";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.23.4";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.23.4";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.23.4";
+import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.23.4";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.23.4";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.23.4";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.23.4";
+import { groupDietarioByDay } from "./dietario.js?v=0.23.4";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -192,7 +192,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.23.3";
+    image.src = "assets/angeli-welcome.gif?v=0.23.4";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
