@@ -1,5 +1,18 @@
 # Changelog
 
+## V0.23.4 · Los accesos directos de llamar y agenda son instantáneos (sin esperar a la IA)
+
+- **Antes**: cualquier acceso directo — incluso "📞 Llamar contacto" o "🗓️ Hoy" — pasaba por la IA del servidor antes de hacer nada, aunque ya supiéramos exactamente qué hacer. Eso añadía una espera innecesaria.
+- **Ahora**: los accesos marcados como directos resuelven la acción **en el propio móvil, al instante**, sin llamar a la IA:
+  - **📞 Llamar a [nombre]**: extrae el nombre del texto y va directo a buscar el contacto.
+  - **🗓️ Hoy / Próxima semana / Mañana / Esta semana**: calcula el rango y consulta la agenda directamente.
+  - **✕ Cancelar evento**: prepara la búsqueda del evento sin rodeo por la IA.
+- **WhatsApp se queda a propósito con IA**: separar *a quién* de *qué mensaje* sin un marcador claro ("dile…", "diciéndole…") no es fiable en local ("a Ana que llego tarde" haría que el contacto fuera "Ana que llego tarde" y no se encontrara). La IA lo separa bien, así que ese sigue pasando por ella.
+- **Nuevo evento y Recordatorio** también siguen con IA: ahí sí hace falta para entender fechas, horas, lugar y título de lo que dictas.
+- **Verificado** sobre los módulos reales: llamar extrae "Pedro" de "Llama a Pedro", la consulta de agenda calcula su rango, y todo sin tocar la IA; WhatsApp mantiene su ruta con IA.
+- Sin cambios en el backend; no requiere redespliegue (sí recargar la PWA del móvil).
+- Tests: 2 pruebas nuevas en `tests/shortcuts.test.mjs` (209 en total).
+
 ## V0.23.3 · El dictado en el móvil ya no repite palabras (de verdad esta vez)
 
 - **Antes**: en el móvil (Chrome de Android) dictar cualquier instrucción repetía palabras sin parar ("programa una visita programa una visita programa una visita…"). El propietario confirmó un dato clave: **antes no pasaba**, hasta que se cambió el dictado a `continuous:true` (que se puso para que el micro del **ordenador** no se cortara tras la primera frase).

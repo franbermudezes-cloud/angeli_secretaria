@@ -1,6 +1,6 @@
-import { contactQuery } from "./classifier.js?v=0.23.3";
-import { calendarQueryRange, temporalData } from "./temporal.js?v=0.23.3";
-import { REMINDER_SHORTCUT_TRIGGER } from "./keywords.js?v=0.23.3";
+import { contactQuery } from "./classifier.js?v=0.23.4";
+import { calendarQueryRange, temporalData } from "./temporal.js?v=0.23.4";
+import { REMINDER_SHORTCUT_TRIGGER } from "./keywords.js?v=0.23.4";
 
 // Los accesos por defecto llevan un `id` fijo (no generado al vuelo) para
 // que dos dispositivos que arrancan sin nada guardado todavía — y por tanto
@@ -85,6 +85,11 @@ export function shortcutSemantics(shortcut = {}) {
   const value = `${shortcut.label || ""} ${shortcut.command || ""}`.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   if (/\b(?:cancelar|cancela|anular|anula|borrar evento)\b/.test(value)) return { action: "calendar.delete", direct: true };
   if (REMINDER_SHORTCUT_TRIGGER.test(value)) return { action: "reminder.create", direct: false };
+  // WhatsApp NO es directo a propósito: sin un marcador claro de mensaje
+  // ("dile"/"diciéndole"), separar el contacto del texto del mensaje es poco
+  // fiable en local ("a Ana que llego tarde" -> el contacto se comería el
+  // mensaje). La IA lo separa bien, así que este pasa por ella. Llamar y
+  // consultar/cancelar agenda sí son directos: no hay mensaje que separar.
   if (/\bwhats?app\b/.test(value)) return { action: "whatsapp.compose", direct: false };
   if (/\b(?:llamar|llama|telefono|contacto)\b/.test(value)) return { action: "contact.call", direct: true };
   if (/\b(?:que tengo|agenda|calendario|citas?)\b/.test(value)) return { action: "calendar.query", direct: true };

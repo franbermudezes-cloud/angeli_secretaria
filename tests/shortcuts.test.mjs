@@ -255,3 +255,34 @@ test("accesos directos: crear uno personalizado usa el modal propio, no prompt()
   // El nombre se autocompleta a partir de la orden (no obliga a teclearlo).
   assert.match(ui, /const label = \$\("shortcutEditLabel"\)\.value\.trim\(\) \|\| command\.slice\(0, 24\)/, "el nombre se rellena solo desde la orden si se deja vacío");
 });
+
+// Pedido del propietario: los accesos directos (sobre todo llamar y consultar
+// agenda) deberían ser DIRECTOS, sin esperar a la IA. routeShortcutIntent ya
+// reconstruye la intención con parsers locales, así que para un acceso "direct"
+// se salta la llamada a la IA y la acción es instantánea.
+test("accesos directos: los 'direct' se resuelven en local, sin pasar por la IA", () => {
+  const app = readFileSync(new URL("../js/app.js", import.meta.url), "utf8");
+  const base = a => ({ intent: a, title: null, date: null, time: null, rangeStart: null, rangeEnd: null, location: null, contactName: null, phone: null, notes: null, target: null, changes: null, linkedReminder: null, requiresConfirmation: false, missingFields: [], question: null });
+  const now = new Date("2026-09-22T10:00:00+02:00");
+  // Llamar: el nombre se extrae del texto, sin IA.
+  const call = routeShortcutIntent(base("contact.call"), { action: "contact.call", direct: true }, "Llama a Pedro", now);
+  assert.equal(call.intent, "contact.call");
+  assert.equal(call.contactName, "Pedro");
+  // Consultar agenda: el rango se calcula en local.
+  const query = routeShortcutIntent(base("calendar.query"), { action: "calendar.query", direct: true }, "¿Qué tengo hoy?", now);
+  assert.equal(query.intent, "calendar.query");
+  assert.ok(query.rangeStart || query.rangeEnd, "la consulta de agenda calcula su rango en local");
+
+  // El short-circuit debe existir en add(): un acceso 'direct' sin adjuntos ni
+  // interacción pendiente NO llama a interpret() (la IA), usa la base local.
+  assert.match(app, /function directShortcutBase\(action\)\{return\{intent:action,/, "debe existir la base local del acceso directo");
+  assert.match(app, /const interpreted=\(shortcutContext\?\.direct&&!active&&!hasMedia\)\?directShortcutBase\(shortcutContext\.action\):await interpret\(/, "un acceso directo debe saltarse la llamada a la IA");
+});
+
+// WhatsApp se queda a propósito CON IA: separar el contacto del mensaje sin un
+// marcador claro ("dile"/"diciéndole") es poco fiable en local.
+test("accesos directos: WhatsApp NO es directo (necesita la IA para separar contacto y mensaje)", () => {
+  assert.equal(shortcutSemantics({ action: "whatsapp.compose" }).direct, false);
+  assert.equal(shortcutSemantics({ label: "💬 WhatsApp", command: "Envía un WhatsApp a Ana" }).direct, false);
+  assert.equal(DEFAULT_SHORTCUTS.find(s => s.action === "whatsapp.compose").direct, undefined);
+});
