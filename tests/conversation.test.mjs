@@ -1386,7 +1386,9 @@ test('carve-out generalizado (a): un WhatsApp a medias no se come un recordatori
   // intérprete: si difieren, `active` se pone a null para este turno.
   const app = readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
   assert.match(app, /const overrideDomain=explicitNewCommandDomain\(text\);/);
-  assert.match(app, /if\(overrideDomain&&overrideDomain!==activeIntentDomain\(active\)\)active=null;/);
+  // 3ª auditoría: además de soltarla para este turno, se recuerda (`dropped`)
+  // para cancelarla al guardar la orden nueva, en vez de dejarla esperando.
+  assert.match(app, /if\(overrideDomain&&overrideDomain!==activeIntentDomain\(active\)\)\{dropped=active;active=null\}/);
 });
 
 test('carve-out generalizado (a): una nota pendiente sin relación tampoco se come un WhatsApp nuevo', () => {

@@ -1,25 +1,25 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts,readShortcutsHidden,writeShortcutsHidden}from"./storage.js?v=0.23.7";
-import{classify,actionData}from"./classifier.js?v=0.23.7";
-import{sendEntry}from"./sheets.js?v=0.23.7";
-import{createUI}from"./ui.js?v=0.23.7";
-import{createGoogleIntegration}from"./google.js?v=0.23.7";
-import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,activeIntentDomain,explicitNewCommandDomain,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.23.7";
-import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,setShoppingListStore,isMercadonaList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.23.7";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.23.7";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.23.7";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime,calendarDetails}from"./schedule.js?v=0.23.7";
-import{createCloudSync}from"./firebase.js?v=0.23.7";
-import{createMediaService}from"./media.js?v=0.23.7";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.23.7";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.23.7";
-import{createAgendaActions}from"./agenda.js?v=0.23.7";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.23.7";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.23.7";
-import{DEFAULT_SHORTCUTS,SHORTCUT_PRESETS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.23.7";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.23.7";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.23.7";
-import{mediaLibraryItems}from"./media-library.js?v=0.23.7";
-import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.23.7";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts,readShortcutsHidden,writeShortcutsHidden}from"./storage.js?v=0.23.8";
+import{classify,actionData}from"./classifier.js?v=0.23.8";
+import{sendEntry}from"./sheets.js?v=0.23.8";
+import{createUI}from"./ui.js?v=0.23.8";
+import{createGoogleIntegration}from"./google.js?v=0.23.8";
+import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,activeIntentDomain,explicitNewCommandDomain,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.23.8";
+import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,setShoppingListStore,isMercadonaList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.23.8";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.23.8";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.23.8";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime,calendarDetails}from"./schedule.js?v=0.23.8";
+import{createCloudSync}from"./firebase.js?v=0.23.8";
+import{createMediaService}from"./media.js?v=0.23.8";
+import{cancelInteraction,completeFromCollected,completeInteraction,confirmationReply,contextFor,isCancelReply,isNewCommand,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.23.8";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.23.8";
+import{createAgendaActions}from"./agenda.js?v=0.23.8";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.23.8";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.23.8";
+import{DEFAULT_SHORTCUTS,SHORTCUT_PRESETS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.23.8";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.23.8";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.23.8";
+import{mediaLibraryItems}from"./media-library.js?v=0.23.8";
+import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.23.8";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,finalText="",pendingImages=[],pendingFiles=[],pendingMediaContext=null,selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -281,9 +281,23 @@ async function add({interactionId=null,shortcut=null}={}){
  // `active` para este turno — se procesa como si no hubiera nada a medias,
  // igual que ya hace el carve-out de la compra — en vez de arriesgarse a que
  // el pipeline (local o remoto) lo confunda con una continuación.
+ // 3ª auditoría: la operación que se deja a medias por una orden nueva se
+ // CANCELA al guardar la nueva (antes se quedaba esperando para siempre y el
+ // modo conversación la recogía horas después con cualquier frase).
+ let dropped=null;
  if(active?.interaction?.status==="awaiting_input"){
   const overrideDomain=explicitNewCommandDomain(text);
-  if(overrideDomain&&overrideDomain!==activeIntentDomain(active))active=null;
+  if(overrideDomain&&overrideDomain!==activeIntentDomain(active)){dropped=active;active=null}
+ }
+ // «Cancela», «déjalo», «olvídalo»… mientras Angeli espera un dato.
+ if(active?.interaction?.status==="awaiting_input"&&isCancelReply(text)){stopStrayDictation();await saveConfirmed(notes.map(item=>item.id===active.id?cancelInteraction(item):item));clearComposer();ui.closeLayers();ui.notify("Vale, lo dejo");return}
+ // «Sí/vale/no» dicho o escrito sin más: responde a la confirmación pendiente
+ // más reciente (de los últimos 15 minutos). Antes ese caso nunca llegaba aquí
+ // y el «sí» se guardaba como una nota nueva.
+ const reply=confirmationReply(text);
+ if(!active&&reply&&!shortcutContext){
+  const recent=Date.now()-15*60*1000;
+  active=notes.filter(item=>item.interaction?.status==="pending_confirmation"&&Date.parse(item.interaction.updatedAt||item.updatedAt||0)>=recent).sort((a,b)=>String(b.interaction.updatedAt||"").localeCompare(String(a.interaction.updatedAt||"")))[0]||null;
  }
  // La lista de la compra es una función nueva y separada de las notas — no
  // es una entrada más de la conversación, es una lista propia que se puede
@@ -308,11 +322,13 @@ async function add({interactionId=null,shortcut=null}={}){
  if((pendingImages.length||pendingFiles.length)&&!mediaContextComplete(pendingMediaContext)){askMediaContext();return}
  if(!cloud.isSignedIn()){ui.notify("Inicia sesión en Angeli antes de guardar");return}
  if(active?.interaction?.status==="pending_confirmation"){
-   if(/^(?:sí|si|vale|de acuerdo|confirmo|adelante)\b/i.test(text)){clearComposer();ui.showEntryAction(active,google);return}
-   if(/^(?:no|cancelar|cancela|anula|anular)\b/i.test(text)){await saveConfirmed(notes.map(item=>item.id===active.id?cancelInteraction(item):item));clearComposer();ui.closeLayers();ui.notify("Operación cancelada");return}
+   // «Sí» abre la confirmación para pulsarla: una acción sensible (llamar,
+   // cancelar un evento…) nunca se ejecuta solo por voz (AGENTS.md).
+   if(reply==="yes"){clearComposer();ui.showEntryAction(active,google);return}
+   if(reply==="no"){await saveConfirmed(notes.map(item=>item.id===active.id?cancelInteraction(item):item));clearComposer();ui.closeLayers();ui.notify("Operación cancelada");return}
    ui.showEntryAction(active,google);return;
  }
- const now=new Date(),id=active?.id||crypto.randomUUID(),images=[],files=[],hasMedia=Boolean(pendingImages.length||pendingFiles.length);let mediaUploaded=false;saving=true;setSending(true);ui.showWorking("Procesando tu instrucción","Angeli ha recibido tu petición.","Un momento, no pulses Enviar otra vez.");try{
+ const now=new Date(),images=[],files=[],hasMedia=Boolean(pendingImages.length||pendingFiles.length);let id=active?.id||crypto.randomUUID(),mediaUploaded=false;saving=true;setSending(true);ui.showWorking("Procesando tu instrucción","Angeli ha recibido tu petición.","Un momento, no pulses Enviar otra vez.");try{
    if(hasMedia)ui.updateWorking("Subiendo adjunto","Angeli está enviando el archivo a Drive…","No pulses Enviar otra vez; te avisaré cuando termine.");
    for(const file of pendingImages){images.push(await media.upload(file,"image",id))}
    for(const file of pendingFiles){files.push(await media.upload(file,"file",id))}
@@ -341,12 +357,22 @@ async function add({interactionId=null,shortcut=null}={}){
    // dentista el jueves a las 5»), es una orden nueva y no el mensaje de Juan.
    const forceWhatsApp=Boolean(whatsApp)&&(aiWhatsApp||interpreted.source!=="ai"||Boolean(localWhatsApp(text,null)));
    const whatsAppInterpretation=forceWhatsApp?{...interpreted,intent:"whatsapp.compose",contactName:(aiWhatsApp?interpreted.contactName:null)||whatsApp.contactName||null,phone:(aiWhatsApp?interpreted.phone:null)||whatsApp.phone||null,notes:(aiWhatsApp?interpreted.notes:null)||whatsApp.notes||null,requiresConfirmation:true,missingFields:[],question:null}:interpreted;
+   // 3ª auditoría: si la IA, con confianza, dice que la frase es una orden de
+   // OTRA familia que la operación pendiente, es una orden nueva: entrada
+   // nueva, sin heredar contacto, texto ni ubicación de la anterior, y la
+   // anterior se cancela al guardar.
+   if(isNewCommand(active,whatsAppInterpretation)){dropped=active;active=null;id=crypto.randomUUID()}
    const rawInterpretation=applyExplicitNoteCategory(routeShortcutIntent(whatsAppInterpretation,shortcutContext,text,now),text,noteSettings);
    if(rawInterpretation.source==="fallback")ui.updateWorking("Estoy revisando tu petición","Necesito confirmarla contigo antes de continuar.","");
    if(rawInterpretation.fallbackReason==="quota_exhausted")ui.notify("Se agotó tu prueba de Angeli este mes. Seguiré en modo básico; pídele más a quien te dio de alta.");
    const deterministic=localLinked||cancellation||localUpdate;
    const routedInterpretation=(noteQuery||reminderQuery)?protectReadQuery(rawInterpretation,noteQuery,reminderQuery):protectContactCallInterpretation(preserveCancellation(active,protectCalendarInterpretation(rawInterpretation,deterministic)),immediateCall);
-   const normalizedInterpretation=normalizeReminderSchedule(normalizeFutureCall(normalizeUndatedCall(routedInterpretation,text,active,now),text),text,now);
+   // 3ª auditoría: al responder «a las 10» después de haber dicho «mañana», la
+   // normalización calculaba la fecha solo con la frase actual (hoy) y luego
+   // pisaba la ya recogida: el aviso quedaba hoy, en el pasado. Lo recogido
+   // completa lo que la respuesta no trae ANTES de normalizar.
+   const withCollected=completeFromCollected(active,routedInterpretation,temporalData(text,now));
+   const normalizedInterpretation=normalizeReminderSchedule(normalizeFutureCall(normalizeUndatedCall(withCollected,text,active,now),text),text,now);
    if(normalizedInterpretation.intent==="task.complete"){await resolvePendingCompletion(normalizedInterpretation);return}
    if(normalizedInterpretation.intent==="reminder.query"){await resolveReminderQuery(normalizedInterpretation);return}
    if(normalizedInterpretation.intent==="note.query"){resolveNoteQuery(normalizedInterpretation);return}
@@ -361,7 +387,7 @@ async function add({interactionId=null,shortcut=null}={}){
      return;
    }
    ui.updateWorking("Guardando","Angeli está registrando tu instrucción…","");
-   const previousNotes=notes,nextNotes=active?notes.map(item=>item.id===active.id?entry:item):[entry,...notes];
+   const previousNotes=notes,nextNotes=(active?notes.map(item=>item.id===active.id?entry:item):[entry,...notes]).map(item=>dropped&&item.id===dropped.id?cancelInteraction(item):item);
    const datedTask=entry.type==="task"&&entry.status==="pending"&&entry.scheduledDate&&entry.scheduledTime;
    if(!await saveConfirmed(nextNotes,previousNotes,{waitForServer:datedTask})){if(hasMedia)await Promise.allSettled([...images,...files].map(item=>media.remove(item.driveFileId||item.id)));ui.closeLayers();return}
    if(datedTask){try{await cloud.schedulePush(entry)}catch(_){ui.notify("La tarea se guardó, pero su aviso necesita reintento")}}
@@ -443,6 +469,9 @@ function stop(){dictationMic.set(false);if(rec){try{rec.stop()}catch(e){}}rec=nu
 // arrancar un reconocedor propio, debe llamar a esto primero.
 function stopStrayDictation(){if(dictationMic.isActive())stop()}
 function start({inConversation=false,draftId=null}={}){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(dictationMic.isActive()){stop();return}
+ // 3ª auditoría: con el modo conversación escuchando de fondo, el micro propio
+ // de un modal arrancaba un segundo reconocedor que chocaba con el de fondo.
+ if(conversationOn)stopConversationRecognizer();
  // Real (encontrado en revisión): con el compositor de texto ya oculto,
  // salir aquí sin abrir el borrador dejaba sin ninguna forma de escribir una
  // instrucción a quien usa un navegador sin reconocimiento de voz. El
@@ -532,7 +561,7 @@ function openNoteLibraryDetail(entry){ui.closeNoteLibrary();const show=()=>ui.sh
 //    exigen un toque en pantalla incluso dictando por el compositor normal;
 //    en modo conversación pausamos el micrófono, lo anunciamos y reanudamos
 //    solos en cuanto ese modal se cierra.
-let conversationOn=false,conversationListening=false,conversationBusy=false,conversationRec=null,conversationTurnDispatched=false,conversationModalObserver=null,conversationManualStop=false;
+let conversationAsideAllowed=false,conversationSilences=0,conversationOn=false,conversationListening=false,conversationBusy=false,conversationRec=null,conversationTurnDispatched=false,conversationModalObserver=null,conversationManualStop=false;
 
 function conversationModalKind(){
  if(!$("actionModal").classList.contains("show"))return"closed";
@@ -593,7 +622,10 @@ function speakAloud(text){
  });
 }
 
-function conversationActiveQuestionEntry(){return notes.find(entry=>entry.interaction?.status==="awaiting_input")||null}
+// 3ª auditoría: cogía la PRIMERA pregunta pendiente de cualquier antigüedad;
+// una de ayer atrapaba la siguiente frase del modo conversación. Ahora solo la
+// más reciente y de los últimos 30 minutos.
+function conversationActiveQuestionEntry(){const recent=Date.now()-30*60*1000;return notes.filter(entry=>entry.interaction?.status==="awaiting_input"&&Date.parse(entry.interaction.updatedAt||entry.updatedAt||0)>=recent).sort((a,b)=>String(b.interaction.updatedAt||"").localeCompare(String(a.interaction.updatedAt||"")))[0]||null}
 
 // Muletillas genéricas (no atadas a notas/recordatorios/agenda concretos), en
 // tono cercano de compañera, no de máquina. Se dicen SIEMPRE al capturar la
@@ -618,9 +650,11 @@ async function speakConversationalAside(text){
    chatAside(text,idToken),
    new Promise((_,reject)=>setTimeout(()=>reject(new Error("aside_timeout")),CONVERSATION_ASIDE_TIMEOUT_MS))
   ]);
-  await speakAloud(reply);
+  // 3ª auditoría: si la respuesta real ya llegó, la frase de relleno ya no se
+  // dice (antes podía cortar la respuesta real a medias con speechSynthesis).
+  if(conversationAsideAllowed)await speakAloud(reply);
  }catch(e){
-  await speakAloud(pickConversationFiller());
+  if(conversationAsideAllowed)await speakAloud(pickConversationFiller());
  }
 }
 
@@ -664,8 +698,15 @@ async function conversationHandleOutcome(){
   ui.addConversationTurn("angeli",spoken);
   ui.setConversationStatus("Angeli está hablando…");
   await speakAloud(spoken);
-  ui.setConversationStatus("Toca 🎙️ Hablar o escribe la respuesta");
+  // 3ª auditoría: el modo conversación dejaba de ser manos libres aquí — había
+  // que tocar el micro del modal y «Continuar», y el resultado nunca se leía.
+  // Ahora se vuelve a escuchar de fondo y la respuesta va a la pregunta
+  // pendiente (conversationRunTurn -> add({interactionId})). El choque de dos
+  // reconocedores que motivó esperar al cierre se evita en start(): tocar el
+  // micro propio del modal para primero el de fondo.
+  ui.setConversationStatus("Te escucho: responde en voz alta");
   watchForModalClose(()=>{if(conversationOn)resumeConversationListening()});
+  resumeConversationListening();
   return;
  }
  if(kind==="manual"){
@@ -701,8 +742,10 @@ async function conversationRunTurn(text){
  ui.setConversationStatus("Angeli está pensando…");
  const active=conversationActiveQuestionEntry();
  $("text").value=text;finalText=text;
+ conversationAsideAllowed=true;
  void speakConversationalAside(text);
  try{active?await add({interactionId:active.id}):await add()}catch(e){}
+ conversationAsideAllowed=false;
  // conversationBusy se libera ANTES de leer/hablar el resultado: cada rama
  // de conversationHandleOutcome termina reanudando la escucha, y
  // startConversationRecognizer se niega a arrancar mientras conversationBusy
@@ -746,14 +789,20 @@ function startConversationRecognizer(){
    const result=event.results[i],phrase=(result[0]?.transcript||"").trim();
    if(result.isFinal&&phrase)finalPhrase+=(finalPhrase?" ":"")+phrase;
   }
-  if(finalPhrase){conversationTurnDispatched=true;try{conversationRec?.stop()}catch(e){}void conversationRunTurn(finalPhrase)}
+  if(finalPhrase){conversationSilences=0;conversationTurnDispatched=true;try{conversationRec?.stop()}catch(e){}void conversationRunTurn(finalPhrase)}
  };
  conversationRec.onerror=event=>{
   conversationListening=false;
   $("conversationModeMic").classList.remove("listening");
   if(event.error==="not-allowed"){ui.setConversationStatus("Permiso de micrófono denegado");conversationOn=false;return}
-  if(event.error==="no-speech"||event.error==="aborted")return;
-  ui.setConversationStatus("Error de escucha: "+event.error);
+  if(event.error==="aborted")return;
+  // 3ª auditoría: antes onend reiniciaba sin límite: sin conexión o con el
+  // micro ocupado era un bucle error/reinicio, y en silencio un pitido cada
+  // pocos segundos en Android. Ahora se para y se avisa; toca el micro para
+  // volver a escuchar.
+  if(event.error==="no-speech"){conversationSilences+=1;if(conversationSilences>=4){conversationManualStop=true;ui.setConversationStatus("Toca el micrófono para hablar")}return}
+  conversationManualStop=true;
+  ui.setConversationStatus(event.error==="network"?"Sin conexión: toca el micrófono para reintentar":"No puedo usar el micrófono ahora: toca para reintentar");
  };
  conversationRec.onend=()=>{
   conversationListening=false;
@@ -770,7 +819,7 @@ function resumeConversationListening(){if(conversationOn)startConversationRecogn
 function toggleConversationMic(){
  if(!conversationOn)return;
  if(conversationListening){stopConversationRecognizer();ui.setConversationStatus("Toca el micrófono para continuar")}
- else startConversationRecognizer();
+ else{conversationSilences=0;startConversationRecognizer()}
 }
 
 // Pedido explícito del propietario: tocar "modo conversación" y encontrarse
@@ -1573,7 +1622,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.23.7",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.23.8",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}

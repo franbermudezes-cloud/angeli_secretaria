@@ -1,5 +1,20 @@
 # Changelog
 
+## V0.23.8 · Conversación a varios turnos que se entiende (3ª auditoría, lote 4)
+
+- **«Sí / vale / no» funcionan de verdad**: antes la rama de confirmación nunca se alcanzaba y un «sí» se guardaba como nota nueva; y «Sí» con tilde no se reconocía. Ahora un «sí/no» suelto responde a la confirmación pendiente de los últimos 15 minutos. «Sí» abre la confirmación para pulsarla (una acción sensible nunca se ejecuta solo por voz). Ya no hay falsos positivos: «si puedes, recuérdame…», «no te olvides de…» o «No sé» no cuentan como sí/no, y «sí, pero a las 11» pasa como corrección.
+- **Cancelar por voz**: «cancela», «déjalo», «olvídalo», «no importa»… sueltan la pregunta pendiente. Antes se tomaban como el dato y la pregunta se repetía para siempre.
+- **Una orden nueva es una entrada nueva**: si la IA dice, con confianza, que la frase es de otro tipo que lo pendiente, ya no se funde con ello. Se acabó que un recordatorio nuevo heredara «Llamar a Pepe» o que una cita con el dentista acabara siendo el mensaje de un WhatsApp a Juan. La operación abandonada se cancela en vez de quedarse esperando.
+- **Responder no borra lo ya dicho**: «Recuérdame comprar pan» → «mañana» → «a las diez» termina en *Comprar pan, mañana a las 10:00*. Antes terminaba con el título «a las diez», hoy y en el pasado.
+- **Nunca se pregunta lo que ya está**: tras decir el día, pregunta solo la hora. Un aviso o evento completo siempre queda pendiente de confirmar.
+- **Modo conversación**:
+  - Vuelve a ser manos libres tras una pregunta: tu respuesta en voz alta va a esa pregunta y el resultado se lee.
+  - La frase de relleno ya no corta la respuesta real.
+  - Se acabaron el bucle de error/reinicio sin conexión y el pitido cada pocos segundos en silencio.
+  - Solo recoge preguntas pendientes recientes (30 min), la más reciente.
+- Sin cambios en el backend (sí recargar la PWA).
+- Tests: `tests/conversation-audit.test.mjs` con el diálogo completo (237 pruebas).
+
 ## V0.23.7 · Fechas y horas como se dicen de verdad (3ª auditoría, lote 3)
 
 El parser local de fechas y horas se reescribió de forma legible. Además de servir cuando la IA falla o se agota el cupo, **completa** las respuestas de la IA, así que sus errores se notaban siempre. Sobre la batería del agente: **29 casos arreglados, 0 rotos**.
