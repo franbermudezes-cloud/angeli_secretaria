@@ -29,7 +29,7 @@ test("localCalendarUpdate ya no convierte recordatorios, tareas ni notas en «mo
   ]) assert.equal(localCalendarUpdate(text, now, null)?.intent, "calendar.update", text);
 });
 
-test("al reprogramar, la fecha y la hora nuevas de la IA mandan sobre la extracción local", () => {
+test("al reprogramar, la fecha y la hora nuevas se leen detrás de «al / a las» y son correctas", () => {
   const sat = protectCalendarInterpretation(
     { intent: "calendar.update", confidence: .9, target: { title: "cena" }, changes: { date: "2026-09-26" }, source: "ai" },
     localCalendarUpdate("Cambia la cena del viernes al sábado", now, null));
@@ -40,7 +40,7 @@ test("al reprogramar, la fecha y la hora nuevas de la IA mandan sobre la extracc
   assert.equal(late.changes.time, "21:30");
 });
 
-test("recordatorio: la fecha de la IA manda sobre un «hoy/mañana» del contenido", () => {
+test("recordatorio: gana el PRIMER día dicho, no un «hoy/mañana» del contenido", () => {
   const friday = normalizeReminderSchedule({ intent: "reminder.create", date: "2026-09-25", time: "10:00", source: "ai" }, "Recuérdame el viernes comprar el pan para mañana", now);
   assert.equal(friday.date, "2026-09-25");
   const monday = normalizeReminderSchedule({ intent: "reminder.create", date: "2026-09-28", time: "09:00", source: "ai" }, "Recuérdame el lunes preparar lo de hoy", now);
@@ -119,11 +119,44 @@ test("add(): el texto de un WhatsApp no se lee como cambiar/cancelar evento, y u
   const app = readFileSync(new URL("../js/app.js", import.meta.url), "utf8");
   assert.match(app, /const cancellation=\(localLinked\|\|whatsApp\|\|/);
   assert.match(app, /const localUpdate=\(localLinked\|\|whatsApp\|\|/);
-  assert.match(app, /const forceWhatsApp=Boolean\(whatsApp\)&&\(aiWhatsApp\|\|interpreted\.source!=="ai"\|\|Boolean\(localWhatsApp\(text,null\)\)\);/);
+  assert.match(app, /const forceWhatsApp=Boolean\(whatsApp\)&&\(aiWhatsApp\|\|interpreted\.source!=="ai"\|\|Boolean\(localWhatsApp\(text,null\)\)\|\|\(active\?\.aiIntent\?\.intent==="whatsapp\.compose"&&\(active\.interaction\?\.missingFields\|\|\[\]\)\.includes\("notes"\)\)\);/, "un WhatsApp que espera el MENSAJE toma el texto como mensaje");
 });
 
 test("la hora que se envía a la IA es la local con su desfase, no UTC", () => {
   const value = localIsoNow(new Date(2026, 8, 26, 0, 30, 0));
   assert.match(value, /^2026-09-26T00:30:00[+-]\d{2}:\d{2}$/);
   assert.doesNotMatch(value, /Z$/);
+});
+
+// Revisión con el propietario (preocupado por que se hubiera quitado la lógica
+// y dejado solo la IA): el historial tiene casos reales en que la IA se
+// equivocaba y lo local la corregía. Se prueban aquí CON source:"ai", que es
+// como llegan de verdad (los tests antiguos no lo marcaban y por eso la primera
+// versión de la 3ª auditoría reabrió el #6 sin que nada fallara).
+test("historial #6: «pasado mañana» manda aunque la IA diga mañana", () => {
+  const aug = new Date(2026, 7, 26, 12);
+  const text = "Recuérdame llamar a Carlos Ferrer pasado mañana a las once de la mañana";
+  assert.equal(normalizeReminderSchedule({ intent: "reminder.create", source: "ai", date: "2026-08-27", time: "11:00" }, text, aug).date, "2026-08-28");
+  // Sin ningún día en la frase, la fecha de la IA sigue mandando.
+  assert.equal(normalizeReminderSchedule({ intent: "reminder.create", source: "ai", date: "2026-09-30", time: "11:00" }, "Recuérdame llamar a Pepe", now).date, "2026-09-30");
+});
+
+test("mover un evento: el día nuevo dicho manda aunque la IA se equivoque; mañana/tarde sin franja lo decide la IA", () => {
+  const move = (text, changes) => protectCalendarInterpretation({ intent: "calendar.update", confidence: .9, target: { title: "x" }, source: "ai", changes }, localCalendarUpdate(text, now, null)).changes;
+  assert.equal(move("Cambia la cena del viernes al sábado", { date: "2026-09-25" }).date, "2026-09-26");
+  assert.deepEqual(move("Mueve la reunión del jueves a las 10 al viernes a las 12", {}), { date: "2026-09-25", time: "12:00" });
+  assert.equal(move("Pasa la cena con Vicente a las 9 y media de la noche", { time: "09:30" }).time, "21:30", "franja dicha: manda lo dicho");
+  const dinner = move("Cambia la cena con Laura a las nueve y ponla en Casa Pepe", { time: "21:00", location: "Casa Pepe" });
+  assert.equal(dinner.time, "21:00", "«a las nueve» sin franja en una cena: la IA tiene el contexto");
+  assert.equal(dinner.location, "Casa Pepe", "los cambios que solo entiende la IA se conservan");
+});
+
+test("historial #39: una pregunta con «?» sobre recordatorios o notas sigue siendo consulta", () => {
+  assert.equal(localReminderQuery("¿Tengo recordatorios para mañana?")?.intent, "reminder.query");
+  assert.equal(localNoteQuery("¿Tengo notas del proyecto Karaoke?")?.intent, "note.query");
+});
+
+test("historial #76: «quiero llamar a Ana» sigue forzando la llamada si la IA dice nota", () => {
+  const local = localImmediateCall("quiero llamar a Ana", now);
+  assert.equal(local?.contactName, "Ana");
 });

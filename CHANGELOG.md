@@ -1,5 +1,14 @@
 # Changelog
 
+## V0.23.11 · La lógica local vuelve a proteger donde la IA se equivocaba
+
+Revisión pedida por el propietario, preocupado por si se había quitado la lógica local para dejar solo la IA (que históricamente daba muchos errores). **La lógica local no se quitó**, pero el historial mostró un caso reabierto por la 3ª auditoría, y se corrige:
+- **«Pasado mañana» vuelve a mandar aunque la IA diga «mañana»** (arreglo #6 del 26/08). En recordatorios, la fecha DICHA vuelve a mandar sobre la de la IA, porque calcularla en el móvil es exacto. Se mantiene la mejora de la auditoría: cuenta el PRIMER día que se dice («Recuérdame el viernes comprar el pan para mañana» sigue siendo el viernes). La IA solo decide cuando la frase no dice ningún día.
+- **Al mover un evento, el día y la hora nuevos los vuelve a calcular el móvil**, ahora leyéndolos detrás de «al / para / hasta / a las» («la cena del viernes al sábado» → sábado aunque la IA se equivoque). Única excepción: si dijiste la hora sin franja («la cena a las nueve») y la IA coincide en la hora, decide la IA si es de mañana o de tarde (21:00), porque sabe que es una cena. Si dijiste la franja, manda lo dicho.
+- **Un WhatsApp que espera el mensaje** toma lo que digas como mensaje aunque parezca otra cosa (arreglo #120). Los disparadores explícitos («Recuérdame…», «Llama a…») siguen soltándolo.
+- **Las preguntas con «?» sobre recordatorios o notas** vuelven a reconocerse como consulta (arreglo #39).
+- **Tests**: los casos del historial se prueban ahora como llegan de verdad, marcados como respuesta de la IA. Los antiguos no lo hacían, y por eso el #6 se reabrió sin que fallara nada (252 pruebas).
+
 ## V0.23.10 · Multiusuario más robusto (3ª auditoría, lote 6)
 
 - **Una persona invitada ya no pierde la sesión por un fallo de red**: abrir la app sin conexión o un arranque lento del servidor cerraban su sesión y tenía que volver a entrar. Ahora solo un «no» explícito del servidor la cierra; los datos siguen protegidos por las reglas de Firestore y la IA se vuelve a comprobar en cada petición.
