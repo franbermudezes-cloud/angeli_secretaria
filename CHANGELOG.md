@@ -1,5 +1,22 @@
 # Changelog
 
+## V0.23.9 · Dictado y accesos directos sin sorpresas (3ª auditoría, lote 5)
+
+Regresiones de mis propios cambios recientes (V0.23.1–0.23.4), halladas ejecutando el `start()` real contra un reconocedor simulado:
+- **El micro del móvil ya no se reinicia para siempre**: tras ~1 minuto en silencio se para (antes pitaba cada pocos segundos indefinidamente), y sin conexión avisa en vez de entrar en bucle.
+- **Sin duplicados**: cada frase se suma una vez al cerrarse su tramo («hola hola» si el motor repetía el final).
+- **Parar y volver a tocar el micro rápido** ya no apaga el dictado nuevo.
+- **Tras Enviar, el texto enviado ya no reaparece** en el cuadro ni en la pregunta siguiente; y Enviar para el micro también si algo falla.
+- **Escribir a mano en el borrador para el dictado**, en lugar de que el siguiente tramo borre lo escrito.
+- **iPad** se trata como móvil (antes usaba el modo que duplicaba palabras).
+- **Accesos directos**:
+  - **«🛒 Añadir a la compra» añade a la lista**; antes acababa guardado como nota.
+  - **«📞 Llamar»**: «Llama a» a secas pregunta a quién (antes buscaba el contacto «a»); «al móvil» se quita del nombre; un número se trata como teléfono; «Llama a Ana mañana a las 10» se convierte en aviso (antes llamaba ya).
+  - **«✕ Cancelar evento»**: «Cancela» a secas pregunta qué evento (antes buscaba «Cancela»).
+  - **Voz primero**: Recordatorio, Nuevo evento, Nota… empiezan escuchando. Desde V0.23.2 se abrían sin teclado ni micro; el teclado sigue a un toque (⌨️).
+  - **Su pregunta de seguimiento** ya no dice «Necesito asegurarme».
+- Tests: `tests/shortcuts-audit.test.mjs`, `tests/dictation.test.mjs` ampliado (237+ pruebas).
+
 ## V0.23.8 · Conversación a varios turnos que se entiende (3ª auditoría, lote 4)
 
 - **«Sí / vale / no» funcionan de verdad**: antes la rama de confirmación nunca se alcanzaba y un «sí» se guardaba como nota nueva; y «Sí» con tilde no se reconocía. Ahora un «sí/no» suelto responde a la confirmación pendiente de los últimos 15 minutos. «Sí» abre la confirmación para pulsarla (una acción sensible nunca se ejecuta solo por voz). Ya no hay falsos positivos: «si puedes, recuérdame…», «no te olvides de…» o «No sé» no cuentan como sí/no, y «sí, pero a las 11» pasa como corrección.

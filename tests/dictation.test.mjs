@@ -26,7 +26,13 @@ assert.match(startSource, /isMobileDictation=\/Android\|iPhone\|iPad\|iPod\/i\.t
 // En el móvil se ASIGNA el último resultado (nunca se suman los que crecen).
 assert.match(startSource, /if\(r\.isFinal\)finalPart=phrase;else live=phrase/, "en el móvil se toma el último resultado, no la suma (evita la duplicación)");
 // El reinicio en onend es lo que mantiene el dictado largo sin cortarse.
-assert.match(startSource, /if\(isMobileDictation&&dictationMic\.isActive\(\)&&rec===recognizer\)\{try\{recognizer\.start\(\);return\}/, "en el móvil se reinicia el reconocedor mientras la persona no haya parado");
+assert.match(startSource, /if\(isMobileDictation&&dictationMic\.isActive\(\)&&rec===recognizer&&idleSessions<8\)\{try\{recognizer\.start\(\);return\}/, "en el móvil se reinicia el reconocedor mientras la persona no haya parado, con límite");
+// 3ª auditoría (regresiones de V0.23.3): reinicio con límite, cada enunciado se
+// suma una vez al cerrar su sesión, un onend tardío no toca un dictado nuevo y
+// el reconocedor descartado tras Enviar no reescribe el cuadro.
+assert.match(startSource, /if\(sessionPart\)\{committed=\(committed\?committed\+" ":""\)\+sessionPart;sessionPart=""\}else idleSessions\+=1/);
+assert.match(startSource, /rec\.onend=\(\)=>\{if\(rec&&rec!==recognizer\)return;if\(recognizer\.discarded\)return;/);
+assert.match(app, /function clearComposer\(\)\{if\(rec\)rec\.discarded=true;stopStrayDictation\(\);/);
 // En el ordenador se concatenan los segmentos distintos de la única sesión.
 assert.match(startSource, /finals\+=\(finals\?" ":""\)\+phrase/, "en el ordenador (continuous) los segmentos distintos se concatenan");
 assert.doesNotMatch(startSource, /for\(let i=e\.resultIndex/, "el dictado general no debe volver a depender de e.resultIndex");
@@ -50,7 +56,7 @@ assert.match(app, /function stopStrayDictation\(\)\{if\(dictationMic\.isActive\(
 for (const site of [
   /onCancel:\(\)=>\{stopStrayDictation\(\);pendingShortcut=null;ui\.closeLayers\(\)\}/,
   /onCancel:\(\)=>\{stopStrayDictation\(\);cancelActive\(entry\)\}/,
-  /function clearComposer\(\)\{stopStrayDictation\(\);/,
+  /function clearComposer\(\)\{(?:if\(rec\)rec\.discarded=true;)?stopStrayDictation\(\);/,
   /function shoppingQuickMic\(\)\{\n stopStrayDictation\(\);/
 ]) {
   assert.match(app, site, `falta llamar a stopStrayDictation() en: ${site}`);
@@ -75,7 +81,7 @@ for (const site of [
   /function start\(\{inConversation=false,draftId=null\}=\{\}\)\{const SR=window\.SpeechRecognition\|\|window\.webkitSpeechRecognition;if\(dictationMic\.isActive\(\)\)\{stop\(\);return\}/,
   /rec\.onstart=\(\)=>\{dictationMic\.set\(true\);setMicState\(true\);/,
   /rec\.onerror=e=>\{const fatal=[\s\S]*?dictationMic\.set\(false\);setMicState\(false\);/,
-  /rec\.onend=\(\)=>\{finalText=[\s\S]*?dictationMic\.set\(false\);setMicState\(false\);/,
+  /rec\.onend=\(\)=>\{[\s\S]*?dictationMic\.set\(false\);setMicState\(false\);/,
   /try\{rec\.start\(\)\}catch\(e\)\{dictationMic\.set\(false\);setMicState\(false\);ui\.notify\("No se pudo iniciar el dictado"\)\}\}/
 ]) {
   assert.match(app, site, `falta usar dictationMic en: ${site}`);

@@ -1,6 +1,6 @@
-import { contactQuery } from "./classifier.js?v=0.23.8";
-import { naturalQueryRange, temporalData } from "./temporal.js?v=0.23.8";
-import { REMINDER_SHORTCUT_TRIGGER } from "./keywords.js?v=0.23.8";
+import { contactQuery } from "./classifier.js?v=0.23.9";
+import { naturalQueryRange, temporalData } from "./temporal.js?v=0.23.9";
+import { REMINDER_SHORTCUT_TRIGGER } from "./keywords.js?v=0.23.9";
 
 // Los accesos por defecto llevan un `id` fijo (no generado al vuelo) para
 // que dos dispositivos que arrancan sin nada guardado todavía — y por tanto
@@ -116,7 +116,17 @@ export function routeShortcutIntent(interpretation, shortcut, text, now = new Da
   const date = interpretation.date || temporal.scheduledDate || null;
   const time = interpretation.time || temporal.scheduledTime || null;
   const base = { ...interpretation, intent: action, date, time, question: null };
-  if (action === "contact.call") return { ...base, date: null, time: null, contactName: interpretation.contactName || contactQuery(text) || null, requiresConfirmation: true, missingFields: [] };
+  // 3ª auditoría (atajo directo, sin IA): «Llama a» a secas buscaba el
+  // contacto «a»; «Llama a Ana al móvil» buscaba «Ana al móvil»; un número se
+  // trataba como nombre; y «Llama a Ana mañana a las 10» perdía la fecha y
+  // llamaba ya. Ahora el nombre se limpia, un número va a `phone`, un nombre
+  // vacío se pregunta, y con fecha/hora normalizeFutureCall lo convierte en aviso.
+  if (action === "contact.call") {
+    const raw = String(interpretation.contactName || contactQuery(text) || cleanInstruction(text, "contact.call") || "").replace(/\s+(?:para|que|porque|al\s+(?:m[oó]vil|fijo|trabajo)|a\s+las?\b|ma[nñ]ana|hoy|esta\s+(?:tarde|noche)).*$/i, "").trim();
+    const phone = /^[+\d][\d\s().-]{7,}$/.test(raw) ? raw.replace(/[^\d+]/g, "") : (interpretation.phone || null);
+    const contactName = phone && !interpretation.contactName ? null : (raw.length >= 2 ? raw : null);
+    return { ...base, date: temporal.scheduledDate || null, time: temporal.scheduledTime || null, contactName, phone, requiresConfirmation: true, missingFields: contactName || phone ? [] : ["contactName"] };
+  }
   if (action === "whatsapp.compose") return { ...base, date: null, time: null, contactName: interpretation.contactName || contactQuery(text) || null, requiresConfirmation: true };
   // 3ª auditoría: el acceso directo de agenda ya no pasa por la IA, así que
   // debe entender todos los periodos que sí entiende el respaldo local («los
@@ -136,7 +146,9 @@ function cleanInstruction(text, action) {
     "contact.call": /^\s*(?:(?:llama(?:r)?|telefonea(?:r)?|contacta(?:r)?)\s+(?:a\s+)?)+/i,
     "reminder.create": /^\s*(?:(?:recu[eé]rdame|recordar|av[ií]same)\s+)+/i,
     "calendar.create": /^\s*(?:(?:a[nñ]ade|agrega|crea)\s+(?:un\s+evento\s+)?(?:al\s+calendario\s+)?)+/i,
-    "calendar.delete": /^\s*(?:(?:cancela(?:r)?|anula(?:r)?|borra(?:r)?)\s+(?:el\s+|la\s+)?)+/i
+    // «Cancela» a secas (sin nada detrás) debe quedar vacío y preguntarse, no
+    // buscar el evento «Cancela».
+    "calendar.delete": /^\s*(?:(?:cancela(?:r)?|anula(?:r)?|borra(?:r)?)(?:\s+(?:el\s+|la\s+|lo\s+de\s+)?|\s*$))+/i
   };
   return String(text || "").replace(prefixes[action] || /^$/, "").trim() || null;
 }

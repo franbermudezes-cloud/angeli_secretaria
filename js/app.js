@@ -1,25 +1,25 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts,readShortcutsHidden,writeShortcutsHidden}from"./storage.js?v=0.23.8";
-import{classify,actionData}from"./classifier.js?v=0.23.8";
-import{sendEntry}from"./sheets.js?v=0.23.8";
-import{createUI}from"./ui.js?v=0.23.8";
-import{createGoogleIntegration}from"./google.js?v=0.23.8";
-import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,activeIntentDomain,explicitNewCommandDomain,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.23.8";
-import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,setShoppingListStore,isMercadonaList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.23.8";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.23.8";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.23.8";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime,calendarDetails}from"./schedule.js?v=0.23.8";
-import{createCloudSync}from"./firebase.js?v=0.23.8";
-import{createMediaService}from"./media.js?v=0.23.8";
-import{cancelInteraction,completeFromCollected,completeInteraction,confirmationReply,contextFor,isCancelReply,isNewCommand,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.23.8";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.23.8";
-import{createAgendaActions}from"./agenda.js?v=0.23.8";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.23.8";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.23.8";
-import{DEFAULT_SHORTCUTS,SHORTCUT_PRESETS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.23.8";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.23.8";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.23.8";
-import{mediaLibraryItems}from"./media-library.js?v=0.23.8";
-import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.23.8";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts,readShortcutsHidden,writeShortcutsHidden}from"./storage.js?v=0.23.9";
+import{classify,actionData}from"./classifier.js?v=0.23.9";
+import{sendEntry}from"./sheets.js?v=0.23.9";
+import{createUI}from"./ui.js?v=0.23.9";
+import{createGoogleIntegration}from"./google.js?v=0.23.9";
+import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,activeIntentDomain,explicitNewCommandDomain,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.23.9";
+import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,setShoppingListStore,isMercadonaList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.23.9";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.23.9";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.23.9";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime,calendarDetails}from"./schedule.js?v=0.23.9";
+import{createCloudSync}from"./firebase.js?v=0.23.9";
+import{createMediaService}from"./media.js?v=0.23.9";
+import{cancelInteraction,completeFromCollected,completeInteraction,confirmationReply,contextFor,isCancelReply,isNewCommand,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.23.9";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.23.9";
+import{createAgendaActions}from"./agenda.js?v=0.23.9";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.23.9";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.23.9";
+import{DEFAULT_SHORTCUTS,SHORTCUT_PRESETS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.23.9";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.23.9";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.23.9";
+import{mediaLibraryItems}from"./media-library.js?v=0.23.9";
+import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.23.9";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,finalText="",pendingImages=[],pendingFiles=[],pendingMediaContext=null,selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -90,7 +90,7 @@ function saveShortcuts(){const previous=shortcutsBaseline;shortcuts=normalizeSho
 // todos los dispositivos, y se cachea en local para pintar sin esperar a
 // la nube al abrir la app.
 function toggleShortcutsHidden(){shortcutsHidden=!shortcutsHidden;writeShortcutsHidden(shortcutsHidden);renderShortcuts();if(cloud.isSignedIn())void cloud.saveShortcuts(shortcutsBaseline,shortcuts,shortcutsHidden).then(merged=>{shortcuts=merged;shortcutsBaseline=merged;writeShortcuts(merged);renderShortcuts()}).catch(()=>ui.notify("El ajuste sigue pendiente de sincronizar"));ui.notify(shortcutsHidden?"Accesos directos ocultos":"Accesos directos visibles")}
-function prepareShortcut(shortcut){pendingShortcut=shortcut;if(shortcut.command){$("text").value=shortcut.command;autosize();add({shortcut});return}const prefix=shortcutPrefix(shortcut);$("text").value=prefix;$("text").placeholder=shortcut.prompt||"Escribe o dicta tu instrucción…";autosize();openDraft();if(shortcut.dictate||shortcut.action==="contact.call")setTimeout(start,120);else ui.notify(shortcut.prompt||"Completa la instrucción y pulsa Enviar")}
+function prepareShortcut(shortcut){pendingShortcut=shortcut;if(shortcut.command){$("text").value=shortcut.command;autosize();add({shortcut});return}const prefix=shortcutPrefix(shortcut);$("text").value=prefix;$("text").placeholder=shortcut.prompt||"Escribe o dicta tu instrucción…";autosize();openDraft();/* 3ª auditoría: desde V0.23.2 el borrador no saca el teclado solo, y los accesos sin dictado (Recordatorio, Nuevo evento, Nota…) se abrían sin teclado NI micro. Voz primero: todos empiezan escuchando; el teclado sigue a un toque (⌨️). */setTimeout(start,120);ui.notify(shortcut.prompt||"Te escucho")}
 // Reportado en la 2ª auditoría: esto usaba dos prompt() nativos seguidos —
 // hasta desde "🎙️ Dictar acceso", que en una app de voz obligaba a teclear
 // el nombre en un cuadro feo después de dictar. Ahora usa el modal propio,
@@ -172,7 +172,7 @@ media=createMediaService({getAuthToken:cloud.getAuthToken,ensureDrive:google.ens
 // focus=true solo cuando la persona abrió el borrador tocando el compositor de
 // texto (quiere escribir, el teclado ya está abierto por su toque). Desde el
 // micrófono u otros flujos de voz se abre sin teclado (focus=false).
-function openDraft(focus=false){ui.showDraft({value:$("text").value,focus,onInput:value=>{$("text").value=value;finalText=value;autosize()},onSend:add,onMic:()=>start({inConversation:true}),onCancel:()=>{stopStrayDictation();pendingShortcut=null;ui.closeLayers()}})}
+function openDraft(focus=false){ui.showDraft({value:$("text").value,focus,onInput:value=>{if(dictationMic.isActive()){if(rec)rec.discarded=true;stop()}$("text").value=value;finalText=value;autosize()},onSend:add,onMic:()=>start({inConversation:true}),onCancel:()=>{stopStrayDictation();pendingShortcut=null;ui.closeLayers()}})}
 // Una interacción solo puede continuar desde su propio popup. El compositor
 // principal inicia siempre una instrucción nueva: una pregunta anterior no
 // puede secuestrar órdenes posteriores como «llama a Montse».
@@ -310,7 +310,9 @@ async function add({interactionId=null,shortcut=null}={}){
  // el modo conversación, "añade colacao a la lista de la compra" se coló
  // como respuesta a una nota pendiente sin relación, y acabó pidiendo un
  // título de nota en vez de añadir el artículo.
- if(!shortcutContext&&!pendingImages.length&&!pendingFiles.length){
+ // 3ª auditoría: el acceso «🛒 Añadir a la compra» (sin acción propia) se
+ // saltaba este paso y acababa como nota. Solo se lo salta un acceso con acción.
+ if(!shortcutContext?.action&&!pendingImages.length&&!pendingFiles.length){
   const shoppingCommand=parseShoppingCommand(text,shoppingState.lists.map(list=>list.name));
   // Reportado: al dictar desde el botón normal, openDraft() ya había abierto
   // el modal antes de llegar aquí; si no se cierra, se queda fijo en pantalla
@@ -328,7 +330,7 @@ async function add({interactionId=null,shortcut=null}={}){
    if(reply==="no"){await saveConfirmed(notes.map(item=>item.id===active.id?cancelInteraction(item):item));clearComposer();ui.closeLayers();ui.notify("Operación cancelada");return}
    ui.showEntryAction(active,google);return;
  }
- const now=new Date(),images=[],files=[],hasMedia=Boolean(pendingImages.length||pendingFiles.length);let id=active?.id||crypto.randomUUID(),mediaUploaded=false;saving=true;setSending(true);ui.showWorking("Procesando tu instrucción","Angeli ha recibido tu petición.","Un momento, no pulses Enviar otra vez.");try{
+ const now=new Date(),images=[],files=[],hasMedia=Boolean(pendingImages.length||pendingFiles.length);let id=active?.id||crypto.randomUUID(),mediaUploaded=false;if(rec)rec.discarded=true;stopStrayDictation();saving=true;setSending(true);ui.showWorking("Procesando tu instrucción","Angeli ha recibido tu petición.","Un momento, no pulses Enviar otra vez.");try{
    if(hasMedia)ui.updateWorking("Subiendo adjunto","Angeli está enviando el archivo a Drive…","No pulses Enviar otra vez; te avisaré cuando termine.");
    for(const file of pendingImages){images.push(await media.upload(file,"image",id))}
    for(const file of pendingFiles){files.push(await media.upload(file,"file",id))}
@@ -425,7 +427,7 @@ async function add({interactionId=null,shortcut=null}={}){
    ui.closeLayers();ui.notify(error.message||"No se pudo guardar la entrada");
  }finally{saving=false;setSending(false)}
 }
-function clearComposer(){stopStrayDictation();$("text").value="";$("text").placeholder="Escribe o dicta tu instrucción…";autosize();finalText="";pendingShortcut=null;clearPendingMedia()}
+function clearComposer(){if(rec)rec.discarded=true;stopStrayDictation();$("text").value="";$("text").placeholder="Escribe o dicta tu instrucción…";autosize();finalText="";pendingShortcut=null;clearPendingMedia()}
 async function finishPending(entry){try{const completed=await completePendingWithCalendar(entry,item=>google.completeScheduledReminder(item));if(!await saveConfirmed(notes.map(item=>item.id===entry.id?completed:item)))return;clearComposer();ui.showCompletion({title:"✓ Pendiente completado",lead:`He marcado como hecho: ${entry.aiIntent?.title||entry.text}`})}catch(_){clearComposer();ui.showCompletion({title:"No he podido completar el pendiente",lead:"El aviso sigue activo en Calendar. Inténtalo de nuevo."})}}
 async function resolvePendingCompletion(interpretation){const matches=findPendingMatches(notes,interpretation);clearComposer();if(!matches.length){ui.showCompletion({title:"No encuentro ese pendiente",lead:"No he creado ninguna entrada nueva."});return}if(matches.length===1){await finishPending(matches[0]);return}ui.showPendingChoices(matches,{onSelect:finishPending,onCancel:ui.closeLayers})}
 function resolveNoteQuery(interpretation){clearComposer();showNoteQueryResults(interpretation)}
@@ -489,7 +491,7 @@ function start({inConversation=false,draftId=null}={}){const SR=window.SpeechRec
  // dicta una instrucción/nota que puede necesitar pensar a mitad de frase,
  // así que debe seguir escuchando hasta que la persona toque el micro para
  // parar o pulse Enviar.
- const target=draftId?$(draftId):$("text");finalText=target?.value.trim()||"";const isMobileDictation=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);rec=new SR();const recognizer=rec;rec.lang="es-ES";rec.continuous=!isMobileDictation;rec.interimResults=true;rec.maxAlternatives=1;const dictationBase=finalText||"";let committed="";// Real detectado: dictar en el buscador de la lista de la compra ("café")
+ const target=draftId?$(draftId):$("text");finalText=target?.value.trim()||"";const isMobileDictation=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1);rec=new SR();const recognizer=rec;rec.lang="es-ES";rec.continuous=!isMobileDictation;rec.interimResults=true;rec.maxAlternatives=1;const dictationBase=finalText||"";let committed="";// Real detectado: dictar en el buscador de la lista de la compra ("café")
 // no disparaba ninguna búsqueda. target.value=... asignado desde JS nunca
 // emite un evento "input" nativo, así que el oninput del buscador (que es
 // justamente lo que lanza la búsqueda en vivo) nunca se enteraba de que el
@@ -510,7 +512,19 @@ const paint=value=>{if(target){target.value=value;target.dispatchEvent(new Event
 //     se toma el ÚLTIMO resultado (el más completo), nunca la suma, y se REINICIA
 //     el reconocedor en onend para seguir escuchando el dictado largo sin
 //     cortarse — que era justo el motivo por el que se había puesto continuous.
-rec.onresult=e=>{let live="";if(isMobileDictation){let finalPart="";for(let i=0;i<e.results.length;i++){const r=e.results[i],phrase=(r[0]?.transcript||"").trim();if(!phrase)continue;if(r.isFinal)finalPart=phrase;else live=phrase}if(finalPart){committed=(committed?committed+" ":"")+finalPart;live=""}}else{let finals="";for(let i=0;i<e.results.length;i++){const r=e.results[i],phrase=(r[0]?.transcript||"").trim();if(!phrase)continue;if(r.isFinal)finals+=(finals?" ":"")+phrase;else live+=(live?" ":"")+phrase}committed=finals}finalText=((dictationBase?dictationBase+" ":"")+committed).trim();paint((finalText+(live?(finalText?" ":"")+live:"")).trim())};rec.onerror=e=>{const fatal=e.error==="not-allowed"||e.error==="service-not-allowed"||e.error==="audio-capture";if(fatal){dictationMic.set(false);setMicState(false);$("hint").textContent="Dictado detenido.";ui.notify(e.error==="not-allowed"?"Permiso de micrófono denegado":"No se pudo usar el micrófono")}/* no-speech/aborted/network: sin ruido; onend decide si reinicia */};rec.onend=()=>{finalText=((dictationBase?dictationBase+" ":"")+committed).trim();paint(finalText);if(isMobileDictation&&dictationMic.isActive()&&rec===recognizer){try{recognizer.start();return}catch(_){/* si no reinicia, terminamos abajo */}}dictationMic.set(false);setMicState(false);$("hint").textContent="Dictado terminado. Puedes continuar o pulsar Enviar cuando acabes.";if(shortcutCapture&&finalText){shortcutCapture=false;createShortcut(finalText);$("text").value="";finalText=""}if(!draftId)autosize()};try{rec.start()}catch(e){dictationMic.set(false);setMicState(false);ui.notify("No se pudo iniciar el dictado")}}
+// 3ª auditoría (regresiones de V0.23.1/0.23.3, halladas ejecutando el start()
+// real contra un reconocedor simulado):
+//   · En el móvil cada enunciado se suma UNA vez, al cerrar su sesión (onend):
+//     si el motor entregaba el mismo final dos veces, se duplicaba («hola hola»).
+//   · Los reinicios tienen límite: sin conexión era un bucle sin fin y en
+//     silencio pitaba cada pocos segundos para siempre. Tras ~8 sesiones seguidas
+//     sin oír nada (≈1 min) se para; un error de red en el móvil también para.
+//   · Un onend tardío de un reconocedor ya parado no toca el estado compartido
+//     si ya hay otro dictado en marcha (apagaba el icono y rompía el nuevo).
+//   · Tras Enviar (clearComposer), el onend del reconocedor descartado ya no
+//     vuelve a escribir en el cuadro el texto recién enviado.
+let sessionPart="",idleSessions=0;
+rec.onresult=e=>{idleSessions=0;let live="";if(isMobileDictation){let finalPart="";for(let i=0;i<e.results.length;i++){const r=e.results[i],phrase=(r[0]?.transcript||"").trim();if(!phrase)continue;if(r.isFinal)finalPart=phrase;else live=phrase}sessionPart=finalPart||live}else{let finals="";for(let i=0;i<e.results.length;i++){const r=e.results[i],phrase=(r[0]?.transcript||"").trim();if(!phrase)continue;if(r.isFinal)finals+=(finals?" ":"")+phrase;else live+=(live?" ":"")+phrase}committed=finals}const shown=isMobileDictation?[committed,sessionPart].filter(Boolean).join(" "):committed;finalText=((dictationBase?dictationBase+" ":"")+(isMobileDictation?committed:shown)).trim();paint(((dictationBase?dictationBase+" ":"")+shown+(!isMobileDictation&&live?(shown?" ":"")+live:"")).trim())};rec.onerror=e=>{const fatal=e.error==="not-allowed"||e.error==="service-not-allowed"||e.error==="audio-capture"||(isMobileDictation&&e.error==="network");if(fatal){dictationMic.set(false);setMicState(false);$("hint").textContent="Dictado detenido.";ui.notify(e.error==="not-allowed"?"Permiso de micrófono denegado":e.error==="network"?"Sin conexión: el dictado necesita internet":"No se pudo usar el micrófono");return}if(!isMobileDictation&&e.error!=="no-speech"&&e.error!=="aborted")ui.notify("Error de dictado: "+e.error)};rec.onend=()=>{if(rec&&rec!==recognizer)return;if(recognizer.discarded)return;if(isMobileDictation){if(sessionPart){committed=(committed?committed+" ":"")+sessionPart;sessionPart=""}else idleSessions+=1}finalText=((dictationBase?dictationBase+" ":"")+committed).trim();paint(finalText);if(isMobileDictation&&dictationMic.isActive()&&rec===recognizer&&idleSessions<8){try{recognizer.start();return}catch(_){/* si no reinicia, terminamos abajo */}}if(rec===recognizer)rec=null;dictationMic.set(false);setMicState(false);$("hint").textContent=idleSessions>=8?"Dictado parado tras un rato en silencio. Toca el micro para seguir.":"Dictado terminado. Puedes continuar o pulsar Enviar cuando acabes.";if(shortcutCapture&&finalText){shortcutCapture=false;createShortcut(finalText);$("text").value="";finalText=""}if(!draftId)autosize()};try{rec.start()}catch(e){dictationMic.set(false);setMicState(false);ui.notify("No se pudo iniciar el dictado")}}
 function readImages(files,msg){prepareMedia(files,"image",msg)}
 
 function libraryItems(){return mediaLibraryItems(notes)}
@@ -1622,7 +1636,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.23.8",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.23.9",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}
