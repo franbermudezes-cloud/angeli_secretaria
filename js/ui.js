@@ -1,14 +1,14 @@
-import { typeLabel } from "./classifier.js?v=0.24.3";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.24.3";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.24.3";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.24.3";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.24.3";
-import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.24.3";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.24.3";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.24.3";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.24.3";
-import { groupDietarioByDay } from "./dietario.js?v=0.24.3";
-import { calendarAnswer } from "./agenda.js?v=0.24.3";
+import { typeLabel } from "./classifier.js?v=0.25.0";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.25.0";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.25.0";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.25.0";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.25.0";
+import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.25.0";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.25.0";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.25.0";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.25.0";
+import { groupDietarioByDay } from "./dietario.js?v=0.25.0";
+import { calendarAnswer, clashWarning } from "./agenda.js?v=0.25.0";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -193,7 +193,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.24.3";
+    image.src = "assets/angeli-welcome.gif?v=0.25.0";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -566,7 +566,8 @@ export function createUI({ getMedia }) {
         showCompletion({ title: "✓ Evento y aviso creados", lead: "Los dos elementos relacionados ya están en Calendar.", body: entryBody(note) + calendarCard(note) + reminder + (links ? '<p>' + links + '</p>' : '') });
         return;
       }
-      openModal({ ...base, title: note.calendarStatus === "error" ? "No se pudo completar" : "¿Creo el evento y su aviso?", lead: "Comprueba los dos elementos. Se guardarán juntos o no se guardará ninguno.", body: entryBody(note) + calendarCard(note) + reminder, actions: [
+      const bundleClash = note.calendarStatus === "error" ? "" : clashWarning(google?.getClashResult?.(note) || []);
+      openModal({ ...base, title: note.calendarStatus === "error" ? "No se pudo completar" : bundleClash ? "Esa hora ya está ocupada" : "¿Creo el evento y su aviso?", lead: bundleClash ? bundleClash.replace("¿Lo añado igual?", "¿Creo el evento y su aviso igual?") : "Comprueba los dos elementos. Se guardarán juntos o no se guardará ninguno.", body: entryBody(note) + calendarCard(note) + reminder, actions: [
         { label: "Cancelar", kind: "secondary", onClick: closeLayers },
         { label: "✎ Corregir un dato", kind: "secondary", dataset: { a: "edit-calendar-menu", id: note.id } },
         { label: note.calendarStatus === "error" ? "Reintentar" : "📅 Crear los dos", kind: "confirm", dataset: { a: "calendar-bundle", id: note.id } }
@@ -597,7 +598,8 @@ export function createUI({ getMedia }) {
         showCompletion({ title: "✓ Añadido al calendario", lead: "El evento ya está creado.", body: entryBody(note) + link });
         return;
       }
-      openModal({ ...base, title: "¿Lo añado al calendario?", lead: "Comprueba el título. La ubicación y la descripción se guardarán en sus campos.", body: entryBody(note) + calendarCard(note), actions: [
+      const clash = clashWarning(google?.getClashResult?.(note) || []);
+      openModal({ ...base, title: clash ? "Esa hora ya está ocupada" : "¿Lo añado al calendario?", lead: clash || "Comprueba el título. La ubicación y la descripción se guardarán en sus campos.", body: entryBody(note) + calendarCard(note), actions: [
         { label: "Cancelar", kind: "secondary", onClick: closeLayers },
         { label: "✎ Corregir un dato", kind: "secondary", dataset: { a: "edit-calendar-menu", id: note.id } },
         { label: "📅 Añadir", kind: "confirm", dataset: { a: "calendar", id: note.id } }

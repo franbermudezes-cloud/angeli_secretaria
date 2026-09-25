@@ -41,6 +41,15 @@ export function spokenWhen(event, now = new Date()) {
   return `${day} a las ${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`;
 }
 
+// Aviso cuando el evento nuevo coincide con algo que ya está en la agenda.
+// Se dice en voz alta en el modo conversación, así que va en frase natural.
+export function clashWarning(events = []) {
+  if (!events.length) return "";
+  const item = event => `«${event.summary}» a las ${String(event.start).slice(11, 16)}`;
+  if (events.length === 1) return `Ojo: a esa hora ya tienes ${item(events[0])}. ¿Lo añado igual?`;
+  return `Ojo: a esa hora ya tienes ${events.length} cosas: ${events.slice(0, -1).map(item).join(", ")} y ${item(events[events.length - 1])}. ¿Lo añado igual?`;
+}
+
 export function calendarAnswer(interpretation = {}, result = {}, now = new Date()) {
   const events = result?.events || [];
   const topic = interpretation.target?.title || "";
