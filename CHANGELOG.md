@@ -1,5 +1,13 @@
 # Changelog
 
+## V0.25.3 · «Sí» por voz en el modo conversación
+
+- **Pedido por el propietario**: en el modo conversación, cuando Angeli pregunta «¿Lo apunto en tu agenda?» o «¿Lo programo?», ahora basta con decir **«sí»** (o «vale», «adelante»…). Antes solo volvía a mostrar la pantalla y había que tocar el botón.
+- «Sí» pulsa exactamente el mismo botón que se tocaría: misma acción y mismas comprobaciones. Después Angeli dice el resultado («Hecho, ya está en tu agenda») y sigue escuchando.
+- «No» cierra sin hacer nada («Vale, lo dejo»). Cualquier otra frase («mejor a las diez») se trata como siempre, como corrección u orden nueva.
+- **Solo para crear un evento o programar un aviso.** Borrar, cancelar, llamar o cambiar ajustes siguen pidiendo tocar el botón.
+- Sin cambios en el servidor. Tests: `tests/si-por-voz.test.mjs` (ejecuta el código real con una pantalla simulada).
+
 ## V0.25.2 · Angeli habla más natural
 
 - **Reportado por el propietario**: las respuestas sonaban «muy robóticas». Había dos causas: la voz del móvil leía los símbolos («marca de verificación», «calendario» por ✓ y 📅, las comillas) y decía las horas como un reloj digital («veintiuno cero cero»). Además, en el modo conversación se leía el título y la explicación del formulario tal cual: «¿Lo añado al calendario?. Comprueba el título. La ubicación y la descripción se guardarán en sus campos. Toca «📅 Añadir» para continuar».
