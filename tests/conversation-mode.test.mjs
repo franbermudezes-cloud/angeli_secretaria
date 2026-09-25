@@ -146,8 +146,14 @@ assert.match(manualBranchSource, /await speakAloud\(spoken\);/, "debe hablar el 
 // escucha de fondo, igual que ya hace la rama "manual".
 const questionBranchSource = app.match(/if\(kind==="question"\)\{[\s\S]*?\n \}/)?.[0] || "";
 assert.ok(questionBranchSource, 'la rama "question" de conversationHandleOutcome debe existir');
-assert.doesNotMatch(questionBranchSource, /^\s*resumeConversationListening\(\);/m, "no debe reanudar el micrófono de fondo mientras el modal con su propio micro sigue abierto");
-assert.match(questionBranchSource, /watchForModalClose\(\(\)=>\{if\(conversationOn\)resumeConversationListening\(\)\}\)/, "debe esperar a que el modal se cierre, igual que la rama \"manual\"");
+// 3ª auditoría: esperar al cierre dejaba el modo conversación sin manos
+// libres (había que tocar el micro del modal y «Continuar», y el resultado no
+// se leía). Ahora la rama "question" SÍ vuelve a escuchar de fondo — y el
+// choque de reconocedores que motivó lo anterior se evita en start(): tocar el
+// micro propio del modal para primero el de fondo. Las dos garantías van juntas.
+assert.match(questionBranchSource, /^\s*resumeConversationListening\(\);/m, "tras preguntar, vuelve a escuchar de fondo (manos libres)");
+assert.match(questionBranchSource, /watchForModalClose\(\(\)=>\{if\(conversationOn\)resumeConversationListening\(\)\}\)/, "y sigue reanudando al cerrarse el modal");
+assert.match(app, /function start\(\{inConversation=false,draftId=null\}=\{\}\)\{[^\n]*\n[^\n]*\n[^\n]*\n \s*if\(conversationOn\)stopConversationRecognizer\(\);/, "el micro propio de un modal para el reconocedor de fondo antes de arrancar (sin dos reconocedores a la vez)");
 
 // Reportado luego por el propietario en el móvil: los modales de VOZ (el de
 // "Te escucho" y este de pregunta de aclaración) se abrían enfocando su cuadro,

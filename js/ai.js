@@ -1,6 +1,6 @@
-import{calendarQueryRange,cleanTemporalText,naturalQueryRange,temporalData}from"./temporal.js?v=0.23.7";
-import{localWhatsApp}from"./whatsapp.js?v=0.23.7";
-import{REMINDER_TRIGGER}from"./keywords.js?v=0.23.7";
+import{calendarQueryRange,cleanTemporalText,naturalQueryRange,temporalData}from"./temporal.js?v=0.23.8";
+import{localWhatsApp}from"./whatsapp.js?v=0.23.8";
+import{REMINDER_TRIGGER}from"./keywords.js?v=0.23.8";
 
 export const VALID_INTENTS=["note","note.query","task.create","task.complete","reminder.create","reminder.query","calendar.create","calendar.query","calendar.update","calendar.delete","contact.call","whatsapp.compose","file.store","photo.store"];
 const SENSITIVE_INTENTS=new Set(["calendar.update","calendar.delete","contact.call","whatsapp.compose"]);
