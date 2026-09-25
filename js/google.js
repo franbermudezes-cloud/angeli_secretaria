@@ -1,6 +1,6 @@
-import { cleanTemporalText } from "./temporal.js?v=0.24.3";
-import { calendarDetails } from "./schedule.js?v=0.24.3";
-import { semanticCalendarTarget } from "./ai.js?v=0.24.3";
+import { cleanTemporalText } from "./temporal.js?v=0.25.0";
+import { calendarDetails } from "./schedule.js?v=0.25.0";
+import { semanticCalendarTarget } from "./ai.js?v=0.25.0";
 
 const CLIENT_ID = "172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
@@ -60,6 +60,7 @@ export function createGoogleIntegration({ notify, refresh, setStatus, showConnec
   let healthRequest = null;
   const contactResults = new Map();
   const calendarResults = new Map();
+  const clashResults = new Map();
   const calendarInFlight = new Set();
 
   const signedIn = () => Boolean(getSession?.().signedIn);
@@ -482,6 +483,30 @@ export function createGoogleIntegration({ notify, refresh, setStatus, showConnec
     refresh();
   }
 
+  // Antes de proponer un evento nuevo se mira si esa franja ya está ocupada,
+  // para avisar («Ojo: a esa hora ya tienes…») antes de confirmar. Es solo
+  // un aviso: si Calendar no está conectado o falla, se calla y el evento se
+  // puede crear igual, como siempre.
+  async function checkCalendarClash(note) {
+    const key = clashKey(note);
+    if (!key || note.calendarStatus === "synced") return;
+    try {
+      const event = calendarEvent(note);
+      const params = new URLSearchParams({ singleEvents: "true", orderBy: "startTime", maxResults: "10", timeMin: new Date(event.start.dateTime).toISOString(), timeMax: new Date(event.end.dateTime).toISOString() });
+      const data = await calendarRequest("GET", `?${params}`);
+      clashResults.set(note.id, { key, events: calendarClashes(data.items || [], note) });
+    } catch (_) {
+      clashResults.delete(note.id);
+    }
+  }
+
+  // Solo vale para la fecha y hora con que se consultó: si luego se corrige
+  // la hora, el aviso viejo deja de mostrarse.
+  function getClashResult(note) {
+    const result = clashResults.get(note?.id);
+    return result && result.key === clashKey(note) ? result.events : [];
+  }
+
   // 2ª auditoría: la confirmación ya no vive aquí (usaba el confirm() nativo,
   // y esta capa no tiene acceso a la UI propia). El llamador confirma con el
   // modal de la app ANTES de llamar; aquí se borra directamente.
@@ -562,6 +587,8 @@ export function createGoogleIntegration({ notify, refresh, setStatus, showConnec
     updateListedCalendarEvent,
     getContactResult: id => contactResults.get(id),
     getCalendarResult: id => calendarResults.get(id),
+    checkCalendarClash,
+    getClashResult,
     clearContactResult: id => contactResults.delete(id),
     contactTel
   };
@@ -778,6 +805,21 @@ export function linkedReminderSearch(eventId) {
     maxResults: "20",
     privateExtendedProperty: `angeliRelatedEventId=${eventId}`
   });
+}
+
+function clashKey(note = {}) {
+  return note.proposal?.intent === "calendar.create" && note.scheduledDate && note.scheduledTime ? `${note.scheduledDate}T${note.scheduledTime}` : "";
+}
+
+// Eventos que se pisan con el que se va a crear. No cuentan los de todo el
+// día (unas vacaciones o un cumpleaños no ocupan la hora), ni el propio
+// evento o su aviso si ya se habían creado antes (reintentos).
+export function calendarClashes(items = [], note = {}) {
+  const own = `angeli${String(note.id || "").replace(/-/g, "")}`;
+  return items
+    .filter(item => item.status !== "cancelled" && item.start?.dateTime)
+    .filter(item => item.id !== own && item.extendedProperties?.private?.angeliRelatedEventId !== own)
+    .map(calendarCandidate);
 }
 
 export function calendarEventsForIntent(items = [], intent = "calendar.query") {

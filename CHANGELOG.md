@@ -1,5 +1,13 @@
 # Changelog
 
+## V0.25.0 · Aviso de choque de horario
+
+- **Angeli se adelanta**: al preparar un evento nuevo con fecha y hora, mira antes en Calendar si esa franja ya está ocupada. Si lo está, la confirmación lo dice claro: «Ojo: a esa hora ya tienes «Dentista» a las 21:00. ¿Lo añado igual?» (también en voz alta en el modo conversación). Si está libre, todo sigue como siempre.
+- No cuentan los eventos de todo el día (vacaciones, cumpleaños) ni el propio evento o su aviso si se está reintentando.
+- Es solo un aviso: si Calendar no está conectado, o no responde, se calla y el evento se puede crear igual. Si luego corriges la hora, el aviso viejo deja de mostrarse.
+- Solo lectura de Calendar con el endpoint existente; sin cambios en el servidor.
+- Tests: `tests/choque-horario.test.mjs`.
+
 ## V0.24.3 · Preguntar por la agenda contesta sola
 
 - **Reportado por el propietario**: preguntó «¿qué tengo pendiente el mes de octubre?», la app escribió la pregunta y **no contestó nada**. La IA lo entendía bien (agenda del 1 de octubre al 1 de noviembre), pero la búsqueda en Calendar solo se lanzaba sola desde un acceso directo. Dicha a mano, esperaba a que se tocara «📅 Consultar». Consultar la agenda no cambia nada, así que ahora **se busca siempre y se contesta directamente** («Tienes 3 cosas: …»), y en el modo conversación en voz alta.
