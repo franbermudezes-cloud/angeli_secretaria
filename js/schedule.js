@@ -1,4 +1,4 @@
-import{nextDateForTime,temporalData,explicitRelativeDate}from"./temporal.js?v=0.23.4";
+import{nextDateForTime,temporalData,explicitRelativeDate}from"./temporal.js?v=0.23.5";
 
 const CALL_INTENT=/\b(?:llama|llamar|telefonea|telefonear|contacta|contactar)\b/i;
 
@@ -10,7 +10,11 @@ export function normalizeUndatedCall(interpretation,text,active=null,now=new Dat
   if(/\b(?:horas?|minutos?|segundos?|días?|dias?|cuando|tras)\b|\bel\s+\d|\d[/-]\d/i.test(text))return interpretation;
   if(local.scheduledDate||local.scheduledTime||/\b(?:recuerd|record|avis|agend|program|luego|después|despues|tarde|noche|semana|mes|dentro|próxim|proxim|lunes|martes|jueves|viernes|domingo)\w*\b|miércoles|sábado|\d{4}-\d{2}-\d{2}/i.test(text))return interpretation;
   if(!['contact.call','reminder.create','calendar.create','note'].includes(interpretation.intent))return interpretation;
-  const name=callName(text.replace(/\s+(?:ahora(?:\s+mismo)?|ya|por favor)[.!?]*\s*$/i,''));
+  // 3ª auditoría: el nombre sacado de la frase («Ana para preguntarle por el
+  // presupuesto», «mi madre al móvil») pisaba el nombre limpio que ya había
+  // extraído la IA. Si la IA dio un contacto, manda el suyo.
+  const aiName=interpretation.source==='ai'&&interpretation.contactName?interpretation.contactName:null;
+  const name=aiName||callName(text.replace(/\s+(?:ahora(?:\s+mismo)?|ya|por favor)[.!?]*\s*$/i,'').replace(/\s+(?:para|que|porque|al\s+(?:m[oó]vil|fijo|trabajo))\b.*$/i,''));
   return {...interpretation,intent:'contact.call',title:`Llamar a ${name||interpretation.contactName||interpretation.phone||'contacto'}`,
     contactName:name||interpretation.contactName||null,date:null,time:null,missingFields:[],question:null,requiresConfirmation:true};
 }
@@ -37,7 +41,12 @@ export function normalizeReminderSchedule(interpretation,text,now=new Date()){
   if(interpretation?.intent!=="reminder.create")return interpretation;
   const local=temporalData(text,now,{inferDateFromTime:true});
   const time=interpretation.time||local.scheduledTime||null;
-  const date=explicitRelativeDate(text,now)||interpretation.date||local.scheduledDate||(time?dateKey(nextDateForTime(time,now)):null);
+  // 3ª auditoría: un «hoy/mañana» en CUALQUIER parte de la frase pisaba la fecha
+  // correcta de la IA: «Recuérdame el viernes comprar el pan para mañana» ->
+  // mañana, «Recuérdame el lunes preparar lo de hoy» -> hoy. Si la IA dio una
+  // fecha, manda la suya; lo local solo decide cuando la IA no la trae.
+  const aiDate=interpretation.source==="ai"?interpretation.date:null;
+  const date=aiDate||explicitRelativeDate(text,now)||interpretation.date||local.scheduledDate||(time?dateKey(nextDateForTime(time,now)):null);
   return{...interpretation,date,time,requiresConfirmation:Boolean(date&&time)};
 }
 

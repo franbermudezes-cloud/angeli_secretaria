@@ -1,6 +1,6 @@
-import{calendarQueryRange,cleanTemporalText,naturalQueryRange,temporalData}from"./temporal.js?v=0.23.4";
-import{localWhatsApp}from"./whatsapp.js?v=0.23.4";
-import{REMINDER_TRIGGER}from"./keywords.js?v=0.23.4";
+import{calendarQueryRange,cleanTemporalText,naturalQueryRange,temporalData}from"./temporal.js?v=0.23.5";
+import{localWhatsApp}from"./whatsapp.js?v=0.23.5";
+import{REMINDER_TRIGGER}from"./keywords.js?v=0.23.5";
 
 export const VALID_INTENTS=["note","note.query","task.create","task.complete","reminder.create","reminder.query","calendar.create","calendar.query","calendar.update","calendar.delete","contact.call","whatsapp.compose","file.store","photo.store"];
 const SENSITIVE_INTENTS=new Set(["calendar.update","calendar.delete","contact.call","whatsapp.compose"]);
@@ -48,6 +48,19 @@ export function localCalendarUpdate(text = "", now = new Date(), active = null) 
   const verb = /\b(?:pasa(?:me)?|c[aá]mbia(?:me)?|mueve(?:me)?|modifica(?:me)?|retrasa(?:me)?|adelanta(?:me)?|reprograma(?:me)?|pasar|cambiar|mover|modificar|retrasar|adelantar|reprogramar)\b/i;
   const continuing = active?.interaction?.status === "awaiting_input" && active.aiIntent?.intent === "calendar.update";
   if (!verb.test(value) && !continuing) return null;
+  // 3ª auditoría: el verbo en cualquier posición (incluidos infinitivos)
+  // convertía en «modificar evento» órdenes que no lo son y además pisaba a la
+  // IA: «Recuérdame pasar por el banco mañana», «Tengo que pasar la ITV el
+  // jueves», «Mañana a las diez pasa el técnico», «dice que pasa la reunión al
+  // jueves». Ahora solo cuenta un imperativo al principio de la frase (tras un
+  // «oye/ahora/por favor» opcional) o detrás del evento nombrado («la cena con
+  // Vicente pásala al lunes»); nunca dentro de un recordatorio o una nota.
+  if (!continuing) {
+    if (REMINDER_TRIGGER.test(value) || /^\s*(?:apunta|anota|guarda|tengo\s+que|hay\s+que|debo|he\s+hablado)\b/i.test(value)) return null;
+    const imperative = /^\s*(?:(?:oye|ahora|por\s+favor|venga)[,\s]+)?(?:p[aá]sa(?:me|la|lo)?|c[aá]mbia(?:me|la|lo)?|mu[eé]ve(?:me|la|lo)?|modif[ií]ca(?:me|la|lo)?|retr[aá]sa(?:me|la|lo)?|adel[aá]nta(?:me|la|lo)?|reprogr[aá]ma(?:me|la|lo)?)\b/i;
+    const afterEvent = /^\s*(?:la|el|mi)\s+(?:llamada|recordatorio|aviso|evento|cita|quedada|cena|comida|reuni[oó]n)\b/i.test(value) && verb.test(value);
+    if (!imperative.test(value) && !afterEvent) return null;
+  }
   const temporal = temporalData(value, now);
   const changes = {
     ...(temporal.scheduledDate ? { date: temporal.scheduledDate } : {}),
@@ -87,7 +100,10 @@ export function localReminderQuery(text = "") {
   // criterio ya usado en localImmediateCall para el mismo problema.
   if (REMINDER_TRIGGER.test(text)) return null;
   const normalized = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  const explicitQuery=/\b(?:que|cuales|dime|muestrame|ensename|ver|listar|lista|busca|buscar|consulta|consultar)\b.*\brecordatorios?\b/i.test(normalized);
+  // 3ª auditoría: bastaba un «que» en cualquier sitio, así que «Quiero que me
+  // pongas un recordatorio mañana a las 9» se convertía en una CONSULTA y no
+  // se creaba nada. La palabra de consulta debe abrir la frase (o ir tras «¿»).
+  const explicitQuery=/^\s*\u00bf?\s*(?:y\s+)?(?:que|cuales|cuantos|dime|muestrame|ensename|ver|listar|lista|busca|buscar|consulta|consultar)\b.*\brecordatorios?\b/i.test(normalized);
   const bareQuery=/^(?:mis\s+|los\s+)?recordatorios?(?:\s+pendientes?)?[.!?]*$/i.test(normalized.trim());
   if (!explicitQuery && !bareQuery) return null;
   const match = text.match(/\brecordatorios?\b(?:\s+(?:tengo|tenía|tenia|hay))?\s+(?:de|sobre)\s+(.+?)(?:[.!?,;]|$)/i);
@@ -106,7 +122,11 @@ export function localNoteQuery(text = "") {
   // que explicitQuery coincidiera igual y perdiera la orden entera. Mismo
   // criterio ya usado en localImmediateCall/localReminderQuery.
   if(REMINDER_TRIGGER.test(normalized))return null;
-  const explicitQuery=/\b(?:que|cuales|dime|muestrame|busca|consulta|ensename|ver|listar)\b.*\bnotas?\b/i.test(normalized);
+  // 3ª auditoría: «Dile a Ana que me pase las notas del examen», «Tengo que
+  // estudiar las notas de química» o «Reunión para ver las notas del trimestre»
+  // se convertían en una consulta de notas. La palabra de consulta debe abrir
+  // la frase (o ir tras «¿»).
+  const explicitQuery=/^\s*¿?\s*(?:y\s+)?(?:que|cuales|cuantas|dime|muestrame|busca|consulta|ensename|ver|listar)\b.*\bnotas?\b/i.test(normalized);
   const listCommand=/^\s*lista(?:me)?\b.*\bnotas?\b/i.test(normalized);
   if(!explicitQuery&&!listCommand)return null;
   const match=value.match(/\bnotas?\b(?:\s+(?:que\s+)?(?:tengo|hay))?\s+(?:del?|sobre|relacionadas?\s+con)\s+(.+?)(?:[.!?,;]|$)/i);
@@ -122,7 +142,15 @@ export function localNoteQuery(text = "") {
 // nota aunque el proveedor responda con confianza alta.
 export function protectReadQuery(remote,noteQuery=null,reminderQuery=null){
   const local=noteQuery||reminderQuery;
-  return local?{...local,source:remote?.source,fallbackReason:remote?.fallbackReason}:remote;
+  if(!local)return remote;
+  // 3ª auditoría: si la IA ya dio la MISMA consulta, sus datos (a quién o qué
+  // busca: «recordatorios con Pedro», «notas de Lucía») mandan sobre la versión
+  // local, que no los entiende; lo local solo rellena lo que falte.
+  if(remote?.source==="ai"&&remote.intent===local.intent){
+    const filled=Object.fromEntries(Object.entries(remote).filter(([,value])=>value!==null&&value!==undefined));
+    return{...local,...filled};
+  }
+  return{...local,source:remote?.source,fallbackReason:remote?.fallbackReason};
 }
 
 export async function interpret(text,{provider=mockProvider,fallback,context=null}={}){try{const intent=validateIntent(await provider(text,context));if(intent.confidence<MIN_CONFIDENCE)throw new Error("Baja confianza");return{...intent,source:"ai",fallbackReason:null}}catch(error){const local=typeof fallback==="function"?fallback(text,context):fallback;return{...validateIntent(local),source:"fallback",fallbackReason:failureReason(error)}}}
@@ -139,11 +167,18 @@ export function localImmediateCall(text="",now=new Date()){
   // mismo, aunque no lleve fecha ni hora explícitas: classify() ya prioriza
   // ese verbo sobre «llamar» y esta protección debe respetar el mismo orden.
   if(REMINDER_TRIGGER.test(value))return null;
+  // 3ª auditoría: una nota o tarea que MENCIONA una llamada no es una llamada
+  // ahora («Apunta que tengo que llamar al fontanero», «Tengo que llamar a Juan
+  // esta semana»), y una referencia temporal que temporalData no entiende
+  // («esta noche», «por la tarde», «en media hora», «el día 20») también la
+  // convierte en futura. Esos casos se dejan a la IA / a normalizeFutureCall.
+  if(/^\s*(?:apunta|anota|guarda|tengo\s+que|hay\s+que|debo|tendr[eé]\s+que)\b/i.test(value))return null;
+  if(/\b(?:esta\s+(?:mañana|tarde|noche)|por\s+la\s+(?:mañana|tarde|noche)|a\s+mediod[ií]a|luego|despu[eé]s|m[aá]s\s+tarde|dentro\s+de|en\s+(?:media|un[ao]?|\d+|dos|tres|cinco|diez|quince|veinte)\s+(?:hora|minuto|d[ií]a|semana)s?|el\s+d[ií]a\s+\d|el\s+\d{1,2}\b|la\s+semana|el\s+fin\s+de\s+semana)\b/i.test(value))return null;
   const match=IMMEDIATE_CALL_PATTERN.exec(value);
   if(!match)return null;
   const temporal=temporalData(value,now);
   if(temporal.scheduledDate||temporal.scheduledTime)return null;
-  const name=match[1].replace(/\b(?:mañana|hoy|luego|ahora|por favor|ya)\b.*$/i,"").trim();
+  const name=match[1].replace(/\s+(?:para|que|porque|y|al\s+(?:m[oó]vil|fijo|trabajo)|a\s+ver)\b.*$/i,"").replace(/\b(?:mañana|hoy|luego|ahora|por favor|ya)\b.*$/i,"").trim();
   if(!name)return null;
   return{...EMPTY,intent:"contact.call",confidence:1,contactName:name,requiresConfirmation:true};
 }
@@ -234,7 +269,11 @@ export function protectCalendarInterpretation(remote, local) {
     // silencio cualquier otro cambio (p. ej. ubicación) que la IA sí hubiera
     // entendido bien en la misma orden («...a las nueve y ponla en el
     // restaurante Cala Blava» perdía el restaurante).
-    changes: (local.changes || remote.changes) ? { ...(remote.changes || {}), ...(local.changes || {}) } : null,
+    // 3ª auditoría: lo local toma la PRIMERA fecha/hora de la frase, que en un
+    // cambio suele ser la antigua («la cena del viernes al sábado» -> viernes)
+    // y no entiende «y media/menos cuarto de la noche». Si la IA respondió,
+    // sus cambios mandan; lo local solo completa lo que la IA no trajo.
+    changes: (local.changes || remote.changes) ? (remote?.source === "ai" ? { ...(local.changes || {}), ...(remote.changes || {}) } : { ...(remote.changes || {}), ...(local.changes || {}) }) : null,
     requiresConfirmation: true,
     missingFields: [],
     question: null
@@ -282,7 +321,13 @@ export async function searchMercadonaProduct(query,idToken,limit=6){
  }finally{clearTimeout(timeout)}
 }
 
-export async function remoteProvider(text,idToken,context=null){if(!idToken)throw new Error("IA sin conexión");const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),8000);try{const response=await fetch(INTERPRETER_URL,{method:"POST",headers:{Authorization:`Bearer ${idToken}`,"Content-Type":"application/json"},body:JSON.stringify({text,now:new Date().toISOString(),timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone||"Europe/Madrid",context}),signal:controller.signal});if(!response.ok){const detail=await response.json().catch(()=>({}));const error=new Error(detail.error||`IA no disponible (${response.status})`);error.code=detail.code||"";error.status=response.status;throw error}return await response.json()}finally{clearTimeout(timeout)}}
+// 3ª auditoría: se enviaba la hora en UTC («…T22:30:00.000Z»), así que Gemini
+// tenía que convertirla a Madrid por su cuenta; entre las 00:00 y las 02:00
+// «hoy/mañana» caían un día antes y «en media hora» salía con dos horas de
+// desfase. Ahora va la hora local con su desfase («2026-09-26T00:30:00+02:00»),
+// que el servidor ya acepta (datetime.fromisoformat con zona).
+export function localIsoNow(date=new Date()){const pad=value=>String(value).padStart(2,"0"),offset=-date.getTimezoneOffset(),sign=offset>=0?"+":"-",abs=Math.abs(offset);return`${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}${sign}${pad(Math.floor(abs/60))}:${pad(abs%60)}`}
+export async function remoteProvider(text,idToken,context=null){if(!idToken)throw new Error("IA sin conexión");const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),8000);try{const response=await fetch(INTERPRETER_URL,{method:"POST",headers:{Authorization:`Bearer ${idToken}`,"Content-Type":"application/json"},body:JSON.stringify({text,now:localIsoNow(),timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone||"Europe/Madrid",context}),signal:controller.signal});if(!response.ok){const detail=await response.json().catch(()=>({}));const error=new Error(detail.error||`IA no disponible (${response.status})`);error.code=detail.code||"";error.status=response.status;throw error}return await response.json()}finally{clearTimeout(timeout)}}
 
 export async function mockProvider(text){
   const value=(text||"").trim(),lower=value.toLowerCase(),temporal=temporalData(value),reminderTemporal=temporalData(value,new Date(),{inferDateFromTime:true}),base={...EMPTY,confidence:.9,requiresConfirmation:false};

@@ -1,6 +1,6 @@
-import { contactQuery } from "./classifier.js?v=0.23.4";
-import { calendarQueryRange, temporalData } from "./temporal.js?v=0.23.4";
-import { REMINDER_SHORTCUT_TRIGGER } from "./keywords.js?v=0.23.4";
+import { contactQuery } from "./classifier.js?v=0.23.5";
+import { calendarQueryRange, temporalData } from "./temporal.js?v=0.23.5";
+import { REMINDER_SHORTCUT_TRIGGER } from "./keywords.js?v=0.23.5";
 
 // Los accesos por defecto llevan un `id` fijo (no generado al vuelo) para
 // que dos dispositivos que arrancan sin nada guardado todavía — y por tanto

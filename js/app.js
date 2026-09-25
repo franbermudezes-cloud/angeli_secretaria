@@ -1,25 +1,25 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts,readShortcutsHidden,writeShortcutsHidden}from"./storage.js?v=0.23.4";
-import{classify,actionData}from"./classifier.js?v=0.23.4";
-import{sendEntry}from"./sheets.js?v=0.23.4";
-import{createUI}from"./ui.js?v=0.23.4";
-import{createGoogleIntegration}from"./google.js?v=0.23.4";
-import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,activeIntentDomain,explicitNewCommandDomain,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.23.4";
-import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,setShoppingListStore,isMercadonaList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.23.4";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.23.4";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.23.4";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime,calendarDetails}from"./schedule.js?v=0.23.4";
-import{createCloudSync}from"./firebase.js?v=0.23.4";
-import{createMediaService}from"./media.js?v=0.23.4";
-import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.23.4";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.23.4";
-import{createAgendaActions}from"./agenda.js?v=0.23.4";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.23.4";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.23.4";
-import{DEFAULT_SHORTCUTS,SHORTCUT_PRESETS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.23.4";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.23.4";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.23.4";
-import{mediaLibraryItems}from"./media-library.js?v=0.23.4";
-import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.23.4";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts,readShortcutsHidden,writeShortcutsHidden}from"./storage.js?v=0.23.5";
+import{classify,actionData}from"./classifier.js?v=0.23.5";
+import{sendEntry}from"./sheets.js?v=0.23.5";
+import{createUI}from"./ui.js?v=0.23.5";
+import{createGoogleIntegration}from"./google.js?v=0.23.5";
+import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,activeIntentDomain,explicitNewCommandDomain,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.23.5";
+import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,setShoppingListStore,isMercadonaList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.23.5";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.23.5";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.23.5";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime,calendarDetails}from"./schedule.js?v=0.23.5";
+import{createCloudSync}from"./firebase.js?v=0.23.5";
+import{createMediaService}from"./media.js?v=0.23.5";
+import{cancelInteraction,completeInteraction,contextFor,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.23.5";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.23.5";
+import{createAgendaActions}from"./agenda.js?v=0.23.5";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.23.5";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.23.5";
+import{DEFAULT_SHORTCUTS,SHORTCUT_PRESETS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.23.5";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.23.5";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.23.5";
+import{mediaLibraryItems}from"./media-library.js?v=0.23.5";
+import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.23.5";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,finalText="",pendingImages=[],pendingFiles=[],pendingMediaContext=null,selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -323,8 +323,8 @@ async function add({interactionId=null,shortcut=null}={}){
    const whatsApp=localWhatsApp(text,active);
    const noteQuery=(localLinked||whatsApp||shortcutContext?.action)?null:localNoteQuery(text);
    const reminderQuery=(localLinked||shortcutContext?.action)?null:localReminderQuery(text);
-   const cancellation=(localLinked||noteQuery||reminderQuery||(shortcutContext?.action&&shortcutContext.action!=="calendar.delete"))?null:localCalendarCancellation(text);
-   const localUpdate=(localLinked||noteQuery||reminderQuery||shortcutContext?.action)?null:localCalendarUpdate(text,now,active);
+   const cancellation=(localLinked||whatsApp||noteQuery||reminderQuery||(shortcutContext?.action&&shortcutContext.action!=="calendar.delete"))?null:localCalendarCancellation(text);
+   const localUpdate=(localLinked||whatsApp||noteQuery||reminderQuery||shortcutContext?.action)?null:localCalendarUpdate(text,now,active);
    const immediateCall=(localLinked||whatsApp||noteQuery||reminderQuery||cancellation||localUpdate||shortcutContext?.action)?null:localImmediateCall(text,now);
    // Acceso directo (llamar, WhatsApp, consultar/cancelar agenda): ya sabemos
    // la acción y el texto trae el dato (nombre, "hoy"…). La IA no aporta nada
@@ -333,7 +333,14 @@ async function add({interactionId=null,shortcut=null}={}){
    if(shortcutContext?.direct&&!active&&!hasMedia)ui.updateWorking("Preparando la acción","Angeli lo hace directo, sin esperar a la IA.","");
    const interpreted=(shortcutContext?.direct&&!active&&!hasMedia)?directShortcutBase(shortcutContext.action):await interpret(text,{provider:(value,context)=>google.interpretWithAI(value,remoteProvider,context),fallback:()=>localLinked||whatsApp||noteQuery||reminderQuery||cancellation||localUpdate||localInterpretation(text,fallbackType,active),context:noteInterpretationContext(contextFor(active),noteSettings)});
    const aiWhatsApp=interpreted.intent==="whatsapp.compose";
-   const whatsAppInterpretation=whatsApp?{...interpreted,intent:"whatsapp.compose",contactName:(aiWhatsApp?interpreted.contactName:null)||whatsApp.contactName||null,phone:(aiWhatsApp?interpreted.phone:null)||whatsApp.phone||null,notes:(aiWhatsApp?interpreted.notes:null)||whatsApp.notes||null,requiresConfirmation:true,missingFields:[],question:null}:interpreted;
+   // 3ª auditoría: el texto de un WhatsApp («dile que me pasa a buscar mañana a
+   // las 8») ya no se lee como modificar/cancelar un evento (arriba), y un
+   // WhatsApp PENDIENTE solo impone su lectura local cuando la orden trae el
+   // disparador explícito, cuando la IA no respondió o cuando la IA también dice
+   // WhatsApp. Si la IA, con confianza, dice que es otra cosa («tengo cita con el
+   // dentista el jueves a las 5»), es una orden nueva y no el mensaje de Juan.
+   const forceWhatsApp=Boolean(whatsApp)&&(aiWhatsApp||interpreted.source!=="ai"||Boolean(localWhatsApp(text,null)));
+   const whatsAppInterpretation=forceWhatsApp?{...interpreted,intent:"whatsapp.compose",contactName:(aiWhatsApp?interpreted.contactName:null)||whatsApp.contactName||null,phone:(aiWhatsApp?interpreted.phone:null)||whatsApp.phone||null,notes:(aiWhatsApp?interpreted.notes:null)||whatsApp.notes||null,requiresConfirmation:true,missingFields:[],question:null}:interpreted;
    const rawInterpretation=applyExplicitNoteCategory(routeShortcutIntent(whatsAppInterpretation,shortcutContext,text,now),text,noteSettings);
    if(rawInterpretation.source==="fallback")ui.updateWorking("Estoy revisando tu petición","Necesito confirmarla contigo antes de continuar.","");
    if(rawInterpretation.fallbackReason==="quota_exhausted")ui.notify("Se agotó tu prueba de Angeli este mes. Seguiré en modo básico; pídele más a quien te dio de alta.");
@@ -1566,7 +1573,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.23.4",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.23.5",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}
