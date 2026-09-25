@@ -1,6 +1,6 @@
-import { contactQuery } from "./classifier.js?v=0.23.6";
-import { calendarQueryRange, temporalData } from "./temporal.js?v=0.23.6";
-import { REMINDER_SHORTCUT_TRIGGER } from "./keywords.js?v=0.23.6";
+import { contactQuery } from "./classifier.js?v=0.23.7";
+import { naturalQueryRange, temporalData } from "./temporal.js?v=0.23.7";
+import { REMINDER_SHORTCUT_TRIGGER } from "./keywords.js?v=0.23.7";
 
 // Los accesos por defecto llevan un `id` fijo (no generado al vuelo) para
 // que dos dispositivos que arrancan sin nada guardado todavía — y por tanto
@@ -118,7 +118,10 @@ export function routeShortcutIntent(interpretation, shortcut, text, now = new Da
   const base = { ...interpretation, intent: action, date, time, question: null };
   if (action === "contact.call") return { ...base, date: null, time: null, contactName: interpretation.contactName || contactQuery(text) || null, requiresConfirmation: true, missingFields: [] };
   if (action === "whatsapp.compose") return { ...base, date: null, time: null, contactName: interpretation.contactName || contactQuery(text) || null, requiresConfirmation: true };
-  if (action === "calendar.query") return { ...base, ...(calendarQueryRange(text, now) || {}), requiresConfirmation: false, missingFields: [] };
+  // 3ª auditoría: el acceso directo de agenda ya no pasa por la IA, así que
+  // debe entender todos los periodos que sí entiende el respaldo local («los
+  // próximos 3 días», «este mes», «el fin de semana»), no solo semana/día.
+  if (action === "calendar.query") return { ...base, ...(naturalQueryRange(text, now) || {}), requiresConfirmation: false, missingFields: [] };
   if (action === "calendar.delete") {
     const title = interpretation.target?.title || cleanInstruction(text, action) || interpretation.title;
     return { ...base, target: title ? { title, date, time } : null, requiresConfirmation: true, missingFields: title ? [] : ["target"] };

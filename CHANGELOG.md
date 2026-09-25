@@ -1,5 +1,20 @@
 # Changelog
 
+## V0.23.7 · Fechas y horas como se dicen de verdad (3ª auditoría, lote 3)
+
+El parser local de fechas y horas se reescribió de forma legible. Además de servir cuando la IA falla o se agota el cupo, **completa** las respuestas de la IA, así que sus errores se notaban siempre. Sobre la batería del agente: **29 casos arreglados, 0 rotos**.
+- **Minutos y franja con cifras**, que es como escribe el dictado: «a las 8 y media de la tarde» → 20:30 (antes 08:00), «a las 9 y media de la noche» → 21:30, «a las 12 y media», «a las nueve y veinte», «a las 9.30», «a las 9 pm».
+- **Formas que no se entendían**: «a la una», «sobre las 9», «hacia las 5 de la tarde», «a mediodía», «de la madrugada», «el día 20» (ya pasado → mes que viene), «el 30», «en una semana», «del año que viene».
+- **AM/PM respetando el día dicho**: «Recuérdame mañana a las 8» ya no sale a las 20:00; «mañana por la mañana a las 9» → 09:00; «cena mañana a las 5» → 17:00.
+- **Días**: «este viernes» dicho un viernes es hoy; «esta mañana» es hoy (no mañana); si se dicen dos días, gana el primero («Recuérdame el viernes comprar el pan para mañana» → viernes); «hoy a las 12 de la noche» → día siguiente a las 00:00.
+- **Sin tildes**: «manana», «el sabado», «pasado manana».
+- **Títulos y búsquedas limpios**: adiós a «Dentista pasado», «Cena con Luis el próximo», búsquedas por «que viene» o «Ana de la».
+- **Agenda**: «el fin de semana» y «el mes que viene» tienen su periodo (antes 90 días), también desde el acceso directo, que ya no pasa por la IA.
+- **Recordatorio de hoy ya pasado**: «Recuérdame hoy a las 8» dicho a las 10 pasa a las 20:00 en vez de quedarse en el pasado.
+- **Búsqueda de eventos** sin fecha: empieza en la fecha local (entre las 00:00 y las 02:00 empezaba ayer).
+- Sin cambios en el backend (sí recargar la PWA).
+- Tests: `tests/temporal-audit.test.mjs` (230 pruebas; también en UTC como el CI).
+
 ## V0.23.6 · Un cerebro más fino: el servidor de IA entiende mejor y no desperdicia respuestas (3ª auditoría, lote 2)
 
 - **Temperatura 0**: Gemini usaba la configuración más aleatoria (1.0); la misma frase podía entenderse distinto cada vez. Ahora responde de forma estable.
