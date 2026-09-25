@@ -1,6 +1,6 @@
-import{calendarQueryRange,cleanTemporalText,naturalQueryRange,temporalData}from"./temporal.js?v=0.23.10";
-import{localWhatsApp}from"./whatsapp.js?v=0.23.10";
-import{REMINDER_TRIGGER}from"./keywords.js?v=0.23.10";
+import{calendarQueryRange,cleanTemporalText,naturalQueryRange,temporalData}from"./temporal.js?v=0.23.11";
+import{localWhatsApp}from"./whatsapp.js?v=0.23.11";
+import{REMINDER_TRIGGER}from"./keywords.js?v=0.23.11";
 
 export const VALID_INTENTS=["note","note.query","task.create","task.complete","reminder.create","reminder.query","calendar.create","calendar.query","calendar.update","calendar.delete","contact.call","whatsapp.compose","file.store","photo.store"];
 const SENSITIVE_INTENTS=new Set(["calendar.update","calendar.delete","contact.call","whatsapp.compose"]);
@@ -61,7 +61,12 @@ export function localCalendarUpdate(text = "", now = new Date(), active = null) 
     const afterEvent = /^\s*(?:la|el|mi)\s+(?:llamada|recordatorio|aviso|evento|cita|quedada|cena|comida|reuni[oó]n)\b/i.test(value) && verb.test(value);
     if (!imperative.test(value) && !afterEvent) return null;
   }
-  const temporal = temporalData(value, now);
+  // Los datos NUEVOS van detrás de «al / para / hasta / a las»: «la cena del
+  // viernes AL sábado», «del jueves a las 10 AL viernes a las 12», «a las 9 y
+  // media de la noche». Leer la frase entera cogía la fecha antigua (la primera).
+  const connector = value.match(/\s(?:al|para|hasta)\s+(?=(?:el\s+|este\s+|pr[oó]ximo\s+)?(?:hoy|ma[nñ]ana|pasado|lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo|d[ií]a|\d)|las?\s)/i) || value.match(/\sa\s+las?\s/i);
+  const newPart = connector ? value.slice(connector.index) : value;
+  const temporal = temporalData(newPart, now);
   const changes = {
     ...(temporal.scheduledDate ? { date: temporal.scheduledDate } : {}),
     ...(temporal.scheduledTime ? { time: temporal.scheduledTime } : {})
@@ -83,11 +88,17 @@ export function localCalendarUpdate(text = "", now = new Date(), active = null) 
       .replace(/\s{2,}/g, " ").trim();
     if (candidate) target = candidate;
   }
-  return { ...EMPTY, intent: "calendar.update", confidence: .5,
+  const result = { ...EMPTY, intent: "calendar.update", confidence: .5,
     target: target ? { title: target, date: null, time: null } : null,
     changes: Object.keys(changes).length ? changes : null,
     requiresConfirmation: true };
+  // Hora dicha sin franja («a las nueve»): mañana o tarde es una suposición.
+  if (changes.time && !/\b(?:de|por|en)\s+la\s+(?:ma[nñ]ana|tarde|noche|madrugada)\b|\b[ap]\.?\s?m\b|mediod[ií]a|medianoche|\b(?:1[3-9]|2[0-3]):\d{2}\b/i.test(newPart)) AMBIGUOUS_HALF.add(result);
+  return result;
 }
+// Resultados locales cuya hora no dijo la franja (sin campo extra: validateIntent
+// rechaza campos desconocidos).
+const AMBIGUOUS_HALF = new WeakSet();
 
 // Respaldo de lectura: la IA sigue siendo la primera opción en producción.
 export function localReminderQuery(text = "") {
@@ -103,7 +114,8 @@ export function localReminderQuery(text = "") {
   // 3ª auditoría: bastaba un «que» en cualquier sitio, así que «Quiero que me
   // pongas un recordatorio mañana a las 9» se convertía en una CONSULTA y no
   // se creaba nada. La palabra de consulta debe abrir la frase (o ir tras «¿»).
-  const explicitQuery=/^\s*\u00bf?\s*(?:y\s+)?(?:que|cuales|cuantos|dime|muestrame|ensename|ver|listar|lista|busca|buscar|consulta|consultar)\b.*\brecordatorios?\b/i.test(normalized);
+  const explicitQuery=/^\s*\u00bf?\s*(?:y\s+)?(?:que|cuales|cuantos|dime|muestrame|ensename|ver|listar|lista|busca|buscar|consulta|consultar)\b.*\brecordatorios?\b/i.test(normalized)
+    || (/\?\s*$/.test(normalized) && /\brecordatorios?\b/i.test(normalized) && !/\b(?:pon|ponme|pongas|crea|creame|crees|anade|apunta|programa)\b/i.test(normalized));
   const bareQuery=/^(?:mis\s+|los\s+)?recordatorios?(?:\s+pendientes?)?[.!?]*$/i.test(normalized.trim());
   if (!explicitQuery && !bareQuery) return null;
   const match = text.match(/\brecordatorios?\b(?:\s+(?:tengo|tenía|tenia|hay))?\s+(?:de|sobre)\s+(.+?)(?:[.!?,;]|$)/i);
@@ -126,7 +138,8 @@ export function localNoteQuery(text = "") {
   // estudiar las notas de química» o «Reunión para ver las notas del trimestre»
   // se convertían en una consulta de notas. La palabra de consulta debe abrir
   // la frase (o ir tras «¿»).
-  const explicitQuery=/^\s*¿?\s*(?:y\s+)?(?:que|cuales|cuantas|dime|muestrame|busca|consulta|ensename|ver|listar)\b.*\bnotas?\b/i.test(normalized);
+  const explicitQuery=/^\s*¿?\s*(?:y\s+)?(?:que|cuales|cuantas|dime|muestrame|busca|consulta|ensename|ver|listar)\b.*\bnotas?\b/i.test(normalized)
+    || (/\?\s*$/.test(normalized) && /\bnotas?\b/i.test(normalized) && !/\b(?:pasa|pases|manda|dile|estudiar|crea|anota|apunta)\b/i.test(normalized));
   const listCommand=/^\s*lista(?:me)?\b.*\bnotas?\b/i.test(normalized);
   if(!explicitQuery&&!listCommand)return null;
   const match=value.match(/\bnotas?\b(?:\s+(?:que\s+)?(?:tengo|hay))?\s+(?:del?|sobre|relacionadas?\s+con)\s+(.+?)(?:[.!?,;]|$)/i);
@@ -238,6 +251,12 @@ export function protectContactCallInterpretation(remote,local){
 // borrar la comprensión semántica de Gemini. Si la IA reconoció la misma
 // operación, conserva su objetivo (por ejemplo, solo "Miguel") y usa lo local
 // únicamente para fechas/cambios explícitos y confirmación obligatoria.
+function sameHourOtherHalf(localTime, remoteTime) {
+  if (!localTime || !remoteTime || localTime === remoteTime) return false;
+  const [lh, lm] = localTime.split(":").map(Number), [rh, rm] = remoteTime.split(":").map(Number);
+  return lm === rm && lh % 12 === rh % 12;
+}
+
 export function protectCalendarInterpretation(remote, local) {
   if (!local) return remote;
   const sameIntent = remote?.intent === local.intent;
@@ -269,11 +288,16 @@ export function protectCalendarInterpretation(remote, local) {
     // silencio cualquier otro cambio (p. ej. ubicación) que la IA sí hubiera
     // entendido bien en la misma orden («...a las nueve y ponla en el
     // restaurante Cala Blava» perdía el restaurante).
-    // 3ª auditoría: lo local toma la PRIMERA fecha/hora de la frase, que en un
-    // cambio suele ser la antigua («la cena del viernes al sábado» -> viernes)
-    // y no entiende «y media/menos cuarto de la noche». Si la IA respondió,
-    // sus cambios mandan; lo local solo completa lo que la IA no trajo.
-    changes: (local.changes || remote.changes) ? (remote?.source === "ai" ? { ...(local.changes || {}), ...(remote.changes || {}) } : { ...(remote.changes || {}), ...(local.changes || {}) }) : null,
+    // La fecha/hora nueva que calcula lo local (ya leída detrás de «al / a las /
+    // para», con «y media/menos cuarto de la noche») manda, como siempre: es
+    // exacta, y la IA puede equivocarse de día. Los demás cambios que entendió
+    // la IA (ubicación, título…) se conservan.
+    // Excepción: si las dos dicen la MISMA hora y solo discrepan en mañana/tarde
+    // («la cena … a las nueve»: local 09:00, IA 21:00), la IA tiene el contexto
+    // (es una cena) y su lectura manda.
+    changes: (local.changes || remote.changes) ? AMBIGUOUS_HALF.has(local) && sameHourOtherHalf(local.changes?.time, remote?.changes?.time)
+      ? { ...(remote.changes || {}), ...(local.changes || {}), time: remote.changes.time }
+      : { ...(remote.changes || {}), ...(local.changes || {}) } : null,
     requiresConfirmation: true,
     missingFields: [],
     question: null

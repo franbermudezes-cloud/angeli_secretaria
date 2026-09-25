@@ -1,25 +1,25 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts,readShortcutsHidden,writeShortcutsHidden}from"./storage.js?v=0.23.10";
-import{classify,actionData}from"./classifier.js?v=0.23.10";
-import{sendEntry}from"./sheets.js?v=0.23.10";
-import{createUI}from"./ui.js?v=0.23.10";
-import{createGoogleIntegration}from"./google.js?v=0.23.10";
-import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,activeIntentDomain,explicitNewCommandDomain,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.23.10";
-import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,setShoppingListStore,isMercadonaList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.23.10";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.23.10";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.23.10";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime,calendarDetails}from"./schedule.js?v=0.23.10";
-import{createCloudSync}from"./firebase.js?v=0.23.10";
-import{createMediaService}from"./media.js?v=0.23.10";
-import{cancelInteraction,completeFromCollected,completeInteraction,confirmationReply,contextFor,isCancelReply,isNewCommand,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.23.10";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.23.10";
-import{createAgendaActions}from"./agenda.js?v=0.23.10";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.23.10";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.23.10";
-import{DEFAULT_SHORTCUTS,SHORTCUT_PRESETS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.23.10";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.23.10";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.23.10";
-import{mediaLibraryItems}from"./media-library.js?v=0.23.10";
-import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.23.10";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts,readShortcutsHidden,writeShortcutsHidden}from"./storage.js?v=0.23.11";
+import{classify,actionData}from"./classifier.js?v=0.23.11";
+import{sendEntry}from"./sheets.js?v=0.23.11";
+import{createUI}from"./ui.js?v=0.23.11";
+import{createGoogleIntegration}from"./google.js?v=0.23.11";
+import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,activeIntentDomain,explicitNewCommandDomain,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.23.11";
+import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,setShoppingListStore,isMercadonaList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.23.11";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.23.11";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.23.11";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime,calendarDetails}from"./schedule.js?v=0.23.11";
+import{createCloudSync}from"./firebase.js?v=0.23.11";
+import{createMediaService}from"./media.js?v=0.23.11";
+import{cancelInteraction,completeFromCollected,completeInteraction,confirmationReply,contextFor,isCancelReply,isNewCommand,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.23.11";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.23.11";
+import{createAgendaActions}from"./agenda.js?v=0.23.11";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.23.11";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.23.11";
+import{DEFAULT_SHORTCUTS,SHORTCUT_PRESETS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.23.11";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.23.11";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.23.11";
+import{mediaLibraryItems}from"./media-library.js?v=0.23.11";
+import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.23.11";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,finalText="",pendingImages=[],pendingFiles=[],pendingMediaContext=null,selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -357,7 +357,7 @@ async function add({interactionId=null,shortcut=null}={}){
    // disparador explícito, cuando la IA no respondió o cuando la IA también dice
    // WhatsApp. Si la IA, con confianza, dice que es otra cosa («tengo cita con el
    // dentista el jueves a las 5»), es una orden nueva y no el mensaje de Juan.
-   const forceWhatsApp=Boolean(whatsApp)&&(aiWhatsApp||interpreted.source!=="ai"||Boolean(localWhatsApp(text,null)));
+   const forceWhatsApp=Boolean(whatsApp)&&(aiWhatsApp||interpreted.source!=="ai"||Boolean(localWhatsApp(text,null))||(active?.aiIntent?.intent==="whatsapp.compose"&&(active.interaction?.missingFields||[]).includes("notes")));
    const whatsAppInterpretation=forceWhatsApp?{...interpreted,intent:"whatsapp.compose",contactName:(aiWhatsApp?interpreted.contactName:null)||whatsApp.contactName||null,phone:(aiWhatsApp?interpreted.phone:null)||whatsApp.phone||null,notes:(aiWhatsApp?interpreted.notes:null)||whatsApp.notes||null,requiresConfirmation:true,missingFields:[],question:null}:interpreted;
    // 3ª auditoría: si la IA, con confianza, dice que la frase es una orden de
    // OTRA familia que la operación pendiente, es una orden nueva: entrada
@@ -1642,7 +1642,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.23.10",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.23.11",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}

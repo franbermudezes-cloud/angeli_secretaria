@@ -1,4 +1,4 @@
-import{nextDateForTime,temporalData,explicitRelativeDate}from"./temporal.js?v=0.23.10";
+import{nextDateForTime,temporalData,explicitRelativeDate}from"./temporal.js?v=0.23.11";
 
 const CALL_INTENT=/\b(?:llama|llamar|telefonea|telefonear|contacta|contactar)\b/i;
 
@@ -41,12 +41,15 @@ export function normalizeReminderSchedule(interpretation,text,now=new Date()){
   if(interpretation?.intent!=="reminder.create")return interpretation;
   const local=temporalData(text,now,{inferDateFromTime:true});
   const time=interpretation.time||local.scheduledTime||null;
-  // 3ª auditoría: un «hoy/mañana» en CUALQUIER parte de la frase pisaba la fecha
-  // correcta de la IA: «Recuérdame el viernes comprar el pan para mañana» ->
-  // mañana, «Recuérdame el lunes preparar lo de hoy» -> hoy. Si la IA dio una
-  // fecha, manda la suya; lo local solo decide cuando la IA no la trae.
-  const aiDate=interpretation.source==="ai"?interpretation.date:null;
-  const date=aiDate||explicitRelativeDate(text,now)||interpretation.date||local.scheduledDate||(time?dateKey(nextDateForTime(time,now)):null);
+  // La fecha DICHA manda sobre la de la IA (arreglo #6, 26/08: la IA confundía
+  // «pasado mañana» con «mañana»; calcularla aquí es exacto). En la 3ª auditoría
+  // se vio el problema contrario: un «mañana» del CONTENIDO pisaba el día real
+  // («Recuérdame el viernes comprar el pan para mañana» -> mañana). Ahora cuenta
+  // la PRIMERA fecha que se dice (temporalData sin inferir), que es la del aviso:
+  // «pasado mañana» -> +2 aunque la IA diga +1, y «el viernes … para mañana» ->
+  // viernes. La IA solo decide cuando la frase no dice ningún día.
+  const spoken=temporalData(text,now).scheduledDate||null;
+  const date=spoken||interpretation.date||explicitRelativeDate(text,now)||local.scheduledDate||(time?dateKey(nextDateForTime(time,now)):null);
   // 3ª auditoría: «Recuérdame hoy a las 8» dicho a las 10 quedaba programado
   // en el pasado (y nunca sonaba). Un aviso de HOY ya pasado con hora de
   // mañana (1-11) cuya versión de tarde aún no ha llegado es esa de la tarde.

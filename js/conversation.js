@@ -76,6 +76,11 @@ export function intentDomain(intent) {
 export function isNewCommand(active, interpretation) {
   if (!active?.interaction || active.interaction.status !== INTERACTION_STATUS.AWAITING_INPUT) return false;
   if (interpretation?.source !== "ai") return false;
+  // Un WhatsApp que espera el MENSAJE acepta cualquier texto como mensaje («que
+  // mañana a las 5 quedamos en el bar» no es un evento nuevo). Solo lo sueltan
+  // los disparadores explícitos («Recuérdame…», «Llama a…»), que app.js ya
+  // comprueba antes (arreglo #120).
+  if (active.aiIntent?.intent === "whatsapp.compose" && (active.interaction.missingFields || []).includes("notes")) return false;
   const before = intentDomain(active.aiIntent?.intent), after = intentDomain(interpretation.intent);
   if (!before || !after || before === after) return false;
   const related = new Set(["call:reminder", "reminder:call", "calendar:reminder", "reminder:calendar"]);
