@@ -1,26 +1,26 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts,readShortcutsHidden,writeShortcutsHidden,readDayBriefingShown,writeDayBriefingShown}from"./storage.js?v=0.25.4";
-import{classify,actionData}from"./classifier.js?v=0.25.4";
-import{sendEntry}from"./sheets.js?v=0.25.4";
-import{createUI}from"./ui.js?v=0.25.4";
-import{createGoogleIntegration}from"./google.js?v=0.25.4";
-import{interpret,remoteProvider,chatAside,protectQueryRange,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,activeIntentDomain,explicitNewCommandDomain,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.25.4";
-import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,setShoppingListStore,isMercadonaList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.25.4";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.25.4";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.25.4";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime,calendarDetails}from"./schedule.js?v=0.25.4";
-import{createCloudSync}from"./firebase.js?v=0.25.4";
-import{createMediaService}from"./media.js?v=0.25.4";
-import{cancelInteraction,completeFromCollected,completeInteraction,confirmationReply,contextFor,isCancelReply,isNewCommand,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.25.4";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.25.4";
-import{createAgendaActions,dayBriefing}from"./agenda.js?v=0.25.4";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.25.4";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.25.4";
-import{DEFAULT_SHORTCUTS,SHORTCUT_PRESETS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.25.4";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.25.4";
-import{speechText}from"./speech.js?v=0.25.4";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.25.4";
-import{mediaLibraryItems}from"./media-library.js?v=0.25.4";
-import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.25.4";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts,readShortcutsHidden,writeShortcutsHidden,readDayBriefingShown,writeDayBriefingShown}from"./storage.js?v=0.25.5";
+import{classify,actionData}from"./classifier.js?v=0.25.5";
+import{sendEntry}from"./sheets.js?v=0.25.5";
+import{createUI}from"./ui.js?v=0.25.5";
+import{createGoogleIntegration}from"./google.js?v=0.25.5";
+import{interpret,remoteProvider,chatAside,fetchSpeech,protectQueryRange,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,activeIntentDomain,explicitNewCommandDomain,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.25.5";
+import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,setShoppingListStore,isMercadonaList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.25.5";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.25.5";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.25.5";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime,calendarDetails}from"./schedule.js?v=0.25.5";
+import{createCloudSync}from"./firebase.js?v=0.25.5";
+import{createMediaService}from"./media.js?v=0.25.5";
+import{cancelInteraction,completeFromCollected,completeInteraction,confirmationReply,contextFor,isCancelReply,isNewCommand,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.25.5";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.25.5";
+import{createAgendaActions,dayBriefing}from"./agenda.js?v=0.25.5";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.25.5";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.25.5";
+import{DEFAULT_SHORTCUTS,SHORTCUT_PRESETS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.25.5";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.25.5";
+import{speechText}from"./speech.js?v=0.25.5";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.25.5";
+import{mediaLibraryItems}from"./media-library.js?v=0.25.5";
+import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.25.5";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,finalText="",pendingImages=[],pendingFiles=[],pendingMediaContext=null,selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -620,10 +620,13 @@ function loadVoicePrefs(){try{return JSON.parse(localStorage.getItem(VOICE_PREF_
 function saveVoicePrefs(){try{localStorage.setItem(VOICE_PREF_KEY,JSON.stringify(voicePrefs))}catch(e){}}
 let voicePrefs=loadVoicePrefs();
 function availableVoices(){return("speechSynthesis"in window)?window.speechSynthesis.getVoices():[]}
+// «angeli» (por defecto) es la voz propia, Vindemiatrix, generada en el servidor.
+const ANGELI_VOICE="angeli";
+function useAngeliVoice(){return(voicePrefs.voiceURI||ANGELI_VOICE)===ANGELI_VOICE}
 function selectedVoice(){
  const voices=availableVoices();
  if(!voices.length)return null;
- const byUri=voicePrefs.voiceURI&&voices.find(v=>v.voiceURI===voicePrefs.voiceURI);
+ const byUri=voicePrefs.voiceURI&&voicePrefs.voiceURI!==ANGELI_VOICE&&voices.find(v=>v.voiceURI===voicePrefs.voiceURI);
  return byUri||voices.find(v=>(v.lang||"").toLowerCase().startsWith("es"))||voices[0];
 }
 function renderVoiceOptions(){
@@ -638,18 +641,57 @@ function renderVoiceOptions(){
   option.textContent=`${voice.name} (${voice.lang})`;
   select.appendChild(option);
  });
- if(current)select.value=current.voiceURI;
+ const own=document.createElement("option");
+ own.value=ANGELI_VOICE;own.textContent="Angeli (voz propia · necesita conexión)";
+ select.prepend(own);
+ select.value=useAngeliVoice()?ANGELI_VOICE:(current?.voiceURI||ANGELI_VOICE);
  const spanishVoices=voices.filter(v=>(v.lang||"").toLowerCase().startsWith("es")).length;
  $("voiceSettingsHint").hidden=voices.length===0||spanishVoices>2;
 }
 if("speechSynthesis"in window){renderVoiceOptions();window.speechSynthesis.addEventListener?.("voiceschanged",renderVoiceOptions)}
 
-function speakAloud(text){
+// Habla con la voz propia de Angeli si está elegida (y hay conexión); si el
+// servidor no responde o el navegador no deja reproducir, usa la voz del
+// teléfono. Cada llamada nueva corta la anterior, como antes.
+let speechTurn=0;
+const angeliAudio=typeof Audio==="function"?new Audio():null;
+const speechBlobs=new Map();
+const SILENT_MP3="data:audio/mpeg;base64,SUQzBAAAAAAAIlRTU0UAAAAOAAADTGF2ZjYzLjEuMTAxAAAAAAAAAAAAAAD/80TEAAAAA0gAAAAATEFNRTQuMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FNC7/80TEUwAAA0gAAAAAMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FNC7/80TEpgAAA0gAAAAAMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80TErAAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80TErAAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU=";
+// iOS solo deja reproducir audio tras un toque: se «desbloquea» el reproductor
+// con un silencio en el mismo toque que abre el modo conversación o la prueba.
+function unlockAngeliAudio(){if(!angeliAudio)return;try{angeliAudio.src=SILENT_MP3;void angeliAudio.play().catch(()=>{})}catch(e){}}
+function stopSpeaking(){speechTurn++;try{window.speechSynthesis?.cancel()}catch(e){}try{angeliAudio?.pause()}catch(e){}}
+async function speakAloud(text){
+ stopSpeaking();
+ const turn=speechTurn,spoken=speechText(text);
+ if(!spoken)return;
+ if(useAngeliVoice()&&angeliAudio){
+  try{
+   const rate=voicePrefs.rate||1,key=`${rate}|${spoken}`;
+   let blob=speechBlobs.get(key);
+   if(!blob){blob=await fetchSpeech(spoken,rate,await cloud.getAuthToken());if(spoken.length<=80){speechBlobs.set(key,blob);if(speechBlobs.size>40)speechBlobs.delete(speechBlobs.keys().next().value)}}
+   if(turn!==speechTurn)return;
+   await playAngeliAudio(blob,turn);
+   return;
+  }catch(e){if(turn!==speechTurn)return}
+ }
+ await speakWithDevice(spoken);
+}
+function playAngeliAudio(blob,turn){
+ return new Promise((resolve,reject)=>{
+  const url=URL.createObjectURL(blob);let done=false;
+  const finish=()=>{if(done)return;done=true;angeliAudio.onended=angeliAudio.onpause=angeliAudio.onerror=null;URL.revokeObjectURL(url);resolve()};
+  angeliAudio.onended=finish;angeliAudio.onpause=finish;angeliAudio.onerror=finish;
+  angeliAudio.src=url;
+  angeliAudio.play().catch(error=>{if(done)return;done=true;URL.revokeObjectURL(url);turn===speechTurn?reject(error):resolve()});
+ });
+}
+function speakWithDevice(text){
  return new Promise(resolve=>{
   if(!text||!("speechSynthesis"in window)){resolve();return}
   try{
    window.speechSynthesis.cancel();
-   const utter=new SpeechSynthesisUtterance(speechText(text));
+   const utter=new SpeechSynthesisUtterance(text);
    utter.lang="es-ES";
    const voice=selectedVoice();
    if(voice)utter.voice=voice;
@@ -931,6 +973,7 @@ async function openConversationModeReal(){
  if(!window.SpeechRecognition&&!window.webkitSpeechRecognition){ui.notify("Este navegador no admite dictado por voz");return}
  clearComposer();
  conversationOn=true;
+ unlockAngeliAudio();
  ui.openConversationMode();
  const hello=CONVERSATION_GREETINGS[Math.floor(Math.random()*CONVERSATION_GREETINGS.length)];
  ui.addConversationTurn("angeli",hello);
@@ -942,7 +985,7 @@ async function openConversationModeReal(){
 function closeConversationModeReal(){
  conversationOn=false;
  stopConversationRecognizer();
- if("speechSynthesis"in window)window.speechSynthesis.cancel();
+ stopSpeaking();
  if(conversationModalObserver){conversationModalObserver.disconnect();conversationModalObserver=null}
  // Cerrar la pantalla no debe dejar una pregunta a medias: si se limitara a
  // ocultar el modal, la interacción seguiría "awaiting_input" en los datos y
@@ -1586,7 +1629,7 @@ $("voicePitch").value=voicePrefs.pitch??1;
 $("voiceSelect").onchange=()=>{voicePrefs.voiceURI=$("voiceSelect").value;saveVoicePrefs()};
 $("voiceRate").oninput=()=>{voicePrefs.rate=Number($("voiceRate").value);saveVoicePrefs()};
 $("voicePitch").oninput=()=>{voicePrefs.pitch=Number($("voicePitch").value);saveVoicePrefs()};
-$("voiceTest").onclick=()=>void speakAloud("Hola, soy Angeli. Así sonaré a partir de ahora.");
+$("voiceTest").onclick=()=>{unlockAngeliAudio();void speakAloud("¡Hola! Soy Angeli. Así sonaré a partir de ahora.")};
 $("cameraInput").onchange=e=>{if(e.target.files.length)readImages([...e.target.files],"Foto preparada")};
 $("photoInput").onchange=e=>{if(e.target.files.length)readImages([...e.target.files],"Imagen seleccionada")};
 $("fileInput").onchange=e=>{if(e.target.files.length)prepareMedia([...e.target.files],"file","Archivo preparado")};
@@ -1734,7 +1777,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState!=="visible")return;if(Date.now()-lastConnectionCheck>120000)void verifyConnections(true).then(maybeDayBriefing);else void maybeDayBriefing()});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.25.4",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.25.5",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}

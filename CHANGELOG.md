@@ -1,5 +1,16 @@
 # Changelog
 
+## V0.25.5 · Voz propia de Angeli (Vindemiatrix)
+
+- **Pedido por el propietario**: «la voz no me acaba de gustar, ¿podríamos poner una voz propia?». Escuchó diez voces de Google y eligió **Vindemiatrix**.
+- Angeli habla ahora con esa voz en el modo conversación y en «Probar voz». La genera el servidor (nuevo `/speech`, Cloud Text-to-Speech «Chirp 3 HD», ~1 s). La misma voz con Gemini TTS tardaba ~7 s, demasiado para conversar.
+- **Nunca se queda muda**: sin conexión, si el servidor falla o si el navegador no deja reproducir, habla con la voz del teléfono como antes.
+- Es la voz por defecto; en Ajustes → Voz de Angeli se puede volver a una voz del teléfono. La velocidad elegida se aplica a las dos.
+- Las frases repetidas (saludos, muletillas) se guardan en memoria del servidor y del móvil para que suenen al instante.
+- En iPhone, el audio se «desbloquea» con el mismo toque que abre el modo conversación.
+- Se ha activado la API Cloud Text-to-Speech en el proyecto `angeli-secretaria`. **Requiere redesplegar Cloud Run.**
+- Tests: `backend/test_chat_aside.py` (SpeechTests), `tests/voice-settings.test.mjs`.
+
 ## V0.25.4 · Frases más cercanas en el modo conversación
 
 - **Pedido por el propietario**: «las frases cortitas tienen que ser más amigables». Se ha revisado todo lo que Angeli dice en el modo conversación:
