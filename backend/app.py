@@ -34,6 +34,7 @@ from access_control import AccessControl, AccessDenied, QuotaExhausted
 import mercadona_catalog
 
 MAX_TEXT_LENGTH = 500
+OWNER_ONLY_GOOGLE_ROUTES = {"/google", "/oauth/exchange", "/media/upload", "/media/download", "/media/delete", "/test/session/status", "/test/oauth/exchange"}
 MAX_BODY_BYTES = 8_192  # 3ª auditoría: 2 KB no cabía un dictado largo con dos respuestas de seguimiento (400 y respaldo local justo en la aclaración).
 MAX_MEDIA_BYTES = 20 * 1024 * 1024
 REQUEST_TIMEOUT_SECONDS = 8
@@ -1130,6 +1131,17 @@ def app(environ: dict[str, Any], start_response: Callable):
         # solo tras una interpretación válida; antes solo se comprueba.
         if path == "/interpret":
             access_control().ensure_quota(claims)
+        # PRIVACIDAD (multiusuario): Calendar, Contactos y Drive usan UNA sola
+        # autorización guardada, la del propietario (angeli-google-*-grant), sin
+        # distinguir quién pregunta. Un invitado leería y escribiría en la agenda,
+        # los contactos y el Drive del propietario, y podría incluso sustituir su
+        # autorización al «conectar». Hasta que existan autorizaciones por
+        # persona, estas rutas son solo del propietario.
+        if path in OWNER_ONLY_GOOGLE_ROUTES and not access_control().is_owner(claims):
+            return json_response(start_response, "403 Forbidden", {"error": "Calendar, Contactos y Drive todavía solo funcionan con la cuenta principal de Angeli.", "code": "owner_only_integration", "integration": "google"}, origin)
+        if path == "/session/status" and not access_control().is_owner(claims):
+            unavailable = {"state": "disconnected", "reason": "owner_only"}
+            return json_response(start_response, "200 OK", {"ai": {"state": "connected", "reason": "authenticated_backend"}, CONTACTS: unavailable, CALENDAR: unavailable, DRIVE: unavailable}, origin)
         if path.startswith("/test/") and os.getenv("ANGELI_TEST_HARNESS_ENABLED") != "1":
             return json_response(start_response, "404 Not Found", {"error": "No encontrado"}, origin)
         if path == "/session/status":

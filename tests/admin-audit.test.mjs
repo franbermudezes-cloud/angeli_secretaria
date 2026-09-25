@@ -39,3 +39,13 @@ test("los títulos del panel no se escapan dos veces (se ponen como texto, no HT
 test("la colección access exige además el correo verificado", () => {
   assert.match(rules, /request\.auth\.token\.email == "franbermudez\.es@gmail\.com" && request\.auth\.token\.email_verified == true/);
 });
+
+// PRIVACIDAD: Calendar, Contactos y Drive usan todavía una sola autorización (la
+// del propietario). Una persona invitada no ve esos botones y el servidor, además,
+// le devuelve 403 (backend/test_access_control.py).
+test("una persona invitada no ve Calendar, Contactos ni Drive", () => {
+  assert.match(app, /function refreshOwnerUI\(\)\{const session=cloud\.session\(\),owner=Boolean\(session\.owner\),guest=session\.signedIn&&!owner;/);
+  assert.match(app, /for\(const id of \["contactsConnect","calendarConnect","driveConnect"\]\)\{const row=\$\(id\)\?\.closest\("\.connection"\);if\(row\)row\.hidden=guest\}/);
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  assert.match(html, /id="guestIntegrationsNote" class="menu-copy" hidden>/);
+});
