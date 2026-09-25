@@ -168,6 +168,19 @@ class AccessControl:
         if not self.status(claims).get("allowed"):
             raise AccessDenied("Usuario no autorizado")
 
+    def ensure_quota(self, claims: dict[str, Any]) -> None:
+        """Comprueba que queda cupo SIN gastarlo (se cobra solo tras el éxito)."""
+        if claims.get("bypass"):
+            return
+        policy = self._policy(_email_key(claims.get("email")))
+        if policy is None or policy.get("status") == "blocked":
+            raise AccessDenied("Usuario no autorizado")
+        if policy.get("owner") or policy.get("legacy") or policy.get("mode", "trial") != "trial":
+            return
+        limit = self._limit_of(policy)
+        if limit is not None and self._usage(policy) >= limit:
+            raise QuotaExhausted("quota_exhausted")
+
     def consume(self, claims: dict[str, Any]) -> None:
         """Cobra una interacción de IA al cupo. Lanza QuotaExhausted si se agotó.
 

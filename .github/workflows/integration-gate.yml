@@ -56,7 +56,7 @@ jobs:
 
       - name: Ejecutar pruebas unitarias del backend
         working-directory: backend
-        run: python -m unittest test_app.py test_push_notifications.py test_test_harness.py test_vertex_cache.py test_chat_aside.py test_shopping_mercadona.py
+        run: python -m unittest test_app.py test_push_notifications.py test_test_harness.py test_vertex_cache.py test_chat_aside.py test_shopping_mercadona.py test_access_control.py test_interpreter_quality.py
 
       - name: Ejecutar pruebas del coordinador conversacional
         run: node --test tests/conversation.test.mjs
@@ -90,6 +90,12 @@ jobs:
 
       - name: Verificar la lista de la compra
         run: node --test tests/shopping.test.mjs
+
+      # 3ª auditoría: varias suites (dictado, accesos directos, candado de
+      # sesión multiusuario, panel de administración, autoridad de la IA…)
+      # existían pero ningún paso las ejecutaba, así que no protegían nada.
+      - name: Ejecutar todas las pruebas del frontend
+        run: node --test tests/*.test.mjs
 
       - name: Ejecutar arnés real aislado
         run: python backend/test_harness.py
