@@ -32,8 +32,10 @@ assert.match(app, /localStorage\.getItem\(VOICE_PREF_KEY/);
 // speakAloud() -usado tanto por el módulo de charla aparte como por las
 // respuestas del modo conversación- debe aplicar la voz, velocidad y tono
 // elegidos, no quedarse con los valores por defecto del navegador.
-const speakAloudSource = app.match(/function speakAloud\(text\)\{[\s\S]*?\n\}/)?.[0] || "";
-assert.ok(speakAloudSource, "speakAloud debe existir");
+// Desde V0.25.5 la voz del teléfono vive en speakWithDevice (la de reserva
+// cuando la voz propia de Angeli no está elegida o no responde).
+const speakAloudSource = app.match(/function speakWithDevice\(text\)\{[\s\S]*?\n\}/)?.[0] || "";
+assert.ok(speakAloudSource, "speakWithDevice debe existir");
 assert.match(speakAloudSource, /utter\.voice=voice;/);
 assert.match(speakAloudSource, /utter\.rate=voicePrefs\.rate\|\|1;/);
 assert.match(speakAloudSource, /utter\.pitch=voicePrefs\.pitch\|\|1;/);
@@ -47,5 +49,13 @@ assert.match(selectedVoiceSource, /startsWith\("es"\)/);
 
 assert.match(css, /#voiceSelect\{/);
 assert.match(css, /\.voice-slider-label\{/);
+
+// Voz propia (Vindemiatrix): por defecto, con la del teléfono de reserva.
+const speakSource = app.match(/async function speakAloud\(text\)\{[\s\S]*?\n\}/)?.[0] || "";
+assert.match(speakSource, /useAngeliVoice\(\)/);
+assert.match(speakSource, /await fetchSpeech\(spoken/);
+assert.match(speakSource, /await speakWithDevice\(spoken\)/, "si falla la voz propia, habla la del teléfono");
+assert.match(app, /function useAngeliVoice\(\)\{return\(voicePrefs\.voiceURI\|\|ANGELI_VOICE\)===ANGELI_VOICE\}/, "la voz propia es la de por defecto");
+assert.match(app, /unlockAngeliAudio\(\);\n ui\.openConversationMode\(\);/, "iOS: se desbloquea el audio en el toque");
 
 console.log("voice-settings: ok");

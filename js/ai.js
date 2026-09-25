@@ -1,12 +1,13 @@
-import{calendarQueryRange,cleanTemporalText,naturalQueryRange,temporalData}from"./temporal.js?v=0.25.4";
-import{localWhatsApp}from"./whatsapp.js?v=0.25.4";
-import{REMINDER_TRIGGER}from"./keywords.js?v=0.25.4";
+import{calendarQueryRange,cleanTemporalText,naturalQueryRange,temporalData}from"./temporal.js?v=0.25.5";
+import{localWhatsApp}from"./whatsapp.js?v=0.25.5";
+import{REMINDER_TRIGGER}from"./keywords.js?v=0.25.5";
 
 export const VALID_INTENTS=["note","note.query","task.create","task.complete","reminder.create","reminder.query","calendar.create","calendar.query","calendar.update","calendar.delete","contact.call","whatsapp.compose","file.store","photo.store"];
 const SENSITIVE_INTENTS=new Set(["calendar.update","calendar.delete","contact.call","whatsapp.compose"]);
 const MAX_TEXT_LENGTH=500,MIN_CONFIDENCE=0.75;
 const INTERPRETER_URL="https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app/interpret";
 const CHAT_ASIDE_URL="https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app/chat/aside";
+const SPEECH_URL="https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app/speech";
 const MERCADONA_SEARCH_URL="https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app/shopping/mercadona/search";
 const EMPTY={title:null,date:null,time:null,rangeStart:null,rangeEnd:null,location:null,contactName:null,phone:null,notes:null,noteQuery:null,noteStatus:null,noteClassification:null,target:null,changes:null,linkedReminder:null,missingFields:[],question:null};
 
@@ -340,6 +341,20 @@ export async function chatAside(text,idToken){
   const data=await response.json();
   if(typeof data.reply!=="string"||!data.reply.trim())throw new Error("Respuesta de aside vacía");
   return data.reply.trim();
+ }finally{clearTimeout(timeout)}
+}
+
+// Voz propia de Angeli (Vindemiatrix): el servidor devuelve el audio en MP3.
+// Cualquier fallo lo resuelve el llamador hablando con la voz del teléfono.
+export async function fetchSpeech(text,rate,idToken){
+ if(!idToken)throw new Error("Sin sesión");
+ const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),4000);
+ try{
+  const response=await fetch(SPEECH_URL,{method:"POST",headers:{Authorization:`Bearer ${idToken}`,"Content-Type":"application/json"},body:JSON.stringify({text,rate}),signal:controller.signal});
+  if(!response.ok)throw new Error(`Voz no disponible (${response.status})`);
+  const blob=await response.blob();
+  if(!blob.size)throw new Error("Audio vacío");
+  return blob;
  }finally{clearTimeout(timeout)}
 }
 

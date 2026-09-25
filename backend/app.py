@@ -6,12 +6,13 @@ llamar a Vertex AI. Este servicio no ejecuta acciones de negocio.
 
 from __future__ import annotations
 
+import base64
 import json
 import os
 import re
 import sys
 import time
-from collections import defaultdict, deque
+from collections import OrderedDict, defaultdict, deque
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta
 from io import BytesIO
@@ -338,6 +339,7 @@ RESPONSE_SCHEMA: dict[str, Any] = {
 _rate_windows: dict[str, deque[float]] = defaultdict(deque)
 _interpreter: Callable[[str, str, str], dict[str, Any]] | None = None
 _chat_aside: Callable[[str], str] | None = None
+_speech: Callable[[str, float], bytes] | None = None
 _identity_verifier: Callable[[str], dict[str, Any]] | None = None
 _sessions_factory: Callable[[], GoogleSessions] | None = None
 _push_factory: Callable[[], PushNotifications] | None = None
@@ -1089,12 +1091,51 @@ def vertex_chat_aside(text: str) -> str:
     return reply
 
 
+# Voz propia de Angeli (pedida por el propietario, que eligió Vindemiatrix
+# de entre diez muestras). Cloud Text-to-Speech «Chirp 3 HD» responde en ~1 s;
+# la misma voz con Gemini TTS tardaba ~7 s, demasiado para conversar. Si esto
+# falla, el móvil usa la voz del sistema: Angeli nunca se queda muda.
+SPEECH_VOICE = "es-ES-Chirp3-HD-Vindemiatrix"
+MAX_SPEECH_LENGTH = 600
+SPEECH_CACHE_SIZE = 200
+_speech_cache: "OrderedDict[tuple[str, float], bytes]" = OrderedDict()
+
+
+def google_speech(text: str, rate: float) -> bytes:
+    import google.auth
+    from google.auth.transport.requests import AuthorizedSession
+
+    credentials, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
+    session = AuthorizedSession(credentials)
+    response = session.post(
+        "https://texttospeech.googleapis.com/v1/text:synthesize",
+        json={"input": {"text": text}, "voice": {"languageCode": "es-ES", "name": SPEECH_VOICE}, "audioConfig": {"audioEncoding": "MP3", "speakingRate": rate}},
+        timeout=REQUEST_TIMEOUT_SECONDS,
+    )
+    if response.status_code != 200:
+        raise RuntimeError(f"Text-to-Speech respondió {response.status_code}")
+    return base64.b64decode(response.json()["audioContent"])
+
+
+def synthesize_speech(text: str, rate: float) -> bytes:
+    # Las muletillas y saludos se repiten mucho: se guardan en memoria.
+    key = (text, rate)
+    if key in _speech_cache:
+        _speech_cache.move_to_end(key)
+        return _speech_cache[key]
+    audio = (_speech or google_speech)(text, rate)
+    _speech_cache[key] = audio
+    while len(_speech_cache) > SPEECH_CACHE_SIZE:
+        _speech_cache.popitem(last=False)
+    return audio
+
+
 def app(environ: dict[str, Any], start_response: Callable):
     origin = allowed_origin(environ)
     if environ.get("REQUEST_METHOD") == "OPTIONS":
         return cors_preflight_response(start_response, origin)
     path = environ.get("PATH_INFO")
-    routes = {"/interpret", "/chat/aside", "/shopping/mercadona/search", "/access/status", "/session/status", "/oauth/exchange", "/google", "/media/upload", "/media/download", "/media/delete", "/push/register", "/push/unregister", "/push/schedule", "/push/cancel", "/push/test", "/push/deliver", "/test/session/status", "/test/oauth/exchange"}
+    routes = {"/interpret", "/chat/aside", "/speech", "/shopping/mercadona/search", "/access/status", "/session/status", "/oauth/exchange", "/google", "/media/upload", "/media/download", "/media/delete", "/push/register", "/push/unregister", "/push/schedule", "/push/cancel", "/push/test", "/push/deliver", "/test/session/status", "/test/oauth/exchange"}
     if environ.get("REQUEST_METHOD") != "POST" or path not in routes:
         return json_response(start_response, "404 Not Found", {"error": "No encontrado"}, origin)
     if environ.get("HTTP_ORIGIN") and not origin:
@@ -1236,6 +1277,21 @@ def app(environ: dict[str, Any], start_response: Callable):
             except ValueError as error:
                 raise OutputValidationError(str(error)) from error
             return json_response(start_response, "200 OK", {"reply": reply}, origin)
+        if path == "/speech":
+            speech_payload = parse_json_body(environ, {"text", "rate"})
+            speech_text = speech_payload.get("text")
+            if not isinstance(speech_text, str) or not speech_text.strip() or len(speech_text) > MAX_SPEECH_LENGTH:
+                raise ValueError("El texto debe tener entre 1 y 600 caracteres")
+            rate = speech_payload.get("rate", 1)
+            if isinstance(rate, bool) or not isinstance(rate, (int, float)):
+                raise ValueError("Velocidad no válida")
+            rate = round(max(0.6, min(float(rate), 1.6)), 2)
+            try:
+                audio = synthesize_speech(speech_text.strip(), rate)
+            except Exception as error:  # noqa: BLE001 — el móvil cae a su propia voz
+                print(f"speech_error reason={error}", file=sys.stderr, flush=True)
+                return json_response(start_response, "503 Service Unavailable", {"error": "La voz no está disponible ahora", "code": "speech_unavailable"}, origin)
+            return media_response(start_response, audio, "audio/mpeg", origin)
         if path == "/shopping/mercadona/search":
             search_payload = parse_json_body(environ, {"query", "limit"})
             search_query = search_payload.get("query")
@@ -1279,8 +1335,10 @@ def app(environ: dict[str, Any], start_response: Callable):
         return json_response(start_response, "503 Service Unavailable", {"error": "Interpretación no disponible"}, origin)
 
 
-def set_test_dependencies(interpreter: Callable[[str, str, str], dict[str, Any]] | None = None, verifier: Callable[[str], dict[str, Any]] | None = None, session_factory: Callable[[], GoogleSessions] | None = None, push_factory: Callable[[], PushNotifications] | None = None, chat_aside: Callable[[str], str] | None = None, mercadona_search: Callable[[str, int], list] | None = None, access_factory: Callable[[], AccessControl] | None = None) -> None:
-    global _interpreter, _identity_verifier, _sessions_factory, _push_factory, _chat_aside, _mercadona_search, _access_factory
+def set_test_dependencies(interpreter: Callable[[str, str, str], dict[str, Any]] | None = None, verifier: Callable[[str], dict[str, Any]] | None = None, session_factory: Callable[[], GoogleSessions] | None = None, push_factory: Callable[[], PushNotifications] | None = None, chat_aside: Callable[[str], str] | None = None, mercadona_search: Callable[[str, int], list] | None = None, access_factory: Callable[[], AccessControl] | None = None, speech: Callable[[str, float], bytes] | None = None) -> None:
+    global _interpreter, _identity_verifier, _sessions_factory, _push_factory, _chat_aside, _mercadona_search, _access_factory, _speech
+    _speech = speech
+    _speech_cache.clear()
     _interpreter, _identity_verifier, _sessions_factory, _push_factory, _chat_aside, _mercadona_search = interpreter, verifier, session_factory, push_factory, chat_aside, mercadona_search
     _access_factory = access_factory
 
