@@ -166,8 +166,15 @@ Para
 preguntas sobre la agenda usa calendar.query. En una consulta de intervalo,
 como «qué tengo la semana que viene», usa rangeStart y rangeEnd en formato
 YYYY-MM-DD, con el inicio inclusivo y el fin exclusivo. En calendar.query,
-title debe ser null: la pregunta completa nunca es el título de un evento ni
-un filtro de texto. Para «pasa la cena con
+title debe ser null: la pregunta completa nunca es el título de un evento.
+Si la pregunta es sobre un evento o una persona concretos («¿cuándo es la cena
+con Vicente?», «¿a qué hora tengo el dentista?», «¿tengo algo con Laura esta
+semana?»), usa calendar.query con target.title = el criterio más corto que lo
+identifica («Vicente», «dentista», «Laura»), sin categorías genéricas como
+cena, cita o reunión salvo que sean lo único distintivo; pon periodo solo si se
+dice uno. Si la pregunta es sobre algo que la persona apuntó o le contaron
+(«¿qué me dijo Luis del presupuesto?», «¿qué apunté sobre el wifi?»), usa
+note.query con noteQuery = las palabras clave («Luis presupuesto», «wifi»). Para «pasa la cena con
 Vicente para el lunes que viene», target debe identificar «Cena con Vicente»
 y changes debe contener la nueva fecha; nunca uses esa nueva fecha para buscar
 el evento antiguo. Si una orden de creación contiene «en» seguido de un
@@ -714,7 +721,9 @@ def validate_interpretation(raw: Any) -> dict[str, Any]:
     # Gemini puede completar campos auxiliares que no aplican a la intención
     # solicitada. No dejamos que esos datos inofensivos conviertan una orden
     # válida de recordatorio en un fallo global de interpretación.
-    if result["intent"] not in {"calendar.update", "calendar.delete", "task.complete", "reminder.query"}:
+    # calendar.query admite target: «¿Cuándo es la cena con Vicente?» busca
+    # «Vicente» en la agenda en lugar de listar un periodo entero.
+    if result["intent"] not in {"calendar.update", "calendar.delete", "task.complete", "reminder.query", "calendar.query"}:
         result["target"] = None
     if result["intent"] != "calendar.update":
         result["changes"] = None

@@ -824,11 +824,6 @@
   },
   {
    "cat": "consulta",
-   "text": "¿Cuándo es la cena con Vicente?",
-   "intent": "calendar.query"
-  },
-  {
-   "cat": "consulta",
    "text": "¿Qué recordatorios tengo?",
    "intent": "reminder.query"
   },
@@ -960,6 +955,76 @@
    "text": "Ya no voy a la boda de Pedro, cancélala",
    "intent": "calendar.delete",
    "target_incluye": "pedro"
+  },
+  {
+   "cat": "pregunta",
+   "text": "¿Cuándo es la cena con Vicente?",
+   "intent": "calendar.query",
+   "target_incluye": "vicente"
+  },
+  {
+   "cat": "pregunta",
+   "text": "¿A qué hora tengo el dentista?",
+   "intent": "calendar.query",
+   "target_incluye": "dentista"
+  },
+  {
+   "cat": "pregunta",
+   "text": "¿Cuándo es la reunión con Pedro?",
+   "intent": "calendar.query",
+   "target_incluye": "pedro"
+  },
+  {
+   "cat": "pregunta",
+   "text": "¿Tengo algo con Laura esta semana?",
+   "intent": "calendar.query",
+   "target_incluye": "laura",
+   "rangeStart": [
+    "2026-09-21",
+    "2026-09-23"
+   ]
+  },
+  {
+   "cat": "pregunta",
+   "text": "¿Cuándo tengo la próxima cita con el médico?",
+   "intent": "calendar.query",
+   "target_incluye": "medico"
+  },
+  {
+   "cat": "pregunta",
+   "text": "¿Qué día es la boda de Pedro?",
+   "intent": "calendar.query",
+   "target_incluye": "boda"
+  },
+  {
+   "cat": "pregunta",
+   "text": "¿Qué me dijo Luis del presupuesto?",
+   "intent": "note.query",
+   "notequery_incluye": "presupuesto"
+  },
+  {
+   "cat": "pregunta",
+   "text": "¿Qué apunté sobre el código del portal?",
+   "intent": "note.query",
+   "notequery_incluye": "portal"
+  },
+  {
+   "cat": "pregunta",
+   "text": "¿Dónde apunté la contraseña del wifi?",
+   "intent": "note.query",
+   "notequery_incluye": "wifi"
+  },
+  {
+   "cat": "pregunta",
+   "text": "¿Tengo recordatorios con Pedro?",
+   "intent": "reminder.query",
+   "target_incluye": "pedro"
+  },
+  {
+   "cat": "pregunta",
+   "text": "¿Cuánto me debe Juan?",
+   "intent": "note.query",
+   "notequery_incluye": "juan"
   }
  ]
 }

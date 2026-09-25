@@ -1,5 +1,15 @@
 # Changelog
 
+## V0.24.1 · Pregúntale por tus cosas
+
+Angeli ya contesta preguntas sobre tu agenda y tus notas, no solo ejecuta órdenes:
+- **«¿Cuándo es la cena con Vicente?»**, «¿A qué hora tengo el dentista?», «¿Tengo algo con Laura esta semana?»: la IA extrae el tema («Vicente», «dentista», «Laura») y la búsqueda en Calendar lo usa. Antes solo se buscaba por tema al cambiar o cancelar, y una pregunta así listaba un periodo entero.
+- **Respuesta directa** arriba de la lista: «“Cena con Vicente” es el sábado 26 de septiembre a las 21:00, en Casa Pepe.», «Tienes 2 cosas: …», «No tienes nada en ese periodo.». En el **modo conversación** te la dice en voz alta y sigue escuchando.
+- **Notas: «¿Qué me dijo Luis del presupuesto?»** encuentra la nota aunque las palabras no vayan seguidas («Luis me comentó que el presupuesto…»), sin inventar coincidencias.
+- **Examen**: 11 preguntas nuevas (150 frases); la IA acierta las 11 y el total queda en 97 %. Los 4 fallos restantes los corrige la red local del móvil.
+- **Requiere redesplegar Cloud Run** (el servidor conserva el tema de la pregunta).
+- Tests: `tests/preguntas.test.mjs`, `test_interpreter_quality.py` (257 pruebas en el frontend).
+
 ## V0.24.0 · Un cerebro más listo, medido con un examen
 
 - **Examen del intérprete** (`backend/eval/`): 140 frases genéricas, de las que diría cualquier persona (recordatorios, eventos, llamadas, WhatsApp, notas, tareas, consultas, cambios y cancelaciones). Se corre contra Gemini real con las mismas instrucciones y la misma validación que el servidor, y sirve para medir cada cambio futuro: `GCP_TOKEN=$(gcloud auth print-access-token) python3 eval/run_eval.py <modelo>`.

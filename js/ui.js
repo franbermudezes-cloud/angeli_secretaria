@@ -1,13 +1,14 @@
-import { typeLabel } from "./classifier.js?v=0.24.0";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.24.0";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.24.0";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.24.0";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.24.0";
-import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.24.0";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.24.0";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.24.0";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.24.0";
-import { groupDietarioByDay } from "./dietario.js?v=0.24.0";
+import { typeLabel } from "./classifier.js?v=0.24.1";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.24.1";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.24.1";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.24.1";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.24.1";
+import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.24.1";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.24.1";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.24.1";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.24.1";
+import { groupDietarioByDay } from "./dietario.js?v=0.24.1";
+import { calendarAnswer } from "./agenda.js?v=0.24.1";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -192,7 +193,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.24.0";
+    image.src = "assets/angeli-welcome.gif?v=0.24.1";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -696,7 +697,10 @@ export function createUI({ getMedia }) {
         return;
       }
       const body = result ? entryBody(note) + calendarActions(note, google) : base.body;
-      openModal({ ...base, title, body, actions: result ? [{ label: "Cerrar", kind: "confirm", onClick: closeLayers }] : [{ label: "Ahora no", kind: "secondary", onClick: closeLayers }, { label, kind: "confirm", dataset: { a: "search-calendar", id: note.id } }] });
+      // Respuesta directa arriba (y la que se lee en voz alta en el modo
+      // conversación), en vez del genérico «Angeli ha entendido esto».
+      const answer = intent === "calendar.query" && result && !result.error ? calendarAnswer(note.aiIntent || {}, result) : null;
+      openModal({ ...base, title: answer ? "Tu agenda" : title, ...(answer ? { lead: answer } : {}), body, actions: result ? [{ label: "Cerrar", kind: "confirm", onClick: closeLayers }] : [{ label: "Ahora no", kind: "secondary", onClick: closeLayers }, { label, kind: "confirm", dataset: { a: "search-calendar", id: note.id } }] });
       return;
     }
     showCompletion({ title: "✓ Guardado en Angeli", lead: "Ya está sincronizado en tu conversación.", body: entryBody(note) });
