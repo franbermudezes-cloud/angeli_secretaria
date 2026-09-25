@@ -1,6 +1,6 @@
-import{calendarQueryRange,cleanTemporalText,naturalQueryRange,temporalData}from"./temporal.js?v=0.25.3";
-import{localWhatsApp}from"./whatsapp.js?v=0.25.3";
-import{REMINDER_TRIGGER}from"./keywords.js?v=0.25.3";
+import{calendarQueryRange,cleanTemporalText,naturalQueryRange,temporalData}from"./temporal.js?v=0.25.4";
+import{localWhatsApp}from"./whatsapp.js?v=0.25.4";
+import{REMINDER_TRIGGER}from"./keywords.js?v=0.25.4";
 
 export const VALID_INTENTS=["note","note.query","task.create","task.complete","reminder.create","reminder.query","calendar.create","calendar.query","calendar.update","calendar.delete","contact.call","whatsapp.compose","file.store","photo.store"];
 const SENSITIVE_INTENTS=new Set(["calendar.update","calendar.delete","contact.call","whatsapp.compose"]);
@@ -406,22 +406,22 @@ export function localLinkedCalendarIntent(text="",now=new Date()){
   const eventName=cleanEventTitle.toLowerCase();
   const eventContext=/^(?:boda|cena|reuni[oó]n|comida|cita|fiesta|actuaci[oó]n)\b/i.test(eventName)?`de la ${eventName}`:`del ${eventName}`;
   const context=[eventContext,eventLocation?`en ${eventLocation}`:null].filter(Boolean).join(" ");
-  return{...EMPTY,intent:"calendar.create",confidence:.9,title:cleanEventTitle,date:eventTemporal.scheduledDate,time:eventTemporal.scheduledTime||null,location:eventLocation,linkedReminder:{title:`${reminderTitle.charAt(0).toUpperCase()+reminderTitle.slice(1)} ${context}`,date:dateKey(date),time:eventTemporal.scheduledTime||null},requiresConfirmation:true,missingFields:eventTemporal.scheduledTime?[]:["time"],question:eventTemporal.scheduledTime?null:"¿A qué hora es el evento?"};
+  return{...EMPTY,intent:"calendar.create",confidence:.9,title:cleanEventTitle,date:eventTemporal.scheduledDate,time:eventTemporal.scheduledTime||null,location:eventLocation,linkedReminder:{title:`${reminderTitle.charAt(0).toUpperCase()+reminderTitle.slice(1)} ${context}`,date:dateKey(date),time:eventTemporal.scheduledTime||null},requiresConfirmation:true,missingFields:eventTemporal.scheduledTime?[]:["time"],question:eventTemporal.scheduledTime?null:"¿Y a qué hora es?"};
 }
 
 export function validateIntent(raw){if(!raw||typeof raw!=="object"||Array.isArray(raw))throw new Error("Respuesta IA no válida");const allowed=new Set(["intent","confidence","title","date","time","rangeStart","rangeEnd","location","contactName","phone","notes","noteQuery","noteStatus","noteClassification","target","changes","linkedReminder","requiresConfirmation","missingFields","question"]);if(Object.keys(raw).some(key=>!allowed.has(key)))throw new Error("Campo IA no permitido");if(!VALID_INTENTS.includes(raw.intent))throw new Error("Intent IA no permitido");if(typeof raw.confidence!=="number"||raw.confidence<0||raw.confidence>1)throw new Error("Confianza IA no válida");const normalized={...EMPTY,intent:raw.intent,confidence:raw.confidence,requiresConfirmation:Boolean(raw.requiresConfirmation)};for(const key of["title","location","contactName","phone","notes","noteQuery","question"]){if(raw[key]!==undefined&&raw[key]!==null){if(typeof raw[key]!=="string"||raw[key].length>MAX_TEXT_LENGTH)throw new Error("Texto IA no válido");normalized[key]=raw[key].trim()||null}}if(raw.noteStatus!==undefined&&raw.noteStatus!==null){if(!["pending","done","all"].includes(raw.noteStatus))throw new Error("Estado de nota IA no válido");normalized.noteStatus=raw.noteStatus}for(const key of["date","time","rangeStart","rangeEnd"]){if(raw[key]!==undefined&&raw[key]!==null){if(!isValidTemporal(key,raw[key]))throw new Error("Fecha u hora IA no válida");normalized[key]=raw[key]}}if(normalized.rangeStart&&normalized.rangeEnd&&normalized.rangeStart>=normalized.rangeEnd)throw new Error("Intervalo IA no válido");normalized.target=normalizeTarget(raw.target);normalized.changes=normalizeChanges(raw.changes);normalized.linkedReminder=normalizeLinkedReminder(raw.linkedReminder);normalized.noteClassification=normalizeNoteClassification(raw.noteClassification);normalized.missingFields=normalizeMissingFields(raw.missingFields);normalized.question=normalized.missingFields.length?spanishQuestion(normalized.missingFields,normalized.intent):null;if(SENSITIVE_INTENTS.has(normalized.intent))normalized.requiresConfirmation=true;return normalized}
 
 function spanishQuestion(fields,intent){
   const field=fields[0];
-  if(field==="title")return intent==="reminder.create"?"¿Qué quieres que te recuerde?":"¿Qué título quieres poner al evento?";
-  if(field==="date")return"¿Para qué día es?";
-  if(field==="time")return"¿A qué hora?";
-  if(field==="location")return"¿Dónde es?";
-  if(field==="contactName")return"¿Con quién quieres contactar?";
-  if(field==="phone")return"¿Qué número de teléfono quieres usar?";
-  if(field==="notes")return intent==="whatsapp.compose"?"¿Qué mensaje quieres escribir?":"¿Qué descripción quieres añadir?";
-  if(field==="target")return intent==="calendar.update"?"¿Qué evento quieres modificar?":"¿Qué evento quieres cancelar?";
-  return"¿Qué dato falta?";
+  if(field==="title")return intent==="reminder.create"?"¿Qué quieres que te recuerde?":"¿Cómo le llamo al evento?";
+  if(field==="date")return"¿Y qué día es?";
+  if(field==="time")return"¿Y a qué hora?";
+  if(field==="location")return"¿Y dónde es?";
+  if(field==="contactName")return"¿Con quién quieres hablar?";
+  if(field==="phone")return"¿A qué número?";
+  if(field==="notes")return intent==="whatsapp.compose"?"¿Qué le quieres decir?":"¿Quieres añadir algún detalle?";
+  if(field==="target")return intent==="calendar.update"?"¿Qué evento quieres cambiar?":"¿Qué evento cancelo?";
+  return"¿Me cuentas un poco más?";
 }
 
 function normalizeTarget(target){if(target===undefined||target===null)return null;if(typeof target!=="object"||Array.isArray(target))throw new Error("Objetivo IA no válido");const allowed=new Set(["title","date","time"]);if(Object.keys(target).some(key=>!allowed.has(key)))throw new Error("Objetivo IA no permitido");if(typeof target.title!=="string"||!target.title.trim()||target.title.length>MAX_TEXT_LENGTH)throw new Error("Título objetivo no válido");if(target.date!==null&&target.date!==undefined&&!isValidTemporal("date",target.date))throw new Error("Fecha objetivo no válida");if(target.time!==null&&target.time!==undefined&&!isValidTemporal("time",target.time))throw new Error("Hora objetivo no válida");return{title:target.title.trim(),date:target.date||null,time:target.time||null}}

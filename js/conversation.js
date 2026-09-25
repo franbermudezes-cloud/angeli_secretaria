@@ -255,12 +255,12 @@ function uniqueKnownFields(fields) {
 }
 
 function questionFor(intent, missingFields) {
-  if (intent.intent === "calendar.update" && missingFields.includes("date") && missingFields.includes("time")) return "¿Para qué día u hora quieres cambiarlo?";
-  if (missingFields.includes("date") && missingFields.includes("time")) return "¿Qué día y a qué hora?";
-  if (missingFields.includes("date")) return "¿Qué día quieres hacerlo?";
-  if (missingFields.includes("time")) return "¿A qué hora?";
-  if (missingFields.includes("target")) return "¿Qué evento quieres modificar o cancelar?";
-  if (missingFields.includes("contactName") || missingFields.includes("phone")) return intent.intent === "whatsapp.compose" ? "¿A quién quieres escribir por WhatsApp?" : "¿A quién quieres llamar?";
-  if (missingFields.includes("notes")) return "¿Qué mensaje quieres escribir?";
-  return "¿Puedes darme un poco más de información?";
+  if (intent.intent === "calendar.update" && missingFields.includes("date") && missingFields.includes("time")) return "¿Para cuándo lo cambio?";
+  if (missingFields.includes("date") && missingFields.includes("time")) return "¿Para qué día y a qué hora?";
+  if (missingFields.includes("date")) return "¿Y qué día es?";
+  if (missingFields.includes("time")) return "¿Y a qué hora?";
+  if (missingFields.includes("target")) return "¿De qué evento se trata?";
+  if (missingFields.includes("contactName") || missingFields.includes("phone")) return intent.intent === "whatsapp.compose" ? "¿A quién le escribo?" : "¿A quién llamamos?";
+  if (missingFields.includes("notes")) return "¿Qué le quieres decir?";
+  return "¿Me cuentas un poco más?";
 }

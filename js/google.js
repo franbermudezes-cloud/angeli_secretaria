@@ -1,6 +1,6 @@
-import { cleanTemporalText } from "./temporal.js?v=0.25.3";
-import { calendarDetails } from "./schedule.js?v=0.25.3";
-import { semanticCalendarTarget } from "./ai.js?v=0.25.3";
+import { cleanTemporalText } from "./temporal.js?v=0.25.4";
+import { calendarDetails } from "./schedule.js?v=0.25.4";
+import { semanticCalendarTarget } from "./ai.js?v=0.25.4";
 
 const CLIENT_ID = "172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
@@ -484,7 +484,7 @@ export function createGoogleIntegration({ notify, refresh, setStatus, showConnec
   }
 
   // Antes de proponer un evento nuevo se mira si esa franja ya está ocupada,
-  // para avisar («Ojo: a esa hora ya tienes…») antes de confirmar. Es solo
+  // para avisar («Oye, a esa hora ya tienes…») antes de confirmar. Es solo
   // un aviso: si Calendar no está conectado o falla, se calla y el evento se
   // puede crear igual, como siempre.
   async function checkCalendarClash(note) {

@@ -41,7 +41,7 @@ test("diálogo completo sin IA: «Recuérdame comprar pan» → «mañana» → 
   let turn = resolveConversationTurn({ text: "Recuérdame comprar pan", interpretation: { intent: "reminder.create", source: "ai", title: "Comprar pan", date: null, time: null, missingFields: ["date", "time"], requiresConfirmation: false }, now: now.toISOString() });
   let active = { id: "r1", aiIntent: turn.interpretation, interaction: turn.interaction };
   turn = step(active, "mañana");
-  assert.equal(turn.interaction.question, "¿A qué hora?", "no vuelve a preguntar el día ya dicho");
+  assert.equal(turn.interaction.question, "¿Y a qué hora?", "no vuelve a preguntar el día ya dicho");
   assert.equal(turn.interpretation.title, "Comprar pan", "la respuesta no se convierte en el título");
   active = { id: "r1", aiIntent: turn.interpretation, interaction: turn.interaction };
   turn = step(active, "a las diez");

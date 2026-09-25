@@ -28,6 +28,15 @@ test("el modo conversación dice frases naturales y la voz pasa por el filtro", 
   const ui = readFileSync(new URL("../js/ui.js", import.meta.url), "utf8");
   assert.match(app, /new SpeechSynthesisUtterance\(speechText\(text\)\)/);
   assert.equal((app.match(/ui\.spokenModalText\(\)/g) || []).length, 2, "confirmaciones y resultados");
-  assert.match(ui, /spoken: `Hecho\. \$\{eventPhrase\(note\)\} ya está en tu agenda\.`/);
-  assert.match(ui, /¿Lo apunto en tu agenda\?/);
+  assert.match(ui, /`¡Listo! Ya tienes \$\{eventPhrase\(note\)\} en tu agenda\.`/);
+  assert.match(ui, /Te apunto \$\{eventPhrase\(note\)\} en la agenda\. ¿Te parece bien\?/);
+});
+
+test("frases cercanas: saludo al entrar, muletillas enteras y ofrecer seguir", () => {
+  const app = readFileSync(new URL("../js/app.js", import.meta.url), "utf8");
+  const list = name => JSON.parse(app.match(new RegExp(`const ${name}=(\\[[^\\]]*\\]);`))[1]);
+  for (const phrase of list("CONVERSATION_FILLERS")) assert.ok(phrase.split(" ").length >= 3, `«${phrase}» es demasiado seca`);
+  assert.ok(list("CONVERSATION_GREETINGS").length >= 3);
+  assert.match(app, /await speakAloud\(hello\);\n if\(conversationOn\)startConversationRecognizer\(\);/, "saluda antes de escuchar");
+  assert.ok(list("CONVERSATION_FOLLOWUPS").includes(" ¿Algo más?"));
 });

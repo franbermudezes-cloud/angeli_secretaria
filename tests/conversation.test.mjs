@@ -131,11 +131,11 @@ test('gestor: los tres listados abren fichas editables y conservan scroll',()=>{
 
 test('las preguntas pendientes de Gemini siempre se presentan en español',()=>{
   const event=validateIntent({intent:'calendar.create',confidence:.95,title:null,date:'2026-09-03',time:'18:00',missingFields:['title'],question:'What is the title of the event?',requiresConfirmation:true});
-  assert.equal(event.question,'¿Qué título quieres poner al evento?');
-  assert.equal(validateIntent({...event,missingFields:['date'],question:'What day is it?'}).question,'¿Para qué día es?');
-  assert.equal(validateIntent({...event,missingFields:['time'],question:'What time?'}).question,'¿A qué hora?');
-  assert.equal(validateIntent({...event,missingFields:['location'],question:'Where is it?'}).question,'¿Dónde es?');
-  assert.equal(validateIntent({...event,intent:'contact.call',missingFields:['contactName'],question:'Who?'}).question,'¿Con quién quieres contactar?');
+  assert.equal(event.question,'¿Cómo le llamo al evento?');
+  assert.equal(validateIntent({...event,missingFields:['date'],question:'What day is it?'}).question,'¿Y qué día es?');
+  assert.equal(validateIntent({...event,missingFields:['time'],question:'What time?'}).question,'¿Y a qué hora?');
+  assert.equal(validateIntent({...event,missingFields:['location'],question:'Where is it?'}).question,'¿Y dónde es?');
+  assert.equal(validateIntent({...event,intent:'contact.call',missingFields:['contactName'],question:'Who?'}).question,'¿Con quién quieres hablar?');
 });
 
 test('notas: clasifica sin bloquear y conserva los metadatos en Firestore',()=>{
@@ -311,7 +311,7 @@ test('reprogramar sin hora mantiene el modal y una respuesta corta completa la m
   assert.equal(first.interpretation.intent,'calendar.update');
   assert.equal(first.interpretation.target.title,'Miguel');
   assert.equal(first.interaction.status,INTERACTION_STATUS.AWAITING_INPUT);
-  assert.equal(first.interaction.question,'¿Para qué día u hora quieres cambiarlo?');
+  assert.equal(first.interaction.question,'¿Para cuándo lo cambio?');
   const active={id:'update-miguel',aiIntent:first.interpretation,interaction:first.interaction};
   const answer=localCalendarUpdate('A las once',now,active);
   const second=resolveConversationTurn({active,text:'A las once',interpretation:answer});
@@ -682,7 +682,7 @@ test('cancelar por nombre busca sin exigir día ni hora, incluso si la IA los pi
   assert.equal(parsed.intent, 'calendar.delete');
   assert.equal(parsed.target.title, 'Miguel Ibiza');
   const result = resolveConversationTurn({text:'Anula llamada a Miguel Ibiza',
-    interpretation:{...parsed,source:'ai',missingFields:['date','time'],question:'¿Qué día y a qué hora?'}});
+    interpretation:{...parsed,source:'ai',missingFields:['date','time'],question:'¿Para qué día y a qué hora?'}});
   assert.equal(result.interaction.status,'pending_confirmation');
   assert.deepEqual(result.interaction.missingFields,[]);
   assert.equal(result.interaction.question,null);
@@ -971,7 +971,7 @@ test("una llamada con día pero sin hora se convierte en recordatorio y pregunta
 
   assert.equal(turn.interpretation.intent, "reminder.create");
   assert.deepEqual(turn.interaction.missingFields, ["time"]);
-  assert.equal(turn.interaction.question, "¿A qué hora?");
+  assert.equal(turn.interaction.question, "¿Y a qué hora?");
 });
 
 test("una llamada con hora pero sin día programa la próxima ocurrencia", () => {
@@ -1161,7 +1161,7 @@ test("P05 entiende tienes que avisarme y pregunta la hora sin convertir la orden
   assert.equal(initial.time,null);
   assert.equal(initial.location,"el Complejo San Marcos de Gandía");
   assert.deepEqual(initial.missingFields,["time"]);
-  assert.equal(initial.question,"¿A qué hora es el evento?");
+  assert.equal(initial.question,"¿Y a qué hora es?");
   assert.deepEqual(initial.linkedReminder,{title:"Ir a montar el equipo del disco móvil en el Complejo San Marcos de Gandía",date:"2026-09-04",time:null});
   const first=resolveConversationTurn({text,interpretation:validateIntent(initial),now:"2026-08-27T12:00:00.000Z"});
   assert.equal(first.interaction.status,"awaiting_input");
@@ -1187,7 +1187,7 @@ test("WhatsApp: extrae destinatario y mensaje sin confundirlo con una llamada", 
 test("WhatsApp: pide el mensaje y la respuesta continúa la misma operación", () => {
   const first=resolveConversationTurn({text:"WhatsApp a Pepe",interpretation:validateIntent(localWhatsApp("WhatsApp a Pepe"))});
   assert.deepEqual(first.interaction.missingFields,["notes"]);
-  assert.equal(first.interaction.question,"¿Qué mensaje quieres escribir?");
+  assert.equal(first.interaction.question,"¿Qué le quieres decir?");
   const active={id:"wa-pepe",aiIntent:first.interpretation,interaction:first.interaction};
   const second=resolveConversationTurn({active,text:"Dile que llego a las ocho",interpretation:validateIntent(localWhatsApp("Dile que llego a las ocho",active))});
   assert.equal(second.interpretation.contactName,"Pepe");
