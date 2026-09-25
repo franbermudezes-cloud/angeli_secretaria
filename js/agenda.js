@@ -61,8 +61,8 @@ export function dayBriefing(events = [], now = new Date()) {
 export function clashWarning(events = []) {
   if (!events.length) return "";
   const item = event => `«${event.summary}» a las ${String(event.start).slice(11, 16)}`;
-  if (events.length === 1) return `Ojo: a esa hora ya tienes ${item(events[0])}. ¿Lo añado igual?`;
-  return `Ojo: a esa hora ya tienes ${events.length} cosas: ${events.slice(0, -1).map(item).join(", ")} y ${item(events[events.length - 1])}. ¿Lo añado igual?`;
+  if (events.length === 1) return `Oye, a esa hora ya tienes ${item(events[0])}. ¿Lo apunto igual?`;
+  return `Oye, a esa hora ya tienes ${events.length} cosas: ${events.slice(0, -1).map(item).join(", ")} y ${item(events[events.length - 1])}. ¿Lo apunto igual?`;
 }
 
 export function calendarAnswer(interpretation = {}, result = {}, now = new Date()) {

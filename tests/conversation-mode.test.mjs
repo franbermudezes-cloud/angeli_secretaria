@@ -187,6 +187,8 @@ for (const [name, focusTarget] of [
 // pantalla, sin ese segundo toque.
 const openConversationModeRealSource = app.match(/function openConversationModeReal\(\)\{[\s\S]*?\n\}/)?.[0] || "";
 assert.ok(openConversationModeRealSource, "openConversationModeReal debe existir");
-assert.match(openConversationModeRealSource, /ui\.openConversationMode\(\);\s*startConversationRecognizer\(\);/, "el micrófono debe arrancar solo, nada más abrir la pantalla");
+// Ahora saluda primero y arranca solo en cuanto termina el saludo (sin tocar
+// nada): hablar antes evita que el micrófono recoja la propia voz de Angeli.
+assert.match(openConversationModeRealSource, /ui\.openConversationMode\(\);[\s\S]*await speakAloud\(hello\);\s*if\(conversationOn\)startConversationRecognizer\(\);/, "el micrófono debe arrancar solo tras el saludo, sin otro toque");
 
 console.log("conversation-mode: ok");

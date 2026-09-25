@@ -22,8 +22,8 @@ test("cuenta lo que se pisa y descarta lo que no ocupa esa hora", () => {
 
 test("el aviso suena natural para decirlo en voz alta", () => {
   assert.equal(clashWarning([]), "");
-  assert.equal(clashWarning([{ summary: "Dentista", start: "2026-10-01T21:00:00+02:00" }]), "Ojo: a esa hora ya tienes «Dentista» a las 21:00. ¿Lo añado igual?");
-  assert.equal(clashWarning([{ summary: "Pádel", start: "2026-10-01T20:30:00+02:00" }, { summary: "Dentista", start: "2026-10-01T21:00:00+02:00" }]), "Ojo: a esa hora ya tienes 2 cosas: «Pádel» a las 20:30 y «Dentista» a las 21:00. ¿Lo añado igual?");
+  assert.equal(clashWarning([{ summary: "Dentista", start: "2026-10-01T21:00:00+02:00" }]), "Oye, a esa hora ya tienes «Dentista» a las 21:00. ¿Lo apunto igual?");
+  assert.equal(clashWarning([{ summary: "Pádel", start: "2026-10-01T20:30:00+02:00" }, { summary: "Dentista", start: "2026-10-01T21:00:00+02:00" }]), "Oye, a esa hora ya tienes 2 cosas: «Pádel» a las 20:30 y «Dentista» a las 21:00. ¿Lo apunto igual?");
 });
 
 test("la app comprueba la agenda antes de proponer el evento y muestra el aviso", () => {

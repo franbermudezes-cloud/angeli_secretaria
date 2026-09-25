@@ -64,3 +64,15 @@ class ChatAsideTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AsideToneTests(unittest.TestCase):
+    """Pedido por el propietario: las reacciones sonaban secas. El tono es
+    cálido, pero nunca da la tarea por hecha ni se pasa de confianza."""
+
+    def test_prompt_is_warm_but_never_claims_done(self):
+        prompt = app.ASIDE_SYSTEM_INSTRUCTION
+        self.assertIn("entre 4 y 10 palabras", prompt)
+        self.assertIn("no digas que ya está hecho", prompt)
+        self.assertIn("cariño", prompt)  # prohibido como apelativo
+        self.assertGreaterEqual(app.ASIDE_MAX_OUTPUT_TOKENS, 30)

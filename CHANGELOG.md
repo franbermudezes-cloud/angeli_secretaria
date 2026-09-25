@@ -1,5 +1,17 @@
 # Changelog
 
+## V0.25.4 · Frases más cercanas en el modo conversación
+
+- **Pedido por el propietario**: «las frases cortitas tienen que ser más amigables». Se ha revisado todo lo que Angeli dice en el modo conversación:
+  - **Saludo al entrar**: «¡Hola! Dime, ¿qué necesitas?», «Aquí estoy. ¿En qué te ayudo?»… Después se pone a escuchar sola, sin tocar nada.
+  - **Mientras piensa**: la IA ya no está limitada a 6 palabras secas; reacciona con cercanía y nombra de pasada el tema («Venga, me pongo con lo de Luis.», «Claro, déjame que mire tu semana.»), sin dar nada por hecho, sin horas y sin apelativos. Las frases de reserva también son enteras y cálidas («Claro que sí, dame un segundito.»). Se le da 1,5 s en vez de 0,9 s para que llegue a tiempo.
+  - **Confirmaciones**: «Te apunto «Cena con Marta» el jueves a las nueve de la noche en la agenda. ¿Te parece bien?»; «Vale, te recuerdo … ¿Te parece bien?».
+  - **Al terminar**: «¡Listo! Ya tienes … en tu agenda.», «¡Apuntado! Ya lo tienes guardado.», «¡Genial, uno menos!», y a veces «¿Algo más?».
+  - **Preguntas**: «¿Y a qué hora?», «¿Y qué día es?», «¿A quién llamamos?», «¿A quién le escribo?», «¿Qué le quieres decir?», «¿Me cuentas un poco más?».
+  - **Choque de horario**: «Oye, a esa hora ya tienes «Dentista» a las 21:00. ¿Lo apunto igual?».
+- **Requiere redesplegar Cloud Run** (nuevo tono de `/chat/aside`; probado contra Gemini real con 10 frases, 0,6–0,95 s).
+- Tests: `tests/voz-natural.test.mjs`, `backend/test_chat_aside.py`, y las pruebas de conversación actualizadas.
+
 ## V0.25.3 · «Sí» por voz en el modo conversación
 
 - **Pedido por el propietario**: en el modo conversación, cuando Angeli pregunta «¿Lo apunto en tu agenda?» o «¿Lo programo?», ahora basta con decir **«sí»** (o «vale», «adelante»…). Antes solo volvía a mostrar la pantalla y había que tocar el botón.
