@@ -17,3 +17,8 @@ export async function getMedia(store,id){const db=await openMediaDB();return new
 export async function deleteMedia(store,id){const db=await openMediaDB();return new Promise((resolve,reject)=>{const tx=db.transaction(store,"readwrite");tx.objectStore(store).delete(id);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error)})}
 export function deleteMediaDB(){return new Promise((resolve,reject)=>{const request=indexedDB.deleteDatabase(MEDIA_DB);request.onsuccess=()=>resolve();request.onerror=()=>reject(request.error);request.onblocked=()=>reject(new Error("La base de datos está en uso"))})}
 export async function migrateLegacyImages(notes){let changed=false;for(const note of notes){if(!note.images?.some(image=>typeof image==="string"&&image.startsWith("data:")))continue;const migrated=[];let complete=true;for(const image of note.images){if(!image.startsWith?.("data:")){migrated.push(image);continue}try{const blob=await fetch(image).then(response=>response.blob());const id=crypto.randomUUID();await putMedia(MEDIA_STORES.images,{id,blob,type:blob.type,size:blob.size});migrated.push(id)}catch(e){complete=false;break}}if(complete){note.images=migrated;changed=true}}return changed}
+// Resumen del día: solo recuerda qué día se mostró por última vez en este
+// dispositivo (preferencia local; si no se puede leer, se vuelve a mostrar).
+const DAY_BRIEFING_KEY="angeli_secretaria_day_briefing_v1";
+export function readDayBriefingShown(){try{return localStorage.getItem(DAY_BRIEFING_KEY)}catch(e){return null}}
+export function writeDayBriefingShown(day){try{localStorage.setItem(DAY_BRIEFING_KEY,day)}catch(e){}}

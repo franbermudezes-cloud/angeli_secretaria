@@ -1,6 +1,6 @@
-import { cleanTemporalText } from "./temporal.js?v=0.25.0";
-import { calendarDetails } from "./schedule.js?v=0.25.0";
-import { semanticCalendarTarget } from "./ai.js?v=0.25.0";
+import { cleanTemporalText } from "./temporal.js?v=0.25.1";
+import { calendarDetails } from "./schedule.js?v=0.25.1";
+import { semanticCalendarTarget } from "./ai.js?v=0.25.1";
 
 const CLIENT_ID = "172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
@@ -500,6 +500,20 @@ export function createGoogleIntegration({ notify, refresh, setStatus, showConnec
     }
   }
 
+  // Lo que queda de hoy en la agenda, para el resumen del día. Devuelve null
+  // si Calendar no está conectado (no se pide conectar ni se avisa de nada).
+  async function todayEvents(now = new Date()) {
+    if (!isConnected("calendar")) return null;
+    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    try {
+      const params = new URLSearchParams({ singleEvents: "true", orderBy: "startTime", maxResults: "20", timeMin: now.toISOString(), timeMax: end.toISOString() });
+      const data = await calendarRequest("GET", `?${params}`);
+      return calendarEventsForIntent(data.items || []);
+    } catch (_) {
+      return null;
+    }
+  }
+
   // Solo vale para la fecha y hora con que se consultó: si luego se corrige
   // la hora, el aviso viejo deja de mostrarse.
   function getClashResult(note) {
@@ -588,6 +602,7 @@ export function createGoogleIntegration({ notify, refresh, setStatus, showConnec
     getContactResult: id => contactResults.get(id),
     getCalendarResult: id => calendarResults.get(id),
     checkCalendarClash,
+    todayEvents,
     getClashResult,
     clearContactResult: id => contactResults.delete(id),
     contactTel
@@ -795,7 +810,8 @@ function calendarCandidate(event) {
     allDay: !event.start?.dateTime,
     location: event.location || "",
     description: event.description || "",
-    htmlLink: event.htmlLink || ""
+    htmlLink: event.htmlLink || "",
+    relatedEventId: event.extendedProperties?.private?.angeliRelatedEventId || ""
   };
 }
 

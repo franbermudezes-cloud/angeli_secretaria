@@ -1,14 +1,14 @@
-import { typeLabel } from "./classifier.js?v=0.25.0";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.25.0";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.25.0";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.25.0";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.25.0";
-import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.25.0";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.25.0";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.25.0";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.25.0";
-import { groupDietarioByDay } from "./dietario.js?v=0.25.0";
-import { calendarAnswer, clashWarning } from "./agenda.js?v=0.25.0";
+import { typeLabel } from "./classifier.js?v=0.25.1";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.25.1";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.25.1";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.25.1";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.25.1";
+import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.25.1";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.25.1";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.25.1";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.25.1";
+import { groupDietarioByDay } from "./dietario.js?v=0.25.1";
+import { calendarAnswer, clashWarning } from "./agenda.js?v=0.25.1";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -193,7 +193,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.25.0";
+    image.src = "assets/angeli-welcome.gif?v=0.25.1";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -216,6 +216,12 @@ export function createUI({ getMedia }) {
     else $("modalBody").replaceChildren(workingBody(body));
     $("actionModal").classList.add("working-modal");
     $("modalActions").innerHTML = "";
+  }
+
+  // Resumen del día: una frase y un solo botón; la agenda completa sigue
+  // estando a una pregunta de distancia.
+  function showDayBriefing(text) {
+    openModal({ title: "Tu día", lead: text, body: "", actions: [{ label: "Vale", kind: "confirm", onClick: closeLayers }] });
   }
 
   function showCompletion({ title, lead, body = "" }) {
@@ -1635,7 +1641,7 @@ export function createUI({ getMedia }) {
     $("conversationModeTranscript").scrollTop = $("conversationModeTranscript").scrollHeight;
   }
 
-  return { $, notify, setGoogleStatus, setPushStatus, setSyncStatus, showConnectionHealth, showNotificationSettings, render, openMediaLibrary, renderMediaLibrary, closeMediaLibrary, openNoteLibrary, renderNoteLibrary, closeNoteLibrary, openDietario, renderDietario, closeDietario, showDietarioDetail, openShoppingList, closeShoppingList, renderShoppingOverview, renderShoppingDetail, renderShoppingCart, renderShoppingPurchases, showPurchaseDetail, hideShoppingSuggestions, showShoppingSuggestionsMessage, renderShoppingSuggestions, setShoppingFallback, showShoppingAddConfirm, renderShoppingConfirmResults, setShoppingConfirmStatus, showShoppingListChoice, showShoppingStoreChoice, showShoppingNamePrompt, showShoppingDeleteConfirm, showShoppingClearConfirm, showShoppingRemoveMarkedConfirm, showShortcutEditor, showTextPrompt, showConfirm, showAdminPanel, showMediaViewer, closeMediaViewer, showMediaEntryDetail, showImagePreview, showEntryAction, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showMediaContextEditor, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome, openConversationMode, closeConversationMode, setConversationStatus, addConversationTurn };
+  return { $, notify, setGoogleStatus, setPushStatus, setSyncStatus, showConnectionHealth, showNotificationSettings, render, openMediaLibrary, renderMediaLibrary, closeMediaLibrary, openNoteLibrary, renderNoteLibrary, closeNoteLibrary, openDietario, renderDietario, closeDietario, showDietarioDetail, openShoppingList, closeShoppingList, renderShoppingOverview, renderShoppingDetail, renderShoppingCart, renderShoppingPurchases, showPurchaseDetail, hideShoppingSuggestions, showShoppingSuggestionsMessage, renderShoppingSuggestions, setShoppingFallback, showShoppingAddConfirm, renderShoppingConfirmResults, setShoppingConfirmStatus, showShoppingListChoice, showShoppingStoreChoice, showShoppingNamePrompt, showShoppingDeleteConfirm, showShoppingClearConfirm, showShoppingRemoveMarkedConfirm, showShortcutEditor, showTextPrompt, showConfirm, showAdminPanel, showMediaViewer, closeMediaViewer, showMediaEntryDetail, showImagePreview, showEntryAction, showDayBriefing, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showMediaContextEditor, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome, openConversationMode, closeConversationMode, setConversationStatus, addConversationTurn };
 }
 
 function esc(value) {

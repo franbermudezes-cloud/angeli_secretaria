@@ -41,6 +41,21 @@ export function spokenWhen(event, now = new Date()) {
   return `${day} a las ${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`;
 }
 
+// Resumen del día, la primera vez que se abre Angeli cada día. Los avisos
+// que Angeli crea junto a un evento no se cuentan dos veces.
+export function dayBriefing(events = [], now = new Date()) {
+  const hour = now.getHours();
+  const greeting = hour < 14 ? "Buenos días" : hour < 21 ? "Buenas tardes" : "Buenas noches";
+  const items = events.filter(event => !event.relatedEventId);
+  const later = hour < 14 ? "Hoy" : "Lo que queda de hoy";
+  if (!items.length) return `${greeting}. ${hour < 14 ? "Hoy no tienes nada en la agenda" : "No te queda nada más en la agenda por hoy"}.`;
+  const when = event => event.allDay ? "todo el día" : `a las ${String(event.start).slice(11, 16)}`;
+  const item = event => `«${event.summary}» ${when(event)}`;
+  if (items.length === 1) return `${greeting}. ${later} tienes ${item(items[0])}.`;
+  if (items.length <= 4) return `${greeting}. ${later} tienes ${items.length} cosas: ${items.slice(0, -1).map(item).join(", ")} y ${item(items[items.length - 1])}.`;
+  return `${greeting}. ${later} tienes ${items.length} cosas. La primera, ${item(items[0])}.`;
+}
+
 // Aviso cuando el evento nuevo coincide con algo que ya está en la agenda.
 // Se dice en voz alta en el modo conversación, así que va en frase natural.
 export function clashWarning(events = []) {
