@@ -93,6 +93,7 @@ def check(case: dict, result: dict) -> list[str]:
     if "notes_incluye" in case: contains("notes_incluye", result.get("notes"))
     if "location_incluye" in case: contains("location_incluye", result.get("location"))
     if "target_incluye" in case: contains("target_incluye", (result.get("target") or {}).get("title"))
+    if "notequery_incluye" in case: contains("notequery_incluye", result.get("noteQuery"))
     if "missing_incluye" in case and case["missing_incluye"] not in (result.get("missingFields") or []):
         problems.append(f"falta pedir {case['missing_incluye']!r} (missingFields={result.get('missingFields')})")
     return problems

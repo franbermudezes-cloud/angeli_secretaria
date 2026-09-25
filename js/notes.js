@@ -119,8 +119,16 @@ function noteScore(entry, query, requested) {
   if (title.includes(query) || relation.includes(query) || category.includes(query)) return 6;
   if (tags.some(tag => tag === query)) return 5;
   if (text.includes(query) || purpose.includes(query) || tags.some(tag => tag.includes(query))) return 3;
+  // «¿Qué me dijo Luis del presupuesto?» -> «Luis presupuesto»: las palabras no
+  // van seguidas en la nota («Luis me comentó que el presupuesto…»). Basta con
+  // que aparezcan todas las palabras con contenido en algún campo de la nota.
+  const words = query.split(/\s+/).filter(word => word.length > 2 && !STOP_WORDS.has(word));
+  const haystack = [title, text, category, relation, purpose, ...tags].join(" ");
+  if (words.length > 1 && words.every(word => haystack.includes(word))) return 2;
   return 0;
 }
+
+const STOP_WORDS = new Set(["que", "del", "las", "los", "una", "uno", "unos", "unas", "con", "para", "por", "sobre", "como", "donde", "cuando", "esta", "este", "eso", "esa", "dijo", "apunte", "tengo", "nota", "notas"]);
 
 function isUnfiltered(value) {
   return value.scope === "general" && value.relationType === "none" && !value.purpose && !value.tags.length;

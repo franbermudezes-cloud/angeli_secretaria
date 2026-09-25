@@ -1,6 +1,6 @@
-import { cleanTemporalText } from "./temporal.js?v=0.24.0";
-import { calendarDetails } from "./schedule.js?v=0.24.0";
-import { semanticCalendarTarget } from "./ai.js?v=0.24.0";
+import { cleanTemporalText } from "./temporal.js?v=0.24.1";
+import { calendarDetails } from "./schedule.js?v=0.24.1";
+import { semanticCalendarTarget } from "./ai.js?v=0.24.1";
 
 const CLIENT_ID = "172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
@@ -707,7 +707,9 @@ export function buildCalendarSearch(interpretation = {}, intent = "calendar.quer
     timeMin: range.from.toISOString(),
     timeMax: range.to.toISOString()
   });
-  const query = intent === "calendar.query" ? "" : calendarTargetQuery(target.title);
+  // Una pregunta sobre algo concreto («¿cuándo es la cena con Vicente?») busca
+  // por su tema; una pregunta de periodo («¿qué tengo mañana?») no lleva texto.
+  const query = intent === "calendar.query" ? (target.title ? calendarTargetQuery(target.title) : "") : calendarTargetQuery(target.title);
   if (query) params.set("q", query);
   return {
     params,

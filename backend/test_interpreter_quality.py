@@ -94,6 +94,11 @@ class PromptTests(unittest.TestCase):
         aside = source.split("def vertex_chat_aside(", 1)[1].split("\ndef ", 1)[0]
         self.assertIn("model=ASIDE_MODEL", aside, "la frase de reacción sigue en el modelo rápido")
 
+    def test_agenda_question_keeps_its_topic(self):
+        # «¿Cuándo es la cena con Vicente?» busca «Vicente», no lista un periodo.
+        result = app.validate_interpretation(base(intent="calendar.query", target={"title": "Vicente", "date": None, "time": None}))
+        self.assertEqual(result["target"]["title"], "Vicente")
+
     def test_single_day_query_date_becomes_a_one_day_range(self):
         # «¿Qué tengo mañana?»: Gemini daba `date` y la app buscaba 90 días.
         result = app.validate_interpretation(base(intent="calendar.query", date="2026-09-24"))
