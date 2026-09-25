@@ -1378,3 +1378,42 @@ La activación real del dispositivo se confirmó porque Ajustes mostraba «Aviso
 - Cada pendiente puede generar aviso anticipado, puntual y posterior. El posterior solo se entrega mientras la entrada siga pendiente; los tipos pueden activarse por separado.
 - El servidor desplaza o descarta avisos dentro del horario de descanso según la preferencia de la cuenta. Al guardar ajustes, la PWA vuelve a programar las entradas pendientes.
 - La desactivación es local al dispositivo y elimina su token FCM del servidor. Los demás dispositivos conservan su estado.
+
+## 2026-09-25 — 3ª auditoría: la IA manda (V0.23.5 – V0.23.10)
+
+Revisión de punta a punta con cinco agentes (backend/prompt, pipeline de
+interpretación, fechas y horas, conversación a varios turnos y regresiones de
+V0.23.x), verificando cada hallazgo con el código real antes de corregirlo.
+
+Decisión de fondo que debe mantenerse: **cuando la IA responde con confianza,
+las reglas locales solo rellenan huecos; nunca cambian la intención ni pisan
+datos que la IA ya dio.** La causa principal de que la IA «no estuviera fina»
+era justo lo contrario: en una batería de 52 órdenes, 30 respuestas correctas de
+Gemini acababan mal por reglas locales (`localCalendarUpdate`, fusión de
+`changes`, `explicitRelativeDate`, consultas por un «que» suelto, llamadas
+inmediatas…). Una regla local solo puede imponerse cuando la IA falla o cuando
+su disparador es inequívoco (p. ej. «Envía un WhatsApp a…»).
+
+Otras decisiones:
+- El intérprete corre a `temperature=0` y recibe la hora **local**, el día de la
+  semana y un calendario de 15 días; el cliente envía `now` con desfase, no UTC.
+- `target.time` admite `null`; la validación corrige formatos en vez de rechazar
+  toda la respuesta (cada 503 hacía caer al respaldo local, mucho peor).
+- El cupo de invitados solo lo consume `/interpret` tras una interpretación
+  válida (ni errores, ni Mercadona, ni la frase de reacción).
+- `js/temporal.js` se reescribió legible; si se dicen dos días gana el primero;
+  sin franja, de 1 a 6 es por la tarde y 12 es mediodía.
+- Conversación: «sí/no» son frase completa y «sí» solo ABRE la confirmación
+  (una acción sensible nunca se ejecuta por voz); una respuesta de la IA de otra
+  familia es una entrada nueva y la pendiente se cancela; lo ya recogido
+  completa la respuesta antes de normalizar.
+- Dictado móvil: reinicio con límite (~1 min de silencio), cada enunciado se suma
+  una vez al cerrar su sesión y el reconocedor descartado tras Enviar no escribe.
+- CI: la puerta ejecuta ahora todas las suites del frontend y las de multiusuario
+  (ocho existían sin que ningún paso las ejecutase).
+
+Pendiente de acción del propietario: la autorización de pruebas de
+`buengusto.es@gmail.com` caducó (el arnés falla con «La autorización guardada ha
+caducado o fue revocada» y bloquea todos los PR); se renueva en
+`tests/test-auth.html`. Tras fusionar, redesplegar Cloud Run (lotes 2 y
+multiusuario) y publicar `firestore.rules`.
