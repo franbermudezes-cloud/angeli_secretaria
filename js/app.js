@@ -1,25 +1,26 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts,readShortcutsHidden,writeShortcutsHidden,readDayBriefingShown,writeDayBriefingShown}from"./storage.js?v=0.25.1";
-import{classify,actionData}from"./classifier.js?v=0.25.1";
-import{sendEntry}from"./sheets.js?v=0.25.1";
-import{createUI}from"./ui.js?v=0.25.1";
-import{createGoogleIntegration}from"./google.js?v=0.25.1";
-import{interpret,remoteProvider,chatAside,protectQueryRange,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,activeIntentDomain,explicitNewCommandDomain,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.25.1";
-import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,setShoppingListStore,isMercadonaList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.25.1";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.25.1";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.25.1";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime,calendarDetails}from"./schedule.js?v=0.25.1";
-import{createCloudSync}from"./firebase.js?v=0.25.1";
-import{createMediaService}from"./media.js?v=0.25.1";
-import{cancelInteraction,completeFromCollected,completeInteraction,confirmationReply,contextFor,isCancelReply,isNewCommand,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.25.1";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.25.1";
-import{createAgendaActions,dayBriefing}from"./agenda.js?v=0.25.1";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.25.1";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.25.1";
-import{DEFAULT_SHORTCUTS,SHORTCUT_PRESETS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.25.1";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.25.1";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.25.1";
-import{mediaLibraryItems}from"./media-library.js?v=0.25.1";
-import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.25.1";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts,readShortcutsHidden,writeShortcutsHidden,readDayBriefingShown,writeDayBriefingShown}from"./storage.js?v=0.25.2";
+import{classify,actionData}from"./classifier.js?v=0.25.2";
+import{sendEntry}from"./sheets.js?v=0.25.2";
+import{createUI}from"./ui.js?v=0.25.2";
+import{createGoogleIntegration}from"./google.js?v=0.25.2";
+import{interpret,remoteProvider,chatAside,protectQueryRange,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,activeIntentDomain,explicitNewCommandDomain,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.25.2";
+import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,setShoppingListStore,isMercadonaList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.25.2";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.25.2";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.25.2";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime,calendarDetails}from"./schedule.js?v=0.25.2";
+import{createCloudSync}from"./firebase.js?v=0.25.2";
+import{createMediaService}from"./media.js?v=0.25.2";
+import{cancelInteraction,completeFromCollected,completeInteraction,confirmationReply,contextFor,isCancelReply,isNewCommand,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.25.2";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.25.2";
+import{createAgendaActions,dayBriefing}from"./agenda.js?v=0.25.2";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.25.2";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.25.2";
+import{DEFAULT_SHORTCUTS,SHORTCUT_PRESETS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.25.2";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.25.2";
+import{speechText}from"./speech.js?v=0.25.2";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.25.2";
+import{mediaLibraryItems}from"./media-library.js?v=0.25.2";
+import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.25.2";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,finalText="",pendingImages=[],pendingFiles=[],pendingMediaContext=null,selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -339,7 +340,7 @@ async function add({interactionId=null,shortcut=null}={}){
    // «Sí» abre la confirmación para pulsarla: una acción sensible (llamar,
    // cancelar un evento…) nunca se ejecuta solo por voz (AGENTS.md).
    if(reply==="yes"){clearComposer();ui.showEntryAction(active,google);return}
-   if(reply==="no"){await saveConfirmed(notes.map(item=>item.id===active.id?cancelInteraction(item):item));clearComposer();ui.closeLayers();ui.notify("Operación cancelada");return}
+   if(reply==="no"){await saveConfirmed(notes.map(item=>item.id===active.id?cancelInteraction(item):item));clearComposer();ui.closeLayers();ui.notify("Vale, lo dejo");return}
    ui.showEntryAction(active,google);return;
  }
  const now=new Date(),images=[],files=[],hasMedia=Boolean(pendingImages.length||pendingFiles.length);let id=active?.id||crypto.randomUUID(),mediaUploaded=false;if(rec)rec.discarded=true;stopStrayDictation();saving=true;setSending(true);ui.showWorking("Procesando tu instrucción","Angeli ha recibido tu petición.","Un momento, no pulses Enviar otra vez.");try{
@@ -476,7 +477,7 @@ async function resolveReminderQuery(interpretation){
  const showDetail=entry=>ui.showReminderDetail(entry,{onBack:reopen,onEdit:()=>ui.showReminderEditor(entry,{onCancel:()=>showDetail(entry),onSave:async values=>{let next=updateCalendarDetails(entry,"title",values.title);next=updateCalendarDetails(next,"location",values.location);next=updateCalendarDetails(next,"description",values.description);next=updateCalendarDateTime(next,values.date,values.time);ui.showWorking("Actualizando recordatorio","Guardando los cambios en Angeli y Calendar…","");if(await google.updateScheduledReminder(next)&&await saveConfirmed(notes.map(item=>item.id===entry.id?next:item)))showDetail(next);else showDetail(entry)}}),onComplete:finishPending,onCancel:()=>ui.showReminderCancellation(entry)});
  ui.showReminderResults(matches,interpretation.target?.title||"",{onSelect:showDetail})
 }
-async function cancelActive(entry){await saveConfirmed(notes.map(item=>item.id===entry.id?cancelInteraction(item):item));ui.closeLayers();ui.notify("Operación cancelada")}
+async function cancelActive(entry){await saveConfirmed(notes.map(item=>item.id===entry.id?cancelInteraction(item):item));ui.closeLayers();ui.notify("Vale, lo dejo")}
 function localInterpretation(text,type,active=null){const query=localReminderQuery(text);if(query&&!active)return query;const reminder=type==="reminder"&&!active,data={...actionData(text,type),...temporalData(text,new Date(),{inferDateFromTime:reminder})},isCompletion=/\b(?:ya\s+)?he\s+(?:llamado|terminado|completado|hecho)\b/i.test(text),isCalendarQuery=/\b(?:qué|que)\s+(?:tengo|hay)|\b(?:muéstrame|muestrame|consulta)\s+(?:mi\s+)?(?:agenda|calendario)\b/i.test(text),futureCall=type==="contact"&&Boolean(data.scheduledDate||data.scheduledTime),intent=isCompletion?"task.complete":isCalendarQuery?"calendar.query":futureCall?"reminder.create":{note:"note",task:"task.create",reminder:"reminder.create",calendar:"calendar.create",contact:"contact.call",file:"file.store",photo:"photo.store"}[type]||"note";return{intent,confidence:.5,title:text||null,date:data.scheduledDate||null,time:data.scheduledTime||null,...(isCalendarQuery?(calendarQueryRange(text)||{}):{}),location:null,contactName:data.contactQuery||null,phone:data.phone||null,notes:null,target:isCompletion?{title:completionTarget(text)||text,date:null,time:null}:null,changes:null,missingFields:[],question:null,requiresConfirmation:Boolean(data.scheduledDate&&data.scheduledTime)}}
 function setMicState(active){$("mic").classList.toggle("listening",active);$("micMini").classList.toggle("listening",active);$("shoppingMic")?.classList.toggle("listening",active);document.querySelectorAll(".conversation-mic,.modal-actions .voice").forEach(button=>{button.classList.toggle("listening",active);button.textContent=active?"🎙️ Escuchando…":"🎙️ Hablar"});$("micLabel").textContent=active?"Escuchando… toca otra vez para parar":"Toca para hablar"}
 function stop(){dictationMic.set(false);if(rec){try{rec.stop()}catch(e){}}rec=null;setMicState(false);$("hint").textContent="Dictado terminado. Puedes continuar o pulsar Enviar cuando acabes.";autosize()}
@@ -645,7 +646,7 @@ function speakAloud(text){
   if(!text||!("speechSynthesis"in window)){resolve();return}
   try{
    window.speechSynthesis.cancel();
-   const utter=new SpeechSynthesisUtterance(text);
+   const utter=new SpeechSynthesisUtterance(speechText(text));
    utter.lang="es-ES";
    const voice=selectedVoice();
    if(voice)utter.voice=voice;
@@ -709,7 +710,7 @@ function watchForModalClose(onClose){
 async function conversationHandleOutcome(){
  const kind=conversationModalKind();
  if(kind==="completion"){
-  const spoken=[$("modalTitle").textContent,$("modalLead").textContent].filter(Boolean).join(". ");
+  const spoken=ui.spokenModalText()||[$("modalTitle").textContent,$("modalLead").textContent].filter(Boolean).join(". ");
   ui.addConversationTurn("angeli",spoken);
   ui.setConversationStatus("Angeli está hablando…");
   await speakAloud(spoken);
@@ -768,7 +769,10 @@ async function conversationHandleOutcome(){
   const lead=$("modalLead").textContent||"";
   const primaryButton=$("modalActions").querySelector("button.confirm, button.danger");
   const primaryLabel=primaryButton?.textContent?.trim();
-  const spoken=[title,lead].filter(Boolean).join(". ")+(primaryLabel?` Toca «${primaryLabel}» para continuar.`:" Toca en la pantalla para continuar.");
+  // Si el modal trae una frase natural para decir, se usa esa en vez de leer
+  // el título y la explicación como un formulario.
+  const natural=ui.spokenModalText();
+  const spoken=natural?`${natural}${primaryLabel?` Toca ${primaryLabel}.`:""}`:[title,lead].filter(Boolean).join(". ")+(primaryLabel?` Toca «${primaryLabel}» para continuar.`:" Toca en la pantalla para continuar.");
   ui.addConversationTurn("angeli",spoken);
   ui.setConversationStatus(primaryLabel?`Toca «${primaryLabel}» para continuar`:"Toca en la pantalla para continuar");
   await speakAloud(spoken);
@@ -1678,7 +1682,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState!=="visible")return;if(Date.now()-lastConnectionCheck>120000)void verifyConnections(true).then(maybeDayBriefing);else void maybeDayBriefing()});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.25.1",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.25.2",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}
