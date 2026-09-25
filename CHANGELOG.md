@@ -1,5 +1,13 @@
 # Changelog
 
+## V0.25.1 · Resumen del día
+
+- **La primera vez que abres Angeli cada día**, te dice lo que tienes en la agenda: «Buenos días. Hoy tienes 2 cosas: «Dentista» a las 17:00 y «Cena con Marta» a las 21:00». Por la tarde habla de «lo que queda de hoy»; si no hay nada, también lo dice.
+- Una vez al día por dispositivo, al abrir la app o al volver a ella. Solo si Calendar está conectado y no hay otra ventana abierta; si no puede mostrarse, lo intenta la próxima vez.
+- El aviso que Angeli crea junto a un evento no se cuenta dos veces.
+- Solo lectura de Calendar con el endpoint existente; sin cambios en el servidor.
+- Tests: `tests/resumen-dia.test.mjs`.
+
 ## V0.25.0 · Aviso de choque de horario
 
 - **Angeli se adelanta**: al preparar un evento nuevo con fecha y hora, mira antes en Calendar si esa franja ya está ocupada. Si lo está, la confirmación lo dice claro: «Ojo: a esa hora ya tienes «Dentista» a las 21:00. ¿Lo añado igual?» (también en voz alta en el modo conversación). Si está libre, todo sigue como siempre.
