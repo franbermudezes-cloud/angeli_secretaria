@@ -1,26 +1,26 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts,readShortcutsHidden,writeShortcutsHidden,readDayBriefingShown,writeDayBriefingShown}from"./storage.js?v=0.25.2";
-import{classify,actionData}from"./classifier.js?v=0.25.2";
-import{sendEntry}from"./sheets.js?v=0.25.2";
-import{createUI}from"./ui.js?v=0.25.2";
-import{createGoogleIntegration}from"./google.js?v=0.25.2";
-import{interpret,remoteProvider,chatAside,protectQueryRange,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,activeIntentDomain,explicitNewCommandDomain,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.25.2";
-import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,setShoppingListStore,isMercadonaList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.25.2";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.25.2";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.25.2";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime,calendarDetails}from"./schedule.js?v=0.25.2";
-import{createCloudSync}from"./firebase.js?v=0.25.2";
-import{createMediaService}from"./media.js?v=0.25.2";
-import{cancelInteraction,completeFromCollected,completeInteraction,confirmationReply,contextFor,isCancelReply,isNewCommand,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.25.2";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.25.2";
-import{createAgendaActions,dayBriefing}from"./agenda.js?v=0.25.2";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.25.2";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.25.2";
-import{DEFAULT_SHORTCUTS,SHORTCUT_PRESETS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.25.2";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.25.2";
-import{speechText}from"./speech.js?v=0.25.2";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.25.2";
-import{mediaLibraryItems}from"./media-library.js?v=0.25.2";
-import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.25.2";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts,readShortcutsHidden,writeShortcutsHidden,readDayBriefingShown,writeDayBriefingShown}from"./storage.js?v=0.25.3";
+import{classify,actionData}from"./classifier.js?v=0.25.3";
+import{sendEntry}from"./sheets.js?v=0.25.3";
+import{createUI}from"./ui.js?v=0.25.3";
+import{createGoogleIntegration}from"./google.js?v=0.25.3";
+import{interpret,remoteProvider,chatAside,protectQueryRange,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,activeIntentDomain,explicitNewCommandDomain,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.25.3";
+import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,setShoppingListStore,isMercadonaList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.25.3";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.25.3";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.25.3";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime,calendarDetails}from"./schedule.js?v=0.25.3";
+import{createCloudSync}from"./firebase.js?v=0.25.3";
+import{createMediaService}from"./media.js?v=0.25.3";
+import{cancelInteraction,completeFromCollected,completeInteraction,confirmationReply,contextFor,isCancelReply,isNewCommand,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.25.3";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.25.3";
+import{createAgendaActions,dayBriefing}from"./agenda.js?v=0.25.3";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.25.3";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.25.3";
+import{DEFAULT_SHORTCUTS,SHORTCUT_PRESETS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.25.3";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.25.3";
+import{speechText}from"./speech.js?v=0.25.3";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.25.3";
+import{mediaLibraryItems}from"./media-library.js?v=0.25.3";
+import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.25.3";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,finalText="",pendingImages=[],pendingFiles=[],pendingMediaContext=null,selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -598,6 +598,9 @@ function openNoteLibraryDetail(entry){ui.closeNoteLibrary();const show=()=>ui.sh
 //    exigen un toque en pantalla incluso dictando por el compositor normal;
 //    en modo conversación pausamos el micrófono, lo anunciamos y reanudamos
 //    solos en cuanto ese modal se cierra.
+// Botón «confirmar» del modal abierto que espera un «sí/no» dicho en voz alta.
+let conversationConfirm=null;
+const VOICE_CONFIRM_ACTIONS=new Set(["calendar","calendar-bundle","schedule"]);
 let conversationAsideAllowed=false,conversationSilences=0,conversationOn=false,conversationListening=false,conversationBusy=false,conversationRec=null,conversationTurnDispatched=false,conversationModalObserver=null,conversationManualStop=false;
 
 function conversationModalKind(){
@@ -772,11 +775,17 @@ async function conversationHandleOutcome(){
   // Si el modal trae una frase natural para decir, se usa esa en vez de leer
   // el título y la explicación como un formulario.
   const natural=ui.spokenModalText();
-  const spoken=natural?`${natural}${primaryLabel?` Toca ${primaryLabel}.`:""}`:[title,lead].filter(Boolean).join(". ")+(primaryLabel?` Toca «${primaryLabel}» para continuar.`:" Toca en la pantalla para continuar.");
+  // Pedido por el propietario: en el modo conversación, un «sí» dicho en voz
+  // alta confirma igual que tocar el botón. Solo para crear un evento o
+  // programar un aviso; lo demás (borrar, llamar, ajustes…) sigue pidiendo tocar.
+  const confirmable=primaryButton?.classList.contains("confirm")&&VOICE_CONFIRM_ACTIONS.has(primaryButton.dataset.a)?primaryButton:null;
+  const ask=confirmable?(/[?]$/.test(natural||"")?"":" ¿Lo hago? Dime sí o no."):(primaryLabel?` Toca «${primaryLabel}» para continuar.`:" Toca en la pantalla para continuar.");
+  const spoken=natural?`${natural}${ask}`:[title,lead].filter(Boolean).join(". ")+ask;
   ui.addConversationTurn("angeli",spoken);
-  ui.setConversationStatus(primaryLabel?`Toca «${primaryLabel}» para continuar`:"Toca en la pantalla para continuar");
+  ui.setConversationStatus(confirmable?"Dime sí o no":primaryLabel?`Toca «${primaryLabel}» para continuar`:"Toca en la pantalla para continuar");
   await speakAloud(spoken);
-  watchForModalClose(()=>{if(conversationOn)resumeConversationListening()});
+  watchForModalClose(()=>{conversationConfirm=null;if(conversationOn)resumeConversationListening()});
+  if(confirmable&&confirmable.isConnected){conversationConfirm=confirmable;resumeConversationListening()}
   return;
  }
  const toast=$("toast");
@@ -789,6 +798,7 @@ async function conversationHandleOutcome(){
 }
 
 async function conversationRunTurn(text){
+ if(await conversationAnswerConfirm(text))return;
  conversationBusy=true;
  ui.addConversationTurn("me",text);
  ui.setConversationStatus("Angeli está pensando…");
@@ -805,6 +815,36 @@ async function conversationRunTurn(text){
  // dejaba la reanudación como un no-op silencioso.
  conversationBusy=false;
  await conversationHandleOutcome();
+}
+
+// «Sí» / «no» a la confirmación que Angeli acaba de preguntar en voz alta.
+// «Sí» pulsa el mismo botón que se tocaría (misma acción, mismas
+// comprobaciones); «no» cierra sin hacer nada. Cualquier otra frase sigue su
+// camino normal como orden o corrección.
+async function conversationAnswerConfirm(text){
+ const button=conversationConfirm;
+ conversationConfirm=null;
+ const reply=button&&button.isConnected&&$("actionModal").classList.contains("show")?confirmationReply(text):null;
+ if(!reply)return false;
+ conversationBusy=true;
+ ui.addConversationTurn("me",text);
+ conversationModalObserver?.disconnect();conversationModalObserver=null;
+ if(reply==="no"){ui.closeLayers();ui.notify("Vale, lo dejo")}
+ else{ui.setConversationStatus("Angeli está en ello…");button.click();await waitForConfirmResult(button)}
+ conversationBusy=false;
+ await conversationHandleOutcome();
+ return true;
+}
+
+// Espera a que la acción del botón termine: el botón desaparece y ya no se
+// muestra el «trabajando…» (máximo 30 s).
+async function waitForConfirmResult(button){
+ const started=Date.now();
+ while(Date.now()-started<30000){
+  const modal=$("actionModal");
+  if(!button.isConnected&&!(modal.classList.contains("show")&&modal.classList.contains("working-modal")))return;
+  await new Promise(resolve=>setTimeout(resolve,150));
+ }
 }
 
 function stopConversationRecognizer(){
@@ -861,7 +901,7 @@ function startConversationRecognizer(){
   $("conversationModeMic").classList.remove("listening");
   const manualStop=conversationManualStop;
   conversationManualStop=false;
-  if(!manualStop&&!conversationTurnDispatched&&conversationOn&&!conversationBusy&&conversationModalKind()!=="manual")startConversationRecognizer();
+  if(!manualStop&&!conversationTurnDispatched&&conversationOn&&!conversationBusy&&(conversationModalKind()!=="manual"||conversationConfirm))startConversationRecognizer();
  };
  try{conversationRec.start()}catch(e){ui.setConversationStatus("No se pudo iniciar el micrófono")}
 }
@@ -1682,7 +1722,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState!=="visible")return;if(Date.now()-lastConnectionCheck>120000)void verifyConnections(true).then(maybeDayBriefing);else void maybeDayBriefing()});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.25.2",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.25.3",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}
