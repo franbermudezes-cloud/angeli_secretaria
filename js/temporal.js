@@ -96,6 +96,11 @@ export function calendarQueryRange(text,now=new Date()){
     return range(start,addDays(start,day===0?1:2));
   }
   if(/\b(?:el\s+)?mes\s+que\s+viene\b|\bproximo\s+mes\b/.test(value)){const start=new Date(now.getFullYear(),now.getMonth()+1,1);return range(start,new Date(now.getFullYear(),now.getMonth()+2,1))}
+  // «¿Qué tengo en octubre?», «el mes de octubre», «para noviembre»: el mes
+  // entero (este año si no ha pasado; si no, el que viene). «20 de octubre» es
+  // un día concreto y lo resuelve extractDate más abajo.
+  const month=value.match(new RegExp(`\\b(?:el\\s+)?(?:mes\\s+de|en|para|durante|todo)\\s+(?:el\\s+mes\\s+de\\s+)?(${MONTH_WORDS})\\b(?!\\s+de\\s+\\d)`));
+  if(month){const index=MONTHS[month[1]],year=index<now.getMonth()?now.getFullYear()+1:now.getFullYear();return range(new Date(year,index,1),new Date(year,index+1,1))}
   if(/\b(?:este|del)\s+mes\b/.test(value)){const start=new Date(now.getFullYear(),now.getMonth(),1);return range(start,new Date(now.getFullYear(),now.getMonth()+1,1))}
   const date=extractDate(value,now);
   if(!date)return null;
