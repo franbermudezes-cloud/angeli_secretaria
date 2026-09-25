@@ -1,5 +1,16 @@
 # Changelog
 
+## V0.23.10 · Multiusuario más robusto (3ª auditoría, lote 6)
+
+- **Una persona invitada ya no pierde la sesión por un fallo de red**: abrir la app sin conexión o un arranque lento del servidor cerraban su sesión y tenía que volver a entrar. Ahora solo un «no» explícito del servidor la cierra; los datos siguen protegidos por las reglas de Firestore y la IA se vuelve a comprobar en cada petición.
+- **El panel de administración ya no se reabre solo**: cada vez que un invitado usaba la IA (su contador cambiaba), el panel saltaba encima de lo que hubiera en pantalla y tiraba el menú de opciones o el tope a medio escribir. Ahora solo se actualiza si está a la vista, deja de escuchar al cerrarlo tocando fuera, y cada acción vuelve a la lista.
+- **Invitar a alguien que ya está** avisa en vez de reactivarlo o pasarlo a prueba en silencio.
+- **Un tope vacío se muestra como 40**, igual que lo cuenta el servidor (antes mostraba 0).
+- **Nombres con «&»** ya no aparecen como «&amp;amp;».
+- **Reglas de Firestore**: la colección de invitaciones exige además el correo verificado.
+- Requiere publicar `firestore.rules` (junto con el despliegue pendiente del lote 2).
+- Tests: `tests/admin-audit.test.mjs` (248 pruebas).
+
 ## V0.23.9 · Dictado y accesos directos sin sorpresas (3ª auditoría, lote 5)
 
 Regresiones de mis propios cambios recientes (V0.23.1–0.23.4), halladas ejecutando el `start()` real contra un reconocedor simulado:

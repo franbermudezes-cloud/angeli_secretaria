@@ -1,25 +1,25 @@
-import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts,readShortcutsHidden,writeShortcutsHidden}from"./storage.js?v=0.23.9";
-import{classify,actionData}from"./classifier.js?v=0.23.9";
-import{sendEntry}from"./sheets.js?v=0.23.9";
-import{createUI}from"./ui.js?v=0.23.9";
-import{createGoogleIntegration}from"./google.js?v=0.23.9";
-import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,activeIntentDomain,explicitNewCommandDomain,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.23.9";
-import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,setShoppingListStore,isMercadonaList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.23.9";
-import{entryTypeForIntent,planIntent}from"./intents.js?v=0.23.9";
-import{calendarQueryRange,temporalData}from"./temporal.js?v=0.23.9";
-import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime,calendarDetails}from"./schedule.js?v=0.23.9";
-import{createCloudSync}from"./firebase.js?v=0.23.9";
-import{createMediaService}from"./media.js?v=0.23.9";
-import{cancelInteraction,completeFromCollected,completeInteraction,confirmationReply,contextFor,isCancelReply,isNewCommand,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.23.9";
-import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.23.9";
-import{createAgendaActions}from"./agenda.js?v=0.23.9";
-import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.23.9";
-import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.23.9";
-import{DEFAULT_SHORTCUTS,SHORTCUT_PRESETS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.23.9";
-import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.23.9";
-import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.23.9";
-import{mediaLibraryItems}from"./media-library.js?v=0.23.9";
-import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.23.9";
+import{clearNotes,deleteMediaDB,readShortcuts,writeShortcuts,readShortcutsHidden,writeShortcutsHidden}from"./storage.js?v=0.23.10";
+import{classify,actionData}from"./classifier.js?v=0.23.10";
+import{sendEntry}from"./sheets.js?v=0.23.10";
+import{createUI}from"./ui.js?v=0.23.10";
+import{createGoogleIntegration}from"./google.js?v=0.23.10";
+import{interpret,remoteProvider,chatAside,searchMercadonaProduct,localReminderQuery,localNoteQuery,localCalendarCancellation,localCalendarUpdate,localLinkedCalendarIntent,localImmediateCall,activeIntentDomain,explicitNewCommandDomain,protectCalendarInterpretation,protectContactCallInterpretation,protectReadQuery}from"./ai.js?v=0.23.10";
+import{parseShoppingCommand,parseItemList,addShoppingItems,removeShoppingItems,checkShoppingItems,clearShoppingList,toggleShoppingItem,removeShoppingItemById,setShoppingItemProduct,setShoppingItemQuantity,describeShoppingItems,shoppingListTotal,normalizeShoppingState,getActiveList,findListByName,createShoppingList,renameShoppingList,deleteShoppingList,setActiveShoppingList,setShoppingListStore,isMercadonaList,updateListItems,addCheckedToCart,toggleCartItem,setCartItemQuantity,removeCartItem,finalizePurchase}from"./shopping.js?v=0.23.10";
+import{entryTypeForIntent,planIntent}from"./intents.js?v=0.23.10";
+import{calendarQueryRange,temporalData}from"./temporal.js?v=0.23.10";
+import{normalizeFutureCall,normalizeReminderSchedule,normalizeUndatedCall,deferredCallIntent,scheduleFor,linkedScheduleFor,updateCalendarDetails,updateCalendarDateTime,calendarDetails}from"./schedule.js?v=0.23.10";
+import{createCloudSync}from"./firebase.js?v=0.23.10";
+import{createMediaService}from"./media.js?v=0.23.10";
+import{cancelInteraction,completeFromCollected,completeInteraction,confirmationReply,contextFor,isCancelReply,isNewCommand,resolveConversationTurn,preserveCancellation}from"./conversation.js?v=0.23.10";
+import{completionTarget,completePendingWithCalendar,findPendingMatches,findReminderMatches,markCancelledReminder}from"./pending.js?v=0.23.10";
+import{createAgendaActions}from"./agenda.js?v=0.23.10";
+import{prepareNoteDraft,missingNoteDraftFields,findNoteMatches,noteClassificationFromIntent,removeNoteEntry,updateNoteDraft,updateNoteStatus}from"./notes.js?v=0.23.10";
+import{DEFAULT_NOTE_SETTINGS,addNoteSetting,applyExplicitNoteCategory,normalizeNoteSettings,noteInterpretationContext,removeNoteSetting,renameNoteSetting,settingLabel}from"./note-settings.js?v=0.23.10";
+import{DEFAULT_SHORTCUTS,SHORTCUT_PRESETS,normalizeShortcuts,routeShortcutIntent,shortcutPrefix,shortcutType}from"./shortcuts.js?v=0.23.10";
+import{localWhatsApp,whatsappUrl}from"./whatsapp.js?v=0.23.10";
+import{DEFAULT_NOTIFICATION_SETTINGS,normalizeNotificationSettings}from"./notification-settings.js?v=0.23.10";
+import{mediaLibraryItems}from"./media-library.js?v=0.23.10";
+import{mediaContextComplete,normalizeMediaContext}from"./media-context.js?v=0.23.10";
 
 let media;const ui=createUI({getMedia:(_,id)=>media.getMedia(id)});const $=ui.$;
 let notes=[],rec=null,finalText="",pendingImages=[],pendingFiles=[],pendingMediaContext=null,selectedFilter="all",selectedType="all",shortcutCapture=false,pendingShortcut=null,saving=false,noteDraftSaving=false;
@@ -1392,18 +1392,24 @@ $("aiDisconnect").onclick=cloud.disconnect;
 const ADMIN_DEFAULT_LIMIT=40;
 let adminUnsub=null,adminOpen=false;
 function adminPeriod(){const d=new Date();return`${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}`}
-function toAdminView(person){const mode=person.mode||"trial",status=person.status||"active";const used=person.usagePeriod===adminPeriod()?Math.max(0,Number(person.usageCount)||0):0;const limit=mode==="open"?null:(Number.isFinite(Number(person.monthlyLimit))?Number(person.monthlyLimit):ADMIN_DEFAULT_LIMIT);return{email:person.email,name:person.name||"",status,mode,limit,used}}
+function toAdminView(person){const mode=person.mode||"trial",status=person.status||"active";const used=person.usagePeriod===adminPeriod()?Math.max(0,Number(person.usageCount)||0):0;const limit=mode==="open"?null:(person.monthlyLimit!==null&&person.monthlyLimit!==undefined&&person.monthlyLimit!==""&&Number.isFinite(Number(person.monthlyLimit))?Number(person.monthlyLimit):ADMIN_DEFAULT_LIMIT);return{email:person.email,name:person.name||"",status,mode,limit,used}}
 function refreshOwnerUI(){const owner=Boolean(cloud.session().owner);$("adminSection").hidden=!owner;if(!owner)stopAdmin()}
 function stopAdmin(){if(adminUnsub){adminUnsub();adminUnsub=null}adminOpen=false}
 function openAdminPanel(){
   stopAdmin();adminOpen=true;
-  let people=[];
-  const render=()=>{if(adminOpen)ui.showAdminPanel({people,
-    onInvite:email=>cloud.saveAccessEntry(email,{name:"",status:"active",mode:"trial",monthlyLimit:ADMIN_DEFAULT_LIMIT}).then(()=>ui.notify("Invitación enviada; ya puede entrar")).catch(()=>ui.notify("No se pudo invitar")),
-    onSetMode:(person,mode)=>cloud.saveAccessEntry(person.email,{mode,status:"active"}).then(()=>ui.notify(mode==="open"?"Grifo abierto":"En prueba, con tope")).catch(()=>ui.notify("No se pudo cambiar")),
-    onSetStatus:(person,status)=>cloud.saveAccessEntry(person.email,{status}).then(()=>ui.notify(status==="blocked"?"Acceso cortado":"Acceso reactivado")).catch(()=>ui.notify("No se pudo cambiar")),
-    onSetLimit:(person,limit)=>cloud.saveAccessEntry(person.email,{monthlyLimit:limit,mode:"trial",status:"active"}).then(()=>ui.notify("Tope actualizado")).catch(()=>ui.notify("No se pudo guardar")),
-    onRemove:person=>cloud.removeAccessEntry(person.email).then(()=>ui.notify("Quitado de la lista")).catch(()=>ui.notify("No se pudo quitar")),
+  let people=[],shown=false;
+  // 3ª auditoría: cada escritura de uso de un invitado (el servidor anota su
+  // gasto) disparaba la suscripción y reabría el panel ENCIMA de lo que hubiera
+  // en pantalla, tirando el menú de opciones o el tope a medio escribir. Solo se
+  // redibuja si el panel es lo que se ve; si se cerró tocando fuera, se deja de
+  // escuchar.
+  const panelVisible=()=>$("actionModal").classList.contains("show")&&Boolean($("modalBody").querySelector(".admin-panel"));
+  const render=(force=false)=>{if(!adminOpen)return;if(!force&&shown&&!$("actionModal").classList.contains("show")){stopAdmin();return}if(!force&&shown&&!panelVisible())return;shown=true;ui.showAdminPanel({people,
+    onInvite:email=>{const existing=people.find(person=>person.email===email);if(existing){ui.notify(existing.status==="blocked"?"Ya está en la lista, con el acceso cortado: reactívalo desde sus opciones":"Ya está en la lista");return}return cloud.saveAccessEntry(email,{name:"",status:"active",mode:"trial",monthlyLimit:ADMIN_DEFAULT_LIMIT}).then(()=>{ui.notify("Invitación enviada; ya puede entrar");render(true)}).catch(()=>ui.notify("No se pudo invitar"))},
+    onSetMode:(person,mode)=>cloud.saveAccessEntry(person.email,{mode,status:"active"}).then(()=>{ui.notify(mode==="open"?"Grifo abierto":"En prueba, con tope");render(true)}).catch(()=>ui.notify("No se pudo cambiar")),
+    onSetStatus:(person,status)=>cloud.saveAccessEntry(person.email,{status}).then(()=>{ui.notify(status==="blocked"?"Acceso cortado":"Acceso reactivado");render(true)}).catch(()=>ui.notify("No se pudo cambiar")),
+    onSetLimit:(person,limit)=>cloud.saveAccessEntry(person.email,{monthlyLimit:limit,mode:"trial",status:"active"}).then(()=>{ui.notify("Tope actualizado");render(true)}).catch(()=>ui.notify("No se pudo guardar")),
+    onRemove:person=>cloud.removeAccessEntry(person.email).then(()=>{ui.notify("Quitado de la lista");render(true)}).catch(()=>ui.notify("No se pudo quitar")),
     onClose:stopAdmin})};
   adminUnsub=cloud.watchAccessList(list=>{people=list.map(toAdminView).sort((a,b)=>(a.name||a.email).localeCompare(b.name||b.email));render()},()=>{ui.notify("No se pudo cargar la lista de acceso");stopAdmin()});
 }
@@ -1636,7 +1642,7 @@ async function handleEntryAction(event){
 $("list").onclick=handleEntryAction;$("actionModal").onclick=handleEntryAction;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastConnectionCheck>120000)void verifyConnections(true)});
 window.addEventListener("online",()=>void verifyConnections(true));
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.23.9",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js?v=0.23.10",{updateViaCache:"none"}).then(registration=>registration.update()).catch(()=>{});
 load();
 
 async function mediaServiceGet(id){return media.getMedia(id)}

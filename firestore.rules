@@ -11,7 +11,7 @@ service cloud.firestore {
     // desde el panel de administrador. El servidor la consulta y anota el gasto
     // con el SDK de administración, que no pasa por estas reglas.
     match /access/{emailId} {
-      allow read, write: if request.auth != null && request.auth.token.email == "franbermudez.es@gmail.com";
+      allow read, write: if request.auth != null && request.auth.token.email == "franbermudez.es@gmail.com" && request.auth.token.email_verified == true;
     }
   }
 }
