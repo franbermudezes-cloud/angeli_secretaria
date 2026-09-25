@@ -1,4 +1,4 @@
-import{nextDateForTime,temporalData,explicitRelativeDate}from"./temporal.js?v=0.23.6";
+import{nextDateForTime,temporalData,explicitRelativeDate}from"./temporal.js?v=0.23.7";
 
 const CALL_INTENT=/\b(?:llama|llamar|telefonea|telefonear|contacta|contactar)\b/i;
 
@@ -47,6 +47,14 @@ export function normalizeReminderSchedule(interpretation,text,now=new Date()){
   // fecha, manda la suya; lo local solo decide cuando la IA no la trae.
   const aiDate=interpretation.source==="ai"?interpretation.date:null;
   const date=aiDate||explicitRelativeDate(text,now)||interpretation.date||local.scheduledDate||(time?dateKey(nextDateForTime(time,now)):null);
+  // 3ª auditoría: «Recuérdame hoy a las 8» dicho a las 10 quedaba programado
+  // en el pasado (y nunca sonaba). Un aviso de HOY ya pasado con hora de
+  // mañana (1-11) cuya versión de tarde aún no ha llegado es esa de la tarde.
+  if(date&&time&&date===dateKey(now)){
+    const [hour,minute]=time.split(":").map(Number),due=new Date(now);due.setHours(hour,minute,0,0);
+    const evening=new Date(now);evening.setHours(hour+12,minute,0,0);
+    if(due<now&&hour>=1&&hour<12&&evening>now)return{...interpretation,date,time:`${String(hour+12).padStart(2,"0")}:${String(minute).padStart(2,"0")}`,requiresConfirmation:true};
+  }
   return{...interpretation,date,time,requiresConfirmation:Boolean(date&&time)};
 }
 

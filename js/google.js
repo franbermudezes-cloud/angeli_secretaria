@@ -1,6 +1,6 @@
-import { cleanTemporalText } from "./temporal.js?v=0.23.6";
-import { calendarDetails } from "./schedule.js?v=0.23.6";
-import { semanticCalendarTarget } from "./ai.js?v=0.23.6";
+import { cleanTemporalText } from "./temporal.js?v=0.23.7";
+import { calendarDetails } from "./schedule.js?v=0.23.7";
+import { semanticCalendarTarget } from "./ai.js?v=0.23.7";
 
 const CLIENT_ID = "172772694205-7sigc4s8lkhebs4dtjjvj6huptj10tt0.apps.googleusercontent.com";
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
@@ -682,7 +682,12 @@ function calendarEnd(date, time) {
 
 function calendarRange(date, rangeStart, rangeEnd) {
   if (rangeStart && rangeEnd) return { from: new Date(`${rangeStart}T00:00:00`), to: new Date(`${rangeEnd}T00:00:00`) };
-  const from = new Date(`${date || new Date().toISOString().slice(0, 10)}T00:00:00`);
+  // 3ª auditoría: toISOString() da la fecha UTC; entre las 00:00 y las 02:00
+  // en Madrid es AYER, y la búsqueda de eventos a cancelar/modificar sin fecha
+  // empezaba un día antes. Se usa la fecha local.
+  const today = new Date();
+  const localToday = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const from = new Date(`${date || localToday}T00:00:00`);
   const to = new Date(from);
   to.setDate(to.getDate() + (date ? 1 : 90));
   return { from, to };
