@@ -1,5 +1,20 @@
 # Changelog
 
+## V0.23.6 · Un cerebro más fino: el servidor de IA entiende mejor y no desperdicia respuestas (3ª auditoría, lote 2)
+
+- **Temperatura 0**: Gemini usaba la configuración más aleatoria (1.0); la misma frase podía entenderse distinto cada vez. Ahora responde de forma estable.
+- **Hora local, día de la semana y calendario de 15 días** en cada petición: antes recibía la hora en UTC y sin día de la semana, y tenía que calcular «el jueves», «el lunes que viene» o «en media hora» por su cuenta (y entre las 00:00 y las 02:00 se equivocaba de día).
+- **Ya no se obliga a inventar una hora**: el esquema exigía una hora en cancelar, modificar y «ya he llamado a…». Con la hora vacía se rechazaba la respuesta entera y se caía a reglas locales («He comprado el pan» acababa como nota nueva).
+- **Validación que corrige en vez de tirar todo**: «9:00» → «09:00», «¿Qué tengo hoy?» con inicio = fin, cambios vacíos, un campo pendiente desconocido, un aviso vinculado mal formado o una categoría escrita con su nombre («Empresa») ya no provocan un 503.
+- **Reglas nuevas en el prompt**: hora de cenas/fiestas por la tarde y de citas en horario laboral («cena a las nueve» = 21:00), «a las doce» = mediodía, tareas con `task.create`, fechas pasadas → año siguiente al crear, expresiones relativas («en media hora»), y que **faltar un dato no es ambigüedad** (antes la IA bajaba la confianza en «WhatsApp a Pepe» y el móvil descartaba su respuesta correcta).
+- **Los ajustes de notas ya no se presentan como «operación pendiente»**, que empujaba cualquier orden nueva hacia continuar lo anterior; y con algo pendiente, una orden completa de otro tipo («¿qué tengo mañana?») se reconoce como nueva.
+- **Consultas con periodo**: «¿Qué apunté ayer?» y «¿Qué recordatorios tengo esta semana?» conservan su intervalo (antes mostraban todo).
+- **Cupo de invitados justo**: solo se cobra una interpretación que salió bien. Antes cobraban los errores, cada búsqueda en Mercadona (que ni usa IA) y la frase de reacción del modo conversación; un invitado podía agotar su mes en una sola compra.
+- **Más margen**: peticiones hasta 8 KB (un dictado largo con dos respuestas de seguimiento no cabía) y respuestas hasta 800 tokens.
+- **CI**: 8 suites de pruebas del frontend y 2 del backend (incluida la de multiusuario) existían pero ninguna puerta las ejecutaba. Ahora se ejecutan todas.
+- **Requiere redesplegar el servicio de Cloud Run** para que el servidor use estos cambios.
+- Tests: `backend/test_interpreter_quality.py` (16 pruebas nuevas).
+
 ## V0.23.5 · La IA manda: las reglas locales ya no pisan sus respuestas correctas (3ª auditoría, lote 1)
 
 - **El problema de fondo** de que la IA «no acabe de estar fina»: Gemini entendía bien, pero después una regla local sustituía su respuesta por otra peor. En una batería de 52 órdenes, 30 respuestas correctas de la IA terminaban mal. Principio nuevo: si la IA respondió con confianza, lo local solo rellena huecos.

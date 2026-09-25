@@ -13,7 +13,7 @@ import sys
 import time
 from collections import defaultdict, deque
 from concurrent.futures import ThreadPoolExecutor
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from io import BytesIO
 from typing import Any, Callable
 from urllib.error import HTTPError, URLError
@@ -34,7 +34,7 @@ from access_control import AccessControl, AccessDenied, QuotaExhausted
 import mercadona_catalog
 
 MAX_TEXT_LENGTH = 500
-MAX_BODY_BYTES = 2_048
+MAX_BODY_BYTES = 8_192  # 3ª auditoría: 2 KB no cabía un dictado largo con dos respuestas de seguimiento (400 y respaldo local justo en la aclaración).
 MAX_MEDIA_BYTES = 20 * 1024 * 1024
 REQUEST_TIMEOUT_SECONDS = 8
 RATE_LIMIT_PER_MINUTE = 30
@@ -78,13 +78,32 @@ ALLOWED_FIELDS = {
 }
 
 SYSTEM_INSTRUCTION = """Eres el intérprete de una secretaria personal en español.
-Interpreta la orden actual usando la fecha/hora y zona horaria dadas. Si se
-incluye CONTEXTO ACTIVO, la orden actual es una respuesta a esa misma operación:
-completa sus datos y conserva su intención, salvo que la persona cancele
-explícitamente la operación.
+Interpreta la orden actual usando la fecha, la hora local, el día de la semana
+y el calendario de próximos días que se te dan; calcula «hoy», «mañana», «el
+lunes», «este viernes» o «el día 20» SIEMPRE con ese calendario, nunca por tu
+cuenta. Si hay una OPERACIÓN PENDIENTE, la orden actual normalmente es la
+respuesta a esa operación: completa sus datos y conserva su intención. Pero si
+la orden actual es por sí sola una orden completa de otro tipo (por ejemplo,
+«¿qué tengo mañana?» o «apunta que…» mientras un evento espera la hora), usa la
+intención nueva. Los AJUSTES DE NOTAS solo sirven para clasificar notas; no son
+una operación pendiente.
 Usa exclusivamente las intenciones permitidas por el esquema. Extrae solo datos
 explícitos o inequívocos; no inventes fechas, horas, personas, teléfonos ni
-ubicaciones. Si existe ambigüedad material, baja la confianza.
+ubicaciones. Si existe ambigüedad material sobre QUÉ quiere la persona, baja la
+confianza. Que falte un dato (la hora, el mensaje, el contacto) NO es ambigüedad:
+mantén la confianza alta (0.8 o más), deja ese campo en null, inclúyelo en
+missingFields y formula la pregunta.
+Formatos obligatorios: fechas «YYYY-MM-DD» y horas «HH:MM» en 24 horas, con dos
+cifras («09:05», nunca «9:05»). En target, date y time son null si no se dicen.
+Horas sin «de la mañana/tarde/noche»: para cenas, cenas de empresa, fiestas,
+bodas, conciertos y quedadas por la tarde usa la hora de tarde o noche («cena a
+las nueve» = 21:00); para reuniones, citas médicas y trámites usa el horario
+laboral (08:00–20:00); si se da un día explícito, no elijas la hora según lo
+cercana que esté a la hora actual. «A las doce» es mediodía salvo «de la noche».
+Para tareas pendientes («tengo que comprar pilas», «hay que llamar al seguro»)
+sin fecha ni hora usa task.create; con fecha y hora, reminder.create.
+Una fecha sin año que ya pasó este año se refiere al año siguiente al crear algo,
+y a la pasada más reciente al preguntar por ella.
 
 Para calendar.create, separa obligatoriamente los datos: title es un nombre
 breve del evento, sin fecha, hora ni lugar; location es el recinto, dirección,
@@ -161,8 +180,10 @@ contactName en missingFields; si falta el texto, incluye solo notes. Ejemplos:
 contactName «Monse» y notes «Llego diez minutos tarde»; «WhatsApp a Pepe»
 pregunta «¿Qué mensaje quieres escribir?». Esta intención solo prepara el chat:
 la aplicación nunca afirma que el mensaje se haya enviado.
-Para reminder.create, si se dice una hora pero no un día, usa la fecha de
-`now` cuando esa hora aún está por llegar; si ya pasó, usa el día siguiente.
+Para reminder.create, si se dice una hora pero no un día, usa la fecha de hoy
+cuando esa hora aún está por llegar; si ya pasó, usa el día siguiente. Las
+expresiones relativas («en media hora», «dentro de dos horas», «en 10
+minutos») se calculan sumando a la hora local actual.
 Interpreta «a las dos y cuarto», «a las 2 y 15 minutos» y expresiones
 equivalentes con la hora natural más próxima según `now`; conserva siempre la
 hora en formato de 24 horas. El aviso nunca se programa sin confirmación de la
@@ -249,7 +270,11 @@ RESPONSE_SCHEMA: dict[str, Any] = {
                     "properties": {
                         "title": {"type": "string"},
                         "date": {"type": ["string", "null"]},
-                        "time": {"type": "string"},
+                        # 3ª auditoría: era obligatorio y sin null, así que en
+                        # «Cancela la cena con Vicente» o «Ya he llamado a
+                        # Miguel» Gemini tenía que inventar una hora; con "" la
+                        # respuesta entera se rechazaba (503 y respaldo local).
+                        "time": {"type": ["string", "null"]},
                     },
                 },
             ]
@@ -402,8 +427,11 @@ def validate_context(value: Any) -> dict[str, Any] | None:
     if not isinstance(interaction_id, str) or len(interaction_id) > 100 or intent not in VALID_INTENTS or status not in {"awaiting_input", "pending_confirmation", "executing"}:
         raise ValueError("Contexto conversacional no válido")
     collected = value.get("collectedData", {})
-    if not isinstance(collected, dict) or not set(collected).issubset({"title", "date", "time", "rangeStart", "rangeEnd", "location", "contactName", "phone", "notes", "target", "changes", "linkedReminder"}):
+    if not isinstance(collected, dict):
         raise ValueError("Contexto conversacional no válido")
+    # 3ª auditoría: el móvil guarda también noteQuery/noteClassification; en vez
+    # de rechazar la petición entera (400 y respaldo local), se ignoran.
+    collected = {key: item for key, item in collected.items() if key in {"title", "date", "time", "rangeStart", "rangeEnd", "location", "contactName", "phone", "notes", "target", "changes", "linkedReminder"}}
     missing = value.get("missingFields", [])
     if not isinstance(missing, list) or len(missing) > 7 or any(item not in {"title", "date", "time", "location", "contactName", "phone", "notes", "target"} for item in missing):
         raise ValueError("Contexto conversacional no válido")
@@ -638,6 +666,35 @@ def push_notifications() -> PushNotifications:
     return _push_factory() if _push_factory else PushNotifications()
 
 
+def normalize_clock(value: Any) -> Any:
+    """Corrige formatos de hora habituales en vez de rechazar toda la respuesta.
+
+    3ª auditoría: «9:00» (sin cero), «21:30:00» o "" tumbaban la respuesta entera
+    con un 503 y el móvil caía a reglas locales mucho peores.
+    """
+    if isinstance(value, str):
+        value = value.strip()
+        if not value:
+            return None
+        match = re.fullmatch(r"(\d{1,2}):([0-5]\d)(?::00)?", value)
+        if match and int(match.group(1)) <= 23:
+            return f"{int(match.group(1)):02d}:{match.group(2)}"
+    return value
+
+
+def normalize_day(value: Any) -> Any:
+    return None if isinstance(value, str) and not value.strip() else value
+
+
+def slug_id(value: Any) -> Any:
+    """«Empresa» -> «empresa», «Proyecto Karaoke» -> «proyecto-karaoke»."""
+    if not isinstance(value, str):
+        return value
+    import unicodedata
+    plain = "".join(ch for ch in unicodedata.normalize("NFD", value.strip().lower()) if unicodedata.category(ch) != "Mn")
+    return re.sub(r"[^a-z0-9]+", "-", plain).strip("-")[:64] or value
+
+
 def validate_interpretation(raw: Any) -> dict[str, Any]:
     if not isinstance(raw, dict) or not set(raw).issubset(ALLOWED_FIELDS):
         raise ValueError("Respuesta estructurada no válida")
@@ -653,10 +710,13 @@ def validate_interpretation(raw: Any) -> dict[str, Any]:
         result["changes"] = None
     if result["intent"] != "calendar.create":
         result["linkedReminder"] = None
-    if result["intent"] != "calendar.query":
+    # 3ª auditoría: «¿Qué apunté ayer?» o «¿Qué recordatorios tengo esta
+    # semana?» necesitan su intervalo; antes solo se conservaba en la agenda y
+    # la consulta devolvía TODO.
+    if result["intent"] not in {"calendar.query", "note.query", "reminder.query"}:
         result["rangeStart"] = None
         result["rangeEnd"] = None
-    else:
+    if result["intent"] == "calendar.query":
         # Una pregunta de agenda se resuelve por intervalo, no con sus
         # propias palabras como filtro de título de Calendar.
         result["title"] = None
@@ -673,12 +733,34 @@ def validate_interpretation(raw: Any) -> dict[str, Any]:
         result[key] = value.strip() if isinstance(value, str) else None
     # Gemini puede incluir segundos cero: no cambian la hora del contrato HH:MM.
     # No truncar segundos reales ni convertir horas fuera de rango.
-    if isinstance(result["time"], str) and re.fullmatch(r"(?:[01]\d|2[0-3]):[0-5]\d:00", result["time"]):
-        result["time"] = result["time"][:5]
+    result["time"] = normalize_clock(result["time"])
+    for key in ("date", "rangeStart", "rangeEnd"):
+        result[key] = normalize_day(result[key])
     for key in ("date", "time", "rangeStart", "rangeEnd"):
         validate_temporal(key, result[key])
-    if result["rangeStart"] and result["rangeEnd"] and result["rangeStart"] >= result["rangeEnd"]:
+    # 3ª auditoría: «¿Qué tengo hoy?» con inicio y fin iguales (el modelo no
+    # siempre respeta el fin exclusivo) daba 503; se amplía a un día.
+    if result["rangeStart"] and result["rangeEnd"] and result["rangeStart"] == result["rangeEnd"]:
+        result["rangeEnd"] = (date.fromisoformat(result["rangeEnd"]) + timedelta(days=1)).isoformat()
+    if result["rangeStart"] and result["rangeEnd"] and result["rangeStart"] > result["rangeEnd"]:
         raise ValueError("Intervalo no válido")
+    if isinstance(result["changes"], dict):
+        result["changes"] = {key: (normalize_clock(item) if key == "time" else normalize_day(item) if key == "date" else item) for key, item in result["changes"].items()}
+        if not any(item is not None for item in result["changes"].values()):
+            result["changes"] = None
+    if isinstance(result["linkedReminder"], dict):
+        result["linkedReminder"]["time"] = normalize_clock(result["linkedReminder"].get("time"))
+        result["linkedReminder"]["date"] = normalize_day(result["linkedReminder"].get("date"))
+        try:
+            validate_linked_reminder(result["linkedReminder"])
+        except ValueError:
+            result["linkedReminder"] = None
+    if isinstance(result["noteClassification"], dict):
+        classification = result["noteClassification"]
+        for key in ("scope", "relationType"):
+            classification[key] = slug_id(classification.get(key))
+        if isinstance(classification.get("tags"), list):
+            classification["tags"] = [tag for tag in classification["tags"] if isinstance(tag, str) and tag.strip()][:5]
     validate_target(result["target"])
     validate_changes(result["changes"])
     validate_linked_reminder(result["linkedReminder"])
@@ -687,10 +769,12 @@ def validate_interpretation(raw: Any) -> dict[str, Any]:
     allowed_missing = {"title", "date", "time", "location", "contactName", "phone", "notes", "target"}
     if missing is None:
         result["missingFields"] = []
-    elif not isinstance(missing, list) or len(missing) > 7 or any(item not in allowed_missing for item in missing):
+    elif not isinstance(missing, list):
         raise ValueError("Campos pendientes no válidos")
     else:
-        result["missingFields"] = list(dict.fromkeys(missing))
+        # 3ª auditoría: un campo pendiente desconocido («message», «question»)
+        # ya no tira toda la respuesta; se descarta solo ese.
+        result["missingFields"] = list(dict.fromkeys(item for item in missing if item in allowed_missing))[:7]
     if result["missingFields"] and not result["question"]:
         result["question"] = None
     if not result["missingFields"]:
@@ -748,8 +832,8 @@ def validate_target(value: Any) -> None:
     value["title"] = value["title"].strip()
     if not value["title"] or len(value["title"]) > MAX_TEXT_LENGTH:
         raise ValueError("Objetivo no válido")
-    value["date"] = value.get("date")
-    value["time"] = value.get("time")
+    value["date"] = normalize_day(value.get("date"))
+    value["time"] = normalize_clock(value.get("time"))
     validate_temporal("date", value["date"])
     validate_temporal("time", value["time"])
 
@@ -829,6 +913,38 @@ def _cached_system_instruction(client: Any) -> str | None:
     return _interpreter_cache_name
 
 
+WEEKDAYS_ES = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
+
+
+def interpreter_prompt(text: str, now: str, timezone: str, context: dict[str, Any] | None = None) -> str:
+    """Prompt de usuario con la hora LOCAL, el día de la semana y un calendario.
+
+    3ª auditoría: se enviaba la hora en UTC y sin día de la semana; flash-lite
+    tenía que convertir la zona y deducir el día por su cuenta, y fallaba entre
+    las 00:00 y las 02:00 y con «el jueves», «el lunes que viene» o «en media
+    hora». Además los ajustes de notas llegaban como «CONTEXTO ACTIVO», que el
+    prompt trata como operación pendiente, y sesgaban toda orden nueva.
+    """
+    try:
+        zone = ZoneInfo(timezone)
+        local = datetime.fromisoformat(now).astimezone(zone)
+    except (ValueError, KeyError):
+        local = datetime.fromisoformat(now)
+    today = local.date()
+    calendar_lines = ", ".join(f"{WEEKDAYS_ES[(today + timedelta(days=offset)).weekday()]} {(today + timedelta(days=offset)).isoformat()}" for offset in range(15))
+    context = dict(context or {})
+    note_settings = context.pop("noteSettings", None)
+    pending = json.dumps(context, ensure_ascii=False) if context.get("interactionId") else "ninguna"
+    settings = json.dumps(note_settings, ensure_ascii=False) if note_settings else "ninguno"
+    return (
+        f"Ahora (hora local): {WEEKDAYS_ES[local.weekday()]} {local.strftime('%Y-%m-%d %H:%M')} ({timezone})\n"
+        f"Próximos días: {calendar_lines}\n"
+        f"OPERACIÓN PENDIENTE: {pending}\n"
+        f"AJUSTES DE NOTAS: {settings}\n"
+        f"Orden actual: {text}"
+    )
+
+
 def vertex_interpret(text: str, now: str, timezone: str, context: dict[str, Any] | None = None) -> dict[str, Any]:
     project = os.getenv("GOOGLE_CLOUD_PROJECT", "")
     if not project:
@@ -842,8 +958,7 @@ def vertex_interpret(text: str, now: str, timezone: str, context: dict[str, Any]
         location=os.getenv("VERTEX_LOCATION", "global"),
         http_options=types.HttpOptions(timeout=REQUEST_TIMEOUT_SECONDS * 1000),
     )
-    context_text = json.dumps(context, ensure_ascii=False) if context else "ninguno"
-    prompt = f"Fecha/hora actual: {now}\nZona horaria: {timezone}\nCONTEXTO ACTIVO: {context_text}\nOrden actual: {text}"
+    prompt = interpreter_prompt(text, now, timezone, context)
 
     cache_name = _cached_system_instruction(client)
     if cache_name:
@@ -855,7 +970,8 @@ def vertex_interpret(text: str, now: str, timezone: str, context: dict[str, Any]
                     cached_content=cache_name,
                     response_mime_type="application/json",
                     response_json_schema=RESPONSE_SCHEMA,
-                    max_output_tokens=400,
+                    temperature=0,
+                    max_output_tokens=800,
                 ),
             )
             return response.parsed if response.parsed is not None else json.loads(response.text)
@@ -874,7 +990,12 @@ def vertex_interpret(text: str, now: str, timezone: str, context: dict[str, Any]
             system_instruction=SYSTEM_INSTRUCTION,
             response_mime_type="application/json",
             response_json_schema=RESPONSE_SCHEMA,
-            max_output_tokens=400,
+            # 3ª auditoría: sin fijar, Gemini usa 1.0 y la misma frase se
+            # interpretaba distinto cada vez. Clasificar y extraer pide 0.
+            temperature=0,
+            # 400 se quedaba justo con una nota larga + clasificación: JSON
+            # cortado = 503.
+            max_output_tokens=800,
         ),
     )
     return response.parsed if response.parsed is not None else json.loads(response.text)
@@ -965,8 +1086,14 @@ def app(environ: dict[str, Any], start_response: Callable):
         # Las rutas que gastan IA cobran una interacción al cupo mensual antes de
         # trabajar; el propietario y la lista heredada no gastan, y quien tenga el
         # grifo abierto cuenta pero no se corta.
-        if path in ("/interpret", "/chat/aside", "/shopping/mercadona/search"):
-            access_control().consume(claims)
+        # 3ª auditoría: antes se cobraba al ENTRAR y en tres rutas, así que un
+        # 503 de la IA, una petición mal formada, cada búsqueda en Mercadona
+        # (que no usa IA) y la frase de reacción del modo conversación (que el
+        # móvil descarta a los 900 ms) gastaban cupo. Un invitado podía agotar
+        # su mes en una sola sesión de compra. Ahora solo /interpret consume, y
+        # solo tras una interpretación válida; antes solo se comprueba.
+        if path == "/interpret":
+            access_control().ensure_quota(claims)
         if path.startswith("/test/") and os.getenv("ANGELI_TEST_HARNESS_ENABLED") != "1":
             return json_response(start_response, "404 Not Found", {"error": "No encontrado"}, origin)
         if path == "/session/status":
@@ -1077,6 +1204,7 @@ def app(environ: dict[str, Any], start_response: Callable):
             interpretation = validate_interpretation(raw)
         except ValueError as error:
             raise OutputValidationError(str(error)) from error
+        access_control().consume(claims)
         return json_response(start_response, "200 OK", interpretation, origin)
     except PermissionError:
         return json_response(start_response, "401 Unauthorized", {"error": "No autorizado"}, origin)
