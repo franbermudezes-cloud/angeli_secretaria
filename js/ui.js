@@ -1,13 +1,13 @@
-import { typeLabel } from "./classifier.js?v=0.23.9";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.23.9";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.23.9";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.23.9";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.23.9";
-import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.23.9";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.23.9";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.23.9";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.23.9";
-import { groupDietarioByDay } from "./dietario.js?v=0.23.9";
+import { typeLabel } from "./classifier.js?v=0.23.10";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.23.10";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.23.10";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.23.10";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.23.10";
+import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.23.10";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.23.10";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.23.10";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.23.10";
+import { groupDietarioByDay } from "./dietario.js?v=0.23.10";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -192,7 +192,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.23.9";
+    image.src = "assets/angeli-welcome.gif?v=0.23.10";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -1363,11 +1363,11 @@ export function createUI({ getMedia }) {
       }
       actions.push({ label: "🗑️ Quitar de la lista", kind: "danger", onClick: () => remove(person) });
       actions.push({ label: "Volver", kind: "secondary", onClick: () => showAdminPanel({ people, onInvite, onSetMode, onSetStatus, onSetLimit, onRemove, onClose }) });
-      openModal({ title: person.name ? esc(person.name) : esc(person.email), lead: esc(person.email), actions });
+      openModal({ title: person.name || person.email, lead: person.email, actions });
     }
 
     function changeLimit(person) {
-      showTextPrompt({ title: "Tope mensual", lead: `Cuántas interacciones de IA al mes puede gastar ${esc(person.name || person.email)} con tu grifo.`, placeholder: "40", value: String(person.limit || 40), confirmLabel: "Guardar tope", emptyMessage: "Escribe un número", onSave: value => {
+      showTextPrompt({ title: "Tope mensual", lead: `Cuántas interacciones de IA al mes puede gastar ${person.name || person.email} con tu grifo.`, placeholder: "40", value: String(person.limit || 40), confirmLabel: "Guardar tope", emptyMessage: "Escribe un número", onSave: value => {
         const limit = parseInt(value, 10);
         if (!Number.isFinite(limit) || limit < 0) { notify("Escribe un número válido"); return; }
         onSetLimit?.(person, limit);
@@ -1375,7 +1375,7 @@ export function createUI({ getMedia }) {
     }
 
     function remove(person) {
-      showConfirm({ title: "¿Quitar de la lista?", lead: `${esc(person.name || person.email)} dejará de tener acceso a Angeli. Sus propias notas seguirán siendo suyas; solo pierde la entrada.`, confirmLabel: "Quitar", onConfirm: () => onRemove?.(person) });
+      showConfirm({ title: "¿Quitar de la lista?", lead: `${person.name || person.email} dejará de tener acceso a Angeli. Sus propias notas seguirán siendo suyas; solo pierde la entrada.`, confirmLabel: "Quitar", onConfirm: () => onRemove?.(person) });
     }
   }
 

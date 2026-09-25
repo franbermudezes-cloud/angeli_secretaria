@@ -28,9 +28,9 @@ import {
   waitForPendingWrites
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 import { deleteToken, getMessaging, getToken, isSupported, onMessage } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging.js";
-import { fromCloudEntry, sameEntry, toCloudEntry } from "./cloud-entry.js?v=0.23.9";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.23.9";
-import { applyShortcutsDiff, diffShortcuts } from "./shortcuts.js?v=0.23.9";
+import { fromCloudEntry, sameEntry, toCloudEntry } from "./cloud-entry.js?v=0.23.10";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.23.10";
+import { applyShortcutsDiff, diffShortcuts } from "./shortcuts.js?v=0.23.10";
 
 const API = "https://angeli-ai-interpreter-172772694205.europe-southwest1.run.app";
 const VAPID_KEY = "BHyc8Ne9wyaAFoju-9FNG5_qCXPOLSQhHhsfye9bdFlAv3zdLfAvjcvb29Cyrtj80kSq7gJ3qGJ9k3Mb_EqYt_o";
@@ -102,9 +102,14 @@ export function createCloudSync({ notify }) {
         try {
           decision = await fetchAccessStatus(nextUser);
         } catch (error) {
-          notify("No se pudo comprobar tu acceso a Angeli; inténtalo de nuevo");
-          await signOut(auth);
-          return;
+          // 3ª auditoría: cualquier fallo de red (abrir la app sin conexión, un
+          // arranque lento del servidor, un 503) cerraba la sesión del invitado,
+          // que tenía que volver a entrar. Solo un «no» explícito del servidor
+          // cierra la sesión; si no se pudo comprobar, se sigue con acceso
+          // «desconocido»: los datos los protegen las reglas de Firestore y la
+          // IA la vuelve a comprobar el servidor en cada petición.
+          notify("No se pudo comprobar tu acceso ahora; tu sesión sigue abierta y se volverá a comprobar");
+          decision = { allowed: true, owner: false, mode: "unknown", limit: null, used: 0, remaining: null };
         }
         if (!decision?.allowed) {
           notify(decision?.reason === "blocked"
