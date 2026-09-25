@@ -87,6 +87,17 @@ class PromptTests(unittest.TestCase):
         body = source.split("def vertex_interpret(", 1)[1].split("\ndef ", 1)[0]
         self.assertEqual(body.count("temperature=0"), 2)
         self.assertEqual(body.count("max_output_tokens=800"), 2)
+        # Examen del intérprete: 2.5 Flash sin razonamiento es el que más acierta.
+        self.assertEqual(app.INTERPRETER_MODEL, "gemini-2.5-flash")
+        self.assertEqual(body.count("thinking_config=types.ThinkingConfig(thinking_budget=INTERPRETER_THINKING_BUDGET)"), 2)
+        self.assertEqual(app.INTERPRETER_THINKING_BUDGET, 0)
+        aside = source.split("def vertex_chat_aside(", 1)[1].split("\ndef ", 1)[0]
+        self.assertIn("model=ASIDE_MODEL", aside, "la frase de reacción sigue en el modelo rápido")
+
+    def test_single_day_query_date_becomes_a_one_day_range(self):
+        # «¿Qué tengo mañana?»: Gemini daba `date` y la app buscaba 90 días.
+        result = app.validate_interpretation(base(intent="calendar.query", date="2026-09-24"))
+        self.assertEqual((result["rangeStart"], result["rangeEnd"]), ("2026-09-24", "2026-09-25"))
 
     def test_context_with_unknown_collected_fields_is_accepted(self):
         context = {"interactionId": "n1", "intent": "note", "status": "awaiting_input", "collectedData": {"title": "Nota", "noteQuery": None, "noteClassification": None}, "missingFields": [], "turns": []}

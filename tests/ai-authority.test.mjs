@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { interpret, localCalendarUpdate, localImmediateCall, localIsoNow, localNoteQuery, localReminderQuery, protectCalendarInterpretation, protectReadQuery } from "../js/ai.js";
+import { interpret, localCalendarUpdate, localImmediateCall, localIsoNow, localNoteQuery, localReminderQuery, protectCalendarInterpretation, protectQueryRange, protectReadQuery } from "../js/ai.js";
 import { normalizeReminderSchedule, normalizeUndatedCall } from "../js/schedule.js";
 import { localWhatsApp } from "../js/whatsapp.js";
 
@@ -159,4 +159,15 @@ test("historial #39: una pregunta con «?» sobre recordatorios o notas sigue si
 test("historial #76: «quiero llamar a Ana» sigue forzando la llamada si la IA dice nota", () => {
   const local = localImmediateCall("quiero llamar a Ana", now);
   assert.equal(local?.contactName, "Ana");
+});
+
+// Examen del intérprete: en «¿Qué tengo mañana?» Gemini devolvía `date` y la
+// búsqueda (que solo mira el intervalo) iba de hoy a 90 días; y confundía
+// «pasado mañana» con «mañana». El periodo dicho lo calcula el móvil y manda.
+test("agenda: el periodo dicho manda y un día suelto de la IA se convierte en periodo de un día", () => {
+  const range = (text, ai) => { const r = protectQueryRange({ intent: "calendar.query", ...ai }, text, now); return [r.rangeStart, r.rangeEnd]; };
+  assert.deepEqual(range("¿Qué tengo mañana?", { date: "2026-09-24" }), ["2026-09-24", "2026-09-25"]);
+  assert.deepEqual(range("Dime mi agenda de pasado mañana", { rangeStart: "2026-09-24", rangeEnd: "2026-09-26" }), ["2026-09-25", "2026-09-26"]);
+  assert.deepEqual(range("¿Qué tengo la semana que viene?", { rangeStart: "2026-09-28", rangeEnd: "2026-10-07" }), ["2026-09-28", "2026-10-05"]);
+  assert.deepEqual(range("¿Hay algo importante?", { date: "2026-09-25" }), ["2026-09-25", "2026-09-26"], "sin periodo dicho, el día de la IA como un día");
 });

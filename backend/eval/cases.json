@@ -1,0 +1,965 @@
+{
+ "_nota": "Examen genérico del intérprete: frases habituales que diría cualquier persona. 'Ahora' es el miércoles 23/09/2026 a las 10:00 en Europe/Madrid. Cada campo esperado admite un valor o una lista de valores válidos. *_incluye compara sin mayúsculas ni tildes.",
+ "now": "2026-09-23T10:00:00+02:00",
+ "timeZone": "Europe/Madrid",
+ "cases": [
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame llamar al médico mañana a las diez",
+   "intent": "reminder.create",
+   "date": "2026-09-24",
+   "time": "10:00"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame comprar pan esta tarde a las seis",
+   "intent": "reminder.create",
+   "date": "2026-09-23",
+   "time": "18:00"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Avísame el viernes a las 9 de la mañana de sacar la basura",
+   "intent": "reminder.create",
+   "date": "2026-09-25",
+   "time": "09:00"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame en media hora apagar el horno",
+   "intent": "reminder.create",
+   "date": "2026-09-23",
+   "time": "10:30"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame dentro de dos horas llamar a mi hermana",
+   "intent": "reminder.create",
+   "date": "2026-09-23",
+   "time": "12:00"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame pasado mañana a las 8 de la mañana pagar el alquiler",
+   "intent": "reminder.create",
+   "date": "2026-09-25",
+   "time": "08:00"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame el lunes que viene a las diez y media revisar el correo",
+   "intent": "reminder.create",
+   "date": "2026-09-28",
+   "time": "10:30"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Pon un recordatorio el 3 de octubre a las 12 para renovar el DNI",
+   "intent": "reminder.create",
+   "date": "2026-10-03",
+   "time": "12:00"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame esta noche a las once tomar la pastilla",
+   "intent": "reminder.create",
+   "date": "2026-09-23",
+   "time": "23:00"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame mañana por la mañana a las 9 llevar el coche al taller",
+   "intent": "reminder.create",
+   "date": "2026-09-24",
+   "time": "09:00"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame a las cinco de la tarde recoger a los niños",
+   "intent": "reminder.create",
+   "date": "2026-09-23",
+   "time": "17:00"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame el día 30 a las 10 de la mañana pagar la luz",
+   "intent": "reminder.create",
+   "date": "2026-09-30",
+   "time": "10:00"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame el 1 de noviembre a las 10 de la mañana felicitar a Carmen",
+   "intent": "reminder.create",
+   "date": "2026-11-01",
+   "time": "10:00"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Avísame mañana a las 7 menos cuarto de la mañana para ir al gimnasio",
+   "intent": "reminder.create",
+   "date": "2026-09-24",
+   "time": "06:45"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame el sábado a mediodía comprar flores",
+   "intent": "reminder.create",
+   "date": "2026-09-26",
+   "time": "12:00"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame en 3 días llamar a Ana",
+   "intent": "reminder.create",
+   "date": "2026-09-26"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame comprar leche",
+   "intent": "reminder.create",
+   "missing_incluye": "date"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame el jueves regar las plantas",
+   "intent": "reminder.create",
+   "date": "2026-09-24"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame a las 9 de la noche sacar al perro",
+   "intent": "reminder.create",
+   "date": "2026-09-23",
+   "time": "21:00"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame hoy a las 12:30 la reunión con el banco",
+   "intent": "reminder.create",
+   "date": "2026-09-23",
+   "time": "12:30"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame la semana que viene el martes a las 4 de la tarde ir al dentista",
+   "intent": "reminder.create",
+   "date": "2026-09-29",
+   "time": "16:00"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame el 15 de enero a las 9 de la mañana pagar el seguro",
+   "intent": "reminder.create",
+   "date": "2027-01-15",
+   "time": "09:00"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame este domingo a las 11 de la mañana llamar a mi madre",
+   "intent": "reminder.create",
+   "date": "2026-09-27",
+   "time": "11:00"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame el viernes a las 8 y cuarto de la mañana enviar el informe",
+   "intent": "reminder.create",
+   "date": "2026-09-25",
+   "time": "08:15"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame dentro de 10 minutos mirar el horno",
+   "intent": "reminder.create",
+   "date": "2026-09-23",
+   "time": "10:10"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame mañana a las 21:00 ver el partido",
+   "intent": "reminder.create",
+   "date": "2026-09-24",
+   "time": "21:00"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame el martes a las 3 y media de la tarde la cita del veterinario",
+   "intent": "reminder.create",
+   "date": "2026-09-29",
+   "time": "15:30"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "No me dejes olvidar el cumpleaños de Luis el 12 de octubre a las 10 de la mañana",
+   "intent": [
+    "reminder.create",
+    "calendar.create"
+   ],
+   "date": "2026-10-12",
+   "time": "10:00"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Acuérdate de avisarme mañana a las 9 de la mañana para llamar al fontanero",
+   "intent": "reminder.create",
+   "date": "2026-09-24",
+   "time": "09:00"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame esta tarde a las 4 que tengo que llamar a Juan",
+   "intent": "reminder.create",
+   "date": "2026-09-23",
+   "time": "16:00"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame llamar a Carlos pasado mañana a las once de la mañana",
+   "intent": "reminder.create",
+   "date": "2026-09-25",
+   "time": "11:00"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame que mañana tengo que llamar al banco a las 9 de la mañana",
+   "intent": "reminder.create",
+   "date": "2026-09-24",
+   "time": "09:00"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame pasar por la farmacia esta tarde a las 7",
+   "intent": "reminder.create",
+   "date": "2026-09-23",
+   "time": "19:00"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Quiero que me pongas un recordatorio mañana a las 9 de la mañana para ir al médico",
+   "intent": "reminder.create",
+   "date": "2026-09-24",
+   "time": "09:00"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame el viernes que el sábado es el cumple de Pepe",
+   "intent": "reminder.create",
+   "date": "2026-09-25"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame llamar a mi madre",
+   "intent": "reminder.create",
+   "missing_incluye": "date"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame en una semana revisar la caldera",
+   "intent": "reminder.create",
+   "date": "2026-09-30"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Mañana a primera hora recuérdame enviar el correo",
+   "intent": "reminder.create",
+   "date": "2026-09-24"
+  },
+  {
+   "cat": "recordatorio",
+   "text": "Recuérdame el viernes comprar el pan para el sábado",
+   "intent": "reminder.create",
+   "date": "2026-09-25"
+  },
+  {
+   "cat": "evento",
+   "text": "Tengo cena con Laura el sábado a las nueve en La Tagliatella",
+   "intent": "calendar.create",
+   "date": "2026-09-26",
+   "time": "21:00",
+   "location_incluye": "tagliatella"
+  },
+  {
+   "cat": "evento",
+   "text": "Apunta en el calendario reunión con el equipo el lunes a las diez",
+   "intent": "calendar.create",
+   "date": "2026-09-28",
+   "time": "10:00"
+  },
+  {
+   "cat": "evento",
+   "text": "Mañana a las cinco tengo dentista",
+   "intent": "calendar.create",
+   "date": "2026-09-24",
+   "time": "17:00"
+  },
+  {
+   "cat": "evento",
+   "text": "El viernes a las 8 de la tarde cumpleaños de Marta en su casa",
+   "intent": "calendar.create",
+   "date": "2026-09-25",
+   "time": "20:00"
+  },
+  {
+   "cat": "evento",
+   "text": "Añade al calendario la boda de Pedro el 17 de octubre a las 12 en la iglesia de San Juan",
+   "intent": "calendar.create",
+   "date": "2026-10-17",
+   "time": "12:00",
+   "location_incluye": "san juan"
+  },
+  {
+   "cat": "evento",
+   "text": "Cita con el médico el jueves a las 11 y media en el centro de salud",
+   "intent": "calendar.create",
+   "date": "2026-09-24",
+   "time": "11:30",
+   "location_incluye": "centro de salud"
+  },
+  {
+   "cat": "evento",
+   "text": "Partido de pádel el domingo a las diez de la mañana en el polideportivo",
+   "intent": "calendar.create",
+   "date": "2026-09-27",
+   "time": "10:00",
+   "location_incluye": "polideportivo"
+  },
+  {
+   "cat": "evento",
+   "text": "Tengo una reunión con el banco pasado mañana a las 12",
+   "intent": "calendar.create",
+   "date": "2026-09-25",
+   "time": "12:00"
+  },
+  {
+   "cat": "evento",
+   "text": "Crea un evento: comida familiar el domingo a las dos en casa de mis padres",
+   "intent": "calendar.create",
+   "date": "2026-09-27",
+   "time": "14:00",
+   "location_incluye": "casa de mis padres"
+  },
+  {
+   "cat": "evento",
+   "text": "Entrevista de trabajo el martes 29 a las 9:30",
+   "intent": "calendar.create",
+   "date": "2026-09-29",
+   "time": "09:30"
+  },
+  {
+   "cat": "evento",
+   "text": "Concierto el 20 de noviembre a las 21:30 en el WiZink Center",
+   "intent": "calendar.create",
+   "date": "2026-11-20",
+   "time": "21:30",
+   "location_incluye": "wizink"
+  },
+  {
+   "cat": "evento",
+   "text": "Ponme en la agenda clase de inglés mañana a las 7 de la tarde",
+   "intent": "calendar.create",
+   "date": "2026-09-24",
+   "time": "19:00"
+  },
+  {
+   "cat": "evento",
+   "text": "Quedada con los amigos el viernes a las 10 de la noche en el bar de siempre",
+   "intent": "calendar.create",
+   "date": "2026-09-25",
+   "time": "22:00"
+  },
+  {
+   "cat": "evento",
+   "text": "Tengo cena de empresa el 18 de diciembre a las nueve en el restaurante Lola",
+   "intent": "calendar.create",
+   "date": "2026-12-18",
+   "time": "21:00",
+   "location_incluye": "lola"
+  },
+  {
+   "cat": "evento",
+   "text": "Reunión con clientes el miércoles a las cuatro",
+   "intent": "calendar.create",
+   "date": [
+    "2026-09-30",
+    "2026-09-23"
+   ],
+   "time": "16:00"
+  },
+  {
+   "cat": "evento",
+   "text": "Visita al notario el 2 de octubre a las 10",
+   "intent": "calendar.create",
+   "date": "2026-10-02",
+   "time": "10:00"
+  },
+  {
+   "cat": "evento",
+   "text": "Tengo fisioterapia mañana a las 6 de la tarde",
+   "intent": "calendar.create",
+   "date": "2026-09-24",
+   "time": "18:00"
+  },
+  {
+   "cat": "evento",
+   "text": "Cena con Vicente el sábado",
+   "intent": "calendar.create",
+   "date": "2026-09-26",
+   "missing_incluye": "time"
+  },
+  {
+   "cat": "evento",
+   "text": "Tengo que llevar el coche al taller el jueves a las 8 de la mañana",
+   "intent": [
+    "calendar.create",
+    "reminder.create"
+   ],
+   "date": "2026-09-24",
+   "time": "08:00"
+  },
+  {
+   "cat": "evento",
+   "text": "Tenemos boda el 14 de noviembre a las seis en la Masía El Olivar. Recuérdame dos días antes recoger el traje",
+   "intent": "calendar.create",
+   "date": "2026-11-14",
+   "time": "18:00",
+   "location_incluye": "olivar",
+   "linked_date": "2026-11-12"
+  },
+  {
+   "cat": "evento",
+   "text": "Mañana a las 10 pasa el técnico de la caldera",
+   "intent": "calendar.create",
+   "date": "2026-09-24",
+   "time": "10:00"
+  },
+  {
+   "cat": "evento",
+   "text": "Tengo médico el 30 a las 10",
+   "intent": "calendar.create",
+   "date": "2026-09-30",
+   "time": "10:00"
+  },
+  {
+   "cat": "evento",
+   "text": "Cena el viernes a las 9 con Marta y recuérdame un día antes comprar vino",
+   "intent": "calendar.create",
+   "date": "2026-09-25",
+   "time": "21:00",
+   "linked_date": "2026-09-24"
+  },
+  {
+   "cat": "llamada",
+   "text": "Llama a Pedro",
+   "intent": "contact.call",
+   "contact_incluye": "pedro"
+  },
+  {
+   "cat": "llamada",
+   "text": "Llama a mi madre",
+   "intent": "contact.call",
+   "contact_incluye": "madre"
+  },
+  {
+   "cat": "llamada",
+   "text": "Quiero llamar a Ana García",
+   "intent": "contact.call",
+   "contact_incluye": "ana garcia"
+  },
+  {
+   "cat": "llamada",
+   "text": "Llama al 612 345 678",
+   "intent": "contact.call",
+   "phone_incluye": "612"
+  },
+  {
+   "cat": "llamada",
+   "text": "Llama a Juan mañana a las 10 de la mañana",
+   "intent": "reminder.create",
+   "date": "2026-09-24",
+   "time": "10:00",
+   "contact_incluye": "juan"
+  },
+  {
+   "cat": "llamada",
+   "text": "Llama a Laura esta tarde a las 5",
+   "intent": "reminder.create",
+   "date": "2026-09-23",
+   "time": "17:00",
+   "contact_incluye": "laura"
+  },
+  {
+   "cat": "llamada",
+   "text": "Telefonea a la farmacia",
+   "intent": "contact.call",
+   "contact_incluye": "farmacia"
+  },
+  {
+   "cat": "llamada",
+   "text": "Llama a Carlos para preguntarle por el presupuesto",
+   "intent": "contact.call",
+   "contact_exacto": "Carlos"
+  },
+  {
+   "cat": "llamada",
+   "text": "Llama a Marta el viernes a las 9 de la mañana",
+   "intent": "reminder.create",
+   "date": "2026-09-25",
+   "time": "09:00",
+   "contact_incluye": "marta"
+  },
+  {
+   "cat": "llamada",
+   "text": "Necesito hablar con Luis, llámalo",
+   "intent": "contact.call",
+   "contact_incluye": "luis"
+  },
+  {
+   "cat": "llamada",
+   "text": "Pon una llamada a mi hermano",
+   "intent": "contact.call",
+   "contact_incluye": "hermano"
+  },
+  {
+   "cat": "llamada",
+   "text": "Llama a Pepe el lunes",
+   "intent": "reminder.create",
+   "date": "2026-09-28",
+   "contact_incluye": "pepe"
+  },
+  {
+   "cat": "whatsapp",
+   "text": "Envía un WhatsApp a Ana diciéndole que llego tarde",
+   "intent": "whatsapp.compose",
+   "contact_exacto": "Ana",
+   "notes_incluye": "llego tarde"
+  },
+  {
+   "cat": "whatsapp",
+   "text": "Mándale un WhatsApp a Pedro que ya estoy abajo",
+   "intent": "whatsapp.compose",
+   "contact_exacto": "Pedro",
+   "notes_incluye": "ya estoy abajo"
+  },
+  {
+   "cat": "whatsapp",
+   "text": "WhatsApp a mi madre: llego a las ocho",
+   "intent": "whatsapp.compose",
+   "contact_incluye": "madre",
+   "notes_incluye": "llego a las ocho"
+  },
+  {
+   "cat": "whatsapp",
+   "text": "Escribe a Luis por WhatsApp que la reunión es mañana",
+   "intent": "whatsapp.compose",
+   "contact_exacto": "Luis",
+   "notes_incluye": "reunion es manana"
+  },
+  {
+   "cat": "whatsapp",
+   "text": "Envía un WhatsApp a Juan",
+   "intent": "whatsapp.compose",
+   "contact_exacto": "Juan",
+   "missing_incluye": "notes"
+  },
+  {
+   "cat": "whatsapp",
+   "text": "Manda un mensaje por WhatsApp",
+   "intent": "whatsapp.compose",
+   "missing_incluye": "contactName"
+  },
+  {
+   "cat": "whatsapp",
+   "text": "Dile a Marta por WhatsApp que se me ha hecho tarde",
+   "intent": "whatsapp.compose",
+   "contact_exacto": "Marta",
+   "notes_incluye": "tarde"
+  },
+  {
+   "cat": "whatsapp",
+   "text": "Envíale un WhatsApp a Carlos preguntándole si viene a cenar",
+   "intent": "whatsapp.compose",
+   "contact_exacto": "Carlos",
+   "notes_incluye": "cenar"
+  },
+  {
+   "cat": "whatsapp",
+   "text": "Mándale un whatsapp a Laura y dile feliz cumpleaños",
+   "intent": "whatsapp.compose",
+   "contact_exacto": "Laura",
+   "notes_incluye": "feliz cumpleanos"
+  },
+  {
+   "cat": "whatsapp",
+   "text": "WhatsApp al 666 111 222 que ya he llegado",
+   "intent": "whatsapp.compose",
+   "phone_incluye": "666",
+   "notes_incluye": "ya he llegado"
+  },
+  {
+   "cat": "whatsapp",
+   "text": "Envía un WhatsApp a Pepe para decirle que mañana no puedo",
+   "intent": "whatsapp.compose",
+   "contact_exacto": "Pepe",
+   "notes_incluye": "manana no puedo"
+  },
+  {
+   "cat": "whatsapp",
+   "text": "Mándale a Sonia un WhatsApp: recuerda traer el vino",
+   "intent": "whatsapp.compose",
+   "contact_exacto": "Sonia",
+   "notes_incluye": "vino"
+  },
+  {
+   "cat": "nota",
+   "text": "Apunta que el código del portal es 4521",
+   "intent": "note"
+  },
+  {
+   "cat": "nota",
+   "text": "Anota: la contraseña del wifi está en la nevera",
+   "intent": "note"
+  },
+  {
+   "cat": "nota",
+   "text": "Guarda una nota: ideas para el cumpleaños de Marta, globos y tarta",
+   "intent": "note"
+  },
+  {
+   "cat": "nota",
+   "text": "Toma nota de que el coche necesita cambio de aceite",
+   "intent": [
+    "note",
+    "task.create"
+   ]
+  },
+  {
+   "cat": "nota",
+   "text": "Apunta que Juan me debe 20 euros",
+   "intent": "note"
+  },
+  {
+   "cat": "nota",
+   "text": "Nota: comprar regalo para el amigo invisible",
+   "intent": [
+    "note",
+    "task.create"
+   ]
+  },
+  {
+   "cat": "nota",
+   "text": "Apunta la matrícula del coche de alquiler: 1234 ABC",
+   "intent": "note"
+  },
+  {
+   "cat": "nota",
+   "text": "Anota que la reunión de ayer fue bien y hay que enviar el presupuesto",
+   "intent": [
+    "note",
+    "task.create"
+   ]
+  },
+  {
+   "cat": "nota",
+   "text": "Guarda que la talla de zapatos de Lucas es la 32",
+   "intent": "note"
+  },
+  {
+   "cat": "nota",
+   "text": "Apunta esta idea: hacer una app de recetas",
+   "intent": "note"
+  },
+  {
+   "cat": "nota",
+   "text": "Apunta que tengo que llamar al fontanero",
+   "intent": [
+    "note",
+    "task.create"
+   ]
+  },
+  {
+   "cat": "nota",
+   "text": "El proyecto se llama Aurora, apúntalo",
+   "intent": "note"
+  },
+  {
+   "cat": "tarea",
+   "text": "Tengo que comprar pilas",
+   "intent": [
+    "task.create",
+    "note"
+   ]
+  },
+  {
+   "cat": "tarea",
+   "text": "Hay que llamar al seguro",
+   "intent": [
+    "task.create",
+    "note"
+   ]
+  },
+  {
+   "cat": "tarea",
+   "text": "Ya he llamado a Miguel",
+   "intent": "task.complete",
+   "target_incluye": "miguel"
+  },
+  {
+   "cat": "tarea",
+   "text": "He terminado el informe",
+   "intent": "task.complete",
+   "target_incluye": "informe"
+  },
+  {
+   "cat": "tarea",
+   "text": "Ya he comprado el pan",
+   "intent": "task.complete",
+   "target_incluye": "pan"
+  },
+  {
+   "cat": "tarea",
+   "text": "Ya he pagado la luz",
+   "intent": "task.complete",
+   "target_incluye": "luz"
+  },
+  {
+   "cat": "tarea",
+   "text": "Tengo que renovar el pasaporte",
+   "intent": [
+    "task.create",
+    "note"
+   ]
+  },
+  {
+   "cat": "tarea",
+   "text": "Pendiente: devolver el libro a la biblioteca",
+   "intent": [
+    "task.create",
+    "note"
+   ]
+  },
+  {
+   "cat": "consulta",
+   "text": "¿Qué tengo hoy?",
+   "intent": "calendar.query",
+   "rangeStart": "2026-09-23",
+   "rangeEnd": "2026-09-24"
+  },
+  {
+   "cat": "consulta",
+   "text": "¿Qué tengo mañana?",
+   "intent": "calendar.query",
+   "rangeStart": "2026-09-24",
+   "rangeEnd": "2026-09-25"
+  },
+  {
+   "cat": "consulta",
+   "text": "¿Qué tengo esta semana?",
+   "intent": "calendar.query",
+   "rangeStart": [
+    "2026-09-21",
+    "2026-09-23"
+   ],
+   "rangeEnd": [
+    "2026-09-28",
+    "2026-09-27"
+   ]
+  },
+  {
+   "cat": "consulta",
+   "text": "¿Qué tengo la semana que viene?",
+   "intent": "calendar.query",
+   "rangeStart": "2026-09-28",
+   "rangeEnd": [
+    "2026-10-05",
+    "2026-10-04"
+   ]
+  },
+  {
+   "cat": "consulta",
+   "text": "¿Tengo algo el viernes?",
+   "intent": "calendar.query",
+   "rangeStart": "2026-09-25",
+   "rangeEnd": "2026-09-26"
+  },
+  {
+   "cat": "consulta",
+   "text": "¿Qué tengo el fin de semana?",
+   "intent": "calendar.query",
+   "rangeStart": "2026-09-26",
+   "rangeEnd": [
+    "2026-09-28",
+    "2026-09-27"
+   ]
+  },
+  {
+   "cat": "consulta",
+   "text": "¿Qué citas tengo el 2 de octubre?",
+   "intent": "calendar.query",
+   "rangeStart": "2026-10-02",
+   "rangeEnd": "2026-10-03"
+  },
+  {
+   "cat": "consulta",
+   "text": "Dime mi agenda de pasado mañana",
+   "intent": "calendar.query",
+   "rangeStart": "2026-09-25",
+   "rangeEnd": "2026-09-26"
+  },
+  {
+   "cat": "consulta",
+   "text": "¿Estoy libre el lunes por la tarde?",
+   "intent": "calendar.query",
+   "rangeStart": "2026-09-28"
+  },
+  {
+   "cat": "consulta",
+   "text": "¿Qué hay en mi calendario este mes?",
+   "intent": "calendar.query",
+   "rangeStart": [
+    "2026-09-01",
+    "2026-09-23"
+   ],
+   "rangeEnd": "2026-10-01"
+  },
+  {
+   "cat": "consulta",
+   "text": "¿Cuándo es la cena con Vicente?",
+   "intent": "calendar.query"
+  },
+  {
+   "cat": "consulta",
+   "text": "¿Qué recordatorios tengo?",
+   "intent": "reminder.query"
+  },
+  {
+   "cat": "consulta",
+   "text": "¿Qué recordatorios tengo para mañana?",
+   "intent": "reminder.query"
+  },
+  {
+   "cat": "consulta",
+   "text": "Enséñame mis recordatorios pendientes",
+   "intent": "reminder.query"
+  },
+  {
+   "cat": "consulta",
+   "text": "¿Tengo algún recordatorio sobre el médico?",
+   "intent": "reminder.query"
+  },
+  {
+   "cat": "consulta",
+   "text": "¿Qué notas tengo?",
+   "intent": "note.query"
+  },
+  {
+   "cat": "consulta",
+   "text": "Busca mis notas sobre el coche",
+   "intent": "note.query"
+  },
+  {
+   "cat": "consulta",
+   "text": "¿Qué apunté sobre el wifi?",
+   "intent": "note.query"
+  },
+  {
+   "cat": "consulta",
+   "text": "Enséñame las notas de trabajo",
+   "intent": "note.query"
+  },
+  {
+   "cat": "modificar",
+   "text": "Cambia la cena con Laura al domingo",
+   "intent": "calendar.update",
+   "target_incluye": "laura",
+   "changes_date": "2026-09-27"
+  },
+  {
+   "cat": "modificar",
+   "text": "Pasa la reunión del lunes al martes",
+   "intent": "calendar.update",
+   "changes_date": "2026-09-29"
+  },
+  {
+   "cat": "modificar",
+   "text": "Mueve el dentista a las seis de la tarde",
+   "intent": "calendar.update",
+   "target_incluye": "dentista",
+   "changes_time": "18:00"
+  },
+  {
+   "cat": "modificar",
+   "text": "Retrasa la cita con el médico una hora",
+   "intent": "calendar.update"
+  },
+  {
+   "cat": "modificar",
+   "text": "Cámbiame la hora de la reunión con Pedro a las 12",
+   "intent": "calendar.update",
+   "target_incluye": "pedro",
+   "changes_time": "12:00"
+  },
+  {
+   "cat": "modificar",
+   "text": "Adelanta la cena del sábado a las ocho y media",
+   "intent": "calendar.update",
+   "changes_time": "20:30"
+  },
+  {
+   "cat": "modificar",
+   "text": "Cambia la hora de Miguel",
+   "intent": "calendar.update",
+   "target_incluye": "miguel"
+  },
+  {
+   "cat": "modificar",
+   "text": "Pasa la llamada a Ana al jueves a las 10 de la mañana",
+   "intent": "calendar.update",
+   "target_incluye": "ana",
+   "changes_date": "2026-09-24",
+   "changes_time": "10:00"
+  },
+  {
+   "cat": "modificar",
+   "text": "Cambia la cena con Vicente al lunes que viene a las nueve",
+   "intent": "calendar.update",
+   "target_incluye": "vicente",
+   "changes_date": "2026-09-28",
+   "changes_time": "21:00"
+  },
+  {
+   "cat": "cancelar",
+   "text": "Cancela la cena con Laura",
+   "intent": "calendar.delete",
+   "target_incluye": "laura"
+  },
+  {
+   "cat": "cancelar",
+   "text": "Anula la cita del dentista",
+   "intent": "calendar.delete",
+   "target_incluye": "dentista"
+  },
+  {
+   "cat": "cancelar",
+   "text": "Borra la reunión del lunes",
+   "intent": "calendar.delete"
+  },
+  {
+   "cat": "cancelar",
+   "text": "Cancela el recordatorio de llamar a Juan",
+   "intent": "calendar.delete",
+   "target_incluye": "juan"
+  },
+  {
+   "cat": "cancelar",
+   "text": "Quita la comida del domingo",
+   "intent": "calendar.delete"
+  },
+  {
+   "cat": "cancelar",
+   "text": "Ya no voy a la boda de Pedro, cancélala",
+   "intent": "calendar.delete",
+   "target_incluye": "pedro"
+  }
+ ]
+}

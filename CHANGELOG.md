@@ -1,5 +1,30 @@
 # Changelog
 
+## V0.24.0 · Un cerebro más listo, medido con un examen
+
+- **Examen del intérprete** (`backend/eval/`): 140 frases genéricas, de las que diría cualquier persona (recordatorios, eventos, llamadas, WhatsApp, notas, tareas, consultas, cambios y cancelaciones). Se corre contra Gemini real con las mismas instrucciones y la misma validación que el servidor, y sirve para medir cada cambio futuro: `GCP_TOKEN=$(gcloud auth print-access-token) python3 eval/run_eval.py <modelo>`.
+- **Resultados** (con el mismo prompt):
+
+  | Modelo | Aciertos | Tiempo típico |
+  |---|---|---|
+  | 2.5 Flash-Lite (el anterior) | 87 % → 94 % con el prompt mejorado | 1,3 s |
+  | **2.5 Flash sin razonamiento (el nuevo)** | **98 %** | 1,8 s |
+  | 3 Flash *preview* | 98 % | 1,7 s (en pruebas, no estable) |
+  | 2.5 Pro | lento (8 s) y respuestas cortadas | — |
+
+- **Cambio de modelo**: el intérprete pasa a Gemini 2.5 Flash con el razonamiento desactivado. Razonar no mejoraba la nota y cortaba respuestas. La frase corta de reacción del modo conversación sigue en Flash-Lite, que es más rápido.
+- **Fallo grave encontrado por el examen**: al preguntar «¿Qué tengo mañana?» la IA solía devolver solo el día, sin periodo, y **la búsqueda iba de hoy a 90 días**. Ahora se corrige en dos capas:
+  - el servidor convierte un día suelto en un periodo de un día;
+  - el móvil calcula el periodo que dices («pasado mañana», «el fin de semana», «la semana que viene») y manda, que es exacto. La IA también confundía aquí «pasado mañana» con «mañana».
+- **Prompt más claro** sobre:
+  - periodos en las consultas;
+  - «en una semana» son 7 días;
+  - una frase que describe algo futuro es crear, no modificar;
+  - «toma nota» siempre es una nota;
+  - un WhatsApp que ya trae el mensaje no se pregunta.
+- **Requiere redesplegar Cloud Run.**
+- Tests: `test_interpreter_quality.py` y `tests/ai-authority.test.mjs` ampliados (253 pruebas en el frontend).
+
 ## V0.23.11 · La lógica local vuelve a proteger donde la IA se equivocaba
 
 Revisión pedida por el propietario, preocupado por si se había quitado la lógica local para dejar solo la IA (que históricamente daba muchos errores). **La lógica local no se quitó**, pero el historial mostró un caso reabierto por la 3ª auditoría, y se corrige:

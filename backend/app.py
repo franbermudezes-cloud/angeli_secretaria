@@ -100,6 +100,16 @@ bodas, conciertos y quedadas por la tarde usa la hora de tarde o noche («cena a
 las nueve» = 21:00); para reuniones, citas médicas y trámites usa el horario
 laboral (08:00–20:00); si se da un día explícito, no elijas la hora según lo
 cercana que esté a la hora actual. «A las doce» es mediodía salvo «de la noche».
+En calendar.query, reminder.query y note.query usa SIEMPRE rangeStart y rangeEnd
+cuando se habla de un periodo, también para un solo día: «¿qué tengo mañana?»
+es rangeStart = mañana y rangeEnd = pasado mañana. «Pasado mañana» son DOS días
+después de hoy. «En una semana» son 7 días, «en dos semanas» 14.
+Una frase que describe algo que va a pasar («cena con Vicente el sábado»,
+«reunión el lunes a las diez») es crear (calendar.create); solo es
+calendar.update si pide explícitamente cambiar, mover, pasar o retrasar algo
+que ya existe. «Toma nota», «apunta» y «anota» son siempre note.
+En whatsapp.compose, si la frase ya incluye el mensaje (tras «que», «diciéndole»,
+«dile», «preguntándole», «:»), notes contiene ese texto y NO se pregunta.
 Para tareas pendientes («tengo que comprar pilas», «hay que llamar al seguro»)
 sin fecha ni hora usa task.create; con fecha y hora, reminder.create.
 Una fecha sin año que ya pasó este año se refiere al año siguiente al crear algo,
@@ -740,6 +750,14 @@ def validate_interpretation(raw: Any) -> dict[str, Any]:
         validate_temporal(key, result[key])
     # 3ª auditoría: «¿Qué tengo hoy?» con inicio y fin iguales (el modelo no
     # siempre respeta el fin exclusivo) daba 503; se amplía a un día.
+    # Examen del intérprete: en las consultas de UN día Gemini suele devolver
+    # `date` en vez de intervalo, y la app no usa `date` en una consulta: buscaba
+    # de hoy a 90 días («¿Qué tengo mañana?» enseñaba todo el trimestre).
+    if result["intent"] in {"calendar.query", "note.query", "reminder.query"} and result["date"] and not result["rangeStart"]:
+        result["rangeStart"] = result["date"]
+        result["rangeEnd"] = (date.fromisoformat(result["date"]) + timedelta(days=1)).isoformat()
+    if result["rangeStart"] and not result["rangeEnd"]:
+        result["rangeEnd"] = (date.fromisoformat(result["rangeStart"]) + timedelta(days=1)).isoformat()
     if result["rangeStart"] and result["rangeEnd"] and result["rangeStart"] == result["rangeEnd"]:
         result["rangeEnd"] = (date.fromisoformat(result["rangeEnd"]) + timedelta(days=1)).isoformat()
     if result["rangeStart"] and result["rangeEnd"] and result["rangeStart"] > result["rangeEnd"]:
@@ -868,7 +886,14 @@ def validate_linked_reminder(value: Any) -> None:
     validate_temporal("time", value["time"])
 
 
-INTERPRETER_MODEL = "gemini-2.5-flash-lite"
+# Examen del intérprete (backend/eval, 140 frases genéricas): con el mismo prompt,
+# 2.5 Flash sin razonamiento acierta 98 % frente a 94 % de Flash-Lite (87 %
+# antes de mejorar el prompt), con ~0,5 s más. El razonamiento no mejora la nota
+# y gasta el margen de salida (respuestas cortadas), así que va a 0.
+INTERPRETER_MODEL = "gemini-2.5-flash"
+INTERPRETER_THINKING_BUDGET = 0
+# La frase corta de reacción del modo conversación no necesita más: rápida y barata.
+ASIDE_MODEL = "gemini-2.5-flash-lite"
 # El prompt de sistema pesa ~48.000 caracteres (~12.000-13.000 tokens) y es
 # idéntico en cada interpretación. Sin caché, ese texto entero se transmite y
 # se factura completo en cada llamada. Vertex AI permite cachearlo de forma
@@ -972,6 +997,7 @@ def vertex_interpret(text: str, now: str, timezone: str, context: dict[str, Any]
                     response_json_schema=RESPONSE_SCHEMA,
                     temperature=0,
                     max_output_tokens=800,
+                    thinking_config=types.ThinkingConfig(thinking_budget=INTERPRETER_THINKING_BUDGET),
                 ),
             )
             return response.parsed if response.parsed is not None else json.loads(response.text)
@@ -996,6 +1022,7 @@ def vertex_interpret(text: str, now: str, timezone: str, context: dict[str, Any]
             # 400 se quedaba justo con una nota larga + clasificación: JSON
             # cortado = 503.
             max_output_tokens=800,
+            thinking_config=types.ThinkingConfig(thinking_budget=INTERPRETER_THINKING_BUDGET),
         ),
     )
     return response.parsed if response.parsed is not None else json.loads(response.text)
@@ -1033,7 +1060,7 @@ def vertex_chat_aside(text: str) -> str:
         http_options=types.HttpOptions(timeout=REQUEST_TIMEOUT_SECONDS * 1000),
     )
     response = client.models.generate_content(
-        model=INTERPRETER_MODEL,
+        model=ASIDE_MODEL,
         contents=f"Orden que estás procesando: {text}",
         config=types.GenerateContentConfig(
             system_instruction=ASIDE_SYSTEM_INSTRUCTION,
