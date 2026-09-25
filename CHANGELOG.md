@@ -1,5 +1,18 @@
 # Changelog
 
+## V0.23.5 · La IA manda: las reglas locales ya no pisan sus respuestas correctas (3ª auditoría, lote 1)
+
+- **El problema de fondo** de que la IA «no acabe de estar fina»: Gemini entendía bien, pero después una regla local sustituía su respuesta por otra peor. En una batería de 52 órdenes, 30 respuestas correctas de la IA terminaban mal. Principio nuevo: si la IA respondió con confianza, lo local solo rellena huecos.
+- **Recordatorios, tareas y notas ya no se convierten en «modificar evento»**: «Recuérdame pasar por el banco mañana», «Tengo que pasar la ITV el jueves», «Mañana a las diez pasa el técnico»… Ahora solo cuenta un verbo de cambio al principio de la frase o detrás del evento nombrado.
+- **Al mover un evento, la fecha y hora nuevas de la IA mandan**: «la cena del viernes al sábado» ya no se queda el viernes, y «a las 9 y media de la noche» ya no se queda en 09:00.
+- **Recordatorios: la fecha de la IA manda** sobre un «hoy/mañana» del contenido («Recuérdame el viernes comprar el pan para mañana» ya no cae mañana).
+- **Crear ya no se confunde con consultar**: «Quiero que me pongas un recordatorio…» crea el recordatorio (antes buscaba tus recordatorios y no creaba nada); «Dile a Ana que me pase las notas» ya no busca notas.
+- **Llamadas**: una nota que menciona llamar («Apunta que tengo que llamar al fontanero») o una llamada con hora («Llama a Ana esta noche») ya no se lanza como llamada inmediata; el nombre se corta limpio («Ana», no «Ana para preguntarle por el presupuesto»), y el nombre de la IA manda.
+- **WhatsApp**: responder a un WhatsApp pendiente con la IA caída o sin cupo ya no revienta con «Campo IA no permitido»; el texto de un WhatsApp («dile que me pasa a buscar mañana a las 8») ya no se lee como modificar un evento; un WhatsApp pendiente ya no convierte una orden nueva en su mensaje cuando la IA dice que es otra cosa; y el respaldo local separa contacto y mensaje también sin «dile» («a Ana que llego tarde»), con «envíale/mándale» y con número.
+- **Hora a la IA**: se envía la hora local con su desfase en lugar de UTC (entre las 00:00 y las 02:00 «hoy/mañana» caían un día antes).
+- Sin cambios en el backend; no requiere redespliegue (sí recargar la PWA).
+- Tests: `tests/ai-authority.test.mjs` con los casos reales de la auditoría (220 pruebas).
+
 ## V0.23.4 · Los accesos directos de llamar y agenda son instantáneos (sin esperar a la IA)
 
 - **Antes**: cualquier acceso directo — incluso "📞 Llamar contacto" o "🗓️ Hoy" — pasaba por la IA del servidor antes de hacer nada, aunque ya supiéramos exactamente qué hacer. Eso añadía una espera innecesaria.
