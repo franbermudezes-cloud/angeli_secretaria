@@ -1,5 +1,15 @@
 # Changelog
 
+## V0.24.2 · Privacidad: Calendar, Contactos y Drive son solo del propietario
+
+- **Fallo grave de privacidad encontrado** al preparar el resumen del día: la conexión con Google Calendar, Contactos y Drive guarda **una sola autorización, la del propietario** (`angeli-google-*-grant`), sin distinguir quién pregunta. Una persona invitada habría leído y escrito en la agenda del propietario, buscado en sus contactos y subido archivos a su Drive, e incluso podría haber **sustituido su autorización** al pulsar «Conectar».
+- **No llegó a pasar**: la lista de invitados está vacía y la lista heredada solo contiene el correo del propietario (comprobado en producción).
+- **Arreglo en el servidor**: `/google`, `/oauth/exchange` y `/media/*` responden 403 a quien no sea el propietario, con un mensaje claro. `/session/status` ya no revela a un invitado el estado de las conexiones del propietario.
+- **En la app**: una persona invitada no ve los botones de Calendar, Contactos ni Drive, y en su lugar lee que de momento son solo de la cuenta principal. Sus notas, recordatorios y listas siguen siendo solo suyos (Firestore, por `uid`).
+- **Pendiente para que los invitados tengan su propia agenda**: autorizaciones de Google por persona.
+- **Requiere redesplegar Cloud Run.**
+- Tests: `backend/test_access_control.py` (3 nuevas), `tests/admin-audit.test.mjs`.
+
 ## V0.24.1 · Pregúntale por tus cosas
 
 Angeli ya contesta preguntas sobre tu agenda y tus notas, no solo ejecuta órdenes:

@@ -159,5 +159,51 @@ class AccessDispatchTests(unittest.TestCase):
         self.assertEqual(data.get("code"), "account_not_allowed")
 
 
+
+class GoogleIntegrationsAreOwnerOnlyTests(unittest.TestCase):
+    """PRIVACIDAD: Calendar, Contactos y Drive usan UNA autorización (la del
+    propietario). Un invitado no debe poder leer ni escribir en ellas, ni
+    sustituirla al «conectar»."""
+
+    def setUp(self):
+        os.environ.pop("ANGELI_AI_DEV_BYPASS_AUTH", None)
+        os.environ.pop("K_SERVICE", None)
+        os.environ["ALLOWED_FIREBASE_EMAILS"] = OWNER
+        self.store = {"ana@gmail.com": {"status": "active", "mode": "open"}}
+
+    def tearDown(self):
+        os.environ.pop("ALLOWED_FIREBASE_EMAILS", None)
+        app.set_test_dependencies()
+
+    def request(self, path, payload, email):
+        app.set_test_dependencies(verifier=lambda token: claims(email), access_factory=lambda: AccessControl(store=self.store))
+        body = json.dumps(payload).encode("utf-8")
+        captured = {}
+        raw = b"".join(app.app({"REQUEST_METHOD": "POST", "PATH_INFO": path, "CONTENT_LENGTH": str(len(body)), "wsgi.input": BytesIO(body), "HTTP_AUTHORIZATION": "Bearer t"}, lambda status, headers: captured.setdefault("status", status)))
+        return captured["status"], json.loads(raw) if raw.strip().startswith(b"{") else {}
+
+    def test_invitee_cannot_use_calendar_contacts_or_drive(self):
+        for path, payload in [
+            ("/google", {"integration": "calendar", "action": "list", "params": {}}),
+            ("/google", {"integration": "contacts", "action": "search", "query": "Ana"}),
+            ("/oauth/exchange", {"integration": "calendar", "code": "x", "redirectUri": "https://example.com"}),
+            ("/media/delete", {"fileId": "abcdefghijklmno"}),
+            ("/media/download", {"fileId": "abcdefghijklmno"}),
+        ]:
+            status, data = self.request(path, payload, "ana@gmail.com")
+            self.assertEqual(status, "403 Forbidden", path)
+            self.assertEqual(data["code"], "owner_only_integration", path)
+
+    def test_invitee_session_status_does_not_reveal_owner_connections(self):
+        status, data = self.request("/session/status", {}, "ana@gmail.com")
+        self.assertEqual(status, "200 OK")
+        for integration in ("contacts", "calendar", "drive"):
+            self.assertEqual(data[integration]["reason"], "owner_only")
+
+    def test_owner_is_not_blocked(self):
+        status, _ = self.request("/google", {"integration": "nope", "action": "list"}, OWNER)
+        self.assertNotEqual(status, "403 Forbidden")
+
+
 if __name__ == "__main__":
     unittest.main()

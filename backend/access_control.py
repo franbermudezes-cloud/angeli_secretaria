@@ -161,6 +161,15 @@ class AccessControl:
             "name": policy.get("name", ""),
         }
 
+    def is_owner(self, claims: dict[str, Any]) -> bool:
+        """Propietario (o la lista heredada, que es la del propietario antes del multiusuario)."""
+        if claims.get("bypass"):
+            return True
+        if not claims.get("email_verified"):
+            return False
+        policy = self._policy(_email_key(claims.get("email")))
+        return bool(policy and (policy.get("owner") or policy.get("legacy")) and policy.get("status") != "blocked")
+
     def authorize(self, claims: dict[str, Any]) -> None:
         """Verifica que la cuenta puede usar Angeli. Lanza AccessDenied si no."""
         if claims.get("bypass"):
