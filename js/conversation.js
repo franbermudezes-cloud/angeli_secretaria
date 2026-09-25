@@ -134,7 +134,10 @@ export function resolveConversationTurn({ active, text, interpretation, now = ne
       id,
       intent: resolved.intent,
       status,
-      source: resolved.source === "ai" ? "ai" : "fallback",
+      // 3ª auditoría: un acceso directo (source "shortcut") no es un respaldo por
+      // IA caída; marcarlo "fallback" mostraba «Necesito asegurarme / No quiero
+      // asumir una acción» en su pregunta de seguimiento.
+      source: resolved.source === "ai" || resolved.source === "shortcut" ? resolved.source : "fallback",
       fallbackReason: resolved.fallbackReason || null,
       collectedData: collectData(resolved),
       missingFields,
