@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.24.3 · Preguntar por la agenda contesta sola
+
+- **Reportado por el propietario**: preguntó «¿qué tengo pendiente el mes de octubre?», la app escribió la pregunta y **no contestó nada**. La IA lo entendía bien (agenda del 1 de octubre al 1 de noviembre), pero la búsqueda en Calendar solo se lanzaba sola desde un acceso directo. Dicha a mano, esperaba a que se tocara «📅 Consultar». Consultar la agenda no cambia nada, así que ahora **se busca siempre y se contesta directamente** («Tienes 3 cosas: …»), y en el modo conversación en voz alta.
+- **Meses por su nombre** en la red local del móvil: «en octubre», «el mes de octubre», «para noviembre» son el mes entero (del año siguiente si ya pasó); «el 20 de octubre» sigue siendo ese día.
+- Sin cambios en el servidor.
+
 ## V0.24.2 · Privacidad: Calendar, Contactos y Drive son solo del propietario
 
 - **Fallo grave de privacidad encontrado** al preparar el resumen del día: la conexión con Google Calendar, Contactos y Drive guarda **una sola autorización, la del propietario** (`angeli-google-*-grant`), sin distinguir quién pregunta. Una persona invitada habría leído y escrito en la agenda del propietario, buscado en sus contactos y subido archivos a su Drive, e incluso podría haber **sustituido su autorización** al pulsar «Conectar».

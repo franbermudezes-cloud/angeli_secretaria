@@ -97,3 +97,10 @@ test("la búsqueda de eventos sin fecha empieza en la fecha LOCAL, no en la UTC"
   assert.doesNotMatch(google, /new Date\(\)\.toISOString\(\)\.slice\(0, 10\)/);
   assert.match(google, /const from = new Date\(`\$\{date \|\| localToday\}T00:00:00`\);/);
 });
+
+test("un mes por su nombre es el mes entero («¿Qué tengo pendiente el mes de octubre?»)", () => {
+  const sep = new Date(2026, 8, 26, 10);
+  assert.deepEqual(naturalQueryRange("¿Qué tengo pendiente el mes de octubre?", sep), { rangeStart: "2026-10-01", rangeEnd: "2026-11-01" });
+  assert.deepEqual(naturalQueryRange("¿Qué tengo en marzo?", sep), { rangeStart: "2027-03-01", rangeEnd: "2027-04-01" });
+  assert.deepEqual(naturalQueryRange("¿Qué tengo el 20 de octubre?", sep), { rangeStart: "2026-10-20", rangeEnd: "2026-10-21" }, "un día concreto sigue siendo ese día");
+});

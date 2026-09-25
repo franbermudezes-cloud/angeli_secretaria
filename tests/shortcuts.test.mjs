@@ -56,7 +56,11 @@ test("accesos directos: la intención elegida vence una clasificación errónea 
 test("accesos directos: consultas y llamadas ejecutan la búsqueda sin tarjeta intermedia", () => {
   const app = readFileSync(new URL("../js/app.js", import.meta.url), "utf8");
   const worker = readFileSync(new URL("../sw.js", import.meta.url), "utf8");
-  assert.match(app, /shortcutContext\?\.direct&&interpretation\.intent==="calendar\.query"/);
+  // Reportado por el propietario («¿qué tengo pendiente el mes de octubre?» no
+  // contestaba): la consulta de agenda ya no depende de venir de un acceso
+  // directo; dicha o escrita a mano también busca y contesta sola.
+  assert.match(app, /interpretation\.intent==="calendar\.update"\|\|interpretation\.intent==="calendar\.query"\)\{/);
+  assert.doesNotMatch(app, /shortcutContext\?\.direct&&interpretation\.intent==="calendar\.query"/, "ya no debe depender de un acceso directo");
   assert.match(worker, /\.\/js\/shortcuts\.js\?v=/);
 });
 
