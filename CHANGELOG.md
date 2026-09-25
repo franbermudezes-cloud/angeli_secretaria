@@ -1,5 +1,13 @@
 # Changelog
 
+## V0.25.2 · Angeli habla más natural
+
+- **Reportado por el propietario**: las respuestas sonaban «muy robóticas». Había dos causas: la voz del móvil leía los símbolos («marca de verificación», «calendario» por ✓ y 📅, las comillas) y decía las horas como un reloj digital («veintiuno cero cero»). Además, en el modo conversación se leía el título y la explicación del formulario tal cual: «¿Lo añado al calendario?. Comprueba el título. La ubicación y la descripción se guardarán en sus campos. Toca «📅 Añadir» para continuar».
+- **La voz** (nuevo `js/speech.js`): ya no lee símbolos ni comillas, y dice las horas como una persona: «a las nueve de la noche», «a la una del mediodía», «a las cinco y media de la tarde». Lo escrito en pantalla no cambia.
+- **Frases naturales** en el modo conversación: ««Cena con Marta», el jueves 1 de octubre a las nueve de la noche. ¿Lo apunto en tu agenda? Toca Añadir.»; al terminar, «Hecho. «Cena con Marta» … ya está en tu agenda.»; «Apuntado.» / «Listo, anotado.» para las notas; «Hecho, te lo recuerdo mañana a las …» para los avisos. Varían un poco para no repetir siempre lo mismo.
+- «Operación cancelada» pasa a «Vale, lo dejo».
+- Sin cambios en el servidor. Tests: `tests/voz-natural.test.mjs`.
+
 ## V0.25.1 · Resumen del día
 
 - **La primera vez que abres Angeli cada día**, te dice lo que tienes en la agenda: «Buenos días. Hoy tienes 2 cosas: «Dentista» a las 17:00 y «Cena con Marta» a las 21:00». Por la tarde habla de «lo que queda de hoy»; si no hay nada, también lo dice.

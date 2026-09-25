@@ -1,14 +1,14 @@
-import { typeLabel } from "./classifier.js?v=0.25.1";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.25.1";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.25.1";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.25.1";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.25.1";
-import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.25.1";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.25.1";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.25.1";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.25.1";
-import { groupDietarioByDay } from "./dietario.js?v=0.25.1";
-import { calendarAnswer, clashWarning } from "./agenda.js?v=0.25.1";
+import { typeLabel } from "./classifier.js?v=0.25.2";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.25.2";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.25.2";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.25.2";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.25.2";
+import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.25.2";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.25.2";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.25.2";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.25.2";
+import { groupDietarioByDay } from "./dietario.js?v=0.25.2";
+import { calendarAnswer, clashWarning, spokenWhen } from "./agenda.js?v=0.25.2";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -131,8 +131,12 @@ export function createUI({ getMedia }) {
     $("settingsMenu").classList.add("show");
   }
 
-  function openModal({ title, lead, body, actions = [] }) {
+  let modalSpoken = "";
+  // `spoken`: lo que se dice en voz alta en el modo conversación, en frase
+  // natural. Si falta, se lee el título y la explicación del modal.
+  function openModal({ title, lead, body, actions = [], spoken = "" }) {
     clearTimeout(completionTimer);
+    modalSpoken = spoken;
     $("actionModal").classList.remove("working-modal", "conversation-modal", "call-choice-modal", "completion-modal");
     $("modalTitle").textContent = title;
     $("modalLead").textContent = lead;
@@ -193,7 +197,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.25.1";
+    image.src = "assets/angeli-welcome.gif?v=0.25.2";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -224,8 +228,8 @@ export function createUI({ getMedia }) {
     openModal({ title: "Tu día", lead: text, body: "", actions: [{ label: "Vale", kind: "confirm", onClick: closeLayers }] });
   }
 
-  function showCompletion({ title, lead, body = "" }) {
-    openModal({ title, lead, body, actions: [] });
+  function showCompletion({ title, lead, body = "", spoken = "" }) {
+    openModal({ title, lead, body, actions: [], spoken });
     $("actionModal").classList.add("completion-modal");
     completionTimer = setTimeout(closeLayers, 1800);
   }
@@ -561,7 +565,7 @@ export function createUI({ getMedia }) {
     const intent = note.proposal?.intent || "note";
     const base = { title: "Entrada preparada", lead: "Angeli ha entendido esto. Confirma solo si quieres realizar la acción.", body: entryBody(note) };
     if (intent === "note") {
-      showCompletion({ title: "✓ Nota guardada", lead: "Ya está sincronizada y clasificada.", body: noteConfirmationCard(note) });
+      showCompletion({ title: "✓ Nota guardada", lead: "Ya está sincronizada y clasificada.", body: noteConfirmationCard(note), spoken: pick(["Apuntado.", "Hecho, ya lo tengo apuntado.", "Listo, anotado."]) });
       return;
     }
     if (intent === "calendar.create" && note.schedule) {
@@ -569,11 +573,11 @@ export function createUI({ getMedia }) {
       const completed = note.calendarStatus === "synced" && note.schedule.status === "scheduled";
       if (completed) {
         const links = (note.calendarUrl ? '<a href="' + esc(note.calendarUrl) + '" target="_blank" rel="noopener">Abrir evento</a>' : '') + (note.schedule.calendarUrl ? ' · <a href="' + esc(note.schedule.calendarUrl) + '" target="_blank" rel="noopener">Abrir aviso</a>' : '');
-        showCompletion({ title: "✓ Evento y aviso creados", lead: "Los dos elementos relacionados ya están en Calendar.", body: entryBody(note) + calendarCard(note) + reminder + (links ? '<p>' + links + '</p>' : '') });
+        showCompletion({ title: "✓ Evento y aviso creados", lead: "Los dos elementos relacionados ya están en Calendar.", body: entryBody(note) + calendarCard(note) + reminder + (links ? '<p>' + links + '</p>' : ''), spoken: `Hecho. ${eventPhrase(note)} ya está en tu agenda, y te aviso ${dueWhen(note.schedule)}.` });
         return;
       }
       const bundleClash = note.calendarStatus === "error" ? "" : clashWarning(google?.getClashResult?.(note) || []);
-      openModal({ ...base, title: note.calendarStatus === "error" ? "No se pudo completar" : bundleClash ? "Esa hora ya está ocupada" : "¿Creo el evento y su aviso?", lead: bundleClash ? bundleClash.replace("¿Lo añado igual?", "¿Creo el evento y su aviso igual?") : "Comprueba los dos elementos. Se guardarán juntos o no se guardará ninguno.", body: entryBody(note) + calendarCard(note) + reminder, actions: [
+      openModal({ ...base, title: note.calendarStatus === "error" ? "No se pudo completar" : bundleClash ? "Esa hora ya está ocupada" : "¿Creo el evento y su aviso?", lead: bundleClash ? bundleClash.replace("¿Lo añado igual?", "¿Creo el evento y su aviso igual?") : "Comprueba los dos elementos. Se guardarán juntos o no se guardará ninguno.", spoken: note.calendarStatus === "error" ? "" : `${bundleClash ? bundleClash.replace("¿Lo añado igual?", "") : ""}${eventPhrase(note)}, y te aviso ${dueWhen(note.schedule)}. ¿Lo creo?`, body: entryBody(note) + calendarCard(note) + reminder, actions: [
         { label: "Cancelar", kind: "secondary", onClick: closeLayers },
         { label: "✎ Corregir un dato", kind: "secondary", dataset: { a: "edit-calendar-menu", id: note.id } },
         { label: note.calendarStatus === "error" ? "Reintentar" : "📅 Crear los dos", kind: "confirm", dataset: { a: "calendar-bundle", id: note.id } }
@@ -584,7 +588,7 @@ export function createUI({ getMedia }) {
       const detail = entryBody(note) + calendarCard(note) + '<div class="schedule-box"><small>Estado: ' + esc(scheduleState(note.schedule)) + '</small></div>';
       if (note.schedule.status === "scheduled") {
         const link = note.schedule.calendarUrl ? '<p><a href="' + esc(note.schedule.calendarUrl) + '" target="_blank" rel="noopener">Abrir aviso en Calendar</a></p>' : "";
-        showCompletion({ title: "✓ Aviso programado", lead: "Calendar te avisará a la hora indicada.", body: detail + link });
+        showCompletion({ title: "✓ Aviso programado", lead: "Calendar te avisará a la hora indicada.", body: detail + link, spoken: `Hecho, te lo recuerdo ${dueWhen(note.schedule)}.` });
         return;
       }
       if (note.schedule.status === "cancelled") {
@@ -592,20 +596,20 @@ export function createUI({ getMedia }) {
         return;
       }
       if (note.schedule.status === "completed") {
-        showCompletion({ title: "✓ Pendiente completado", lead: "Lo he marcado como hecho.", body: detail });
+        showCompletion({ title: "✓ Pendiente completado", lead: "Lo he marcado como hecho.", body: detail, spoken: pick(["Perfecto, tachado.", "Muy bien, lo marco como hecho."]) });
         return;
       }
-      openModal({ ...base, title: note.schedule.status === "error" ? "No se pudo programar" : "¿Programo este aviso?", lead: "Comprueba el título. Si está bien, solo tienes que programarlo.", body: detail, actions: [{ label: "Cancelar", kind: "secondary", onClick: closeLayers }, { label: "✎ Corregir un dato", kind: "secondary", dataset: { a: "edit-calendar-menu", id: note.id } }, { label: note.schedule.status === "error" ? "Reintentar" : "⏰ Programar", kind: "confirm", dataset: { a: "schedule", id: note.id } }] });
+      openModal({ ...base, title: note.schedule.status === "error" ? "No se pudo programar" : "¿Programo este aviso?", lead: "Comprueba el título. Si está bien, solo tienes que programarlo.", body: detail, spoken: note.schedule.status === "error" ? "" : `Te recuerdo ${scheduleTitle(note) ? `«${scheduleTitle(note)}» ` : ""}${dueWhen(note.schedule)}. ¿Lo programo?`, actions: [{ label: "Cancelar", kind: "secondary", onClick: closeLayers }, { label: "✎ Corregir un dato", kind: "secondary", dataset: { a: "edit-calendar-menu", id: note.id } }, { label: note.schedule.status === "error" ? "Reintentar" : "⏰ Programar", kind: "confirm", dataset: { a: "schedule", id: note.id } }] });
       return;
     }
     if (intent === "calendar.create") {
       if (note.calendarStatus === "synced") {
         const link = note.calendarUrl ? '<p><a href="' + esc(note.calendarUrl) + '" target="_blank" rel="noopener">Abrir evento en Calendar</a></p>' : "";
-        showCompletion({ title: "✓ Añadido al calendario", lead: "El evento ya está creado.", body: entryBody(note) + link });
+        showCompletion({ title: "✓ Añadido al calendario", lead: "El evento ya está creado.", body: entryBody(note) + link, spoken: `Hecho. ${eventPhrase(note)} ya está en tu agenda.` });
         return;
       }
       const clash = clashWarning(google?.getClashResult?.(note) || []);
-      openModal({ ...base, title: clash ? "Esa hora ya está ocupada" : "¿Lo añado al calendario?", lead: clash || "Comprueba el título. La ubicación y la descripción se guardarán en sus campos.", body: entryBody(note) + calendarCard(note), actions: [
+      openModal({ ...base, title: clash ? "Esa hora ya está ocupada" : "¿Lo añado al calendario?", lead: clash || "Comprueba el título. La ubicación y la descripción se guardarán en sus campos.", spoken: clash ? clash : `${eventPhrase(note)}. ¿Lo apunto en tu agenda?`, body: entryBody(note) + calendarCard(note), actions: [
         { label: "Cancelar", kind: "secondary", onClick: closeLayers },
         { label: "✎ Corregir un dato", kind: "secondary", dataset: { a: "edit-calendar-menu", id: note.id } },
         { label: "📅 Añadir", kind: "confirm", dataset: { a: "calendar", id: note.id } }
@@ -1641,7 +1645,22 @@ export function createUI({ getMedia }) {
     $("conversationModeTranscript").scrollTop = $("conversationModeTranscript").scrollHeight;
   }
 
-  return { $, notify, setGoogleStatus, setPushStatus, setSyncStatus, showConnectionHealth, showNotificationSettings, render, openMediaLibrary, renderMediaLibrary, closeMediaLibrary, openNoteLibrary, renderNoteLibrary, closeNoteLibrary, openDietario, renderDietario, closeDietario, showDietarioDetail, openShoppingList, closeShoppingList, renderShoppingOverview, renderShoppingDetail, renderShoppingCart, renderShoppingPurchases, showPurchaseDetail, hideShoppingSuggestions, showShoppingSuggestionsMessage, renderShoppingSuggestions, setShoppingFallback, showShoppingAddConfirm, renderShoppingConfirmResults, setShoppingConfirmStatus, showShoppingListChoice, showShoppingStoreChoice, showShoppingNamePrompt, showShoppingDeleteConfirm, showShoppingClearConfirm, showShoppingRemoveMarkedConfirm, showShortcutEditor, showTextPrompt, showConfirm, showAdminPanel, showMediaViewer, closeMediaViewer, showMediaEntryDetail, showImagePreview, showEntryAction, showDayBriefing, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showMediaContextEditor, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, openMenu, closeLayers, dismissWelcome, openConversationMode, closeConversationMode, setConversationStatus, addConversationTurn };
+  return { $, notify, setGoogleStatus, setPushStatus, setSyncStatus, showConnectionHealth, showNotificationSettings, render, openMediaLibrary, renderMediaLibrary, closeMediaLibrary, openNoteLibrary, renderNoteLibrary, closeNoteLibrary, openDietario, renderDietario, closeDietario, showDietarioDetail, openShoppingList, closeShoppingList, renderShoppingOverview, renderShoppingDetail, renderShoppingCart, renderShoppingPurchases, showPurchaseDetail, hideShoppingSuggestions, showShoppingSuggestionsMessage, renderShoppingSuggestions, setShoppingFallback, showShoppingAddConfirm, renderShoppingConfirmResults, setShoppingConfirmStatus, showShoppingListChoice, showShoppingStoreChoice, showShoppingNamePrompt, showShoppingDeleteConfirm, showShoppingClearConfirm, showShoppingRemoveMarkedConfirm, showShortcutEditor, showTextPrompt, showConfirm, showAdminPanel, showMediaViewer, closeMediaViewer, showMediaEntryDetail, showImagePreview, showEntryAction, showDayBriefing, showCalendarEvent, showCalendarEventEditor, showInteractionQuestion, showWhatsAppEditor, showWhatsAppPhoneEditor, showCalendarFieldEditor, showCalendarDateTimeEditor, showPendingChoices, showReminderResults, showReminderDetail, showReminderEditor, showReminderCancellation, showNoteResults, showNoteDetail, showNoteDeleteConfirmation, showNoteConfirmation, showNoteEditor, showNoteSettings, showMediaContextEditor, showCompletion, showDraft, updateDraft, showWorking, updateWorking, openModal, spokenModalText: () => modalSpoken, openMenu, closeLayers, dismissWelcome, openConversationMode, closeConversationMode, setConversationStatus, addConversationTurn };
+}
+
+function pick(options) {
+  return options[Math.floor(Math.random() * options.length)];
+}
+
+// «Cena con Marta, el jueves 1 de octubre a las 21:00» para decirlo en voz alta.
+function eventPhrase(note = {}) {
+  const title = calendarDetails(note).title || "El evento";
+  const when = note.scheduledDate && note.scheduledTime ? spokenWhen({ start: `${note.scheduledDate}T${note.scheduledTime}:00`, allDay: false }) : "";
+  return `«${title}»${when ? `, ${when}` : ""}`;
+}
+
+function dueWhen(schedule = {}) {
+  return schedule?.dueAt ? spokenWhen({ start: schedule.dueAt, allDay: false }) : "a la hora indicada";
 }
 
 function esc(value) {
