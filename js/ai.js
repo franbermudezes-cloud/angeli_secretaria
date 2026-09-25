@@ -1,6 +1,6 @@
-import{calendarQueryRange,cleanTemporalText,naturalQueryRange,temporalData}from"./temporal.js?v=0.23.11";
-import{localWhatsApp}from"./whatsapp.js?v=0.23.11";
-import{REMINDER_TRIGGER}from"./keywords.js?v=0.23.11";
+import{calendarQueryRange,cleanTemporalText,naturalQueryRange,temporalData}from"./temporal.js?v=0.24.0";
+import{localWhatsApp}from"./whatsapp.js?v=0.24.0";
+import{REMINDER_TRIGGER}from"./keywords.js?v=0.24.0";
 
 export const VALID_INTENTS=["note","note.query","task.create","task.complete","reminder.create","reminder.query","calendar.create","calendar.query","calendar.update","calendar.delete","contact.call","whatsapp.compose","file.store","photo.store"];
 const SENSITIVE_INTENTS=new Set(["calendar.update","calendar.delete","contact.call","whatsapp.compose"]);
@@ -164,6 +164,19 @@ export function protectReadQuery(remote,noteQuery=null,reminderQuery=null){
     return{...local,...filled};
   }
   return{...local,source:remote?.source,fallbackReason:remote?.fallbackReason};
+}
+
+// Examen del intérprete: en «¿Qué tengo mañana?» Gemini solía devolver `date` en
+// vez de intervalo, y la búsqueda (que solo mira el intervalo) iba de hoy a 90
+// días. Además confundía «pasado mañana» con «mañana» (el mismo fallo del
+// arreglo #6). El periodo DICHO lo calcula el móvil y manda; si no se dice
+// ninguno, el día de la IA se convierte en un periodo de un día.
+export function protectQueryRange(interpretation,text,now=new Date()){
+  if(interpretation?.intent!=="calendar.query")return interpretation;
+  const spoken=naturalQueryRange(text,now);
+  if(spoken)return{...interpretation,...spoken};
+  if(!interpretation.rangeStart&&interpretation.date){const next=new Date(`${interpretation.date}T12:00:00`);next.setDate(next.getDate()+1);return{...interpretation,rangeStart:interpretation.date,rangeEnd:`${next.getFullYear()}-${String(next.getMonth()+1).padStart(2,"0")}-${String(next.getDate()).padStart(2,"0")}`}}
+  return interpretation;
 }
 
 export async function interpret(text,{provider=mockProvider,fallback,context=null}={}){try{const intent=validateIntent(await provider(text,context));if(intent.confidence<MIN_CONFIDENCE)throw new Error("Baja confianza");return{...intent,source:"ai",fallbackReason:null}}catch(error){const local=typeof fallback==="function"?fallback(text,context):fallback;return{...validateIntent(local),source:"fallback",fallbackReason:failureReason(error)}}}
