@@ -18,6 +18,11 @@ def _firebase_app():
         return firebase_admin.initialize_app(options={"projectId": os.environ["GOOGLE_CLOUD_PROJECT"]})
 
 
+# Cloud Tasks acepta tareas hasta 30 días vista.
+MAX_TASK_AHEAD = timedelta(days=29)
+DEFER_AFTER = timedelta(days=28)
+
+
 class PushNotifications:
     def __init__(self) -> None:
         project = os.environ["GOOGLE_CLOUD_PROJECT"]
@@ -193,24 +198,59 @@ class PushNotifications:
             moments.append(("at", due))
         if settings["afterMinutes"]:
             moments.append(("after", due + timedelta(minutes=settings["afterMinutes"])))
-        from google.cloud import tasks_v2
-        from google.protobuf import timestamp_pb2
         parent = client.queue_path(self.project, self.location, self.queue)
         created = []
+        now = datetime.now(timezone.utc)
+        too_far = False
         for kind, requested in moments:
             deliver_at = self._after_quiet_hours(requested, settings["quiet"])
-            if not deliver_at or deliver_at <= datetime.now(timezone.utc):
+            if not deliver_at or deliver_at <= now:
+                continue
+            # Cloud Tasks no admite tareas a más de 30 días: antes fallaba con
+            # 400 y el aviso se quedaba sin programar. Se aplaza (ver abajo).
+            if deliver_at > now + MAX_TASK_AHEAD:
+                too_far = True
                 continue
             name = self._task_name(uid, entry_id, generation, kind)
-            stamp = timestamp_pb2.Timestamp(); stamp.FromDatetime(deliver_at)
-            task = tasks_v2.Task(name=name, schedule_time=stamp, http_request=tasks_v2.HttpRequest(
-                http_method=tasks_v2.HttpMethod.POST, url=self.delivery_url, headers={"Content-Type": "application/json"},
-                body=json.dumps({"uid": uid, "entryId": entry_id, "dueAt": due_key, "generation": generation, "kind": kind}).encode(),
-                oidc_token=tasks_v2.OidcToken(service_account_email=self.delivery_account, audience=self.delivery_url.rsplit("/push/deliver", 1)[0])))
-            client.create_task(parent=parent, task=task)
+            self._create_task(client, parent, name, deliver_at, {"uid": uid, "entryId": entry_id, "dueAt": due_key, "generation": generation, "kind": kind})
             created.append({"name": name, "kind": kind, "deliverAt": deliver_at.isoformat()})
+        if too_far:
+            # Una tarea «defer» vuelve a llamar a schedule() dentro de 28 días,
+            # cuando el aviso ya cabe en la ventana de Cloud Tasks.
+            defer_at = now + DEFER_AFTER
+            name = self._task_name(uid, entry_id, generation, f"defer-{defer_at:%Y%m%d}")
+            self._create_task(client, parent, name, defer_at, {"uid": uid, "entryId": entry_id, "dueAt": due_key, "generation": generation, "kind": "defer"})
+            created.append({"name": name, "kind": "defer", "deliverAt": defer_at.isoformat()})
         reminder_ref.set({"tasks": created, "dueAt": due_key, "generation": generation, "type": entry_type, "updatedAt": datetime.now(timezone.utc)})
         return {"scheduled": bool(created), "dueAt": due_key, "notices": len(created), "type": entry_type}
+
+    def _create_task(self, client, parent: str, name: str, deliver_at: datetime, payload: dict[str, Any]) -> None:
+        from google.cloud import tasks_v2
+        from google.protobuf import timestamp_pb2
+        stamp = timestamp_pb2.Timestamp(); stamp.FromDatetime(deliver_at)
+        task = tasks_v2.Task(name=name, schedule_time=stamp, http_request=tasks_v2.HttpRequest(
+            http_method=tasks_v2.HttpMethod.POST, url=self.delivery_url, headers={"Content-Type": "application/json"},
+            body=json.dumps(payload).encode(),
+            oidc_token=tasks_v2.OidcToken(service_account_email=self.delivery_account, audience=self.delivery_url.rsplit("/push/deliver", 1)[0])))
+        try:
+            client.create_task(parent=parent, task=task)
+        except Exception as error:
+            # El nombre sale del contenido (entrada, hora y ajustes): si ya
+            # existe, ese mismo aviso ya está programado. Antes daba 503.
+            if not self._already_exists(error):
+                raise
+
+    @staticmethod
+    def _already_exists(error: Exception) -> bool:
+        if type(error).__name__ == "AlreadyExists":
+            return True
+        code = getattr(error, "code", None)
+        if callable(code):
+            try:
+                code = code()
+            except Exception:  # noqa: BLE001
+                return False
+        return getattr(code, "name", "") == "ALREADY_EXISTS" or code == 409
 
     def cancel(self, uid: str, entry_id: str) -> dict[str, Any]:
         reminder_ref = self._reminder_ref(uid, entry_id)
@@ -241,6 +281,9 @@ class PushNotifications:
         programmed_kinds = {item.get("kind") for item in programmed_data.get("tasks", [])}
         if kind not in programmed_kinds:
             return {"delivered": 0, "skipped": "already_delivered"}
+        if kind == "defer":
+            # Aviso lejano: ya está dentro de la ventana; se programa de verdad.
+            return self.schedule(uid, entry_id, due_at)
         snapshot = self._db().collection("users").document(uid).collection("entries").document(entry_id).get()
         if not snapshot.exists:
             return {"delivered": 0, "skipped": "missing"}

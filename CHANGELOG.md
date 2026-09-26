@@ -1,5 +1,13 @@
 # Changelog
 
+## V0.26.5 · Avisos lejanos y repetidos
+
+- El nuevo registro de errores (V0.26.3) sacó dos fallos antiguos al programar avisos en real:
+  - **Avisos a más de 30 días**: Cloud Tasks no los admite y daba un 400, así que el aviso se quedaba sin programar. Ahora se programa una tarea `defer` que vuelve a programarlo cuando ya cabe en la ventana (unos 28 días después).
+  - **Aviso ya programado igual** (por ejemplo, al volver a guardar los ajustes): Google responde «ya existe» (409) y lo tratábamos como error 503. Ahora cuenta como programado.
+- `PROJECT_MEMORY.md` recoge las decisiones de V0.24 a V0.26.
+- **Requiere redesplegar Cloud Run.** Tests: `backend/test_push_notifications.py`.
+
 ## V0.26.4 · Página de presentación para la verificación de Google
 
 - **Pedido por el propietario**: quitar el aviso «Google no ha verificado esta aplicación» que ve quien conecta su cuenta. Para ello hay que pedir a Google la verificación, y Google exige una página principal pública que explique la app.
