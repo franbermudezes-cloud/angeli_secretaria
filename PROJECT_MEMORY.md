@@ -1,5 +1,30 @@
 # Memoria del proyecto — Angeli Secretaria
 
+## 2026-09-26 — Multiusuario real, dominio propio, voz propia y avisos (V0.24.0 – V0.26.5)
+
+**Interpretación**: el intérprete usa `gemini-2.5-flash` sin razonamiento (thinking 0), elegido con el examen `backend/eval/` (150 frases genéricas contra Gemini real). Antes de cambiar el prompt o el modelo, hay que volver a pasar el examen. La fecha o el periodo que dice el usuario lo calcula el móvil y manda sobre la IA (historial #6, #76 y #120).
+
+**Privacidad y multiusuario**:
+- Cada persona usa **su** Google. Los invitados guardan sus llaves en `angeli-google-u-<sha256(uid)[:24]>-*-grant`, y el prefijo sale siempre del uid verificado. Sus adjuntos van a una carpeta «Angeli» de su Drive (`drive.file`). El propietario sigue con `angeli-google-*`.
+- La cuenta de servicio solo puede crear y usar llaves de invitados: `roles/secretmanager.admin` con la condición `resource.name.startsWith(".../secrets/angeli-google-u-")` o recurso de tipo proyecto.
+- Google Sheets (`sendEntry`) solo recibe entradas del propietario.
+- El arnés (`/test/*`) sigue siendo solo del propietario.
+
+**OAuth publicado en producción**: antes estaba en «Pruebas», y por eso todas las conexiones, incluida la del arnés, caducaban cada 7 días. La marca está verificada: iacloud.es se verificó en Search Console con la cuenta propietaria del proyecto; con otra cuenta de Google no vale. Queda pendiente la verificación de los permisos sensibles (`calendar.events` y `contacts.readonly`), con vídeo. Las páginas públicas son `presentacion.html`, `privacidad.html` y `condiciones.html`.
+
+**Dominio**: la app vive en https://asistente.iacloud.es. Es un CNAME en IONOS hacia `franbermudezes-cloud.github.io`, con el archivo `CNAME` en el repo. La dirección antigua redirige con un 301. El nuevo origen está permitido en `ALLOWED_ORIGINS`, en los dominios autorizados de Firebase Auth y en los dos clientes OAuth («Angeli Secretaria PWA» y «Angeli Integration Gate Tests»). Cambiar de origen obliga a reinstalar la PWA, volver a iniciar sesión y reactivar los avisos. Las conexiones de Google no se pierden, porque están en el servidor.
+
+**Voz**: la voz propia es `es-ES-Chirp3-HD-Vindemiatrix`, servida por `POST /speech` (Cloud TTS, alrededor de 1 s). Si falla, se usa la voz del teléfono. `js/speech.js` prepara el texto: quita símbolos y dice las horas en lenguaje natural. El modo conversación usa frases propias (`spoken`) y admite «sí» por voz, solo para `calendar`, `calendar-bundle` y `schedule`.
+
+**Proactividad**: aviso de choque de horario al crear un evento y resumen del día la primera vez que se abre la app cada día.
+
+**Avisos push**:
+- `_not_found` llamaba a `error.code()` siendo un número, lo que daba TypeError al reprogramar avisos que ya habían sonado.
+- Cloud Tasks no admite tareas a más de 30 días. Esos avisos se aplazan con una tarea `defer` que vuelve a llamar a `schedule()`.
+- Si Cloud Tasks responde `AlreadyExists`, cuenta como programado.
+- El móvil reprograma solo lo que aún puede sonar, en tandas de 3.
+- El registro de errores incluye `where=archivo:línea` (sin datos).
+
 ## 2026-09-21 — Cancelar un evento de Calendar con el modal propio V0.22.36
 
 Duodécimo arreglo de la segunda auditoría (usabilidad). Encontrado en el barrido final de `prompt()`/`confirm()` nativos que hizo la sesión principal tras cerrar los hallazgos de los agentes — se le había escapado a los agentes porque vivía en la capa de integración (`js/google.js`), no en la UI.

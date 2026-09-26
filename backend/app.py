@@ -1179,7 +1179,7 @@ def app(environ: dict[str, Any], start_response: Callable):
             verify_delivery_identity(environ, service.delivery_account, service.delivery_url.rsplit("/push/deliver", 1)[0])
             delivery = parse_json_body(environ, {"uid", "entryId", "dueAt", "generation", "kind"})
             uid, entry_id, due_at, generation, kind = delivery.get("uid"), delivery.get("entryId"), delivery.get("dueAt"), delivery.get("generation"), delivery.get("kind")
-            if not isinstance(uid, str) or not uid or not isinstance(entry_id, str) or not entry_id or not isinstance(due_at, str) or not isinstance(generation, str) or kind not in {"before", "at", "after"}:
+            if not isinstance(uid, str) or not uid or not isinstance(entry_id, str) or not entry_id or not isinstance(due_at, str) or not isinstance(generation, str) or kind not in {"before", "at", "after", "defer"}:
                 raise ValueError("Entrega no válida")
             return json_response(start_response, "200 OK", service.deliver(uid, entry_id, due_at, generation, kind), origin)
         claims = authenticate(environ)
