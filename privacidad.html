@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Política de privacidad · Angeli</title>
+<style>
+:root{--ground:#f6f5fb;--ink:#0b1440;--muted:#5a6187;--line:#dfe0ee;--accent:#b8621a;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--ground:#071038;--ink:#eef0ff;--muted:#a9afd6;--line:#233070;--accent:#f0a24f;color-scheme:dark}}
+body{margin:0;background:var(--ground);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-inline:16px}
+main{max-width:680px;margin:0 auto;padding-block:32px 56px}
+h1{font-size:30px;line-height:1.2;margin:0 0 4px}
+h2{font-size:19px;margin:32px 0 8px}
+p,li{max-width:65ch}
+.meta{color:var(--muted);margin:0 0 24px}
+a{color:var(--accent)}
+code{font-size:14px}
+footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<main>
+<h1>Política de privacidad</h1>
+<p class="meta">Angeli · Asistente personal por voz · Última actualización: 26 de septiembre de 2026</p>
+
+<p>Angeli es un asistente personal por voz de uso privado. Solo se accede por invitación del titular. Esta página explica qué datos usa Angeli, para qué y cómo puedes borrarlos.</p>
+
+<h2>Quién es el responsable</h2>
+<p>El titular de Angeli. Para cualquier consulta sobre tus datos, escribe a <a href="mailto:franbermudez.es@gmail.com">franbermudez.es@gmail.com</a>.</p>
+
+<h2>Qué datos usa Angeli</h2>
+<ul>
+<li><strong>Tu cuenta de Google para entrar</strong> (nombre y correo), a través de Firebase Authentication. Sirve para saber que eres tú y que tienes invitación.</li>
+<li><strong>Lo que dictas o escribes</strong>: notas, recordatorios, tareas, listas de la compra y ajustes. Se guardan en Google Cloud Firestore, en un espacio separado por persona. Nadie más puede leer el tuyo.</li>
+<li><strong>Tus servicios de Google, solo si tú los conectas:</strong>
+ <ul>
+ <li><strong>Google Calendar</strong> (permiso <code>calendar.events</code>): para crear, consultar, modificar y cancelar tus eventos y avisos cuando tú se lo pides.</li>
+ <li><strong>Google Contactos</strong> (permiso de solo lectura <code>contacts.readonly</code>): para encontrar el teléfono de la persona a la que quieres llamar o escribir. Angeli no modifica tus contactos.</li>
+ <li><strong>Google Drive</strong> (permiso <code>drive.file</code>): para guardar las fotos y archivos que adjuntas, en una carpeta «Angeli» de tu Drive. Angeli solo puede ver los archivos que ella misma crea, no el resto de tu Drive.</li>
+ </ul>
+ Cada persona conecta su propia cuenta; Angeli nunca mezcla los datos de una persona con los de otra. Las autorizaciones se guardan cifradas en Google Cloud Secret Manager y nunca en tu dispositivo.</li>
+<li><strong>El texto de tus órdenes</strong> se envía a Google Vertex AI (Gemini) para entender lo que pides. Las frases que Angeli dice en voz alta se generan con Google Cloud Text-to-Speech.</li>
+<li><strong>Avisos</strong>: si activas las notificaciones, se guarda el identificador de tu dispositivo (Firebase Cloud Messaging) para poder enviarte los recordatorios.</li>
+<li><strong>Preferencias del dispositivo</strong>, como la voz o la velocidad elegidas, que se guardan solo en tu teléfono.</li>
+</ul>
+
+<h2>Para qué se usan</h2>
+<p>Únicamente para que Angeli haga lo que tú le pides: apuntar, recordar, consultar tu agenda, llamar o escribir a tus contactos y guardar tus archivos. No se usan para publicidad, no se venden y no se comparten con nadie, salvo con los servicios de Google que hacen funcionar Angeli y que se indican arriba.</p>
+
+<h2>Uso de los datos de las API de Google</h2>
+<p>El uso que hace Angeli de la información recibida de las API de Google, y su transferencia a cualquier otra aplicación, cumple la <a href="https://developers.google.com/terms/api-services-user-data-policy" rel="noopener">Política de datos de usuario de los servicios de API de Google</a>, incluidos los requisitos de uso limitado. En particular, esos datos no se usan para publicidad ni para entrenar modelos de inteligencia artificial, y ninguna persona los lee salvo que tú lo pidas para resolver un problema.</p>
+
+<h2>Dónde se guardan y durante cuánto tiempo</h2>
+<p>En los servidores de Google Cloud y Firebase. Tus entradas se guardan mientras tengas acceso a Angeli o hasta que las borres. Los eventos, contactos y archivos siguen en tu propia cuenta de Google, bajo tu control.</p>
+
+<h2>Cómo borrar tus datos</h2>
+<ul>
+<li>Puedes borrar cualquier nota, recordatorio o lista desde la propia app.</li>
+<li>Puedes desconectar Calendar, Contactos o Drive retirando el permiso en <a href="https://myaccount.google.com/permissions" rel="noopener">myaccount.google.com/permissions</a>.</li>
+<li>Si quieres que se borre todo lo que Angeli guarda sobre ti, escribe al correo de arriba y se eliminará.</li>
+</ul>
+
+<h2>Cambios</h2>
+<p>Si esta política cambia, se actualizará en esta página con una fecha nueva.</p>
+
+<footer><a href="./condiciones.html">Condiciones del servicio</a> · <a href="./">Abrir Angeli</a></footer>
+</main>
+</body>
+</html>
