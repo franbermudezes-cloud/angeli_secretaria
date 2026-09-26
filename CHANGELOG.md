@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.26.2 · Nueva dirección: asistente.iacloud.es
+
+- **Pedido por el propietario**: una dirección más normal que la de GitHub. La app pasa a **https://asistente.iacloud.es** (subdominio del dominio `iacloud.es`, en IONOS, con un CNAME a `franbermudezes-cloud.github.io`). La dirección antigua de GitHub redirige sola a la nueva.
+- Preparado antes del cambio para que nada se rompa: la nueva dirección está permitida en el servidor (`ALLOWED_ORIGINS`, rev 00063), en Firebase Authentication (dominios autorizados) y en los dos clientes OAuth (el de la app y el del arnés). La antigua se mantiene permitida durante la transición.
+- En el móvil es una app nueva: hay que instalarla de nuevo, iniciar sesión y reactivar los avisos. Los datos están en la nube y no se pierden.
+
 ## V0.26.1 · Política de privacidad, condiciones y Sheets solo del propietario
 
 - **Política de privacidad** (`privacidad.html`) y **Condiciones del servicio** (`condiciones.html`), públicas en GitHub Pages y enlazadas desde Ajustes. Google las exige para pasar la app de «Pruebas» a «En producción», lo que evita que las conexiones de Google caduquen cada 7 días y permite invitar sin darse de alta a mano. Explican qué datos usa Angeli (permisos `calendar.events`, `contacts.readonly` y `drive.file`), incluyen la declaración de «uso limitado» de las API de Google y dicen cómo borrar tus datos.

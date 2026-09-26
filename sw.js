@@ -1,4 +1,4 @@
-const V="0.26.1",CACHE="angeli-secretaria-v"+V;
+const V="0.26.2",CACHE="angeli-secretaria-v"+V;
 importScripts("https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js","https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging-compat.js");
 firebase.initializeApp({apiKey:"AIzaSyAFM5NjcxX9lC5MpfII4B3Kx7lV9SsUAsc",authDomain:"angeli-secretaria.firebaseapp.com",projectId:"angeli-secretaria",storageBucket:"angeli-secretaria.firebasestorage.app",messagingSenderId:"172772694205",appId:"1:172772694205:web:6ce976de4a3658c12f3fd4"});
 firebase.messaging().onBackgroundMessage(payload=>{const data=payload.data||{};return self.registration.showNotification(data.title||"Angeli",{body:data.body||"Tienes un recordatorio.",icon:"icon-192.png",badge:"icon-192.png",tag:data.entryId||"angeli-test",data:{url:data.url||"./"}})});
