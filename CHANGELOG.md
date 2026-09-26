@@ -1,5 +1,17 @@
 # Changelog
 
+## V0.26.7 · Angeli contesta en voz alta cuando le dictas
+
+- **Pedido por el propietario**: fuera del modo conversación, Angeli no decía nada. Ahora, cuando la orden se **dicta** con el micrófono normal (o el de un acceso directo), contesta con una frase corta y **no se queda escuchando**:
+  - al terminar: «¡Apuntado!», «¡Listo! Ya tienes … en tu agenda», lo añadido a la compra…;
+  - si falta algo: «¿Y a qué hora?»;
+  - al confirmar: «Te apunto … ¿Te parece bien?»;
+  - al consultar la agenda: la respuesta.
+- Si la orden se **escribe**, sigue sin hablar.
+- Responder a una pregunta funciona **igual que antes** (escribiendo o con «🎙️ Hablar»). Al tocar cualquier micrófono, Angeli se calla al momento para no oírse a sí misma.
+- Se puede desactivar en Ajustes → Voz de Angeli → «Contestar en voz alta cuando dicto».
+- Sin cambios en el servidor. Tests: `tests/respuestas-habladas.test.mjs`.
+
 ## V0.26.6 · Botón «＋» en las pantallas de arriba
 
 - **Pedido por el propietario**: desde las pantallas que se abren con los botones de arriba (fotos, archivos, notas y recordatorios) solo se podía mirar. Para subir una imagen había que ir abajo o pasar por una nota.

@@ -27,7 +27,7 @@ test("el modo conversación dice frases naturales y la voz pasa por el filtro", 
   const app = readFileSync(new URL("../js/app.js", import.meta.url), "utf8");
   const ui = readFileSync(new URL("../js/ui.js", import.meta.url), "utf8");
   assert.match(app, /const turn=speechTurn,spoken=speechText\(text\);/, "las dos voces reciben el texto ya preparado para hablar");
-  assert.equal((app.match(/ui\.spokenModalText\(\)/g) || []).length, 2, "confirmaciones y resultados");
+  assert.equal((app.match(/ui\.spokenModalText\(\)/g) || []).length, 4, "confirmaciones y resultados, en conversación y al dictar");
   assert.match(ui, /`¡Listo! Ya tienes \$\{eventPhrase\(note\)\} en tu agenda\.`/);
   assert.match(ui, /Te apunto \$\{eventPhrase\(note\)\} en la agenda\. ¿Te parece bien\?/);
 });
