@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.26.4 · Página de presentación para la verificación de Google
+
+- **Pedido por el propietario**: quitar el aviso «Google no ha verificado esta aplicación» que ve quien conecta su cuenta. Para ello hay que pedir a Google la verificación, y Google exige una página principal pública que explique la app.
+- Nueva `presentacion.html` (https://asistente.iacloud.es/presentacion.html): qué hace Angeli, qué permiso de Google usa y para qué (`calendar.events`, `contacts.readonly`, `drive.file`), cómo retirar el permiso y enlaces a privacidad y condiciones. Enlazada desde Ajustes y desde las páginas legales.
+- Logo de 120×120 para la «Información de la marca» de Google: `assets/logo-120.png`.
+- Tests: `tests/admin-audit.test.mjs`.
+
 ## V0.26.3 · Guardar los ajustes de avisos, sin atascos
 
 - **Reportado por el propietario**: al pulsar «Guardar ajustes» en los avisos, la pantalla no se cerraba. Parecía que no se había guardado; pulsó varias veces y al final tuvo que salir.
