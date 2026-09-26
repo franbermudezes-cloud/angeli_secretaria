@@ -32,7 +32,7 @@ assert.match(app, /localStorage\.getItem\(VOICE_PREF_KEY/);
 // speakAloud() -usado tanto por el módulo de charla aparte como por las
 // respuestas del modo conversación- debe aplicar la voz, velocidad y tono
 // elegidos, no quedarse con los valores por defecto del navegador.
-// Desde V0.25.5 la voz del teléfono vive en speakWithDevice (la de reserva
+// Desde V0.26.0 la voz del teléfono vive en speakWithDevice (la de reserva
 // cuando la voz propia de Angeli no está elegida o no responde).
 const speakAloudSource = app.match(/function speakWithDevice\(text\)\{[\s\S]*?\n\}/)?.[0] || "";
 assert.ok(speakAloudSource, "speakWithDevice debe existir");

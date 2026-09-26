@@ -1,5 +1,16 @@
 # Changelog
 
+## V0.26.0 · Cada persona con su propio Google
+
+- **Pedido por el propietario**: una persona invitada pone **sus** datos: su Calendar, sus Contactos y su Drive. Solo se le presta la IA durante un tiempo, y nunca ve los datos del propietario.
+- **Servidor**: cada persona tiene sus propias llaves de Google en Secret Manager (`angeli-google-u-<resumen del uid>-*-grant`). Se eligen siempre por el uid verificado de Firebase, nunca por algo que mande el móvil. El propietario sigue con las suyas (`angeli-google-*`), que no se tocan. Un invitado no puede leer, usar ni sustituir las llaves del propietario ni las de otro invitado.
+- **Drive**: los adjuntos de un invitado van a una carpeta «Angeli» en **su** Drive, creada la primera vez. Con el permiso `drive.file`, Angeli solo ve lo que ella misma crea.
+- El servidor solo puede **crear** secretos de invitados; nunca crea ni sustituye los del propietario ni los del arnés.
+- **App**: los invitados vuelven a ver «Conectar» en Calendar, Contactos y Drive, con un aviso de que es su propia cuenta.
+- Si a un invitado se le corta el acceso, deja de poder usar también su Google a través de Angeli.
+- **Requiere**: permiso de Secret Manager para el servidor, limitado a `angeli-google-u-*`, y redesplegar Cloud Run.
+- Tests: `backend/test_access_control.py` (GooglePerPersonTests, GuestSecretsTests), `tests/admin-audit.test.mjs`.
+
 ## V0.25.5 · Voz propia de Angeli (Vindemiatrix)
 
 - **Pedido por el propietario**: «la voz no me acaba de gustar, ¿podríamos poner una voz propia?». Escuchó diez voces de Google y eligió **Vindemiatrix**.
