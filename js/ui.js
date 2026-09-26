@@ -1,14 +1,14 @@
-import { typeLabel } from "./classifier.js?v=0.26.5";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.26.5";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.26.5";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.26.5";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.26.5";
-import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.26.5";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.26.5";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.26.5";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.26.5";
-import { groupDietarioByDay } from "./dietario.js?v=0.26.5";
-import { calendarAnswer, clashWarning, spokenWhen } from "./agenda.js?v=0.26.5";
+import { typeLabel } from "./classifier.js?v=0.26.6";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.26.6";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.26.6";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.26.6";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.26.6";
+import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.26.6";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.26.6";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.26.6";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.26.6";
+import { groupDietarioByDay } from "./dietario.js?v=0.26.6";
+import { calendarAnswer, clashWarning, spokenWhen } from "./agenda.js?v=0.26.6";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -197,7 +197,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.26.5";
+    image.src = "assets/angeli-welcome.gif?v=0.26.6";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
@@ -257,7 +257,12 @@ export function createUI({ getMedia }) {
     });
   }
 
-  function showReminderResults(matches, query = "", { onSelect } = {}) {
+  function showReminderResults(matches, query = "", { onSelect, onAdd } = {}) {
+    const addAction = onAdd ? [{ label: "＋ Nuevo recordatorio", kind: "secondary", onClick: onAdd }] : [];
+    if (!matches.length && onAdd) {
+      openModal({ title: "No hay recordatorios pendientes", lead: "¿Quieres crear uno?", body: "", actions: [...addAction, { label: "Cerrar", kind: "confirm", onClick: closeLayers }] });
+      return;
+    }
     if (!matches.length) {
       showCompletion({
         title: "No hay recordatorios pendientes",
@@ -282,7 +287,7 @@ export function createUI({ getMedia }) {
       title: matches.length === 1 ? "Tienes este recordatorio" : "Tienes estos recordatorios",
       lead: query ? `Pendientes relacionados con ${query}.` : "Estos son tus recordatorios pendientes.",
       body,
-      actions: [{ label: "Cerrar", kind: "confirm", onClick: closeLayers }]
+      actions: [...addAction, { label: "Cerrar", kind: "confirm", onClick: closeLayers }]
     });
   }
 
