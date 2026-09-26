@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.26.1 · Política de privacidad, condiciones y Sheets solo del propietario
+
+- **Política de privacidad** (`privacidad.html`) y **Condiciones del servicio** (`condiciones.html`), públicas en GitHub Pages y enlazadas desde Ajustes. Google las exige para pasar la app de «Pruebas» a «En producción», lo que evita que las conexiones de Google caduquen cada 7 días y permite invitar sin darse de alta a mano. Explican qué datos usa Angeli (permisos `calendar.events`, `contacts.readonly` y `drive.file`), incluyen la declaración de «uso limitado» de las API de Google y dicen cómo borrar tus datos.
+- **Fallo de privacidad encontrado al redactarlas**: cada entrada nueva se copiaba en la hoja de Google Sheets del propietario, **también las de los invitados**. Ahora solo se copian las del propietario; para él no cambia nada, y el endpoint de Apps Script y los datos enviados siguen igual.
+- Tests: `tests/admin-audit.test.mjs`.
+
 ## V0.26.0 · Cada persona con su propio Google
 
 - **Pedido por el propietario**: una persona invitada pone **sus** datos: su Calendar, sus Contactos y su Drive. Solo se le presta la IA durante un tiempo, y nunca ve los datos del propietario.

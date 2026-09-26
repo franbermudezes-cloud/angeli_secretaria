@@ -50,3 +50,23 @@ test("una persona invitada conecta su propio Google", () => {
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
   assert.match(html, /id="guestIntegrationsNote" class="menu-copy" hidden>Conecta aquí tu propia cuenta de Google/);
 });
+
+// PRIVACIDAD: la hoja de Google Sheets es el registro del propietario. Lo que
+// guarda una persona invitada nunca se copia ahí.
+test("la hoja de Google Sheets solo recibe las entradas del propietario", () => {
+  const calls = app.match(/[^\n]*await sendEntry\([^\n]*/g) || [];
+  assert.equal(calls.length, 2);
+  for (const line of calls) assert.match(line, /cloud\.session\(\)\.owner/, line.trim().slice(0, 80));
+});
+
+test("hay política de privacidad y condiciones públicas, enlazadas desde Ajustes", () => {
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const privacy = readFileSync(new URL("../privacidad.html", import.meta.url), "utf8");
+  const terms = readFileSync(new URL("../condiciones.html", import.meta.url), "utf8");
+  assert.match(html, /href="\.\/privacidad\.html"/);
+  assert.match(html, /href="\.\/condiciones\.html"/);
+  assert.match(privacy, /requisitos de uso limitado/, "declaración obligatoria de Google para permisos sensibles");
+  for (const scope of ["calendar.events", "contacts.readonly", "drive.file"]) assert.ok(privacy.includes(scope), scope);
+  assert.match(terms, /puede equivocarse/);
+});
+
