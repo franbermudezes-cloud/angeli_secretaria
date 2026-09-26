@@ -71,8 +71,11 @@ test('avisos: las tareas fechadas se programan y los fallos al reprogramar se mu
   const app=readFileSync(new URL('../js/app.js',import.meta.url),'utf8');
   assert.match(app,/const datedTask=entry\.type==="task"/);
   assert.match(app,/waitForServer:datedTask/);
-  assert.match(app,/entry\.type==="task"&&entry\.status==="pending"&&entry\.scheduledDate&&entry\.scheduledTime/);
-  assert.match(app,/results\.filter\(result=>result\.status==="rejected"\)/);
+  // Desde V0.26.3 la selección y el reparto en tandas viven en notification-settings.js.
+  const settings=readFileSync(new URL('../js/notification-settings.js',import.meta.url),'utf8');
+  assert.match(settings,/entry\?\.type==="task"&&entry\.status==="pending"&&entry\.scheduledDate&&entry\.scheduledTime/);
+  assert.match(settings,/results\.filter\(result=>result\.status==="rejected"\)/);
+  assert.match(app,/const failed=await runInBatches\(entriesToReschedule\(notes\),entry=>cloud\.schedulePush\(entry\)\);ui\.closeLayers\(\);/,"cierra siempre y avisa aparte de los fallos");
 });
 
 test('conexiones: el arranque y la reanudación comprueban y avisan sin abrir OAuth',()=>{

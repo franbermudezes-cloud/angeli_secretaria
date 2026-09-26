@@ -81,5 +81,29 @@ class DeliveryReliabilityTests(unittest.TestCase):
         self.assertEqual(messaging.Message.call_args.kwargs["webpush"], "urgent-webpush")
 
 
+class NotFoundDetectionTests(unittest.TestCase):
+    """Reprogramar un aviso cuya tarea ya sonó fallaba con TypeError: `code`
+    es un valor en google-api-core y se llamaba como función."""
+
+    def test_detects_not_found_in_every_shape(self):
+        from push_notifications import PushNotifications
+        class NotFound(Exception):
+            code = 404
+        class ApiCoreError(Exception):
+            code = 404
+        class Status:
+            name = "NOT_FOUND"
+        class GrpcError(Exception):
+            def code(self):
+                return Status()
+        class Other(Exception):
+            code = 500
+        self.assertTrue(PushNotifications._not_found(NotFound()))
+        self.assertTrue(PushNotifications._not_found(ApiCoreError()))
+        self.assertTrue(PushNotifications._not_found(GrpcError()))
+        self.assertFalse(PushNotifications._not_found(Other()))
+        self.assertFalse(PushNotifications._not_found(RuntimeError("x")))
+
+
 if __name__ == "__main__":
     unittest.main()

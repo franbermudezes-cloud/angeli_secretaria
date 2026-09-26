@@ -1,14 +1,14 @@
-import { typeLabel } from "./classifier.js?v=0.26.2";
-import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.26.2";
-import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.26.2";
-import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.26.2";
-import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.26.2";
-import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.26.2";
-import { normalizeNotificationSettings } from "./notification-settings.js?v=0.26.2";
-import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.26.2";
-import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.26.2";
-import { groupDietarioByDay } from "./dietario.js?v=0.26.2";
-import { calendarAnswer, clashWarning, spokenWhen } from "./agenda.js?v=0.26.2";
+import { typeLabel } from "./classifier.js?v=0.26.3";
+import { calendarDetails, scheduleState, scheduleTitle, scheduleWhen } from "./schedule.js?v=0.26.3";
+import { noteClassificationLabel, noteTitle } from "./notes.js?v=0.26.3";
+import { normalizeNoteSettings, settingLabel } from "./note-settings.js?v=0.26.3";
+import { whatsappChoices, whatsappPhone } from "./whatsapp.js?v=0.26.3";
+import { SHOPPING_STORE_PRESETS, shoppingStoreLabel, isMercadonaList } from "./shopping.js?v=0.26.3";
+import { normalizeNotificationSettings } from "./notification-settings.js?v=0.26.3";
+import { filterMediaLibrary, mediaSize } from "./media-library.js?v=0.26.3";
+import { mediaContextRelation, normalizeMediaContext } from "./media-context.js?v=0.26.3";
+import { groupDietarioByDay } from "./dietario.js?v=0.26.3";
+import { calendarAnswer, clashWarning, spokenWhen } from "./agenda.js?v=0.26.3";
 
 export function createUI({ getMedia }) {
   const $ = id => document.getElementById(id);
@@ -66,7 +66,7 @@ export function createUI({ getMedia }) {
     body.innerHTML=`<section class="notification-device"><strong>${status?.state==="enabled"?"● Avisos activos en este dispositivo":"Avisos sin activar en este dispositivo"}</strong><div><button type="button" data-push="activate">${status?.state==="enabled"?"Renovar":"Activar"}</button><button type="button" data-push="test" ${status?.state!=="enabled"?"disabled":""}>Probar aviso</button><button type="button" data-push="disable" ${status?.state!=="enabled"?"disabled":""}>Desactivar</button></div></section><fieldset><legend>Cuándo avisar</legend><label><input type="checkbox" id="notificationAtTime" ${value.atTime?"checked":""}> A la hora indicada</label><label class="setting-number"><span>Avisar antes</span><input id="notificationBefore" type="number" min="0" max="10080" value="${value.beforeMinutes}"><span>minutos · 0 desactiva</span></label><label class="setting-number"><span>Repetir si sigue pendiente</span><input id="notificationAfter" type="number" min="0" max="10080" value="${value.afterMinutes}"><span>minutos después · 0 desactiva</span></label></fieldset><fieldset><legend>Qué quiero recibir</legend>${[["reminders","Recordatorios"],["calls","Llamadas programadas"],["linked","Avisos vinculados a eventos"],["tasks","Tareas con fecha y hora"],["events","Eventos normales de Calendar"]].map(([key,label])=>`<label><input type="checkbox" data-notification-type="${key}" ${value.types[key]?"checked":""}> ${label}</label>`).join("")}</fieldset><fieldset><legend>Horario de descanso</legend><label><input type="checkbox" id="notificationQuiet" ${value.quiet.enabled?"checked":""}> No molestar</label><div class="quiet-times"><label>Desde <input id="notificationQuietStart" type="time" value="${value.quiet.start}"></label><label>Hasta <input id="notificationQuietEnd" type="time" value="${value.quiet.end}"></label></div><label><input type="checkbox" id="notificationDeliverAfter" ${value.quiet.deliverAfter?"checked":""}> Entregar después los avisos aplazados</label></fieldset>`;
     body.onclick=event=>{const action=event.target.closest("button")?.dataset.push;if(action==="activate")onActivate?.();if(action==="test")onTest?.();if(action==="disable")onDisable?.()};
     const collect=()=>normalizeNotificationSettings({atTime:$("notificationAtTime").checked,beforeMinutes:$("notificationBefore").value,afterMinutes:$("notificationAfter").value,types:Object.fromEntries([...body.querySelectorAll("[data-notification-type]")].map(input=>[input.dataset.notificationType,input.checked])),quiet:{enabled:$("notificationQuiet").checked,start:$("notificationQuietStart").value,end:$("notificationQuietEnd").value,deliverAfter:$("notificationDeliverAfter").checked}});
-    openModal({title:"Configurar avisos de Angeli",lead:"Estas reglas se aplican a tus dispositivos con avisos activos.",body,actions:[{label:"Cancelar",kind:"secondary",onClick:closeLayers},{label:"Guardar ajustes",kind:"confirm",onClick:()=>onSave?.(collect())}]});
+    openModal({title:"Configurar avisos de Angeli",lead:"Estas reglas se aplican a tus dispositivos con avisos activos.",body,actions:[{label:"Cancelar",kind:"secondary",onClick:closeLayers},{label:"Guardar ajustes",kind:"confirm",onClick:async event=>{const button=event.currentTarget;if(button.disabled)return;button.disabled=true;button.textContent="Guardando…";try{await onSave?.(collect())}finally{button.disabled=false;button.textContent="Guardar ajustes"}}}]});
   }
 
   function showConnectionHealth(problems, { onOpenSettings } = {}) {
@@ -197,7 +197,7 @@ export function createUI({ getMedia }) {
     const box = document.createElement("div");
     box.className = "angeli-working";
     const image = document.createElement("img");
-    image.src = "assets/angeli-welcome.gif?v=0.26.2";
+    image.src = "assets/angeli-welcome.gif?v=0.26.3";
     image.alt = "Angeli trabajando";
     const message = document.createElement("span");
     message.id = "workingDetail";
