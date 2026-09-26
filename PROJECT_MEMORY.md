@@ -1,6 +1,6 @@
 # Memoria del proyecto — Angeli Secretaria
 
-## 2026-09-26 — Multiusuario real, dominio propio, voz propia y avisos (V0.24.0 – V0.26.6)
+## 2026-09-26 — Multiusuario real, dominio propio, voz propia y avisos (V0.24.0 – V0.26.7)
 
 **Interpretación**: el intérprete usa `gemini-2.5-flash` sin razonamiento (thinking 0), elegido con el examen `backend/eval/` (150 frases genéricas contra Gemini real). Antes de cambiar el prompt o el modelo, hay que volver a pasar el examen. La fecha o el periodo que dice el usuario lo calcula el móvil y manda sobre la IA (historial #6, #76 y #120).
 
