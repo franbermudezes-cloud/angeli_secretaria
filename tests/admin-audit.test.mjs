@@ -70,3 +70,13 @@ test("hay política de privacidad y condiciones públicas, enlazadas desde Ajust
   assert.match(terms, /puede equivocarse/);
 });
 
+// Verificación de Google: página principal pública que explica la app y cada
+// permiso, con enlaces a privacidad y condiciones.
+test("la página de presentación explica la app, sus permisos y enlaza lo legal", () => {
+  const page = readFileSync(new URL("../presentacion.html", import.meta.url), "utf8");
+  for (const scope of ["calendar.events", "contacts.readonly", "drive.file"]) assert.ok(page.includes(scope), scope);
+  assert.match(page, /href="\.\/privacidad\.html"/);
+  assert.match(page, /href="\.\/condiciones\.html"/);
+  assert.match(page, /href="\.\/"/, "enlaza a la app");
+});
+

@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Angeli · Tu asistente personal por voz</title>
+<meta name="description" content="Angeli es un asistente personal por voz: apunta notas y recordatorios, gestiona tu agenda de Google Calendar, encuentra a tus contactos y guarda tus fotos en tu Google Drive.">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{--ground:#f4f5fb;--surface:#ffffff;--ink:#0b1440;--muted:#545b82;--line:#dde0f0;--accent:#3b4cf0;--accent-ink:#ffffff;--band:#071038;--band-ink:#eef0ff;--band-muted:#b3b9e0;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--ground:#070d2e;--surface:#0f1a4d;--ink:#eef0ff;--muted:#a9afd6;--line:#233070;--accent:#8c98ff;--accent-ink:#071038;--band:#0b1440;--band-ink:#eef0ff;--band-muted:#b3b9e0;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font:17px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:880px;margin:0 auto;padding-inline:20px}
+header.hero{background:var(--band);color:var(--band-ink)}
+header.hero .wrap{display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:center;padding-block:48px}
+header.hero img{width:128px;height:128px;border-radius:28px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+h1{font-size:clamp(30px,6vw,44px);line-height:1.1;margin:0 0 10px;text-wrap:balance}
+.lead{margin:0 0 20px;color:var(--band-muted);max-width:52ch}
+.cta{display:inline-block;background:#fff;color:#071038;font-weight:700;text-decoration:none;padding:12px 22px;border-radius:12px}
+.cta:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+main .wrap{padding-block:40px 24px;display:flex;flex-direction:column;gap:40px}
+h2{font-size:24px;margin:0 0 14px}
+.features{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin:0;padding:0;list-style:none}
+.features li{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.features b{display:block;margin-bottom:4px}
+.features span{color:var(--muted);font-size:15px}
+table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;font-size:15px}
+th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+code{font-size:13px}
+.table-scroll{overflow-x:auto}
+p{max-width:68ch}
+.note{color:var(--muted)}
+a{color:var(--accent)}
+footer{border-top:1px solid var(--line);margin-top:16px}
+footer .wrap{padding-block:20px 32px;color:var(--muted);font-size:15px;display:flex;flex-wrap:wrap;gap:8px 18px}
+@media (max-width:560px){header.hero .wrap{grid-template-columns:1fr;text-align:left}header.hero img{width:96px;height:96px;border-radius:22px}}
+</style>
+</head>
+<body>
+<header class="hero">
+ <div class="wrap">
+  <img src="icon-192.png" alt="Icono de Angeli" width="128" height="128">
+  <div>
+   <h1>Angeli, tu asistente personal por voz</h1>
+   <p class="lead">Le hablas como a una secretaria de confianza y ella se encarga: apunta, te recuerda, organiza tu agenda y te ayuda a llamar o escribir a quien necesites.</p>
+   <a class="cta" href="./">Abrir Angeli</a>
+  </div>
+ </div>
+</header>
+
+<main>
+ <div class="wrap">
+  <section>
+   <h2>Qué hace Angeli</h2>
+   <ul class="features">
+    <li><b>Notas y tareas</b><span>«Apunta que el código del wifi es…». Se guardan ordenadas y las encuentras preguntando.</span></li>
+    <li><b>Recordatorios</b><span>«Recuérdame llamar al fontanero mañana a las diez». Te avisa en el móvil a la hora.</span></li>
+    <li><b>Tu agenda</b><span>Crea, consulta, cambia y cancela eventos de tu Google Calendar, y te avisa si una hora ya está ocupada.</span></li>
+    <li><b>Llamar y WhatsApp</b><span>«Llama a Ana». Busca su teléfono en tus Contactos de Google y te deja la llamada o el mensaje preparados.</span></li>
+    <li><b>Fotos y archivos</b><span>Guarda lo que adjuntas en una carpeta «Angeli» de tu propio Google Drive.</span></li>
+    <li><b>Lista de la compra</b><span>Añade y tacha productos hablando, con sugerencias del supermercado.</span></li>
+   </ul>
+  </section>
+
+  <section>
+   <h2>Cómo usa tus datos de Google</h2>
+   <p>Cada persona conecta <strong>su propia</strong> cuenta de Google y solo si quiere. Angeli únicamente actúa cuando tú se lo pides y siempre te pide confirmación antes de crear, cambiar o borrar algo en tu agenda.</p>
+   <div class="table-scroll">
+   <table>
+    <thead><tr><th>Servicio</th><th>Permiso</th><th>Para qué</th></tr></thead>
+    <tbody>
+     <tr><td>Google Calendar</td><td><code>calendar.events</code></td><td>Crear, consultar, modificar y cancelar los eventos y avisos que tú dictas.</td></tr>
+     <tr><td>Google Contactos</td><td><code>contacts.readonly</code></td><td>Encontrar el teléfono de la persona a la que quieres llamar o escribir. Solo lectura: nunca cambia tus contactos.</td></tr>
+     <tr><td>Google Drive</td><td><code>drive.file</code></td><td>Guardar las fotos y archivos que adjuntas. Solo ve los archivos que crea ella misma.</td></tr>
+    </tbody>
+   </table>
+   </div>
+   <p class="note">Tus datos no se venden, no se usan para publicidad ni para entrenar modelos de inteligencia artificial. Puedes retirar el permiso cuando quieras en <a href="https://myaccount.google.com/permissions" rel="noopener">myaccount.google.com/permissions</a>. Todos los detalles están en la <a href="./privacidad.html">Política de privacidad</a>.</p>
+  </section>
+
+  <section>
+   <h2>Acceso</h2>
+   <p>Angeli es un proyecto personal en fase de pruebas. Se usa por invitación: si te han invitado, ábrela, entra con tu cuenta de Google y conecta los servicios que quieras.</p>
+  </section>
+ </div>
+</main>
+
+<footer>
+ <div class="wrap">
+  <a href="./privacidad.html">Política de privacidad</a>
+  <a href="./condiciones.html">Condiciones del servicio</a>
+  <span>Contacto: <a href="mailto:franbermudez.es@gmail.com">franbermudez.es@gmail.com</a></span>
+ </div>
+</footer>
+</body>
+</html>
