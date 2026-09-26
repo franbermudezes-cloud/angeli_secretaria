@@ -1,5 +1,14 @@
 # Changelog
 
+## V0.26.6 · Botón «＋» en las pantallas de arriba
+
+- **Pedido por el propietario**: desde las pantallas que se abren con los botones de arriba (fotos, archivos, notas y recordatorios) solo se podía mirar. Para subir una imagen había que ir abajo o pasar por una nota.
+- **Fotos / Archivos**: «＋» junto a cerrar. Abre directamente el selector de fotos o de archivos, según la pantalla, o pregunta cuál si se están viendo los dos.
+- **Notas**: «＋» para escribir o dictar una nota nueva.
+- **Recordatorios**: botón «＋ Nuevo recordatorio», también cuando no hay ninguno pendiente.
+- Usan los mismos caminos que el resto de la app, como el «＋» que ya tenía el Dietario. Sin cambios en el servidor.
+- Tests: `tests/anadir-desde-pantallas.test.mjs`.
+
 ## V0.26.5 · Avisos lejanos y repetidos
 
 - El nuevo registro de errores (V0.26.3) sacó dos fallos antiguos al programar avisos en real:
