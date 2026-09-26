@@ -160,49 +160,159 @@ class AccessDispatchTests(unittest.TestCase):
 
 
 
-class GoogleIntegrationsAreOwnerOnlyTests(unittest.TestCase):
-    """PRIVACIDAD: Calendar, Contactos y Drive usan UNA autorización (la del
-    propietario). Un invitado no debe poder leer ni escribir en ellas, ni
-    sustituirla al «conectar»."""
+class FakeSessions:
+    """Sesiones de Google de mentira: recuerdan de QUIÉN son (su prefijo)."""
+
+    def __init__(self, prefix, log):
+        self.prefix, self.log = prefix, log
+
+    def connection_status(self, integration):
+        return {"state": "connected", "reason": self.prefix}
+
+    def exchange_code(self, integration, code, redirect_uri):
+        self.log.append(("exchange", self.prefix, integration))
+        return {"connected": True}
+
+    def api(self, integration, method, url, body=None):
+        self.log.append(("api", self.prefix, integration))
+        return {"items": [], "owner": self.prefix}
+
+    def delete_drive_file(self, file_id):
+        self.log.append(("delete", self.prefix, file_id))
+
+
+class GooglePerPersonTests(unittest.TestCase):
+    """PRIVACIDAD: cada persona usa SU Google (Calendar, Contactos y Drive).
+    Un invitado nunca llega a las autorizaciones del propietario ni a las de
+    otro invitado, y no puede elegirlas desde el móvil: salen del uid
+    verificado."""
 
     def setUp(self):
         os.environ.pop("ANGELI_AI_DEV_BYPASS_AUTH", None)
         os.environ.pop("K_SERVICE", None)
         os.environ["ALLOWED_FIREBASE_EMAILS"] = OWNER
-        self.store = {"ana@gmail.com": {"status": "active", "mode": "open"}}
+        os.environ["ALLOWED_ORIGINS"] = "https://example.com"
+        self.store = {"ana@gmail.com": {"status": "active", "mode": "trial"}, "luis@gmail.com": {"status": "active", "mode": "open"}}
+        self.log = []
 
     def tearDown(self):
         os.environ.pop("ALLOWED_FIREBASE_EMAILS", None)
+        os.environ.pop("ALLOWED_ORIGINS", None)
         app.set_test_dependencies()
 
-    def request(self, path, payload, email):
-        app.set_test_dependencies(verifier=lambda token: claims(email), access_factory=lambda: AccessControl(store=self.store))
+    def request(self, path, payload, email, uid):
+        app.set_test_dependencies(
+            verifier=lambda token: claims(email, uid=uid),
+            access_factory=lambda: AccessControl(store=self.store),
+            session_factory=lambda: FakeSessions("angeli-google", self.log),
+            guest_sessions_factory=lambda prefix: FakeSessions(prefix, self.log),
+        )
         body = json.dumps(payload).encode("utf-8")
         captured = {}
         raw = b"".join(app.app({"REQUEST_METHOD": "POST", "PATH_INFO": path, "CONTENT_LENGTH": str(len(body)), "wsgi.input": BytesIO(body), "HTTP_AUTHORIZATION": "Bearer t"}, lambda status, headers: captured.setdefault("status", status)))
         return captured["status"], json.loads(raw) if raw.strip().startswith(b"{") else {}
 
-    def test_invitee_cannot_use_calendar_contacts_or_drive(self):
-        for path, payload in [
-            ("/google", {"integration": "calendar", "action": "list", "params": {}}),
-            ("/google", {"integration": "contacts", "action": "search", "query": "Ana"}),
-            ("/oauth/exchange", {"integration": "calendar", "code": "x", "redirectUri": "https://example.com"}),
-            ("/media/delete", {"fileId": "abcdefghijklmno"}),
-            ("/media/download", {"fileId": "abcdefghijklmno"}),
-        ]:
-            status, data = self.request(path, payload, "ana@gmail.com")
-            self.assertEqual(status, "403 Forbidden", path)
-            self.assertEqual(data["code"], "owner_only_integration", path)
+    def test_each_guest_uses_their_own_google_never_the_owners(self):
+        status, data = self.request("/google", {"integration": "calendar", "action": "list", "params": {}}, "ana@gmail.com", "uid-ana")
+        self.assertEqual(status, "200 OK")
+        ana = data["owner"]
+        self.assertTrue(ana.startswith("angeli-google-u-"))
+        _, luis = self.request("/google", {"integration": "contacts", "action": "search", "query": "Ana"}, "luis@gmail.com", "uid-luis")
+        self.assertTrue(luis["owner"].startswith("angeli-google-u-"))
+        self.assertNotEqual(ana, luis["owner"], "dos invitados no comparten llaves")
+        _, owner = self.request("/google", {"integration": "calendar", "action": "list", "params": {}}, OWNER, "uid-owner")
+        self.assertEqual(owner["owner"], "angeli-google")
+        self.assertNotIn(("api", "angeli-google", "calendar"), self.log[:2], "los invitados nunca tocaron las llaves del propietario")
 
-    def test_invitee_session_status_does_not_reveal_owner_connections(self):
-        status, data = self.request("/session/status", {}, "ana@gmail.com")
+    def test_connecting_as_a_guest_never_replaces_the_owners_grant(self):
+        status, _ = self.request("/oauth/exchange", {"integration": "calendar", "code": "x", "redirectUri": "https://example.com"}, "ana@gmail.com", "uid-ana")
+        self.assertEqual(status, "200 OK")
+        [(kind, prefix, integration)] = self.log
+        self.assertEqual((kind, integration), ("exchange", "calendar"))
+        self.assertEqual(prefix, app.guest_grant_prefix("uid-ana"))
+        self.assertNotEqual(prefix, "angeli-google")
+
+    def test_guest_drive_and_status_are_their_own(self):
+        self.request("/media/delete", {"fileId": "abcdefghijklmno"}, "ana@gmail.com", "uid-ana")
+        self.assertEqual(self.log, [("delete", app.guest_grant_prefix("uid-ana"), "abcdefghijklmno")])
+        status, data = self.request("/session/status", {}, "ana@gmail.com", "uid-ana")
         self.assertEqual(status, "200 OK")
         for integration in ("contacts", "calendar", "drive"):
-            self.assertEqual(data[integration]["reason"], "owner_only")
+            self.assertEqual(data[integration]["reason"], app.guest_grant_prefix("uid-ana"))
 
-    def test_owner_is_not_blocked(self):
-        status, _ = self.request("/google", {"integration": "nope", "action": "list"}, OWNER)
-        self.assertNotEqual(status, "403 Forbidden")
+    def test_prefix_comes_from_the_verified_uid_and_is_stable(self):
+        self.assertEqual(app.guest_grant_prefix("uid-ana"), app.guest_grant_prefix("uid-ana"))
+        self.assertNotEqual(app.guest_grant_prefix("uid-ana"), app.guest_grant_prefix("uid-luis"))
+        self.assertNotIn("uid-ana", app.guest_grant_prefix("uid-ana"), "el nombre del secreto no revela el uid")
+        with self.assertRaises(PermissionError):
+            app.guest_grant_prefix("")
+
+    def test_blocked_guest_cannot_use_google_at_all(self):
+        self.store["ana@gmail.com"]["status"] = "blocked"
+        status, _ = self.request("/google", {"integration": "calendar", "action": "list", "params": {}}, "ana@gmail.com", "uid-ana")
+        self.assertEqual(status, "401 Unauthorized")
+        self.assertEqual(self.log, [])
+
+    def test_test_harness_stays_owner_only(self):
+        os.environ["ANGELI_TEST_HARNESS_ENABLED"] = "1"
+        try:
+            status, data = self.request("/test/session/status", {}, "ana@gmail.com", "uid-ana")
+        finally:
+            os.environ.pop("ANGELI_TEST_HARNESS_ENABLED", None)
+        self.assertEqual(status, "403 Forbidden")
+        self.assertEqual(data["code"], "owner_only_integration")
+
+
+class GuestSecretsTests(unittest.TestCase):
+    """Solo se crean secretos de invitados; nunca del propietario ni del arnés."""
+
+    class NotFound(Exception):
+        pass
+
+    def fake_client(self, existing):
+        test = self
+        class Client:
+            def __init__(self):
+                self.created = []
+            def add_secret_version(self, request):
+                name = request["parent"].rsplit("/", 1)[1]
+                if name not in existing:
+                    raise test.NotFound()
+            def create_secret(self, request):
+                self.created.append(request["secret_id"])
+                existing.add(request["secret_id"])
+        return Client()
+
+    def session(self, prefix, client, **kwargs):
+        from google_sessions import GoogleSessions
+        service = GoogleSessions("p", "c", grant_prefix=prefix, **kwargs)
+        service._client = lambda: client
+        return service
+
+    def test_guest_secret_is_created_on_first_connection(self):
+        client = self.fake_client(set())
+        prefix = app.guest_grant_prefix("uid-ana")
+        self.session(prefix, client)._write_secret(f"{prefix}-calendar-grant", "{}")
+        self.assertEqual(client.created, [f"{prefix}-calendar-grant"])
+
+    def test_owner_or_harness_secret_is_never_created(self):
+        for prefix in ("angeli-google", "angeli-test-google"):
+            client = self.fake_client(set())
+            with self.assertRaises(self.NotFound):
+                self.session(prefix, client)._write_secret(f"{prefix}-calendar-grant", "{}")
+            self.assertEqual(client.created, [])
+
+    def test_personal_drive_folder_is_found_or_created_once(self):
+        from google_sessions import GoogleSessions
+        calls = []
+        service = GoogleSessions("p", "c", grant_prefix=app.guest_grant_prefix("uid-ana"), personal_drive=True)
+        def api(integration, method, url, body=None):
+            calls.append(method)
+            return {"files": []} if method == "GET" else {"id": "folder-1"}
+        service.api = api
+        self.assertEqual(service._drive_folder("image"), "folder-1")
+        self.assertEqual(service._drive_folder("file"), "folder-1")
+        self.assertEqual(calls, ["GET", "POST"], "busca, crea una vez y la recuerda")
 
 
 if __name__ == "__main__":

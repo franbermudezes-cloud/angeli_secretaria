@@ -7,6 +7,7 @@ llamar a Vertex AI. Este servicio no ejecuta acciones de negocio.
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
 import os
 import re
@@ -25,6 +26,7 @@ from google_sessions import (
     CALENDAR,
     CONTACTS,
     DRIVE,
+    GUEST_GRANT_PREFIX,
     GooglePermissionRequired,
     GoogleReconnectRequired,
     GoogleResourceNotFound,
@@ -35,7 +37,7 @@ from access_control import AccessControl, AccessDenied, QuotaExhausted
 import mercadona_catalog
 
 MAX_TEXT_LENGTH = 500
-OWNER_ONLY_GOOGLE_ROUTES = {"/google", "/oauth/exchange", "/media/upload", "/media/download", "/media/delete", "/test/session/status", "/test/oauth/exchange"}
+OWNER_ONLY_GOOGLE_ROUTES = {"/test/session/status", "/test/oauth/exchange"}
 MAX_BODY_BYTES = 8_192  # 3ª auditoría: 2 KB no cabía un dictado largo con dos respuestas de seguimiento (400 y respaldo local justo en la aclaración).
 MAX_MEDIA_BYTES = 20 * 1024 * 1024
 REQUEST_TIMEOUT_SECONDS = 8
@@ -340,6 +342,7 @@ _rate_windows: dict[str, deque[float]] = defaultdict(deque)
 _interpreter: Callable[[str, str, str], dict[str, Any]] | None = None
 _chat_aside: Callable[[str], str] | None = None
 _speech: Callable[[str, float], bytes] | None = None
+_guest_sessions_factory: Callable[[str], GoogleSessions] | None = None
 _identity_verifier: Callable[[str], dict[str, Any]] | None = None
 _sessions_factory: Callable[[], GoogleSessions] | None = None
 _push_factory: Callable[[], PushNotifications] | None = None
@@ -508,6 +511,30 @@ def sessions() -> GoogleSessions:
     return GoogleSessions(project, client_id)
 
 
+def guest_grant_prefix(uid: str) -> str:
+    """Prefijo de las autorizaciones de una persona invitada.
+
+    Sale SIEMPRE del uid verificado por Firebase, nunca de algo que mande el
+    móvil: nadie puede elegir leer o sustituir las llaves de otra persona.
+    """
+    if not uid:
+        raise PermissionError("Falta identificación")
+    return GUEST_GRANT_PREFIX + hashlib.sha256(uid.encode("utf-8")).hexdigest()[:24]
+
+
+def sessions_for(claims: dict[str, Any]) -> GoogleSessions:
+    """Google del propietario para el propietario; el suyo propio para cada invitado."""
+    if access_control().is_owner(claims):
+        return sessions()
+    prefix = guest_grant_prefix(str(claims.get("uid") or claims.get("sub") or ""))
+    if _guest_sessions_factory:
+        return _guest_sessions_factory(prefix)
+    project, client_id = os.getenv("GOOGLE_CLOUD_PROJECT", ""), os.getenv("GOOGLE_WEB_CLIENT_ID", "")
+    if not project or not client_id:
+        raise RuntimeError("El servidor no está configurado")
+    return GoogleSessions(project, client_id, grant_prefix=prefix, personal_drive=True)
+
+
 def test_sessions() -> GoogleSessions:
     """Perfil de pruebas, aislado por secretos de las sesiones reales."""
     if _sessions_factory:
@@ -519,8 +546,7 @@ def test_sessions() -> GoogleSessions:
     return GoogleSessions(project, client_id, grant_prefix="angeli-test-google")
 
 
-def session_status() -> dict[str, Any]:
-    service = sessions()
+def session_status(service: GoogleSessions) -> dict[str, Any]:
     with ThreadPoolExecutor(max_workers=3) as executor:
         pending = {integration: executor.submit(service.connection_status, integration) for integration in (CONTACTS, CALENDAR, DRIVE)}
         result = {integration: task.result() for integration, task in pending.items()}
@@ -581,9 +607,8 @@ def media_response(start_response: Callable, data: bytes, content_type: str, ori
     return [data]
 
 
-def persistent_google_action(payload: dict[str, Any]) -> dict[str, Any]:
+def persistent_google_action(payload: dict[str, Any], service: GoogleSessions) -> dict[str, Any]:
     integration, action = payload.get("integration"), payload.get("action")
-    service = sessions()
     if integration == CONTACTS and action == "search":
         query = payload.get("query")
         if not isinstance(query, str) or not query.strip() or len(query) > 100:
@@ -1178,21 +1203,17 @@ def app(environ: dict[str, Any], start_response: Callable):
         # solo tras una interpretación válida; antes solo se comprueba.
         if path == "/interpret":
             access_control().ensure_quota(claims)
-        # PRIVACIDAD (multiusuario): Calendar, Contactos y Drive usan UNA sola
-        # autorización guardada, la del propietario (angeli-google-*-grant), sin
-        # distinguir quién pregunta. Un invitado leería y escribiría en la agenda,
-        # los contactos y el Drive del propietario, y podría incluso sustituir su
-        # autorización al «conectar». Hasta que existan autorizaciones por
-        # persona, estas rutas son solo del propietario.
+        # PRIVACIDAD (multiusuario): cada persona usa SU Google. sessions_for()
+        # elige las autorizaciones por el uid verificado: las del propietario
+        # para él, y las propias de cada invitado para los demás. Un invitado
+        # nunca llega a las del propietario ni a las de otro invitado. El arnés
+        # de pruebas sigue siendo solo del propietario.
         if path in OWNER_ONLY_GOOGLE_ROUTES and not access_control().is_owner(claims):
-            return json_response(start_response, "403 Forbidden", {"error": "Calendar, Contactos y Drive todavía solo funcionan con la cuenta principal de Angeli.", "code": "owner_only_integration", "integration": "google"}, origin)
-        if path == "/session/status" and not access_control().is_owner(claims):
-            unavailable = {"state": "disconnected", "reason": "owner_only"}
-            return json_response(start_response, "200 OK", {"ai": {"state": "connected", "reason": "authenticated_backend"}, CONTACTS: unavailable, CALENDAR: unavailable, DRIVE: unavailable}, origin)
+            return json_response(start_response, "403 Forbidden", {"error": "Solo la cuenta principal de Angeli puede usar las pruebas.", "code": "owner_only_integration", "integration": "google"}, origin)
         if path.startswith("/test/") and os.getenv("ANGELI_TEST_HARNESS_ENABLED") != "1":
             return json_response(start_response, "404 Not Found", {"error": "No encontrado"}, origin)
         if path == "/session/status":
-            return json_response(start_response, "200 OK", session_status(), origin)
+            return json_response(start_response, "200 OK", session_status(sessions_for(claims)), origin)
         if path == "/push/register":
             payload = parse_json_body(environ, {"token", "label"})
             return json_response(start_response, "200 OK", push_notifications().register(subject, payload.get("token"), payload.get("label") or "Dispositivo"), origin)
@@ -1216,7 +1237,7 @@ def app(environ: dict[str, Any], start_response: Callable):
             if integration not in {CONTACTS, CALENDAR, DRIVE} or not isinstance(code, str) or not isinstance(redirect_uri, str) or redirect_uri not in configured_origins():
                 raise ValueError("Autorización no válida")
             try:
-                result = sessions().exchange_code(integration, code, redirect_uri)
+                result = sessions_for(claims).exchange_code(integration, code, redirect_uri)
             except (GoogleReconnectRequired, GooglePermissionRequired, RuntimeError) as error:
                 status, payload = integration_error(error, integration)
                 return json_response(start_response, status, payload, origin)
@@ -1231,7 +1252,7 @@ def app(environ: dict[str, Any], start_response: Callable):
             google_payload = parse_json_body(environ, {"integration", "action", "query", "event", "eventId", "params"})
             integration = google_payload.get("integration")
             try:
-                result = persistent_google_action(google_payload)
+                result = persistent_google_action(google_payload, sessions_for(claims))
             except (GoogleReconnectRequired, GooglePermissionRequired, RuntimeError) as error:
                 status, payload = integration_error(error, integration)
                 return json_response(start_response, status, payload, origin)
@@ -1239,7 +1260,7 @@ def app(environ: dict[str, Any], start_response: Callable):
         if path == "/media/upload":
             data, name, mime_type, kind = parse_media_upload(environ)
             try:
-                return json_response(start_response, "200 OK", sessions().upload_drive_file(data, name, mime_type, kind), origin)
+                return json_response(start_response, "200 OK", sessions_for(claims).upload_drive_file(data, name, mime_type, kind), origin)
             except (GoogleReconnectRequired, GooglePermissionRequired, RuntimeError) as error:
                 print(f"media_drive_error path={path} reason={str(error)}", file=sys.stderr, flush=True)
                 status, payload = integration_error(error, DRIVE)
@@ -1249,7 +1270,7 @@ def app(environ: dict[str, Any], start_response: Callable):
             file_id = payload.get("fileId")
             if not isinstance(file_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{10,200}", file_id): raise ValueError("Archivo no válido")
             try:
-                data, mime_type = sessions().download_drive_file(file_id)
+                data, mime_type = sessions_for(claims).download_drive_file(file_id)
             except (GoogleReconnectRequired, GooglePermissionRequired, RuntimeError) as error:
                 print(f"media_drive_error path={path} reason={str(error)}", file=sys.stderr, flush=True)
                 status, payload = integration_error(error, DRIVE)
@@ -1260,7 +1281,7 @@ def app(environ: dict[str, Any], start_response: Callable):
             file_id = payload.get("fileId")
             if not isinstance(file_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{10,200}", file_id): raise ValueError("Archivo no válido")
             try:
-                sessions().delete_drive_file(file_id)
+                sessions_for(claims).delete_drive_file(file_id)
             except (GoogleReconnectRequired, GooglePermissionRequired, RuntimeError) as error:
                 print(f"media_drive_error path={path} reason={str(error)}", file=sys.stderr, flush=True)
                 status, payload = integration_error(error, DRIVE)
@@ -1335,9 +1356,10 @@ def app(environ: dict[str, Any], start_response: Callable):
         return json_response(start_response, "503 Service Unavailable", {"error": "Interpretación no disponible"}, origin)
 
 
-def set_test_dependencies(interpreter: Callable[[str, str, str], dict[str, Any]] | None = None, verifier: Callable[[str], dict[str, Any]] | None = None, session_factory: Callable[[], GoogleSessions] | None = None, push_factory: Callable[[], PushNotifications] | None = None, chat_aside: Callable[[str], str] | None = None, mercadona_search: Callable[[str, int], list] | None = None, access_factory: Callable[[], AccessControl] | None = None, speech: Callable[[str, float], bytes] | None = None) -> None:
-    global _interpreter, _identity_verifier, _sessions_factory, _push_factory, _chat_aside, _mercadona_search, _access_factory, _speech
+def set_test_dependencies(interpreter: Callable[[str, str, str], dict[str, Any]] | None = None, verifier: Callable[[str], dict[str, Any]] | None = None, session_factory: Callable[[], GoogleSessions] | None = None, push_factory: Callable[[], PushNotifications] | None = None, chat_aside: Callable[[str], str] | None = None, mercadona_search: Callable[[str, int], list] | None = None, access_factory: Callable[[], AccessControl] | None = None, speech: Callable[[str, float], bytes] | None = None, guest_sessions_factory: Callable[[str], GoogleSessions] | None = None) -> None:
+    global _interpreter, _identity_verifier, _sessions_factory, _push_factory, _chat_aside, _mercadona_search, _access_factory, _speech, _guest_sessions_factory
     _speech = speech
+    _guest_sessions_factory = guest_sessions_factory
     _speech_cache.clear()
     _interpreter, _identity_verifier, _sessions_factory, _push_factory, _chat_aside, _mercadona_search = interpreter, verifier, session_factory, push_factory, chat_aside, mercadona_search
     _access_factory = access_factory

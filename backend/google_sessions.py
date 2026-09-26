@@ -1,4 +1,4 @@
-"""Autorizaciones persistentes de Google para el único propietario de Angeli.
+"""Autorizaciones persistentes de Google de cada persona de Angeli.
 
 Los refresh tokens nunca salen de Cloud Run: se guardan por integración en
 Secret Manager y las llamadas a People/Calendar se realizan desde este módulo.
@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 import os
 from datetime import datetime, timezone
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -21,6 +21,13 @@ SCOPES = {
   # Solo los archivos que crea Angeli; no concede acceso a todo Mi unidad.
   DRIVE: "openid email https://www.googleapis.com/auth/drive.file",
 }
+
+# Autorizaciones de las personas invitadas: cada una tiene las SUYAS, con este
+# prefijo seguido de un resumen de su uid. Son las únicas que el servidor puede
+# crear; las del propietario (angeli-google-*) y las del arnés
+# (angeli-test-google-*) ya existen y nunca se crean ni se sustituyen desde aquí.
+GUEST_GRANT_PREFIX = "angeli-google-u-"
+PERSONAL_DRIVE_FOLDER = "Angeli"
 
 
 class GoogleResourceNotFound(RuntimeError):
@@ -38,7 +45,7 @@ class GooglePermissionRequired(PermissionError):
 
 
 class GoogleSessions:
-    def __init__(self, project: str, client_id: str, grant_prefix: str = "angeli-google"):
+    def __init__(self, project: str, client_id: str, grant_prefix: str = "angeli-google", personal_drive: bool = False):
         """Sesiones OAuth persistentes de un perfil de Angeli.
 
         ``angeli-google`` es siempre el perfil de producción. El arnés de
@@ -48,6 +55,10 @@ class GoogleSessions:
         if not grant_prefix or not grant_prefix.replace("-", "").isalnum():
             raise ValueError("Prefijo de autorizaciones no válido")
         self.project, self.client_id, self.grant_prefix = project, client_id, grant_prefix
+        # Una persona invitada guarda sus adjuntos en una carpeta «Angeli» de SU
+        # Drive; el propietario sigue usando las carpetas configuradas.
+        self.personal_drive = personal_drive
+        self._personal_folder_id: str | None = None
 
     def _secret_name(self, integration: str) -> str:
         return f"{self.grant_prefix}-{integration}-grant"
@@ -68,9 +79,18 @@ class GoogleSessions:
             raise
 
     def _write_secret(self, name: str, value: str) -> None:
-        self._client().add_secret_version(
-            request={"parent": f"projects/{self.project}/secrets/{name}", "payload": {"data": value.encode("utf-8")}}
-        )
+        client = self._client()
+        request = {"parent": f"projects/{self.project}/secrets/{name}", "payload": {"data": value.encode("utf-8")}}
+        try:
+            client.add_secret_version(request=request)
+        except Exception as error:
+            # La primera vez que una persona invitada conecta, su secreto aún no
+            # existe y se crea. Solo para invitados: jamás se crea un secreto del
+            # propietario o del arnés con otro nombre por error.
+            if type(error).__name__ != "NotFound" or not name.startswith(GUEST_GRANT_PREFIX):
+                raise
+            client.create_secret(request={"parent": f"projects/{self.project}", "secret_id": name, "secret": {"replication": {"automatic": {}}, "labels": {"angeli": "guest-grant"}}})
+            client.add_secret_version(request=request)
 
     def _oauth_secret(self) -> str:
         secret_name = (
@@ -88,7 +108,7 @@ class GoogleSessions:
             # Las carpetas por sí solas no bastan: una cuenta de servicio no
             # tiene cuota de Drive. Los adjuntos deben crearse con el Gmail
             # que autorizó Drive y que sí posee almacenamiento.
-            return self.drive_configured() and bool(self._read_secret(self._secret_name(DRIVE)))
+            return (self.personal_drive or self.drive_configured()) and bool(self._read_secret(self._secret_name(DRIVE)))
         return bool(self._read_secret(self._secret_name(integration)))
 
     def connection_status(self, integration: str, drive_folder_ids: list[str] | None = None) -> dict:
@@ -118,7 +138,7 @@ class GoogleSessions:
                     os.getenv("ANGELI_DRIVE_FILES_FOLDER_ID", "").strip(),
                 ]
                 folders = list(dict.fromkeys(folder for folder in folders if folder))
-                if not folders:
+                if not folders and not self.personal_drive:
                     return {"state": "disconnected", "reason": "missing_configuration"}
                 # ``drive.file`` permite crear los adjuntos de Angeli en el
                 # destino compartido, pero no garantiza que una carpeta ajena
@@ -217,11 +237,31 @@ class GoogleSessions:
         self._drive_raw("DELETE", f"https://www.googleapis.com/drive/v3/files/{file_id}")
 
     def _drive_folder(self, kind: str) -> str:
+        if self.personal_drive:
+            return self._personal_folder()
         variable = "ANGELI_DRIVE_IMAGES_FOLDER_ID" if kind == "image" else "ANGELI_DRIVE_FILES_FOLDER_ID"
         folder_id = os.getenv(variable, "").strip()
         if not folder_id:
             raise RuntimeError("Drive no tiene una carpeta de destino configurada")
         return folder_id
+
+    def _personal_folder(self) -> str:
+        """Carpeta «Angeli» en el Drive de la persona; se crea la primera vez.
+
+        Con ``drive.file`` Angeli solo ve lo que ella misma ha creado, así que
+        la búsqueda nunca encuentra ni toca otras carpetas de esa persona.
+        """
+        if self._personal_folder_id:
+            return self._personal_folder_id
+        query = f"name = '{PERSONAL_DRIVE_FOLDER}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false"
+        found = self.api(DRIVE, "GET", "https://www.googleapis.com/drive/v3/files?" + urlencode({"q": query, "fields": "files(id)", "pageSize": "1", "spaces": "drive"}, quote_via=quote))
+        files = found.get("files") or []
+        if files:
+            self._personal_folder_id = files[0]["id"]
+        else:
+            created = self.api(DRIVE, "POST", "https://www.googleapis.com/drive/v3/files?fields=id", {"name": PERSONAL_DRIVE_FOLDER, "mimeType": "application/vnd.google-apps.folder"})
+            self._personal_folder_id = created["id"]
+        return self._personal_folder_id
 
     def _drive_raw(self, method: str, url: str, data: bytes | None = None, content_type: str = "application/json") -> tuple[bytes, str]:
         # Drive actúa con la autorización OAuth persistente del propietario,
