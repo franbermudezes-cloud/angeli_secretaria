@@ -53,8 +53,19 @@ class PushNotifications:
 
     @staticmethod
     def _not_found(error: Exception) -> bool:
-        code = getattr(error, "code", lambda: None)()
-        return getattr(code, "name", "") == "NOT_FOUND" or type(error).__name__ == "NotFound"
+        # En google-api-core `code` es un valor (404 o un HTTPStatus), no una
+        # función; en gRPC sí es un método. Llamarlo siempre lanzaba TypeError
+        # justo cuando la tarea vieja ya no existía (el aviso ya había sonado),
+        # y reprogramar ese aviso fallaba con un 503.
+        if type(error).__name__ == "NotFound":
+            return True
+        code = getattr(error, "code", None)
+        if callable(code):
+            try:
+                code = code()
+            except Exception:  # noqa: BLE001
+                return False
+        return getattr(code, "name", "") == "NOT_FOUND" or code == 404
 
     def register(self, uid: str, token: str, label: str = "Dispositivo") -> dict[str, Any]:
         if not isinstance(token, str) or not 40 <= len(token) <= 4096:

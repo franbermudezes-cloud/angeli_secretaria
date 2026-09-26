@@ -393,7 +393,15 @@ def log_interpreter_error(category: str, error: Exception) -> None:
     if isinstance(error, TypeError):
         match = re.search(r"unexpected keyword argument ['\"]([^'\"]+)['\"]", str(error))
         detail = f"unexpected_keyword={match.group(1)}" if match else "type_error_without_keyword"
-    elif isinstance(error, OutputValidationError):
+    if detail in {"none", "type_error_without_keyword"} and error.__traceback__ is not None:
+        # Solo el lugar del código (archivo:línea:función), nunca datos: sin
+        # esto un TypeError real de /push/schedule era imposible de localizar.
+        import traceback
+        frames = traceback.extract_tb(error.__traceback__)
+        own = [item for item in frames if os.path.dirname(os.path.abspath(item.filename)) == os.path.dirname(os.path.abspath(__file__))]
+        place = lambda item: f"{os.path.basename(item.filename)}:{item.lineno}:{item.name}"
+        detail = f"{detail} where={place(frames[-1])}" + (f" ours={place(own[-1])}" if own and own[-1] is not frames[-1] else "")
+    if isinstance(error, OutputValidationError):
         # El mensaje procede únicamente de validadores internos; nunca contiene
         # el texto dictado ni la respuesta completa del modelo.
         detail = str(error)[:120] or "validation_error"

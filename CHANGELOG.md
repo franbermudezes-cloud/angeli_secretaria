@@ -1,5 +1,14 @@
 # Changelog
 
+## V0.26.3 · Guardar los ajustes de avisos, sin atascos
+
+- **Reportado por el propietario**: al pulsar «Guardar ajustes» en los avisos, la pantalla no se cerraba. Parecía que no se había guardado; pulsó varias veces y al final tuvo que salir.
+- **Causa 1 (servidor, de antes)**: al reprogramar un aviso, se borra primero la tarea vieja. Si esa tarea **ya había sonado**, Google responde «no existe», y la comprobación de ese «no existe» fallaba ella misma con un `TypeError` (llamaba como función a un código que es un número). Resultado: error 503 y aviso sin reprogramar. Corregido en `push_notifications._not_found`.
+- **Causa 2 (móvil)**: se reprogramaban **todos** los avisos a la vez, incluidos los ya pasados. Cada pulsación mandaba unas 40 peticiones de golpe y chocaba con el límite de 30 por minuto. Ahora solo se reprograma lo que todavía puede sonar, de 3 en 3.
+- **Causa 3 (pantalla)**: si algún aviso fallaba, la pantalla no se cerraba. Ahora el botón pasa a «Guardando…» y no se puede pulsar dos veces; al terminar se cierra siempre (los ajustes sí quedan guardados) y, si algo falló, lo dice aparte.
+- El registro de errores del servidor indica ahora en qué archivo y línea falla (nunca datos).
+- **Requiere redesplegar Cloud Run.** Tests: `tests/avisos-en-tandas.test.mjs`, `backend/test_push_notifications.py`.
+
 ## V0.26.2 · Nueva dirección: asistente.iacloud.es
 
 - **Pedido por el propietario**: una dirección más normal que la de GitHub. La app pasa a **https://asistente.iacloud.es** (subdominio del dominio `iacloud.es`, en IONOS, con un CNAME a `franbermudezes-cloud.github.io`). La dirección antigua de GitHub redirige sola a la nueva.
